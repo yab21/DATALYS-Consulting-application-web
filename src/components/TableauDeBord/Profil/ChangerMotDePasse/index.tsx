@@ -4,14 +4,7 @@ import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { Button } from "@nextui-org/button";
 import { Input, Checkbox } from "@nextui-org/react";
-import { 
-  getAuth, 
-  updatePassword, 
-  signInWithEmailAndPassword, 
-  signOut,
-  EmailAuthProvider,
-  reauthenticateWithCredential 
-} from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 const ChangerMotDePasse = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -23,6 +16,7 @@ const ChangerMotDePasse = () => {
   const [isCurrentPasswordVisible, setIsCurrentPasswordVisible] = useState(false);
   const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const router = useRouter();
 
   // Validation du mot de passe
   const validatePassword = (password: string): boolean => {
@@ -55,96 +49,65 @@ const ChangerMotDePasse = () => {
     return true;
   };
 
-  const handlePasswordChange = async () => {
-    try {
-      setError(null);
-      setLoading(true);
+  const handleSubmit = () => {
+    setError(null);
 
-      // Vérifications de base
-      if (!currentPassword || !newPassword || !confirmPassword) {
-        setError("Veuillez remplir tous les champs");
-        return;
-      }
-
-      if (newPassword !== confirmPassword) {
-        setError("Les nouveaux mots de passe ne correspondent pas");
-        return;
-      }
-
-      if (currentPassword === newPassword) {
-        setError("Le nouveau mot de passe doit être différent de l'ancien");
-        return;
-      }
-
-      // Validation du nouveau mot de passe
-      if (!validatePassword(newPassword)) {
-        return;
-      }
-
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (!user || !user.email) {
-        setError("Aucun utilisateur connecté"); 
-        return;
-      }
-
-      try {
-        // Réauthentification de l'utilisateur
-        const credential = EmailAuthProvider.credential(
-          user.email,
-          currentPassword
-        );
-        await reauthenticateWithCredential(user, credential);
-
-        // Mettre à jour le mot de passe
-        await updatePassword(user, newPassword);
-
-        // Si l'utilisateur ne veut pas garder les autres sessions actives
-        if (!keepOtherSessionsActive) {
-          // Déconnecter toutes les autres sessions
-          await signOut(auth);
-          // Se reconnecter avec le nouveau mot de passe
-          await signInWithEmailAndPassword(auth, user.email, newPassword);
-        }
-
-        // Réinitialiser les champs
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-
-        alert("Mot de passe modifié avec succès !");
-      } catch (error) {
-        console.error("Erreur spécifique:", error);
-        if (error.code === 'auth/wrong-password') {
-          setError("Le mot de passe actuel est incorrect");
-        } else {
-          setError("Une erreur est survenue lors du changement de mot de passe");
-        }
-      }
-    } catch (error) {
-      console.error("Erreur lors du changement de mot de passe:", error);
-      setError("Une erreur est survenue lors du changement de mot de passe");
-    } finally {
-      setLoading(false);
+    // Validation des champs
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError("Veuillez remplir tous les champs");
+      return;
     }
+
+    // Vérification de la correspondance des mots de passe
+    if (newPassword !== confirmPassword) {
+      setError("Les nouveaux mots de passe ne correspondent pas");
+      return;
+    }
+
+    // Validation du nouveau mot de passe
+    if (!validatePassword(newPassword)) {
+      return; // L'erreur est déjà définie dans validatePassword
+    }
+
+    // Vérifier que le nouveau mot de passe est différent de l'actuel
+    if (currentPassword === newPassword) {
+      setError("Le nouveau mot de passe doit être différent du mot de passe actuel");
+      return;
+    }
+
+    setLoading(true);
+
+    // Simulate password change
+    setTimeout(() => {
+      alert("Mot de passe changé avec succès ! (Simulation)");
+      setLoading(false);
+      // Reset form
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      // Navigate back to profile
+      router.push("/tableaudebord/profil/voir");
+    }, 1500);
   };
 
-  const toggleCurrentPasswordVisibility = () => setIsCurrentPasswordVisible(!isCurrentPasswordVisible);
-  const toggleNewPasswordVisibility = () => setIsNewPasswordVisible(!isNewPasswordVisible);
-  const toggleConfirmPasswordVisibility = () => setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
+  const toggleCurrentPasswordVisibility = () => 
+    setIsCurrentPasswordVisible(!isCurrentPasswordVisible);
+  const toggleNewPasswordVisibility = () => 
+    setIsNewPasswordVisible(!isNewPasswordVisible);
+  const toggleConfirmPasswordVisibility = () => 
+    setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
 
   return (
     <>
-      <Breadcrumb pageName="Changer votre mot de passe" />
-      <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px]">
+      <Breadcrumb pageName="Changer mot de passe" />
+      <div className="mx-auto mt-5 w-full max-w-2xl rounded-[10px]">
         <div className="mt-8 rounded-[20px] bg-white p-8 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <div className="mb-8 text-center">
             <h3 className="mb-2 text-[28px] font-bold text-dark dark:text-white">
-              Changer votre mot de passe
+              Changer le mot de passe
             </h3>
             <p className="text-base text-gray-600 dark:text-gray-400">
-              Assurez-vous d'utiliser un mot de passe fort et unique
+              Entrez votre mot de passe actuel et choisissez un nouveau mot de passe sécurisé
             </p>
           </div>
 
@@ -155,7 +118,7 @@ const ChangerMotDePasse = () => {
               </div>
             )}
 
-            <div className="space-y-10">
+            <div className="space-y-8">
               <Input
                 type={isCurrentPasswordVisible ? "text" : "password"}
                 label="Mot de passe actuel"
@@ -166,6 +129,8 @@ const ChangerMotDePasse = () => {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
+                labelPlacement="outside"
+                size="lg"
                 endContent={
                   <button
                     className="focus:outline-none"
@@ -209,8 +174,6 @@ const ChangerMotDePasse = () => {
                     )}
                   </button>
                 }
-                labelPlacement="outside"
-                size="lg"
               />
 
               <Input
@@ -218,11 +181,13 @@ const ChangerMotDePasse = () => {
                 label="Nouveau mot de passe"
                 variant="bordered"
                 color="primary"
-                placeholder="Entrer votre nouveau mot de passe"
+                placeholder="Entrer le nouveau mot de passe"
                 className="text-base"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
+                labelPlacement="outside"
+                size="lg"
                 endContent={
                   <button
                     className="focus:outline-none"
@@ -266,8 +231,6 @@ const ChangerMotDePasse = () => {
                     )}
                   </button>
                 }
-                labelPlacement="outside"
-                size="lg"
               />
 
               <Input
@@ -275,11 +238,13 @@ const ChangerMotDePasse = () => {
                 label="Confirmer le nouveau mot de passe"
                 variant="bordered"
                 color="primary"
-                placeholder="Confirmer votre nouveau mot de passe"
+                placeholder="Confirmer le nouveau mot de passe"
                 className="text-base"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                labelPlacement="outside"
+                size="lg"
                 endContent={
                   <button
                     className="focus:outline-none"
@@ -323,46 +288,60 @@ const ChangerMotDePasse = () => {
                     )}
                   </button>
                 }
-                labelPlacement="outside"
-                size="lg"
               />
 
-              <div className="mt-2">
+              <div className="mt-4">
                 <Checkbox
                   isSelected={keepOtherSessionsActive}
-                  onValueChange={setKeepOtherSessionsActive}
+                  onChange={(checked) => setKeepOtherSessionsActive(checked)}
+                  color="primary"
                   size="sm"
                   className="text-base"
                 >
-                  Garder les autres sessions actives
+                  Maintenir les autres sessions actives
                 </Checkbox>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Si décoché, vous serez déconnecté de tous les autres appareils
+                </p>
               </div>
 
-              <div className="mt-8 text-center">
+              <div className="mt-8 flex gap-4">
                 <Button
                   color="primary"
-                  className="h-12 w-full max-w-md text-base font-medium"
+                  className="h-12 flex-1 text-base font-medium"
                   variant="solid"
                   size="lg"
-                  onPress={handlePasswordChange}
-                  isLoading={loading}
+                  onClick={handleSubmit}
+                  isDisabled={loading}
                 >
-                  {loading ? (
-                    "Modification en cours..."
-                  ) : (
-                    "Changer le mot de passe"
-                  )}
+                  {loading ? "Changement en cours..." : "Changer le mot de passe"}
+                </Button>
+                <Button
+                  color="default"
+                  className="h-12 flex-1 text-base font-medium"
+                  variant="bordered"
+                  size="lg"
+                  onClick={() => router.push("/tableaudebord/profil/voir")}
+                  isDisabled={loading}
+                >
+                  Annuler
                 </Button>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Le mot de passe doit contenir au moins 8 caractères, une majuscule,
-            une minuscule, un chiffre et un caractère spécial.
-          </p>
+          <div className="mt-6">
+            <h4 className="mb-3 text-sm font-semibold text-dark dark:text-white">
+              Exigences du mot de passe :
+            </h4>
+            <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+              <li>• Au moins 8 caractères</li>
+              <li>• Une majuscule (A-Z)</li>
+              <li>• Une minuscule (a-z)</li>
+              <li>• Un chiffre (0-9)</li>
+              <li>• Un caractère spécial (!@#$%^&*)</li>
+            </ul>
+          </div>
         </div>
       </div>
     </>

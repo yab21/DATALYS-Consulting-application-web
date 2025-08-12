@@ -4,11 +4,7 @@ import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { Button } from "@nextui-org/button";
 import { Input, Checkbox } from "@nextui-org/react";
-import { db } from "@/firebase/firebaseConfig";
-import { collection, setDoc, doc, getDocs, query, where } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { createNotification } from "@/firebase/firebaseConfig";
+import { useRouter } from "next/navigation";
 
 const CreerUnCompte = () => {
   const [formData, setFormData] = useState({
@@ -29,6 +25,7 @@ const CreerUnCompte = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,123 +42,36 @@ const CreerUnCompte = () => {
     setFormData({ ...formData, isAdmin: e.target.checked });
   };
 
-  const uploadProfileImage = async (file: File, userId: string): Promise<string> => {
-    const storage = getStorage();
-    const storageRef = ref(storage, `profileImages/${userId}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
-  };
 
-  const checkUsernameExists = async (username: string): Promise<boolean> => {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("username", "==", username));
-    const querySnapshot = await getDocs(q);
-    return !querySnapshot.empty;
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setError(null);
 
-    try {
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-
-      if (!currentUser) {
-        setError("Vous devez être connecté pour créer un compte");
-        return;
-      }
-
-      if (
-        !formData.lastName ||
-        !formData.firstName ||
-        !formData.username ||
-        !formData.email ||
-        !formData.password ||
-        !formData.confirmPassword
-      ) {
-        setError("Veuillez remplir tous les champs.");
-        return;
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        setError("Les mots de passe ne correspondent pas.");
-        return;
-      }
-
-      // Vérifier si le username existe déjà
-      const usernameExists = await checkUsernameExists(formData.username);
-      if (usernameExists) {
-        setError("Ce nom d'utilisateur est déjà pris.");
-        return;
-      }
-
-      setLoading(true);
-
-      // Créer le nouvel utilisateur
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const newUser = userCredential.user;
-
-      // Upload de l'image de profil si fournie
-      let profileImageUrl = "/images/user.png";
-      if (formData.profileImage) {
-        try {
-          profileImageUrl = await uploadProfileImage(formData.profileImage, newUser.uid);
-        } catch (error) {
-          console.error("Erreur lors de l'upload de l'image:", error);
-        }
-      }
-
-      // Créer le document utilisateur
-      await setDoc(doc(db, "users", newUser.uid), {
-        lastName: formData.lastName,
-        firstName: formData.firstName,
-        username: formData.username,
-        email: formData.email,
-        isAdmin: formData.isAdmin,
-        function: formData.function,
-        company: formData.company,
-        department: formData.department,
-        profileImage: profileImageUrl,
-        createdAt: new Date(),
-      });
-
-      console.log("Utilisateur créé avec succès !");
-
-      // Notifier les administrateurs
-      const adminsSnapshot = await getDocs(
-        query(collection(db, "users"), where("isAdmin", "==", true))
-      );
-
-      // Créer les notifications avec l'ID de l'utilisateur actuel
-      const notificationPromises = adminsSnapshot.docs.map(async (adminDoc) => {
-        await createNotification(
-          adminDoc.id,
-          {
-            title: "Nouveau compte créé",
-            body: `créé un nouveau compte pour ${formData.firstName} ${formData.lastName} (${formData.username})`,
-            link: "/tableaudebord/utilisateur/voir"
-          },
-          currentUser.uid
-        );
-      });
-
-      await Promise.all(notificationPromises);
-      alert("Utilisateur créé avec succès !");
-
-    } catch (error: any) {
-      if (error.code === "auth/email-already-in-use") {
-        setError("Cette adresse e-mail est déjà utilisée.");
-      } else {
-        console.error("Erreur lors de la création de l'utilisateur :", error);
-        setError("Erreur lors de la création de l'utilisateur. Veuillez réessayer.");
-      }
-    } finally {
-      setLoading(false);
+    if (
+      !formData.lastName ||
+      !formData.firstName ||
+      !formData.username ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      setError("Veuillez remplir tous les champs.");
+      return;
     }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+
+    setLoading(true);
+    
+    // Simulate account creation
+    setTimeout(() => {
+      alert("Compte créé avec succès ! (Simulation)");
+      setLoading(false);
+      // Navigate to user management page
+      router.push("/tableaudebord/utilisateur");
+    }, 1500);
   };
 
   const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);

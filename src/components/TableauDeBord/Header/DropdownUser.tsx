@@ -1,58 +1,22 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import ClickOutside from "@/components/ClickOutside";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/firebase/firebaseConfig";
-import { getAuth, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [userData, setUserData] = useState({
-    firstName: "",
-    lastName: "",
+  const [userData] = useState({
+    firstName: "John",
+    lastName: "Doe",
     profileImage: "/images/user.png", // Image par défaut
   });
   const router = useRouter();
 
-  // Fonction pour récupérer les informations utilisateur depuis Firestore
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          const userDocRef = doc(db, "users", user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            setUserData({
-              firstName: data.firstName || "",
-              lastName: data.lastName || "",
-              profileImage: data.profileImage || "/images/user.png",
-            });
-          }
-        } catch (error) {
-          console.error(
-            "Erreur lors de la récupération des données utilisateur:",
-            error,
-          );
-        }
-      }
-    };
 
-    fetchUserData();
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      router.push("/connexion");
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-    }
+  const handleSignOut = () => {
+    router.push("/connexion");
   };
 
   return (

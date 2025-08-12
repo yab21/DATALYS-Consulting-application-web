@@ -1,13 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import React, { useState } from "react";
 import Link from "next/link";
 import SidebarItem from "@/components/TableauDeBord/Sidebar/SidebarItem";
 import ClickOutside from "@/components/ClickOutside";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { getAuth } from "firebase/auth";
-import { doc, getDoc, getFirestore } from "firebase/firestore";
 import Image from "next/image";
 
 interface SidebarProps {
@@ -16,24 +13,9 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
-  const pathname = usePathname();
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
-  const [isUserAdmin, setIsUserAdmin] = useState(false);
-
-  useEffect(() => {
-    const checkUserAdmin = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setIsUserAdmin(userDoc.data().isAdmin || false);
-        }
-      }
-    };
-    checkUserAdmin();
-  }, []);
+  // Simulate admin user for demo purposes
+  const [isUserAdmin] = useState(true);
 
   // Définir les menus en fonction des autorisations
   const getMenuGroups = () => {
