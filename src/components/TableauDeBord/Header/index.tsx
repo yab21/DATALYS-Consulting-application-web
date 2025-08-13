@@ -114,23 +114,23 @@ const Header = (props: {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {/* <!-- Dark Mode Toggle --> */}
-            <motion.li
+            <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <DarkModeSwitcher />
-            </motion.li>
+            </motion.div>
             {/* <!-- Dark Mode Toggle --> */}
 
             {/* <!-- Notification Menu Area --> */}
-            <motion.li
+            <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <DropdownNotification />
-            </motion.li>
+            </motion.div>
             {/* <!-- Notification Menu Area --> */}
           </motion.ul>
 
