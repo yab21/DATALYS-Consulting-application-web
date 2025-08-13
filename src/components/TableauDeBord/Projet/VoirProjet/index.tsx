@@ -5,11 +5,30 @@ import { Chip, Button, Card, CardBody, CardHeader, Tabs, Tab } from "@nextui-org
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import FileManager from "@/components/UI/FileManager/FileManager";
 import AnalyticsDashboard from "@/components/UI/Analytics/Dashboard";
+import PartnerManager from "@/components/UI/PartnerManager/PartnerManager";
 import { useNotifications } from "@/context/NotificationContext";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 
-// Interface pour le projet
+// Interfaces
+interface Partner {
+  id: string;
+  nom: string;
+  logo: string;
+  secteur: string;
+  description: string;
+  email: string;
+  telephone: string;
+  responsable: string;
+  statut: "actif" | "inactif" | "suspendu";
+}
+
+interface ProjectPartner extends Partner {
+  roleInProject: string;
+  dateAjout: Date;
+  contributions: string[];
+}
+
 interface Project {
   id: string;
   intitule: string;
@@ -24,12 +43,18 @@ interface Project {
   visibilite: "public" | "prive" | "restreint";
 }
 
-const VoirProjet = () => {
+interface VoirProjetProps {
+  id?: string;
+}
+
+const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
   const params = useParams();
-  const projectId = params.id as string;
+  const searchParams = useSearchParams();
+  const projectId = id || (params.id as string);
   const [project, setProject] = useState<Project | null>(null);
+  const [projectPartners, setProjectPartners] = useState<ProjectPartner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("files");
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "files");
   const { addNotification } = useNotifications();
 
   // Charger les données du projet
@@ -53,7 +78,40 @@ const VoirProjet = () => {
         visibilite: "public",
       };
 
+      // Données mockées des partenaires du projet
+      const mockProjectPartners: ProjectPartner[] = [
+        {
+          id: "partner-1",
+          nom: "TechCorp Solutions",
+          logo: "/images/partners/techcorp.svg",
+          secteur: "Technologie",
+          description: "Spécialiste en solutions informatiques d'entreprise",
+          email: "contact@techcorp.com",
+          telephone: "+33 1 23 45 67 89",
+          responsable: "Jean Dupont",
+          statut: "actif",
+          roleInProject: "lead",
+          dateAjout: new Date("2024-01-15"),
+          contributions: ["Architecture", "Migration"],
+        },
+        {
+          id: "partner-2",
+          nom: "DataFlow Systems",
+          logo: "/images/partners/dataflow.svg",
+          secteur: "Analytics",
+          description: "Solutions d'analyse de données en temps réel",
+          email: "hello@dataflow.io",
+          telephone: "+33 4 77 88 99 00",
+          responsable: "Alexandre Petit",
+          statut: "actif",
+          roleInProject: "technical",
+          dateAjout: new Date("2024-01-20"),
+          contributions: ["Monitoring", "Analytics"],
+        },
+      ];
+
       setProject(mockProject);
+      setProjectPartners(mockProjectPartners);
       setLoading(false);
     };
 
@@ -120,6 +178,11 @@ const VoirProjet = () => {
     }
   };
 
+  // Gestionnaire pour les partenaires
+  const handlePartnersUpdate = (updatedPartners: ProjectPartner[]) => {
+    setProjectPartners(updatedPartners);
+  };
+
   // Fonction pour obtenir la couleur du statut
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -166,31 +229,33 @@ const VoirProjet = () => {
     <>
       <Breadcrumb pageName={`Projet: ${project.intitule}`} />
       
-      <div className="mt-5 space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6">
         {/* En-tête du projet */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-col gap-4 w-full">
+        <Card className="bg-white dark:bg-gray-800 shadow-xl dark:shadow-gray-900/20 border-0 dark:border dark:border-gray-700">
+          <CardHeader className="pb-6 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-gray-800 dark:to-gray-700 rounded-t-large">
+            <div className="flex flex-col gap-6 w-full">
               <div className="flex justify-between items-start">
                 <div>
-                  <h1 className="text-2xl font-bold text-dark dark:text-white">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                     {project.intitule}
                   </h1>
-                  <p className="text-default-400 mt-1">{project.societe}</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">{project.societe}</p>
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Chip
                     color={getStatusColor(project.statut)}
-                    variant="flat"
-                    size="sm"
+                    variant="shadow"
+                    size="lg"
+                    className="font-semibold"
                   >
                     {project.statut.replace("_", " ")}
                   </Chip>
                   <Chip
                     color={getVisibilityColor(project.visibilite)}
-                    variant="flat"
-                    size="sm"
+                    variant="shadow"
+                    size="lg"
+                    className="font-semibold"
                   >
                     {project.visibilite}
                   </Chip>
@@ -198,48 +263,48 @@ const VoirProjet = () => {
               </div>
 
               {/* Informations du projet */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-small font-medium text-default-600">Chef de projet</p>
-                  <p className="text-default-800">{project.chefDeProjet}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white dark:bg-gray-700 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Chef de projet</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{project.chefDeProjet}</p>
                 </div>
                 
-                <div>
-                  <p className="text-small font-medium text-default-600">Domaines</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
+                <div className="bg-white dark:bg-gray-700 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Domaines</p>
+                  <div className="flex flex-wrap gap-1">
                     {project.domaine.map((domain, index) => (
-                      <Chip key={index} size="sm" variant="flat" color="secondary">
+                      <Chip key={index} size="sm" variant="flat" color="secondary" className="text-xs">
                         {domain}
                       </Chip>
                     ))}
                   </div>
                 </div>
                 
-                <div>
-                  <p className="text-small font-medium text-default-600">Progression</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div className="bg-white dark:bg-gray-700 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Progression</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-3">
                       <div
-                        className="bg-primary-500 h-2 rounded-full"
+                        className="bg-gradient-to-r from-primary-500 to-primary-600 h-3 rounded-full transition-all duration-300"
                         style={{ width: `${project.progression || 0}%` }}
                       />
                     </div>
-                    <span className="text-small">{project.progression || 0}%</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{project.progression || 0}%</span>
                   </div>
                 </div>
                 
-                <div>
-                  <p className="text-small font-medium text-default-600">Budget</p>
-                  <p className="text-default-800">
+                <div className="bg-white dark:bg-gray-700 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Budget</p>
+                  <p className="text-gray-900 dark:text-white font-bold text-lg">
                     {project.budget ? `${project.budget.toLocaleString('fr-FR')} €` : "Non défini"}
                   </p>
                 </div>
               </div>
 
               {project.description && (
-                <div>
-                  <p className="text-small font-medium text-default-600 mb-2">Description</p>
-                  <p className="text-default-700">{project.description}</p>
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-6 rounded-xl border border-gray-200 dark:border-gray-600">
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">Description du projet</p>
+                  <p className="text-gray-800 dark:text-gray-200 leading-relaxed">{project.description}</p>
                 </div>
               )}
             </div>
@@ -247,16 +312,21 @@ const VoirProjet = () => {
         </Card>
 
         {/* Contenu principal avec onglets */}
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 shadow-xl dark:shadow-gray-900/20 border-0 dark:border dark:border-gray-700">
           <CardBody className="p-0">
             <Tabs
               selectedKey={activeTab}
               onSelectionChange={(key) => setActiveTab(key as string)}
               className="w-full"
               size="lg"
+              classNames={{
+                tabList: "bg-gray-50 dark:bg-gray-700 p-2 rounded-t-large",
+                tab: "data-[selected=true]:bg-white dark:data-[selected=true]:bg-gray-600 data-[selected=true]:shadow-lg",
+                tabContent: "text-gray-600 dark:text-gray-300 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-semibold"
+              }}
             >
               <Tab key="files" title="📁 Fichiers">
-                <div className="p-6">
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
                   <FileManager
                     projectId={project.id}
                     rootPath={`/projets/${project.id}`}
@@ -274,7 +344,7 @@ const VoirProjet = () => {
               </Tab>
 
               <Tab key="analytics" title="📊 Analytics">
-                <div className="p-6">
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
                   <AnalyticsDashboard
                     compactMode={true}
                     showExportButton={true}
@@ -293,45 +363,69 @@ const VoirProjet = () => {
                 </div>
               </Tab>
 
+              <Tab key="partners" title={`🤝 Partenaires (${projectPartners.length})`}>
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
+                  <PartnerManager
+                    projectId={project.id}
+                    projectName={project.intitule}
+                    projectPartners={projectPartners}
+                    onPartnersUpdate={handlePartnersUpdate}
+                    showAddButton={true}
+                  />
+                </div>
+              </Tab>
+
               <Tab key="settings" title="⚙️ Paramètres">
-                <div className="p-6">
-                  <div className="space-y-6">
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
+                  <div className="space-y-6 max-w-4xl">
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Paramètres du projet</h3>
-                      <div className="grid gap-4">
-                        <div className="flex justify-between items-center p-4 bg-default-50 rounded-lg">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Paramètres du projet</h3>
+                      <div className="grid gap-6">
+                        <div className="flex justify-between items-center p-6 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
                           <div>
-                            <p className="font-medium">Notifications</p>
-                            <p className="text-small text-default-400">
+                            <p className="font-semibold text-gray-900 dark:text-white">Notifications</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               Recevoir des notifications pour ce projet
                             </p>
                           </div>
-                          <Button size="sm" variant="flat">
+                          <Button size="md" variant="flat" color="primary" className="font-semibold">
                             Activer
                           </Button>
                         </div>
                         
-                        <div className="flex justify-between items-center p-4 bg-default-50 rounded-lg">
+                        <div className="flex justify-between items-center p-6 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
                           <div>
-                            <p className="font-medium">Sauvegarde automatique</p>
-                            <p className="text-small text-default-400">
+                            <p className="font-semibold text-gray-900 dark:text-white">Sauvegarde automatique</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               Sauvegarder automatiquement les modifications
                             </p>
                           </div>
-                          <Button size="sm" variant="flat" color="success">
+                          <Button size="md" variant="flat" color="success" className="font-semibold">
                             Activé
                           </Button>
                         </div>
                         
-                        <div className="flex justify-between items-center p-4 bg-default-50 rounded-lg">
+                        <div className="flex justify-between items-center p-6 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
                           <div>
-                            <p className="font-medium">Collaboration</p>
-                            <p className="text-small text-default-400">
+                            <p className="font-semibold text-gray-900 dark:text-white">Collaboration</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               Permettre la collaboration en temps réel
                             </p>
                           </div>
-                          <Button size="sm" variant="flat">
+                          <Button size="md" variant="flat" color="secondary" className="font-semibold">
                             Configurer
+                          </Button>
+                        </div>
+                        
+                        <div className="flex justify-between items-center p-6 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
+                          <div>
+                            <p className="font-semibold text-gray-900 dark:text-white">Archiver le projet</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              Archiver ce projet (action réversible)
+                            </p>
+                          </div>
+                          <Button size="md" variant="flat" color="warning" className="font-semibold">
+                            Archiver
                           </Button>
                         </div>
                       </div>

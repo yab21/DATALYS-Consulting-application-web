@@ -2,8 +2,6 @@ import { Metadata } from "next";
 import { ParentFolderIdProvider } from "@/context/ParentFolderIdContext";
 import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
 import PageProjet from "@/components/TableauDeBord/Projet/VoirProjet";
-import { db } from "@/firebase/firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: "Informations du projet | DATALYS Consulting",
@@ -12,12 +10,15 @@ export const metadata: Metadata = {
 
 // Ajoutez cette fonction pour la génération statique
 export async function generateStaticParams() {
-  const projectsRef = collection(db, "projects");
-  const projectsSnapshot = await getDocs(projectsRef);
+  // Données mockées (remplace Firebase)
+  const mockProjects = [
+    { id: "1" },
+    { id: "2" },
+    { id: "3" },
+    { id: "4" },
+  ];
 
-  return projectsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-  }));
+  return mockProjects;
 }
 
 // Ajoutez cette ligne pour activer l'ISR

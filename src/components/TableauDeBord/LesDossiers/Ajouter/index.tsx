@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { Button } from "@nextui-org/button";
 import { Input } from "@nextui-org/react";
-import { db } from "@/firebase/firebaseConfig"; // Assurez-vous que Firestore est bien importé
-import { collection, addDoc } from "firebase/firestore"; // Pour ajouter des documents dans Firestore
+import { useNotifications } from "@/context/NotificationContext";
 
 const AjouterProjet = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +13,7 @@ const AjouterProjet = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const { addNotification } = useNotifications();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -21,20 +21,50 @@ const AjouterProjet = () => {
   };
 
   const handleSubmit = async () => {
+    if (!formData.nom.trim()) {
+      setError("Le nom du dossier est requis");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // Enregistrer le projet dans Firestore
-      const docRef = await addDoc(collection(db, "projects"), {
+      // Simulation de création (remplace Firebase)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newFolder = {
+        id: `folder-${Date.now()}`,
         nom: formData.nom,
+        createdAt: new Date(),
+      };
+
+      console.log("Dossier créé :", newFolder);
+      
+      addNotification({
+        title: "Dossier créé avec succès",
+        body: `Le dossier "${formData.nom}" a été créé`,
+        type: "success",
+        priority: "medium",
+        category: "project",
+        read: false,
       });
 
-      console.log("Projet créé avec ID :", docRef.id);
-      alert("Projet créé avec succès !");
+      // Reset form
+      setFormData({ nom: "" });
+      
     } catch (error: any) {
-      console.error("Erreur lors de la création du projet :", error);
-      setError("Erreur lors de la création du projet. Veuillez réessayer.");
+      console.error("Erreur lors de la création du dossier :", error);
+      setError("Erreur lors de la création du dossier. Veuillez réessayer.");
+      
+      addNotification({
+        title: "Erreur de création",
+        body: "Une erreur est survenue lors de la création du dossier",
+        type: "error",
+        priority: "high",
+        category: "system",
+        read: false,
+      });
     } finally {
       setLoading(false);
     }

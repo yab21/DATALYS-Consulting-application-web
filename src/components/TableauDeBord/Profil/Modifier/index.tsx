@@ -6,8 +6,7 @@ import { Button } from "@nextui-org/button";
 import { Input } from "@nextui-org/react";
 import { Select, SelectItem } from "@nextui-org/react";
 import { domaines } from "./domaineData";
-import { db } from "@/firebase/firebaseConfig"; // Assurez-vous que Firestore est bien importé
-import { collection, addDoc } from "firebase/firestore"; // Pour ajouter des documents dans Firestore
+import { useNotifications } from "@/context/NotificationContext";
 
 const ModifierCompte = () => {
   const [formData, setFormData] = useState({
@@ -22,15 +21,17 @@ const ModifierCompte = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const { addNotification } = useNotifications();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSelectChange = (selected: Set<string>) => {
+  const handleSelectChange = (selected: any) => {
     // Convertir les éléments sélectionnés en tableau
-    setFormData({ ...formData, domaine: Array.from(selected) });
+    const selectedArray = selected instanceof Set ? Array.from(selected) : Array.from(selected);
+    setFormData({ ...formData, domaine: selectedArray });
   };
 
   const handleSubmit = async () => {
@@ -49,26 +50,59 @@ const ModifierCompte = () => {
       setError("Veuillez remplir tous les champs.");
       return;
     }
+
+    // Vérifier que les mots de passe correspondent
+    if (formData.motdepasse !== formData.cmotdepasse) {
+      setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Enregistrer le projet dans Firestore
-      const docRef = await addDoc(collection(db, "projects"), {
+      // Simulation de modification de profil (remplace Firebase)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const updatedProfile = {
+        id: `user-${Date.now()}`,
         nom: formData.nom,
         prenom: formData.prenom,
         utilisateur: formData.utilisateur,
         email: formData.email,
-        motdepasse: formData.motdepasse,
-        cmotdepasse: formData.cmotdepasse,
-        domaine: formData.domaine, // Un tableau de chaînes de caractères
-        createdAt: new Date(), // Ajout de la date de création
+        domaine: formData.domaine,
+        updatedAt: new Date(),
+      };
+
+      console.log("Profil mis à jour :", updatedProfile);
+      
+      addNotification({
+        title: "Profil mis à jour",
+        body: "Votre profil a été modifié avec succès",
+        type: "success",
+        priority: "medium",
+        category: "user",
+        read: false,
       });
 
-      console.log("Projet créé avec ID :", docRef.id);
-      alert("Projet créé avec succès !");
+      // Reset password fields for security
+      setFormData(prev => ({
+        ...prev,
+        motdepasse: "",
+        cmotdepasse: "",
+      }));
+      
     } catch (error: any) {
-      console.error("Erreur lors de la création du projet :", error);
-      setError("Erreur lors de la création du projet. Veuillez réessayer.");
+      console.error("Erreur lors de la modification du profil :", error);
+      setError("Erreur lors de la modification du profil. Veuillez réessayer.");
+      
+      addNotification({
+        title: "Erreur de modification",
+        body: "Une erreur est survenue lors de la modification du profil",
+        type: "error",
+        priority: "high",
+        category: "system",
+        read: false,
+      });
     } finally {
       setLoading(false);
     }

@@ -12,10 +12,8 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  useDisclosure,
   Tabs,
   Tab,
-  Badge,
 } from "@nextui-org/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
@@ -72,9 +70,10 @@ interface VoirPartenaireProps {
 const MOCK_PARTNER: Partner = {
   id: "partner-1",
   nom: "TechCorp Solutions",
-  logo: "/images/partners/techcorp.png",
+  logo: "/images/partners/techcorp.svg",
   secteur: "Technologie",
-  description: "Spécialiste en solutions informatiques d'entreprise avec plus de 15 ans d'expérience dans le domaine. Nous accompagnons les entreprises dans leur transformation digitale.",
+  description:
+    "Spécialiste en solutions informatiques d'entreprise avec plus de 15 ans d'expérience dans le domaine. Nous accompagnons les entreprises dans leur transformation digitale.",
   email: "contact@techcorp.com",
   telephone: "+33 1 23 45 67 89",
   adresse: "123 Avenue des Champs-Élysées, 75008 Paris",
@@ -87,7 +86,8 @@ const MOCK_PROJECTS: Project[] = [
   {
     id: "proj-1",
     nom: "Migration Cloud AWS",
-    description: "Migration de l'infrastructure vers AWS avec optimisation des coûts",
+    description:
+      "Migration de l'infrastructure vers AWS avec optimisation des coûts",
     statut: "en_cours",
     dateDebut: new Date("2024-01-15"),
     dateFin: new Date("2024-06-30"),
@@ -111,7 +111,8 @@ const MOCK_PROJECTS: Project[] = [
   {
     id: "proj-3",
     nom: "Application Mobile",
-    description: "Développement d'une application mobile pour la gestion des commandes",
+    description:
+      "Développement d'une application mobile pour la gestion des commandes",
     statut: "en_attente",
     dateDebut: new Date("2024-03-01"),
     progression: 15,
@@ -125,7 +126,8 @@ const MOCK_INCIDENTS: Incident[] = [
   {
     id: "inc-1",
     titre: "Problème de connectivité VPN",
-    description: "Les utilisateurs n'arrivent pas à se connecter au VPN depuis ce matin",
+    description:
+      "Les utilisateurs n'arrivent pas à se connecter au VPN depuis ce matin",
     priorite: "haute",
     statut: "en_cours",
     projectId: "proj-1",
@@ -176,8 +178,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       setPartner(MOCK_PARTNER);
       setProjects(MOCK_PROJECTS);
       setIncidents(MOCK_INCIDENTS);
@@ -189,31 +191,45 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "en_cours": return "primary";
-      case "termine": return "success";
-      case "en_attente": return "warning";
-      case "annule": return "danger";
-      case "ouvert": return "danger";
-      case "resolu": return "success";
-      case "ferme": return "default";
-      default: return "default";
+      case "en_cours":
+        return "primary";
+      case "termine":
+        return "success";
+      case "en_attente":
+        return "warning";
+      case "annule":
+        return "danger";
+      case "ouvert":
+        return "danger";
+      case "resolu":
+        return "success";
+      case "ferme":
+        return "default";
+      default:
+        return "default";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "critique": return "danger";
-      case "haute": return "warning";
-      case "moyenne": return "primary";
-      case "faible": return "success";
-      default: return "default";
+      case "critique":
+        return "danger";
+      case "haute":
+        return "warning";
+      case "moyenne":
+        return "primary";
+      case "faible":
+        return "success";
+      default:
+        return "default";
     }
   };
 
   const handleCreateIncident = async () => {
-    if (!newIncident.titre || !newIncident.description || !selectedProject) return;
-    
-    const project = projects.find(p => p.id === selectedProject);
+    if (!newIncident.titre || !newIncident.description || !selectedProject)
+      return;
+
+    const project = projects.find((p) => p.id === selectedProject);
     if (!project) return;
 
     const incident: Incident = {
@@ -228,11 +244,11 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
       assigneA: "Support Technique",
     };
 
-    setIncidents(prev => [incident, ...prev]);
+    setIncidents((prev) => [incident, ...prev]);
     setNewIncident({ titre: "", description: "", priorite: "moyenne" });
     setSelectedProject("");
     setShowCreateIncident(false);
-    
+
     console.log("Nouvel incident créé:", incident);
   };
 
@@ -249,8 +265,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
     return (
       <>
         <Breadcrumb pageName="Partenaire introuvable" />
-        <div className="text-center py-12">
-          <h3 className="text-lg font-semibold text-gray-600">Partenaire introuvable</h3>
+        <div className="py-12 text-center">
+          <h3 className="text-lg font-semibold text-gray-600">
+            Partenaire introuvable
+          </h3>
           <Link href="/tableaudebord/partenaire/liste">
             <Button color="primary" className="mt-4">
               Retour à la liste
@@ -264,19 +282,19 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
   return (
     <>
       <Breadcrumb pageName={`Partenaire: ${partner.nom}`} />
-      
+
       <div className="mx-auto max-w-7xl space-y-6">
         {/* En-tête du partenaire */}
         <motion.div
-          className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card"
+          className="rounded-xl bg-white dark:bg-gray-800 p-8 shadow-xl dark:shadow-gray-900/20 border-0 dark:border dark:border-gray-700"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <div className="flex flex-col gap-6 lg:flex-row">
             {/* Logo et infos principales */}
-            <div className="flex flex-col sm:flex-row gap-6 lg:flex-1">
-              <div className="relative h-24 w-24 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <div className="flex flex-col gap-6 sm:flex-row lg:flex-1">
+              <div className="relative flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100">
                 {partner.logo ? (
                   <Image
                     src={partner.logo}
@@ -290,14 +308,14 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex-1">
-                <div className="flex items-start justify-between mb-4">
+                <div className="mb-4 flex items-start justify-between">
                   <div>
-                    <h1 className="text-2xl font-bold text-dark dark:text-white mb-2">
+                    <h1 className="mb-2 text-2xl font-bold text-dark dark:text-white">
                       {partner.nom}
                     </h1>
-                    <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="mb-3 flex flex-wrap gap-2">
                       <Chip size="sm" variant="flat" color="secondary">
                         {partner.secteur}
                       </Chip>
@@ -307,28 +325,42 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                     </div>
                   </div>
                 </div>
-                
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+
+                <p className="mb-4 text-gray-600 dark:text-gray-400">
                   {partner.description}
                 </p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+
+                <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                   <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Email:</span>
-                    <p className="text-gray-600 dark:text-gray-400">{partner.email}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Téléphone:</span>
-                    <p className="text-gray-600 dark:text-gray-400">{partner.telephone}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Responsable:</span>
-                    <p className="text-gray-600 dark:text-gray-400">{partner.responsable}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Partenaire depuis:</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      Email:
+                    </span>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {partner.dateCreation.toLocaleDateString('fr-FR')}
+                      {partner.email}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      Téléphone:
+                    </span>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {partner.telephone}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      Responsable:
+                    </span>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {partner.responsable}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      Partenaire depuis:
+                    </span>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {partner.dateCreation.toLocaleDateString("fr-FR")}
                     </p>
                   </div>
                 </div>
@@ -338,21 +370,33 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
             {/* Statistiques */}
             <div className="lg:w-80">
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
-                  <div className="text-2xl font-bold text-primary-600">{projects.length}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Projets</div>
-                </div>
-                <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {incidents.filter(i => i.statut !== "resolu" && i.statut !== "ferme").length}
+                <div className="rounded-lg bg-primary-50 p-4 text-center dark:bg-primary-900/20">
+                  <div className="text-2xl font-bold text-primary-600">
+                    {projects.length}
                   </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Incidents</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    Projets
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="rounded-lg bg-orange-50 p-4 text-center dark:bg-orange-900/20">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {
+                      incidents.filter(
+                        (i) => i.statut !== "resolu" && i.statut !== "ferme",
+                      ).length
+                    }
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    Incidents
+                  </div>
+                </div>
+                <div className="rounded-lg bg-green-50 p-4 text-center dark:bg-green-900/20">
                   <div className="text-2xl font-bold text-green-600">
                     {projects.reduce((sum, p) => sum + p.nombreFichiers, 0)}
                   </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Fichiers</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    Fichiers
+                  </div>
                 </div>
               </div>
             </div>
@@ -361,7 +405,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
 
         {/* Contenu principal avec onglets */}
         <motion.div
-          className="rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card"
+          className="rounded-xl bg-white dark:bg-gray-800 shadow-xl dark:shadow-gray-900/20 border-0 dark:border dark:border-gray-700"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -370,92 +414,136 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
             selectedKey={activeTab}
             onSelectionChange={(key) => setActiveTab(key as string)}
             className="w-full"
+            size="lg"
+            classNames={{
+              tabList: "bg-gray-50 dark:bg-gray-700 p-2 rounded-t-xl",
+              tab: "data-[selected=true]:bg-white dark:data-[selected=true]:bg-gray-600 data-[selected=true]:shadow-lg",
+              tabContent: "text-gray-600 dark:text-gray-300 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-semibold"
+            }}
           >
             <Tab
               key="projets"
               title={
                 <div className="flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.25 6a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5A.75.75 0 0 0 7.25 6M12 6a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 12 6m4 .75a.75.75 0 0 1 1.5 0v9.5a.75.75 0 0 1-1.5 0z"/>
-                    <path d="M3.75 2h16.5c.966 0 1.75.784 1.75 1.75v16.5A1.75 1.75 0 0 1 20.25 22H3.75A1.75 1.75 0 0 1 2 20.25V3.75C2 2.784 2.784 2 3.75 2M3.5 3.75v16.5c0 .138.112.25.25.25h16.5a.25.25 0 0 0 .25-.25V3.75a.25.25 0 0 0-.25-.25H3.75a.25.25 0 0 0-.25.25"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M7.25 6a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5A.75.75 0 0 0 7.25 6M12 6a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 12 6m4 .75a.75.75 0 0 1 1.5 0v9.5a.75.75 0 0 1-1.5 0z" />
+                    <path d="M3.75 2h16.5c.966 0 1.75.784 1.75 1.75v16.5A1.75 1.75 0 0 1 20.25 22H3.75A1.75 1.75 0 0 1 2 20.25V3.75C2 2.784 2.784 2 3.75 2M3.5 3.75v16.5c0 .138.112.25.25.25h16.5a.25.25 0 0 0 .25-.25V3.75a.25.25 0 0 0-.25-.25H3.75a.25.25 0 0 0-.25.25" />
                   </svg>
                   Projets ({projects.length})
                 </div>
               }
             >
-              <div className="p-6">
+              <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
                 {/* En-tête des projets */}
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-semibold text-dark dark:text-white">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                     Projets du Partenaire
                   </h3>
-                  <Button
-                    color="primary"
-                    size="sm"
-                    startContent={
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                      </svg>
-                    }
-                  >
-                    Nouveau Projet
-                  </Button>
+                  <Link href="/tableaudebord/projet/ajouter">
+                    <Button
+                      color="primary"
+                      size="md"
+                      variant="shadow"
+                      className="font-semibold"
+                      startContent={
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                        </svg>
+                      }
+                    >
+                      Nouveau Projet
+                    </Button>
+                  </Link>
                 </div>
 
                 {/* Liste des projets */}
                 <div className="space-y-4">
                   {projects.map((project) => (
-                    <Card key={project.id} className="hover:shadow-md transition-shadow">
+                    <Card
+                      key={project.id}
+                      className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all hover:shadow-lg hover:scale-[1.01]"
+                    >
                       <CardBody className="p-6">
-                        <div className="flex justify-between items-start mb-4">
+                        <div className="mb-4 flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="mb-2 flex items-center gap-3">
                               <h4 className="text-lg font-semibold text-dark dark:text-white">
                                 {project.nom}
                               </h4>
-                              <Chip size="sm" variant="flat" color={getStatusColor(project.statut)}>
+                              <Chip
+                                size="sm"
+                                variant="flat"
+                                color={getStatusColor(project.statut)}
+                              >
                                 {project.statut.replace("_", " ")}
                               </Chip>
                             </div>
-                            <p className="text-gray-600 dark:text-gray-400 mb-3">
+                            <p className="mb-3 text-gray-600 dark:text-gray-400">
                               {project.description}
                             </p>
-                            
+
                             {/* Barre de progression */}
                             <div className="mb-4">
-                              <div className="flex justify-between text-sm mb-1">
+                              <div className="mb-1 flex justify-between text-sm">
                                 <span>Progression</span>
                                 <span>{project.progression}%</span>
                               </div>
-                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
                                 <div
-                                  className="bg-primary-500 h-2 rounded-full transition-all"
+                                  className="h-2 rounded-full bg-primary-500 transition-all"
                                   style={{ width: `${project.progression}%` }}
                                 />
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="text-right ml-6">
+
+                          <div className="ml-6 text-right">
                             <div className="text-lg font-semibold text-green-600">
-                              {project.budget.toLocaleString('fr-FR')} €
+                              {project.budget.toLocaleString("fr-FR")} €
                             </div>
                             <div className="text-sm text-gray-500">Budget</div>
                           </div>
                         </div>
-                        
-                        <div className="flex justify-between items-center">
+
+                        <div className="flex items-center justify-between">
                           <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
                             <span>👤 {project.responsable}</span>
                             <span>📁 {project.nombreFichiers} fichiers</span>
-                            <span>📅 {project.dateDebut.toLocaleDateString('fr-FR')}</span>
+                            <span>
+                              📅 {project.dateDebut.toLocaleDateString("fr-FR")}
+                            </span>
                           </div>
-                          
-                          <Link href={`/tableaudebord/projet/pageprojet/${project.id}`}>
-                            <Button size="sm" variant="flat" color="primary">
-                              Voir Projet
-                            </Button>
-                          </Link>
+
+                          <div className="flex gap-2">
+                            <Link
+                              href={`/tableaudebord/projet/pageprojet/${project.id}`}
+                            >
+                              <Button size="sm" variant="flat" color="primary">
+                                Voir Projet
+                              </Button>
+                            </Link>
+                            <Link
+                              href={`/tableaudebord/projet/pageprojet/${project.id}?tab=partners`}
+                            >
+                              <Button 
+                                size="sm" 
+                                variant="flat" 
+                                color="secondary"
+                              >
+                                Gérer Partenaires
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
                       </CardBody>
                     </Card>
@@ -468,26 +556,44 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
               key="incidents"
               title={
                 <div className="flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
                   </svg>
-                  Incidents ({incidents.filter(i => i.statut !== "resolu" && i.statut !== "ferme").length})
+                  Incidents (
+                  {
+                    incidents.filter(
+                      (i) => i.statut !== "resolu" && i.statut !== "ferme",
+                    ).length
+                  }
+                  )
                 </div>
               }
             >
-              <div className="p-6">
+              <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
                 {/* En-tête des incidents */}
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-semibold text-dark dark:text-white">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                     Gestion des Incidents
                   </h3>
                   <Button
                     color="warning"
-                    size="sm"
+                    size="md"
+                    variant="shadow"
+                    className="font-semibold"
                     onClick={() => setShowCreateIncident(true)}
                     startContent={
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
                       </svg>
                     }
                   >
@@ -498,36 +604,57 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                 {/* Liste des incidents */}
                 <div className="space-y-4">
                   {incidents.map((incident) => (
-                    <Card key={incident.id} className="hover:shadow-md transition-shadow">
+                    <Card
+                      key={incident.id}
+                      className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all hover:shadow-lg hover:scale-[1.01]"
+                    >
                       <CardBody className="p-6">
-                        <div className="flex justify-between items-start">
+                        <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="mb-2 flex items-center gap-3">
                               <h4 className="text-lg font-semibold text-dark dark:text-white">
                                 {incident.titre}
                               </h4>
-                              <Chip size="sm" variant="flat" color={getPriorityColor(incident.priorite)}>
+                              <Chip
+                                size="sm"
+                                variant="flat"
+                                color={getPriorityColor(incident.priorite)}
+                              >
                                 {incident.priorite}
                               </Chip>
-                              <Chip size="sm" variant="flat" color={getStatusColor(incident.statut)}>
+                              <Chip
+                                size="sm"
+                                variant="flat"
+                                color={getStatusColor(incident.statut)}
+                              >
                                 {incident.statut.replace("_", " ")}
                               </Chip>
                             </div>
-                            
-                            <p className="text-gray-600 dark:text-gray-400 mb-3">
+
+                            <p className="mb-3 text-gray-600 dark:text-gray-400">
                               {incident.description}
                             </p>
-                            
+
                             <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
                               <span>📋 {incident.projectNom}</span>
                               <span>👤 {incident.assigneA}</span>
-                              <span>📅 {incident.dateCreation.toLocaleDateString('fr-FR')}</span>
+                              <span>
+                                📅{" "}
+                                {incident.dateCreation.toLocaleDateString(
+                                  "fr-FR",
+                                )}
+                              </span>
                               {incident.dateResolution && (
-                                <span>✅ Résolu le {incident.dateResolution.toLocaleDateString('fr-FR')}</span>
+                                <span>
+                                  ✅ Résolu le{" "}
+                                  {incident.dateResolution.toLocaleDateString(
+                                    "fr-FR",
+                                  )}
+                                </span>
                               )}
                             </div>
                           </div>
-                          
+
                           <Button size="sm" variant="flat" color="primary">
                             Détails
                           </Button>
@@ -543,68 +670,153 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
       </div>
 
       {/* Modal de création d'incident */}
-      <Modal isOpen={showCreateIncident} onClose={() => setShowCreateIncident(false)} size="lg">
-        <ModalContent>
-          <ModalHeader>Créer un Nouvel Incident</ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Projet concerné</label>
-                <select
-                  value={selectedProject}
-                  onChange={(e) => setSelectedProject(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700"
+      <Modal
+        isOpen={showCreateIncident}
+        onClose={() => setShowCreateIncident(false)}
+        size="2xl"
+        classNames={{
+          base: "bg-white dark:bg-gray-900",
+          backdrop: "bg-black/50 backdrop-blur-sm"
+        }}
+      >
+        <ModalContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 pb-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-warning-50 to-orange-50 dark:from-warning-900/30 dark:to-orange-900/30 rounded-t-large">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-warning-100 dark:bg-warning-900/50 rounded-lg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-warning-600 dark:text-warning-400">
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Créer un Nouvel Incident
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Signaler un problème ou incident technique
+                    </p>
+                  </div>
+                </div>
+              </ModalHeader>
+              <ModalBody className="py-8 px-6">
+                <div className="space-y-6">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
+                    <label className="mb-3 block text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.25 6a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5A.75.75 0 0 0 7.25 6M12 6a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 12 6m4 .75a.75.75 0 0 1 1.5 0v9.5a.75.75 0 0 1-1.5 0z"/>
+                      </svg>
+                      Projet concerné
+                    </label>
+                    <select
+                      value={selectedProject}
+                      onChange={(e) => setSelectedProject(e.target.value)}
+                      className="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-warning-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">Sélectionner un projet</option>
+                      {projects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {project.nom}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
+                    <Input
+                      label="Titre de l'incident"
+                      placeholder="Ex: Problème de connexion au serveur"
+                      value={newIncident.titre}
+                      onChange={(e) =>
+                        setNewIncident((prev) => ({ ...prev, titre: e.target.value }))
+                      }
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        label: "text-gray-800 dark:text-gray-200 font-semibold",
+                        input: "text-gray-900 dark:text-white",
+                        inputWrapper: "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                      }}
+                      startContent={
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      }
+                    />
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
+                    <label className="mb-3 block text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                      </svg>
+                      Description détaillée
+                    </label>
+                    <textarea
+                      value={newIncident.description}
+                      onChange={(e) =>
+                        setNewIncident((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-warning-500 focus:border-transparent transition-all resize-none"
+                      rows={4}
+                      placeholder="Décrivez le problème en détail : quand est-il survenu, quels sont les symptômes, etc."
+                    />
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
+                    <label className="mb-3 block text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                      </svg>
+                      Niveau de priorité
+                    </label>
+                    <select
+                      value={newIncident.priorite}
+                      onChange={(e) =>
+                        setNewIncident((prev) => ({
+                          ...prev,
+                          priorite: e.target.value as any,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-warning-500 focus:border-transparent transition-all"
+                    >
+                      <option value="faible">🟢 Faible - Impact mineur</option>
+                      <option value="moyenne">🟡 Moyenne - Impact modéré</option>
+                      <option value="haute">🟠 Haute - Impact important</option>
+                      <option value="critique">🔴 Critique - Impact majeur</option>
+                    </select>
+                  </div>
+                </div>
+              </ModalBody>
+              <ModalFooter className="border-t border-gray-200 dark:border-gray-700 pt-6 bg-gray-50 dark:bg-gray-800 rounded-b-large">
+                <Button
+                  variant="flat"
+                  onPress={() => setShowCreateIncident(false)}
+                  className="text-base font-semibold text-gray-600 dark:text-gray-300"
+                  size="lg"
                 >
-                  <option value="">Sélectionner un projet</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.nom}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <Input
-                label="Titre de l'incident"
-                placeholder="Résumé du problème"
-                value={newIncident.titre}
-                onChange={(e) => setNewIncident(prev => ({ ...prev, titre: e.target.value }))}
-              />
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Description</label>
-                <textarea
-                  value={newIncident.description}
-                  onChange={(e) => setNewIncident(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700"
-                  rows={4}
-                  placeholder="Description détaillée du problème"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Priorité</label>
-                <select
-                  value={newIncident.priorite}
-                  onChange={(e) => setNewIncident(prev => ({ ...prev, priorite: e.target.value as any }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700"
+                  Annuler
+                </Button>
+                <Button 
+                  color="warning" 
+                  variant="shadow"
+                  onPress={handleCreateIncident}
+                  className="text-base font-semibold"
+                  size="lg"
+                  startContent={
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                  }
                 >
-                  <option value="faible">Faible</option>
-                  <option value="moyenne">Moyenne</option>
-                  <option value="haute">Haute</option>
-                  <option value="critique">Critique</option>
-                </select>
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={() => setShowCreateIncident(false)}>
-              Annuler
-            </Button>
-            <Button color="warning" onPress={handleCreateIncident}>
-              Créer l'Incident
-            </Button>
-          </ModalFooter>
+                  Créer l'Incident
+                </Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
     </>

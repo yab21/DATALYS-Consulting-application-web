@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/firebaseConfig";
 import {
   Modal,
   ModalContent,
@@ -12,8 +10,7 @@ import {
   Button,
   Input,
 } from "@nextui-org/react";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getAuth } from "firebase/auth";
+import { useNotifications } from "@/context/NotificationContext";
 
 interface UserData {
   uid?: string;
@@ -52,14 +49,13 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
   const [newProfileImage, setNewProfileImage] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (user) {
-      setUserId(user.uid);
-    }
-  }, []);
+    // Simulation d'utilisateur connecté (remplace Firebase Auth)
+    const mockUserId = userData.uid || `user-${Date.now()}`;
+    setUserId(mockUserId);
+  }, [userData.uid]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -84,30 +80,51 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
       let updatedData = { ...formData };
 
       if (newProfileImage) {
-        const storage = getStorage();
-        const storageRef = ref(storage, `profileImages/${userId}`);
-        await uploadBytes(storageRef, newProfileImage);
-        const profileImageUrl = await getDownloadURL(storageRef);
-        updatedData.profileImage = profileImageUrl;
+        // Simulation d'upload d'image (remplace Firebase Storage)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const mockImageUrl = `/images/profiles/${userId}-${newProfileImage.name}`;
+        updatedData.profileImage = mockImageUrl;
       }
 
-      const userDocRef = doc(db, "users", userId);
-      await updateDoc(userDocRef, {
+      // Simulation de mise à jour du profil (remplace Firestore)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const finalUpdatedData = {
         ...updatedData,
         isAdmin: userData.isAdmin,
         createdAt: userData.createdAt,
+        updatedAt: new Date(),
+      };
+
+      console.log("Profil mis à jour avec succès:", finalUpdatedData);
+      
+      addNotification({
+        title: "Profil mis à jour",
+        body: "Votre profil a été modifié avec succès",
+        type: "success",
+        priority: "medium",
+        category: "user",
+        read: false,
       });
 
-      console.log("Profil mis à jour avec succès");
       onUpdate();
       onClose();
     } catch (error) {
       console.error("Erreur lors de la mise à jour du profil :", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue lors de la mise à jour du profil",
-      );
+      const errorMessage = error instanceof Error
+        ? error.message
+        : "Une erreur est survenue lors de la mise à jour du profil";
+      
+      setError(errorMessage);
+      
+      addNotification({
+        title: "Erreur de mise à jour",
+        body: errorMessage,
+        type: "error",
+        priority: "high",
+        category: "system",
+        read: false,
+      });
     }
   };
 

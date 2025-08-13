@@ -1,23 +1,29 @@
-"use client"; // Assurez-vous que ce composant est un Client Component
+"use client";
 
-import { signOut } from "firebase/auth"; // Import Firebase signOut
-import { auth } from "@/firebase/firebaseConfig"; // Import Firebase auth instance
+import { useRouter } from "next/navigation";
+import { Button } from "@nextui-org/react";
 
 const TestPage = () => {
+  const router = useRouter();
+
   const handleLogout = async () => {
     try {
-      await signOut(auth); // Appel à la fonction signOut de Firebase
-      console.log("Déconnexion réussie"); // Afficher dans la console si ça fonctionne
-      window.location.href = "/connexionclient"; // Rediriger après déconnexion
+      // Simulation de déconnexion (remplace Firebase)
+      localStorage.removeItem("user");
+      sessionStorage.clear();
+      console.log("Déconnexion réussie");
+      router.push("/connexionclient");
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error); // Afficher les erreurs
+      console.error("Erreur lors de la déconnexion:", error);
     }
   };
 
   return (
-    <div>
-      <h1>Test de la déconnexion Firebase</h1>
-      <button onClick={handleLogout}>Se déconnecter</button>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-4">Test de la déconnexion</h1>
+      <Button color="danger" onClick={handleLogout}>
+        Se déconnecter
+      </Button>
     </div>
   );
 };

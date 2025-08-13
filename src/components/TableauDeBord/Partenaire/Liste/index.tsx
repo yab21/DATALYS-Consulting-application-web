@@ -42,7 +42,7 @@ const MOCK_PARTNERS: Partner[] = [
   {
     id: "partner-1",
     nom: "TechCorp Solutions",
-    logo: "/images/partners/techcorp.png",
+    logo: "/images/partners/techcorp.svg",
     secteur: "Technologie",
     description: "Spécialiste en solutions informatiques d'entreprise",
     email: "contact@techcorp.com",
@@ -57,7 +57,7 @@ const MOCK_PARTNERS: Partner[] = [
   {
     id: "partner-2",
     nom: "GlobalBank",
-    logo: "/images/partners/globalbank.png",
+    logo: "/images/partners/globalbank.svg",
     secteur: "Finance",
     description: "Institution bancaire internationale",
     email: "partenariat@globalbank.fr",
@@ -72,7 +72,7 @@ const MOCK_PARTNERS: Partner[] = [
   {
     id: "partner-3",
     nom: "EcoLogistics",
-    logo: "/images/partners/ecologistics.png",
+    logo: "/images/partners/ecologistics.svg",
     secteur: "Logistique",
     description: "Solutions logistiques durables",
     email: "info@ecologistics.com",
@@ -87,7 +87,7 @@ const MOCK_PARTNERS: Partner[] = [
   {
     id: "partner-4",
     nom: "MediHealth Plus",
-    logo: "/images/partners/medihealth.png",
+    logo: "/images/partners/medihealth.svg",
     secteur: "Santé",
     description: "Plateforme de santé numérique",
     email: "contact@medihealth.fr",
@@ -378,7 +378,7 @@ const ListePartenaires: React.FC = () => {
                           color="primary"
                           className="w-full bg-blue-50 text-base font-semibold text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
                         >
-                          Voir Détails
+                          Voir Projets
                         </Button>
                       </Link>
                       <Button
@@ -438,107 +438,135 @@ const ListePartenaires: React.FC = () => {
       </div>
 
       {/* Modal de prévisualisation */}
-      <Modal isOpen={isOpen} onClose={onClose} size="2xl" className="dark">
-        <ModalContent className="bg-white dark:bg-gray-800">
-          {selectedPartner && (
+      <Modal 
+        isOpen={isOpen} 
+        onClose={onClose} 
+        size="2xl" 
+        classNames={{
+          base: "bg-white dark:bg-gray-900",
+          backdrop: "bg-black/50 backdrop-blur-sm"
+        }}
+      >
+        <ModalContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+          {(onClose) => selectedPartner && (
             <>
-              <ModalHeader className="border-b border-gray-200 pb-4 dark:border-gray-700">
-                <div className="flex items-center gap-4">
-                  <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-700">
+              <ModalHeader className="flex flex-col gap-1 pb-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-gray-800 dark:to-gray-700 rounded-t-large">
+                <div className="flex items-center gap-6 w-full">
+                  <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white dark:bg-gray-600 shadow-lg">
                     {selectedPartner.logo ? (
                       <Image
                         src={selectedPartner.logo}
                         alt={selectedPartner.nom}
                         fill
-                        className="object-cover"
+                        className="object-cover p-2"
                       />
                     ) : (
-                      <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">
+                      <div className="text-3xl font-bold text-gray-400 dark:text-gray-300">
                         {selectedPartner.nom.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                       {selectedPartner.nom}
                     </h3>
-                    <p className="text-lg text-gray-500 dark:text-gray-400">
+                    <p className="text-lg font-medium text-gray-600 dark:text-gray-300">
                       {selectedPartner.secteur}
                     </p>
                   </div>
                 </div>
               </ModalHeader>
-              <ModalBody className="py-6">
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="mb-2 text-lg font-bold text-gray-700 dark:text-gray-200">
+              <ModalBody className="py-8 px-6">
+                <div className="space-y-8">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+                    <h4 className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
                       Description
                     </h4>
-                    <p className="text-base leading-relaxed text-gray-600 dark:text-gray-400">
+                    <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
                       {selectedPartner.description}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="mb-2 text-lg font-bold text-gray-700 dark:text-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-200 dark:border-gray-600 shadow-sm">
+                      <h4 className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
                         Email
                       </h4>
-                      <p className="text-base text-gray-600 dark:text-gray-400">
+                      <p className="text-base text-gray-700 dark:text-gray-300 font-medium">
                         {selectedPartner.email}
                       </p>
                     </div>
-                    <div>
-                      <h4 className="mb-2 text-lg font-bold text-gray-700 dark:text-gray-200">
+                    <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-200 dark:border-gray-600 shadow-sm">
+                      <h4 className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                        </svg>
                         Téléphone
                       </h4>
-                      <p className="text-base text-gray-600 dark:text-gray-400">
+                      <p className="text-base text-gray-700 dark:text-gray-300 font-medium">
                         {selectedPartner.telephone}
                       </p>
                     </div>
                   </div>
 
-                  <div>
-                    <h4 className="mb-2 text-lg font-bold text-gray-700 dark:text-gray-200">
+                  <div className="bg-white dark:bg-gray-700 rounded-xl p-5 border border-gray-200 dark:border-gray-600 shadow-sm">
+                    <h4 className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V7H9V9C9 11.8 10.79 13.97 13.2 14.72L12.2 16.8C12.09 17.03 12.2 17.3 12.43 17.41C12.5 17.44 12.58 17.44 12.66 17.41L15.07 16.2C15.3 16.09 15.41 15.82 15.3 15.59L14.3 13.5C16.79 13.78 18.78 11.58 18.97 9.09C18.99 9.06 19 9.03 19 9H21Z"/>
+                      </svg>
                       Responsable
                     </h4>
-                    <p className="text-base text-gray-600 dark:text-gray-400">
+                    <p className="text-base text-gray-700 dark:text-gray-300 font-medium">
                       {selectedPartner.responsable}
                     </p>
                   </div>
 
-                  <div className="flex gap-6">
-                    <div className="flex-1 rounded-xl bg-gray-50 p-4 text-center dark:bg-gray-700">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-6 text-center border border-blue-200 dark:border-blue-700">
+                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
                         {selectedPartner.nombreProjets}
                       </div>
-                      <div className="text-base font-medium text-gray-500 dark:text-gray-400">
+                      <div className="text-base font-semibold text-blue-700 dark:text-blue-300">
                         Projets actifs
                       </div>
                     </div>
-                    <div className="flex-1 rounded-xl bg-gray-50 p-4 text-center dark:bg-gray-700">
-                      <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    <div className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 rounded-xl p-6 text-center border border-orange-200 dark:border-orange-700">
+                      <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-2">
                         {selectedPartner.nombreIncidents}
                       </div>
-                      <div className="text-base font-medium text-gray-500 dark:text-gray-400">
+                      <div className="text-base font-semibold text-orange-700 dark:text-orange-300">
                         Incidents ouverts
                       </div>
                     </div>
                   </div>
                 </div>
               </ModalBody>
-              <ModalFooter className="border-t border-gray-200 pt-4 dark:border-gray-700">
+              <ModalFooter className="border-t border-gray-200 dark:border-gray-700 pt-6 bg-gray-50 dark:bg-gray-800 rounded-b-large">
                 <Button
-                  variant="light"
+                  variant="flat"
                   onPress={onClose}
-                  className="text-base font-medium"
+                  className="text-base font-semibold text-gray-600 dark:text-gray-300"
+                  size="lg"
                 >
                   Fermer
                 </Button>
                 <Link href={`/tableaudebord/partenaire/${selectedPartner.id}`}>
                   <Button
                     color="primary"
+                    variant="shadow"
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-semibold"
+                    size="lg"
+                    startContent={
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                      </svg>
+                    }
                   >
                     Voir Détails Complets
                   </Button>

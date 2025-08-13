@@ -1,8 +1,6 @@
 import ModifierProjet from "@/components/TableauDeBord/Projet/ModifierProjet";
 import { Metadata } from "next";
 import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
-import { db } from "@/firebase/firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
 
 export const metadata: Metadata = {
   title: "Modifier le projet | DATALYS Consulting",
@@ -18,15 +16,17 @@ type Props = {
 export async function generateStaticParams() {
   try {
     console.log("Generating static params for project modification pages...");
-    const projectsRef = collection(db, "projects");
-    const projectsSnapshot = await getDocs(projectsRef);
+    
+    // Données mockées (remplace Firebase)
+    const mockProjects = [
+      { id: "1" },
+      { id: "2" },
+      { id: "3" },
+      { id: "4" },
+    ];
 
-    const params = projectsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-    }));
-
-    console.log("Generated params:", params);
-    return params;
+    console.log("Generated params:", mockProjects);
+    return mockProjects;
   } catch (error) {
     console.error("Error generating static params:", error);
     return [];
