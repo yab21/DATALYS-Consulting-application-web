@@ -38,3 +38,12 @@ next-env.d.ts
 # Local Netlify folder
 .netlify
 
+# Additional files to ignore
+.browserslistrc
+CLAUDE.md
+jsvectormap.d.ts
+ecosystem.config.js
+PROJECT_ANALYSE.md
+ANALYSE_PRODUCTION.md
+README.md
+

@@ -1,205 +1,195 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
-import { Button } from "@nextui-org/button";
-import { Input } from "@nextui-org/react";
-import { Select, SelectItem } from "@nextui-org/react";
-import { domaines } from "./domaineData";
-import { db } from "@/firebase/firebaseConfig";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { createNotification } from "@/firebase/firebaseConfig";
+import FormBuilder, { FormSection } from "@/components/UI/FormBuilder/FormBuilder";
+import { useNotifications } from "@/context/NotificationContext";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
 
 const CreerProjet = () => {
-  const [formData, setFormData] = useState({
-    intitule: "",
-    societe: "",
-    chefDeProjet: "",
-    domaine: [] as string[],
+  const { addNotification } = useNotifications();
+  const router = useRouter();
+
+  // Définition des sections du formulaire
+  const formSections: FormSection[] = [
+    {
+      title: "Informations Générales",
+      description: "Détails de base du projet",
+      fields: [
+        {
+          name: "intitule",
+          label: "Intitulé du projet",
+          type: "text",
+          placeholder: "Ex: Migration vers le Cloud",
+          required: true,
+          validation: z.string().min(3, "Minimum 3 caractères").max(100, "Maximum 100 caractères"),
+        },
+        {
+          name: "societe",
+          label: "Nom de la société",
+          type: "text",
+          placeholder: "Ex: DATALYS Consulting",
+          required: true,
+          validation: z.string().min(2, "Minimum 2 caractères"),
+        },
+        {
+          name: "chefDeProjet",
+          label: "Chef de projet",
+          type: "text",
+          placeholder: "Ex: Jean Dupont",
+          required: true,
+          validation: z.string().min(2, "Minimum 2 caractères"),
+        },
+        {
+          name: "domaine",
+          label: "Domaine du projet",
+          type: "multiselect",
+          required: true,
+          options: [
+            { value: "itcloud", label: "IT & Cloud" },
+            { value: "security", label: "Sécurité & Réseau" },
+            { value: "datacenter", label: "Data Center & Énergie" },
+            { value: "consulting", label: "Conseil & Audit" },
+            { value: "development", label: "Développement" },
+            { value: "maintenance", label: "Maintenance" },
+          ],
+          validation: z.array(z.string()).min(1, "Sélectionnez au moins un domaine"),
+        },
+      ],
+    },
+    {
+      title: "Configuration du Projet",
+      description: "Paramètres avancés",
+      fields: [
+        {
+          name: "description",
+          label: "Description du projet",
+          type: "textarea",
+          placeholder: "Décrivez les objectifs et le contexte du projet...",
+          required: false,
+          validation: z.string().max(500, "Maximum 500 caractères").optional(),
+        },
+        {
+          name: "visibilite",
+          label: "Visibilité",
+          type: "radio",
+          required: true,
+          defaultValue: "prive",
+          options: [
+            { value: "public", label: "Public", description: "Visible par tous les utilisateurs" },
+            { value: "prive", label: "Privé", description: "Visible uniquement par l'équipe projet" },
+            { value: "restreint", label: "Restreint", description: "Accès sur invitation uniquement" },
+          ],
+        },
+        {
+          name: "urgent",
+          label: "Projet urgent",
+          type: "switch",
+          description: "Marquer ce projet comme prioritaire",
+          defaultValue: false,
+        },
+        {
+          name: "budget",
+          label: "Budget estimé (€)",
+          type: "number",
+          placeholder: "Ex: 50000",
+          min: 0,
+          max: 10000000,
+          validation: z.number().min(0, "Le budget doit être positif").optional(),
+        },
+        {
+          name: "progression",
+          label: "Progression initiale (%)",
+          type: "slider",
+          min: 0,
+          max: 100,
+          step: 5,
+          defaultValue: 0,
+          description: "Progression actuelle du projet",
+        },
+      ],
+    },
+  ];
+
+  // Schéma de validation global
+  const validationSchema = z.object({
+    intitule: z.string().min(3).max(100),
+    societe: z.string().min(2),
+    chefDeProjet: z.string().min(2),
+    domaine: z.array(z.string()).min(1),
+    description: z.string().max(500).optional(),
+    visibilite: z.enum(["public", "prive", "restreint"]),
+    urgent: z.boolean().optional(),
+    budget: z.number().min(0).optional(),
+    progression: z.number().min(0).max(100).optional(),
   });
 
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSelectChange = (selected: Set<string>) => {
-    setFormData({ ...formData, domaine: Array.from(selected) });
-  };
-
-  const handleSubmit = async () => {
+  // Gestionnaire de soumission
+  const handleSubmit = async (data: any) => {
     try {
-      console.log("Début de la création du projet...");
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
+      // Validation avec Zod
+      const validatedData = validationSchema.parse(data);
       
-      if (!currentUser) {
-        console.error("Aucun utilisateur connecté");
-        setError("Utilisateur non connecté");
-        return;
-      }
+      // Simulation de création du projet
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const newProject = {
+        id: `project-${Date.now()}`,
+        ...validatedData,
+        statut: "en_cours",
+        dateCreation: new Date(),
+        dateModification: new Date(),
+      };
 
-      if (!formData.intitule || !formData.societe || !formData.chefDeProjet || formData.domaine.length === 0) {
-        setError("Veuillez remplir tous les champs.");
-        return;
-      }
-      setLoading(true);
+      console.log("Projet créé:", newProject);
 
-      const docRef = await addDoc(collection(db, "projects"), {
-        intitule: formData.intitule,
-        societe: formData.societe,
-        chefDeProjet: formData.chefDeProjet,
-        domaine: formData.domaine,
-        createdAt: new Date(),
-        createdBy: currentUser.uid,
+      // Notification de succès
+      addNotification({
+        title: "Projet créé avec succès",
+        body: `Le projet "${validatedData.intitule}" a été créé et ajouté à votre tableau de bord`,
+        type: "success",
+        priority: "medium",
+        category: "project",
+        read: false,
+        link: "/tableaudebord/projet/gerer",
       });
 
-      console.log("Projet créé avec succès, ID:", docRef.id);
-
-      const adminsSnapshot = await getDocs(
-        query(collection(db, "users"), where("isAdmin", "==", true))
-      );
-
-      console.log("Nombre d'administrateurs trouvés:", adminsSnapshot.size);
-
-      const notificationPromises = adminsSnapshot.docs.map(async (adminDoc) => {
-        console.log("Création de notification pour admin:", adminDoc.id);
-        try {
-          await createNotification(
-            adminDoc.id,
-            {
-              title: "Nouveau projet créé",
-              body: `a créé un nouveau projet "${formData.intitule}"`,
-              link: `/tableaudebord/projet/pageprojet/${docRef.id}`
-            },
-            currentUser.uid
-          );
-          console.log("Notification créée avec succès pour admin:", adminDoc.id);
-        } catch (error) {
-          console.error("Erreur lors de la création de la notification pour admin:", adminDoc.id, error);
-        }
-      });
-
-      await Promise.all(notificationPromises);
-      console.log("Toutes les notifications ont été créées");
-
-      alert("Projet créé avec succès !");
-      window.location.href = "/tableaudebord/projet/gerer";
+      // Redirection
+      router.push("/tableaudebord/projet/gerer");
+      
     } catch (error) {
-      console.error("Erreur lors de la création du projet:", error);
-      setError("Erreur lors de la création du projet. Veuillez réessayer.");
-    } finally {
-      setLoading(false);
+      console.error("Erreur lors de la création:", error);
+      
+      addNotification({
+        title: "Erreur de création",
+        body: "Une erreur est survenue lors de la création du projet. Veuillez réessayer.",
+        type: "error",
+        priority: "high",
+        category: "system",
+        read: false,
+      });
     }
+  };
+
+  // Gestionnaire d'annulation
+  const handleCancel = () => {
+    router.push("/tableaudebord/projet/gerer");
   };
 
   return (
     <>
       <Breadcrumb pageName="Créer un projet" />
-      <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px]">
-        <div className="mt-8 rounded-[20px] bg-white p-8 shadow-1 dark:bg-gray-dark dark:shadow-card">
-          <div className="mb-8 text-center">
-            <h3 className="mb-2 text-[28px] font-bold text-dark dark:text-white">
-              Créer un projet
-            </h3>
-            <p className="text-base text-gray-600 dark:text-gray-400">
-              Remplissez les informations pour créer un nouveau projet
-            </p>
-          </div>
-
-          <div className="mt-8">
-            {error && (
-              <div className="mb-6 rounded-lg bg-red-100 p-4 text-red-700">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-10">
-              <Input
-                type="text"
-                label="Intitulé du projet"
-                variant="bordered"
-                color="primary"
-                placeholder="Entrer l'intitulé du projet"
-                className="text-base"
-                name="intitule"
-                onChange={handleChange}
-                required
-                labelPlacement="outside"
-                size="lg"
-              />
-
-              <Input
-                type="text"
-                label="Nom de la société"
-                variant="bordered"
-                color="primary"
-                placeholder="Entrer le nom de la société"
-                className="text-base"
-                name="societe"
-                onChange={handleChange}
-                required
-                labelPlacement="outside"
-                size="lg"
-              />
-
-              <Input
-                type="text"
-                label="Nom du chef de projet"
-                variant="bordered"
-                color="primary"
-                placeholder="Entrer le nom du chef de projet"
-                className="text-base"
-                name="chefDeProjet"
-                onChange={handleChange}
-                required
-                labelPlacement="outside"
-                size="lg"
-              />
-
-              <Select
-                label="Domaine du projet"
-                color="primary"
-                variant="bordered"
-                placeholder="Choisir le domaine de projet"
-                selectionMode="single"
-                className="text-base"
-                onSelectionChange={handleSelectChange}
-                labelPlacement="outside"
-                size="lg"
-              >
-                {domaines.map((domaine) => (
-                  <SelectItem key={domaine.key} value={domaine.label}>
-                    {domaine.label}
-                  </SelectItem>
-                ))}
-              </Select>
-
-              <div className="mt-8 text-center">
-                <Button
-                  color="primary"
-                  className="h-12 w-full max-w-md text-base font-medium"
-                  variant="solid"
-                  size="lg"
-                  onClick={handleSubmit}
-                  isDisabled={loading}
-                >
-                  {loading ? "Création en cours..." : "Créer le projet"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Tous les champs sont obligatoires pour créer un projet
-          </p>
-        </div>
+      <div className="mt-5">
+        <FormBuilder
+          sections={formSections}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          validationSchema={validationSchema}
+          submitLabel="Créer le projet"
+          cancelLabel="Annuler"
+          showProgress={true}
+        />
       </div>
     </>
   );

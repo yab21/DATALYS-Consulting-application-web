@@ -1,43 +1,16 @@
 import Link from "next/link";
+import Image from "next/image";
 import DarkModeSwitcher from "./DarkModeSwitcher";
 import DropdownNotification from "./DropdownNotification";
 import DropdownUser from "./DropdownUser";
-import { useEffect, useState } from "react";
-import { auth, db } from "@/firebase/firebaseConfig"; // Assurez-vous d'importer Firebase correctement
-import { doc, getDoc } from "firebase/firestore";
+import { useState } from "react";
 
 const Header = (props: {
   sidebarOpen: string | boolean | undefined;
   setSidebarOpen: (arg0: boolean) => void;
 }) => {
-  const [userName, setUserName] = useState({ firstName: "", lastName: "" });
-
-  // Fonction pour récupérer les informations utilisateur depuis Firestore
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          const userDocRef = doc(db, "users", user.uid); // Assurez-vous que la collection est correcte
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserName({
-              firstName: userData.firstName,
-              lastName: userData.lastName,
-            });
-          }
-        } catch (error) {
-          console.error(
-            "Erreur lors de la récupération des données utilisateur :",
-            error,
-          );
-        }
-      }
-    };
-
-    fetchUserData();
-  }, []);
+  // Données utilisateur statiques pour la démo
+  const [userName] = useState({ firstName: "DATALYS", lastName: "User" });
 
   return (
     <header className="sticky top-0 z-999 flex w-full border-b border-stroke bg-white dark:border-stroke-dark dark:bg-gray-dark">
@@ -87,18 +60,18 @@ const Header = (props: {
           {/* <!-- Hamburger Toggle BTN --> */}
 
           <Link className="block flex-shrink-0 lg:hidden" href="/tableaudebord">
-            <img
+            <Image
               width={100}
               height={100}
-              src={"/images/logo/logo-2.png"}
+              src="/images/logo/logo-2.png"
               alt="Logo"
               priority
               className="dark:hidden"
             />
-            <img
+            <Image
               width={100}
               height={100}
-              src={"/images/logo/logo.png"}
+              src="/images/logo/logo.png"
               alt="Logo"
               priority
               className="hidden dark:block"
@@ -106,17 +79,15 @@ const Header = (props: {
           </Link>
         </div>
 
-        <div className="hidden xl:block"> 
-          {window.location.pathname === '/tableaudebord' && (
-            <div>
-              <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
-                Tableau de bord
-              </h1>
-              <p className="font-medium">
-                Tableau de bord de M. {userName.firstName} {userName.lastName}
-              </p>
-            </div>
-          )}
+        <div className="hidden xl:block">
+          <div>
+            <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
+              Tableau de bord
+            </h1>
+            <p className="font-medium">
+              Tableau de bord de M. {userName.firstName} {userName.lastName}
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center justify-normal gap-2 2xsm:gap-4 lg:w-full lg:justify-between xl:w-auto xl:justify-normal">

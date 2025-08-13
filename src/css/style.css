@@ -54,21 +54,24 @@
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, #1E40AF 0%, #06B6D4 50%, #F59E0B 100%);
+    background: linear-gradient(135deg, #1e40af 0%, #06b6d4 50%, #f59e0b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .floating-particles::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: 
-      radial-gradient(1px 1px at 20% 30%, rgba(30, 64, 175, 0.15), transparent),
+    background-image: radial-gradient(
+        1px 1px at 20% 30%,
+        rgba(30, 64, 175, 0.15),
+        transparent
+      ),
       radial-gradient(1px 1px at 40% 70%, rgba(6, 182, 212, 0.15), transparent),
       radial-gradient(1px 1px at 90% 40%, rgba(245, 158, 11, 0.15), transparent),
       radial-gradient(1px 1px at 60% 90%, rgba(30, 64, 175, 0.15), transparent);
@@ -88,7 +91,7 @@
   }
 
   .input-focus-effect:focus-within {
-    @apply ring-2 ring-primary-400 border-primary-500;
+    @apply border-primary-500 ring-2 ring-primary-400;
     box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
   }
 
@@ -99,7 +102,7 @@
 
   .btn-3d:hover {
     transform: perspective(1000px) rotateX(-10deg) translateY(-2px);
-    box-shadow: 
+    box-shadow:
       0 10px 20px rgba(30, 64, 175, 0.3),
       0 6px 6px rgba(30, 64, 175, 0.2);
   }
@@ -114,13 +117,13 @@
   }
 
   .glow-border::before {
-    content: '';
+    content: "";
     position: absolute;
     top: -1px;
     left: -1px;
     right: -1px;
     bottom: -1px;
-    background: linear-gradient(45deg, #1E40AF, #06B6D4, #F59E0B, #1E40AF);
+    background: linear-gradient(45deg, #1e40af, #06b6d4, #f59e0b, #1e40af);
     border-radius: inherit;
     opacity: 0;
     transition: opacity 0.3s;
@@ -570,4 +573,29 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .custom-gradient-1 {
   background-image: linear-gradient(145deg, #eef 0%, #fff8fc 100%);
+}
+
+/* Styles personnalisés pour les labels des champs Input */
+.nextui-input-label {
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+}
+
+.nextui-input-label[data-slot="label"] {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* Force la couleur des labels pour tous les champs Input */
+[data-slot="label"] {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* Styles spécifiques pour la page mot de passe oublié */
+.mot-de-passe-oublie .nextui-input-label,
+.mot-de-passe-oublie [data-slot="label"] {
+  color: white !important;
+  font-weight: 600 !important;
 }

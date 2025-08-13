@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Input, Checkbox } from "@nextui-org/react";
 import { Button } from "@nextui-org/button";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Eye,
@@ -28,26 +27,10 @@ interface LoginForm {
 
 const Connexion: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>();
+  const { register } = useForm<LoginForm>();
 
   const toggleVisibility = () => setIsVisible(!isVisible);
-
-  const onSubmit = async (_data: LoginForm) => {
-    setIsLoading(true);
-
-    // Simulate loading
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Navigate to dashboard
-    router.push("/tableaudebord");
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -288,26 +271,32 @@ const Connexion: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {/* Glass Card */}
-            <div className="glassmorphism relative flex h-full w-full flex-col justify-center rounded-3xl p-8">
+            <div className="via-white/8 hover:shadow-3xl relative flex h-full w-full flex-col justify-center rounded-3xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-8 shadow-2xl shadow-black/20 backdrop-blur-xl transition-all duration-500 hover:scale-[1.02] hover:border-white/30 hover:shadow-black/30">
+              {/* Animated border glow */}
+              <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-primary-400/20 via-secondary-400/20 to-accent-400/20 opacity-0 transition-opacity duration-500 hover:opacity-100"></div>
+
+              {/* Subtle inner glow */}
+              <div className="absolute inset-1 rounded-3xl bg-gradient-to-br from-primary-500/5 via-transparent to-secondary-500/5"></div>
+
               <div>
                 {/* Header */}
                 <motion.div
-                  className="mb-6 text-center"
+                  className="mb-8 text-center"
                   variants={itemVariants}
                   initial="hidden"
                   animate="visible"
                 >
-                  <h2 className="mb-2 text-2xl font-bold text-white lg:text-3xl">
+                  <h2 className="mb-3 bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-3xl font-bold text-transparent text-white lg:text-4xl">
                     Connexion
                   </h2>
-                  <div className="mx-auto h-0.5 w-16 rounded-full bg-gradient-to-r from-primary-400 to-secondary-400"></div>
+                  <div className="mx-auto h-1 w-20 rounded-full bg-gradient-to-r from-primary-400 via-accent-400 to-secondary-400 shadow-lg shadow-primary-400/25"></div>
+                  <p className="mt-4 text-sm font-medium text-white/60">
+                    Accédez à votre espace entreprise
+                  </p>
                 </motion.div>
 
                 {/* Form */}
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  className="flex flex-col items-center space-y-6"
-                >
+                <div className="flex flex-col items-center space-y-7">
                   {/* Email Input */}
                   <motion.div
                     variants={itemVariants}
@@ -316,15 +305,9 @@ const Connexion: React.FC = () => {
                     transition={{ delay: 0.6 }}
                     className="w-full max-w-sm"
                   >
-                    <div className="input-focus-effect relative">
+                    <div className="input-focus-effect group relative">
                       <Input
-                        {...register("email", {
-                          required: "Email requis",
-                          pattern: {
-                            value: /^\S+@\S+$/i,
-                            message: "Email invalide",
-                          },
-                        })}
+                        {...register("email")}
                         type="email"
                         label="Adresse email"
                         variant="bordered"
@@ -332,15 +315,13 @@ const Connexion: React.FC = () => {
                         classNames={{
                           input: "text-white placeholder:text-white/50 pl-10",
                           inputWrapper:
-                            "border-white/20 bg-white/5 backdrop-blur-md hover:border-primary-400 focus-within:border-primary-400",
+                            "border-white/20 bg-white/5 backdrop-blur-md hover:border-primary-400 focus-within:border-primary-400 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary-400/20",
                           label: "text-white/90 font-medium",
                         }}
                         size="lg"
-                        radius="lg"
-                        isInvalid={!!errors.email}
-                        errorMessage={errors.email?.message}
+                        radius="xl"
                         startContent={
-                          <Mail className="h-5 w-5 flex-shrink-0 text-white/60" />
+                          <Mail className="h-5 w-5 flex-shrink-0 text-white/60 transition-colors duration-300 group-hover:text-primary-400" />
                         }
                       />
                     </div>
@@ -354,15 +335,9 @@ const Connexion: React.FC = () => {
                     transition={{ delay: 0.7 }}
                     className="w-full max-w-sm"
                   >
-                    <div className="input-focus-effect relative">
+                    <div className="input-focus-effect group relative">
                       <Input
-                        {...register("password", {
-                          required: "Mot de passe requis",
-                          minLength: {
-                            value: 6,
-                            message: "Minimum 6 caractères",
-                          },
-                        })}
+                        {...register("password")}
                         type={isVisible ? "text" : "password"}
                         label="Mot de passe"
                         variant="bordered"
@@ -371,19 +346,17 @@ const Connexion: React.FC = () => {
                           input:
                             "text-white placeholder:text-white/50 pl-10 pr-10",
                           inputWrapper:
-                            "border-white/20 bg-white/5 backdrop-blur-md hover:border-primary-400 focus-within:border-primary-400",
+                            "border-white/20 bg-white/5 backdrop-blur-md hover:border-primary-400 focus-within:border-primary-400 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary-400/20",
                           label: "text-white/90 font-medium",
                         }}
                         size="lg"
-                        radius="lg"
-                        isInvalid={!!errors.password}
-                        errorMessage={errors.password?.message}
+                        radius="xl"
                         startContent={
-                          <Lock className="h-5 w-5 flex-shrink-0 text-white/60" />
+                          <Lock className="h-5 w-5 flex-shrink-0 text-white/60 transition-colors duration-300 group-hover:text-primary-400" />
                         }
                         endContent={
                           <motion.button
-                            className="text-white/60 transition-colors hover:text-white focus:outline-none"
+                            className="text-white/60 transition-colors hover:text-primary-400 focus:outline-none"
                             type="button"
                             onClick={toggleVisibility}
                             whileHover={{ scale: 1.1 }}
@@ -412,15 +385,17 @@ const Connexion: React.FC = () => {
                       {...register("rememberMe")}
                       classNames={{
                         base: "text-white/80",
-                        wrapper: "before:border-white/30 after:bg-primary-500",
-                        label: "text-white/80 text-sm",
+                        wrapper:
+                          "before:border-white/30 after:bg-primary-500 hover:before:border-primary-400 transition-colors duration-300",
+                        label:
+                          "text-white/80 text-sm hover:text-white/90 transition-colors duration-300",
                       }}
                     >
                       Se souvenir de moi
                     </Checkbox>
                     <Link
                       href="/mot-de-passe-oublie"
-                      className="font-medium text-accent-400 transition-colors hover:text-accent-300 hover:underline"
+                      className="font-medium text-accent-400 transition-all duration-300 hover:text-accent-300 hover:underline hover:shadow-sm hover:shadow-accent-400/25"
                     >
                       Mot de passe oublié ?
                     </Link>
@@ -434,42 +409,28 @@ const Connexion: React.FC = () => {
                     transition={{ delay: 0.9 }}
                     className="w-full max-w-sm"
                   >
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      className="btn-3d w-full rounded-xl border-0 bg-gradient-to-r from-primary-500 to-secondary-500 py-4 text-lg font-semibold text-white shadow-xl transition-all duration-300 hover:shadow-2xl"
-                      size="lg"
-                    >
-                      <div className="flex items-center justify-center gap-3">
-                        {isLoading ? (
+                    <Link href="/tableaudebord">
+                      <Button
+                        className="w-full rounded-2xl border-0 bg-gradient-to-r from-primary-500 via-primary-600 to-secondary-500 py-5 text-lg font-bold text-white shadow-xl shadow-primary-500/25 transition-all duration-300 hover:scale-105 hover:bg-gradient-to-r hover:from-primary-600 hover:via-primary-700 hover:to-secondary-600 hover:shadow-2xl hover:shadow-primary-500/40"
+                        size="lg"
+                      >
+                        <div className="flex items-center justify-center gap-3">
+                          <span>Se connecter</span>
                           <motion.div
-                            className="h-6 w-6 rounded-full border-2 border-white/30 border-t-white"
-                            animate={{ rotate: 360 }}
-                            transition={{
-                              duration: 1,
-                              repeat: Infinity,
-                              ease: "linear",
-                            }}
-                          />
-                        ) : (
-                          <>
-                            <span>Se connecter</span>
-                            <motion.div
-                              whileHover={{ x: 5 }}
-                              transition={{ type: "spring", stiffness: 300 }}
-                            >
-                              <ArrowRight className="h-5 w-5" />
-                            </motion.div>
-                          </>
-                        )}
-                      </div>
-                    </Button>
+                            whileHover={{ x: 5 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                          >
+                            <ArrowRight className="h-5 w-5" />
+                          </motion.div>
+                        </div>
+                      </Button>
+                    </Link>
                   </motion.div>
-                </form>
+                </div>
 
                 {/* Footer */}
                 <motion.div
-                  className="mt-8 border-t border-white/10 pt-6 text-center"
+                  className="mt-10 border-t border-white/10 pt-6 text-center"
                   variants={itemVariants}
                   initial="hidden"
                   animate="visible"
@@ -479,7 +440,7 @@ const Connexion: React.FC = () => {
                     All Rights Reserved by{" "}
                     <Link
                       href="https://www.datalysconsulting.com/"
-                      className="font-semibold text-accent-400 transition-colors hover:text-accent-300"
+                      className="font-semibold text-accent-400 transition-all duration-300 hover:text-accent-300 hover:underline hover:shadow-sm hover:shadow-accent-400/25"
                       target="_blank"
                     >
                       DATALYS Consulting

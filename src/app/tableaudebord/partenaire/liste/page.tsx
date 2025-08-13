@@ -2,18 +2,18 @@ import { Metadata } from "next";
 import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
 import { NextUIProvider } from "@nextui-org/react";
 import React from "react";
-import TableauDeBord from "@/components/TableauDeBord/index";
+import ListePartenaires from "@/components/TableauDeBord/Partenaire/Liste/index";
 
 export const metadata: Metadata = {
-  title: "Tableau de bord | DATALYS Consulting",
-  description: "Le tableau de bord",
+  title: "Liste des Partenaires | DATALYS Consulting",
+  description: "Gestion des partenaires DATALYS",
 };
 
-export default function Home() {
+export default function ListePartenairesPage() {
   return (
     <NextUIProvider>
       <DefaultLayout>
-        <TableauDeBord />
+        <ListePartenaires />
       </DefaultLayout>
     </NextUIProvider>
   );

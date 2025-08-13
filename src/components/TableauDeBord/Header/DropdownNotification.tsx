@@ -1,246 +1,82 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import {
-  auth,
-  db,
-  requestFCMToken,
-  onMessageListener,
-  initializeMessaging,
-} from "@/firebase/firebaseConfig";
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  limit,
-  Timestamp,
-  doc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
-import { getMessaging, onMessage } from "firebase/messaging";
 import {
   Button,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  ScrollShadow,
   Card,
   CardBody,
-  Divider,
+  Chip,
   cn,
 } from "@nextui-org/react";
-
-interface Notification {
-  id: string;
-  title: string;
-  body: string;
-  timestamp: Timestamp;
-  read: boolean;
-  link?: string;
-}
+import { useNotifications } from "@/context/NotificationContext";
 
 const DropdownNotification = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notifying, setNotifying] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [fcmToken, setFcmToken] = useState<string | null>(null);
-  const [lastReadTimestamp, setLastReadTimestamp] = useState<number>(0);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead,
+    removeNotification,
+    subscribeToRealTime,
+    unsubscribeFromRealTime 
+  } = useNotifications();
 
-  const markAsRead = async (notificationId: string) => {
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        const notificationRef = doc(
-          db,
-          "users",
-          user.uid,
-          "notifications",
-          notificationId,
-        );
-        await updateDoc(notificationRef, { read: true });
-
-        // Mettre à jour le timestamp de dernière lecture
-        const currentTimestamp = Date.now();
-        localStorage.setItem(
-          "lastReadNotification",
-          currentTimestamp.toString(),
-        );
-        setLastReadTimestamp(currentTimestamp);
-
-        // Mettre à jour l'état notifying
-        checkUnreadNotifications();
-      } catch (error) {
-        console.error("Erreur lors du marquage comme lu:", error);
-      }
-    }
-  };
-
-  const checkUnreadNotifications = (notifs: Notification[]) => {
-    const storedTimestamp = parseInt(
-      localStorage.getItem("lastReadNotification") || "0",
-    );
-
-    const unreadNotifs = notifs.filter((notification) => {
-      if (!notification.timestamp) return false;
-      const notifTimestamp = notification.timestamp.toDate().getTime();
-      return notifTimestamp > storedTimestamp;
-    });
-
-    setUnreadCount(unreadNotifs.length);
-    setNotifying(unreadNotifs.length > 0);
-  };
+  const notifying = unreadCount > 0;
 
   const handleDropdownOpen = () => {
     setDropdownOpen(true);
-    const currentTimestamp = Date.now();
-    localStorage.setItem("lastReadNotification", currentTimestamp.toString());
-    setLastReadTimestamp(currentTimestamp);
-    setNotifying(false);
+    // Auto-activer les notifications temps réel à l'ouverture
+    subscribeToRealTime();
   };
 
-  useEffect(() => {
-    const initializeNotifications = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          // Initialiser la messagerie de manière sécurisée
-          const messaging = await initializeMessaging();
-          
-          if (messaging) {
-            // Continuer avec la logique de notification existante
-            onMessage(messaging, (payload) => {
-              if (payload.notification) {
-                const newNotification = {
-                  id: Date.now().toString(),
-                  title: payload.notification.title || "",
-                  body: payload.notification.body || "",
-                  timestamp: Timestamp.now(),
-                  read: false,
-                  link: payload.data?.link,
-                };
-
-                setNotifications((prev) => {
-                  const updatedNotifications = [newNotification, ...prev];
-                  checkUnreadNotifications(updatedNotifications);
-                  return updatedNotifications;
-                });
-              }
-            });
-          }
-
-          // Continuer avec le reste de la logique qui ne dépend pas de la messagerie
-          const storedTimestamp = parseInt(
-            localStorage.getItem("lastReadNotification") || "0"
-          );
-          setLastReadTimestamp(storedTimestamp);
-
-          const token = await requestFCMToken();
-          if (token) {
-            setFcmToken(token);
-            const userTokensRef = collection(db, "users", user.uid, "tokens");
-            await addDoc(userTokensRef, {
-              token,
-              createdAt: new Date(),
-            });
-          }
-
-          const notificationsRef = collection(
-            db,
-            "users",
-            user.uid,
-            "notifications",
-          );
-          const notificationsQuery = query(
-            notificationsRef,
-            orderBy("timestamp", "desc"),
-            limit(10),
-          );
-
-          const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-            const newNotifications = snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            })) as Notification[];
-
-            setNotifications(newNotifications);
-            checkUnreadNotifications(newNotifications);
-          });
-
-          return () => unsubscribe();
-        } catch (err) {
-          console.error("Erreur dans l'initialisation des notifications", err);
-        }
-      }
-    };
-
-    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (user) {
-        initializeNotifications();
-      }
-    });
-
-    return () => {
-      unsubscribeAuth();
-    };
-  }, []);
-
-  const getNotificationTimestamp = (notification: Notification): number => {
-    try {
-      if (
-        notification.timestamp &&
-        typeof notification.timestamp.toDate === "function"
-      ) {
-        return notification.timestamp.toDate().getTime();
-      }
-      // Si timestamp n'est pas un Timestamp Firestore, retourner 0 ou une autre valeur par défaut
-      return 0;
-    } catch (error) {
-      console.error("Erreur lors de la conversion du timestamp:", error);
-      return 0;
-    }
-  };
-
-  const deleteNotification = async (
-    e: React.MouseEvent,
-    notificationId: string,
-  ) => {
+  const deleteNotification = (e: React.MouseEvent, notificationId: string) => {
     e.preventDefault();
     e.stopPropagation();
+    removeNotification(notificationId);
+  };
 
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        const notificationRef = doc(
-          db,
-          "users",
-          user.uid,
-          "notifications",
-          notificationId,
-        );
-        await deleteDoc(notificationRef);
-
-        // Mettre à jour la liste locale des notifications
-        const updatedNotifications = notifications.filter(
-          (n) => n.id !== notificationId,
-        );
-        setNotifications(updatedNotifications);
-
-        // Recalculer le nombre de notifications non lues
-        checkUnreadNotifications(updatedNotifications);
-
-        console.log("Notification supprimée avec succès");
-      } catch (error) {
-        console.error(
-          "Erreur lors de la suppression de la notification:",
-          error,
-        );
-      }
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'success': return 'success';
+      case 'error': return 'danger';
+      case 'warning': return 'warning';
+      case 'info': return 'primary';
+      default: return 'default';
     }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'critical':
+        return <span className="text-red-500">🔴</span>;
+      case 'high':
+        return <span className="text-orange-500">🟠</span>;
+      case 'medium':
+        return <span className="text-blue-500">🔵</span>;
+      case 'low':
+        return <span className="text-gray-500">⚪</span>;
+      default:
+        return null;
+    }
+  };
+
+  const formatTimestamp = (timestamp: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "À l'instant";
+    if (minutes < 60) return `Il y a ${minutes}m`;
+    if (hours < 24) return `Il y a ${hours}h`;
+    if (days < 7) return `Il y a ${days}j`;
+    return timestamp.toLocaleDateString('fr-FR');
   };
 
   return (
@@ -292,86 +128,196 @@ const DropdownNotification = () => {
 
         <DropdownMenu
           aria-label="Notifications"
-          className="relative z-50 overflow-y-scroll w-[360px] h-[400px] p-0"
+          className="relative z-50 overflow-y-scroll w-[400px] h-[500px] p-0"
           closeOnSelect={false}
+          items={[
+            { key: "header", type: "header" },
+            ...(unreadCount > 3 ? [{ key: "mark-all", type: "mark-all" }] : []),
+            ...notifications.slice(0, 10).map(n => ({ key: n.id, ...n })),
+            ...(notifications.length === 0 ? [{ key: "empty", type: "empty" }] : []),
+            ...(notifications.length > 10 ? [{ key: "see-all", type: "see-all" }] : [])
+          ]}
         >
-          <DropdownItem
-            key="header"
-            textValue="Notifications"
-            className="h-14 gap-2"
-          >
-            <div className="flex w-full items-center justify-between">
-              <span className="text-base font-medium">Notifications</span>
-              {unreadCount > 0 && (
-                <span className="rounded-full bg-danger px-2 py-0.5 text-xs text-white">
-                  {unreadCount} nouveau{unreadCount > 1 ? "x" : ""}
-                </span>
-              )}
-            </div>
-          </DropdownItem>
+          {(item: any) => {
+            if (item.type === "header") {
+              return (
+                <DropdownItem
+                  key="header"
+                  textValue="Notifications"
+                  className="h-16 gap-2 border-b border-default-200"
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <div>
+                      <span className="text-lg font-semibold">Notifications</span>
+                      <div className="flex gap-1 mt-1">
+                        <Chip size="sm" variant="flat" color="primary">
+                          {notifications.length} total
+                        </Chip>
+                        {unreadCount > 0 && (
+                          <Chip size="sm" variant="flat" color="danger">
+                            {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
+                          </Chip>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-green-500">●</span>
+                      <span className="text-xs text-default-400">Temps réel</span>
+                    </div>
+                  </div>
+                </DropdownItem>
+              );
+            }
 
-          {notifications.map((notification) => (
-            <DropdownItem
-              key={notification.id}
-              textValue={notification.title}
-              className={cn(
-                "py-3",
-                getNotificationTimestamp(notification) > lastReadTimestamp &&
-                  "bg-default-100  dark:bg-default-50",
-              )}
-            >
-              <div className="flex w-full items-start justify-between">
-                <Link
-                  href={notification.link || "#"}
-                  className="flex-grow"
-                  onClick={() => markAsRead(notification.id)}
+            if (item.type === "mark-all") {
+              return (
+                <DropdownItem
+                  key="mark-all"
+                  textValue="Tout marquer comme lu"
+                  className="py-2"
                 >
-                  <Card shadow="none" className="bg-transparent">
-                    <CardBody className="gap-1 p-0">
-                      <p className="text-small font-medium">
-                        {notification.title}
-                      </p>
-                      <p className="text-tiny text-default-400">
-                        {notification.body}
-                      </p>
-                      <p className="text-tiny text-default-400">
-                        {notification.timestamp &&
-                        typeof notification.timestamp.toDate === "function"
-                          ? notification.timestamp.toDate().toLocaleString()
-                          : "Date inconnue"}
-                      </p>
-                    </CardBody>
-                  </Card>
-                </Link>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="light"
-                  className="ml-2 self-start"
-                  onClick={(e) => deleteNotification(e, notification.id)}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    className="text-default-400"
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    color="primary"
+                    className="w-full"
+                    onPress={markAllAsRead}
                   >
-                    <path
-                      fill="currentColor"
-                      d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"
-                    />
-                  </svg>
-                </Button>
-              </div>
-            </DropdownItem>
-          ))}
+                    Tout marquer comme lu
+                  </Button>
+                </DropdownItem>
+              );
+            }
+            
+            if (item.type === "empty") {
+              return (
+                <DropdownItem key="empty" textValue="Aucune notification" className="py-8">
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">🔔</div>
+                    <p className="text-default-400 font-medium">Aucune notification</p>
+                    <p className="text-tiny text-default-300 mt-1">
+                      Vous êtes à jour !
+                    </p>
+                  </div>
+                </DropdownItem>
+              );
+            }
 
-          {notifications.length === 0 && (
-            <DropdownItem textValue="Aucune notification">
-              <p className="text-default-400">Aucune notification</p>
-            </DropdownItem>
-          )}
+            if (item.type === "see-all") {
+              return (
+                <DropdownItem
+                  key="see-all"
+                  textValue="Voir toutes les notifications"
+                  className="py-3 border-t border-default-200"
+                >
+                  <Link href="/tableaudebord/notifications" className="w-full">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="primary"
+                      className="w-full"
+                    >
+                      Voir toutes les notifications ({notifications.length})
+                    </Button>
+                  </Link>
+                </DropdownItem>
+              );
+            }
+
+            return (
+              <DropdownItem
+                key={item.key}
+                textValue={item.title}
+                className={cn(
+                  "py-4 border-b border-default-100",
+                  !item.read && "bg-primary-50 dark:bg-primary-950/20",
+                )}
+              >
+                <div className="flex w-full items-start gap-3">
+                  <div className="flex flex-col items-center gap-1 mt-1">
+                    {getPriorityIcon(item.priority)}
+                    {!item.read && (
+                      <div className="w-2 h-2 rounded-full bg-primary-500" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-grow min-w-0">
+                    <Link
+                      href={item.link || "#"}
+                      className="block"
+                      onClick={() => markAsRead(item.id)}
+                    >
+                      <Card shadow="none" className="bg-transparent">
+                        <CardBody className="gap-2 p-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-semibold text-foreground line-clamp-1">
+                              {item.title}
+                            </p>
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color={getTypeColor(item.type)}
+                              className="flex-shrink-0"
+                            >
+                              {item.type}
+                            </Chip>
+                          </div>
+                          
+                          <p className="text-xs text-default-500 line-clamp-2">
+                            {item.body}
+                          </p>
+                          
+                          <div className="flex items-center justify-between">
+                            <p className="text-tiny text-default-400">
+                              {formatTimestamp(item.timestamp)}
+                            </p>
+                            <Chip size="sm" variant="flat" className="text-tiny">
+                              {item.category}
+                            </Chip>
+                          </div>
+                          
+                          {item.action && (
+                            <div className="mt-2">
+                              <Button
+                                size="sm"
+                                variant="bordered"
+                                color="primary"
+                                className="text-xs"
+                                onPress={item.action.handler}
+                              >
+                                {item.action.label}
+                              </Button>
+                            </div>
+                          )}
+                        </CardBody>
+                      </Card>
+                    </Link>
+                  </div>
+                  
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    className="flex-shrink-0 self-start opacity-60 hover:opacity-100"
+                    onClick={(e) => deleteNotification(e, item.id)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      className="text-default-400"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"
+                      />
+                    </svg>
+                  </Button>
+                </div>
+              </DropdownItem>
+            );
+          }}
         </DropdownMenu>
       </Dropdown>
     </div>

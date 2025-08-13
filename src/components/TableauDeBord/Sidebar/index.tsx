@@ -126,14 +126,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             />
           </svg>
         ),
-        label: "Utilisateur",
+        label: "Partenaire",
         route: "#",
         children: [
-          { label: "Voir", route: "/tableaudebord/utilisateur/voir" },
-          {
-            label: "Créer un compte",
-            route: "/tableaudebord/creationduncompte",
-          },
+          { label: "Liste des partenaires", route: "/tableaudebord/partenaire/liste" },
+          { label: "Ajouter partenaire", route: "/tableaudebord/partenaire/ajouter" },
         ],
       });
     }

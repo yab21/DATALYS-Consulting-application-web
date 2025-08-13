@@ -9,8 +9,6 @@ import {
   Select,
   SelectItem,
 } from "@nextui-org/react";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/firebase/firebaseConfig";
 
 interface MoveModalProps {
   isOpen: boolean;
@@ -47,31 +45,27 @@ const MoveModal: React.FC<MoveModalProps> = ({
   useEffect(() => {
     const fetchFolders = async () => {
       try {
-        const foldersRef = collection(db, "Folders");
-        const q = query(foldersRef, where("projectId", "==", projectId));
-        const querySnapshot = await getDocs(q);
-        
-        const allFolders: Folder[] = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          name: doc.data().name,
-          parentFolderId: doc.data().parentFolderId || null,
-        }));
+        // Données de démonstration pour remplacer Firebase
+        const mockFolders: Folder[] = [
+          { id: projectId, name: "Root", parentFolderId: null },
+          { id: "folder1", name: "Documents", parentFolderId: projectId },
+          { id: "folder2", name: "Images", parentFolderId: projectId },
+          { id: "folder3", name: "Archives", parentFolderId: projectId },
+          { id: "subfolder1", name: "Contrats", parentFolderId: "folder1" },
+          { id: "subfolder2", name: "Rapports", parentFolderId: "folder1" },
+        ];
 
+        // Exclure le dossier actuel et ses sous-dossiers si c'est un dossier qu'on déplace
         const getSubFolderIds = (folderId: string, accumulator = new Set<string>()): Set<string> => {
           accumulator.add(folderId);
-          allFolders
+          mockFolders
             .filter(folder => folder.parentFolderId === folderId)
             .forEach(subFolder => getSubFolderIds(subFolder.id, accumulator));
           return accumulator;
         };
 
         const excludedIds = currentItemId ? getSubFolderIds(currentItemId) : new Set<string>();
-
-        const availableFolders = allFolders.filter(folder => !excludedIds.has(folder.id));
-
-        if (projectId !== currentItemId) {
-          availableFolders.unshift({ id: projectId, name: "Root", parentFolderId: null });
-        }
+        const availableFolders = mockFolders.filter(folder => !excludedIds.has(folder.id));
 
         setFolders(availableFolders);
         
@@ -104,6 +98,13 @@ const MoveModal: React.FC<MoveModalProps> = ({
     }
   };
 
+  const handleSelectionChange = (keys: any) => {
+    const selected = Array.from(keys as Set<string>)[0];
+    if (selected) {
+      setSelectedFolder(selected);
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalContent>
@@ -120,8 +121,8 @@ const MoveModal: React.FC<MoveModalProps> = ({
               )}
               <Select
                 label="Sélectionner le dossier de destination"
-                value={selectedFolder}
-                onChange={(e) => setSelectedFolder(e.target.value)}
+                selectedKeys={new Set([selectedFolder])}
+                onSelectionChange={handleSelectionChange}
                 className="w-full"
               >
                 {folders.map((folder) => (
