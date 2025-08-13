@@ -92,7 +92,8 @@ const CreerProjet: React.FC = () => {
     }
 
     if (formData.description && formData.description.length > 500) {
-      newErrors.description = "La description ne peut pas dépasser 500 caractères";
+      newErrors.description =
+        "La description ne peut pas dépasser 500 caractères";
     }
 
     if (formData.budget < 0) {
@@ -161,7 +162,7 @@ const CreerProjet: React.FC = () => {
       onOpen();
     } catch (error) {
       console.error("Erreur lors de la création:", error);
-      
+
       addNotification({
         title: "Erreur de création",
         body: "Une erreur est survenue lors de la création du projet. Veuillez réessayer.",
@@ -199,7 +200,8 @@ const CreerProjet: React.FC = () => {
                 Nouveau Projet
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-300">
-                Remplissez les informations ci-dessous pour créer un nouveau projet
+                Remplissez les informations ci-dessous pour créer un nouveau
+                projet
               </p>
             </div>
 
@@ -208,7 +210,7 @@ const CreerProjet: React.FC = () => {
                 variant="flat"
                 color="default"
                 size="lg"
-                className="bg-gray-50 text-base font-medium text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                className="bg-primary text-base font-medium text-white hover:bg-primary-800 dark:bg-primary dark:text-gray-200 dark:hover:bg-primary-800"
               >
                 Retour à la liste
               </Button>
@@ -382,34 +384,42 @@ const CreerProjet: React.FC = () => {
                     </label>
                     <RadioGroup
                       value={formData.visibilite}
-                      onValueChange={(value) => handleInputChange("visibilite", value as "public" | "prive" | "restreint")}
+                      onValueChange={(value) =>
+                        handleInputChange(
+                          "visibilite",
+                          value as "public" | "prive" | "restreint",
+                        )
+                      }
                       className="gap-4"
                     >
-                      <Radio 
+                      <Radio
                         value="public"
                         classNames={{
                           label: "text-gray-800 dark:text-gray-200 font-medium",
-                          description: "text-gray-600 dark:text-gray-400 text-sm"
+                          description:
+                            "text-gray-600 dark:text-gray-400 text-sm",
                         }}
                         description="Visible par tous les utilisateurs"
                       >
                         Public
                       </Radio>
-                      <Radio 
+                      <Radio
                         value="prive"
                         classNames={{
                           label: "text-gray-800 dark:text-gray-200 font-medium",
-                          description: "text-gray-600 dark:text-gray-400 text-sm"
+                          description:
+                            "text-gray-600 dark:text-gray-400 text-sm",
                         }}
                         description="Visible uniquement par l'équipe projet"
                       >
                         Privé
                       </Radio>
-                      <Radio 
+                      <Radio
                         value="restreint"
                         classNames={{
                           label: "text-gray-800 dark:text-gray-200 font-medium",
-                          description: "text-gray-600 dark:text-gray-400 text-sm"
+                          description:
+                            "text-gray-600 dark:text-gray-400 text-sm",
                         }}
                         description="Accès sur invitation uniquement"
                       >
@@ -430,7 +440,9 @@ const CreerProjet: React.FC = () => {
                     </div>
                     <Switch
                       isSelected={formData.urgent}
-                      onValueChange={(checked) => handleInputChange("urgent", checked)}
+                      onValueChange={(checked) =>
+                        handleInputChange("urgent", checked)
+                      }
                     />
                   </div>
 
@@ -445,7 +457,10 @@ const CreerProjet: React.FC = () => {
                         placeholder="Ex: 50000"
                         value={formData.budget.toString()}
                         onChange={(e) =>
-                          handleInputChange("budget", Number(e.target.value) || 0)
+                          handleInputChange(
+                            "budget",
+                            Number(e.target.value) || 0,
+                          )
                         }
                         isInvalid={!!errors.budget}
                         errorMessage={errors.budget}
@@ -467,18 +482,24 @@ const CreerProjet: React.FC = () => {
                       <div className="space-y-3">
                         <Slider
                           value={formData.progression}
-                          onChange={(value) => handleInputChange("progression", Array.isArray(value) ? value[0] : value)}
+                          onChange={(value) =>
+                            handleInputChange(
+                              "progression",
+                              Array.isArray(value) ? value[0] : value,
+                            )
+                          }
                           minValue={0}
                           maxValue={100}
                           step={5}
                           className="max-w-md"
                           classNames={{
                             track: "bg-gray-200 dark:bg-gray-600",
-                            filler: "bg-blue-500"
+                            filler: "bg-blue-500",
                           }}
                         />
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Progression actuelle du projet: {formData.progression}%
+                          Progression actuelle du projet: {formData.progression}
+                          %
                         </p>
                       </div>
                     </div>
@@ -490,7 +511,7 @@ const CreerProjet: React.FC = () => {
                   <Button
                     color="primary"
                     size="lg"
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-semibold shadow-lg hover:from-blue-700 hover:to-indigo-700"
+                    className="flex-1 bg-primary text-base font-semibold shadow-lg hover:from-primary-100 hover:to-primary-800"
                     onPress={handleSubmit}
                     isLoading={isSubmitting}
                     startContent={
@@ -513,7 +534,7 @@ const CreerProjet: React.FC = () => {
                     <Button
                       variant="flat"
                       size="lg"
-                      className="w-full bg-gray-50 text-base font-medium text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                      className="w-full bg-gray-300 text-base font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                       isDisabled={isSubmitting}
                     >
                       Annuler
@@ -564,10 +585,10 @@ const CreerProjet: React.FC = () => {
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">
                     {formData.intitule}
                   </h4>
-                  <p className="text-gray-600 dark:text-gray-300 mt-1">
+                  <p className="mt-1 text-gray-600 dark:text-gray-300">
                     {formData.societe}
                   </p>
-                  <div className="mt-3 flex gap-3 flex-wrap">
+                  <div className="mt-3 flex flex-wrap gap-3">
                     <Chip
                       size="lg"
                       variant="flat"
@@ -587,7 +608,7 @@ const CreerProjet: React.FC = () => {
                       </Chip>
                     )}
                     {formData.domaine.map((d) => {
-                      const domaine = DOMAINES.find(dom => dom.value === d);
+                      const domaine = DOMAINES.find((dom) => dom.value === d);
                       return (
                         <Chip
                           key={d}
@@ -609,7 +630,8 @@ const CreerProjet: React.FC = () => {
                   </p>
                   {formData.budget > 0 && (
                     <p className="flex items-center gap-2">
-                      <span className="text-lg">💰</span> {formData.budget.toLocaleString('fr-FR')} €
+                      <span className="text-lg">💰</span>{" "}
+                      {formData.budget.toLocaleString("fr-FR")} €
                     </p>
                   )}
                 </div>

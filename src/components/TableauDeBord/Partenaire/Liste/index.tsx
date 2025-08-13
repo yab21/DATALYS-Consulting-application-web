@@ -376,7 +376,7 @@ const ListePartenaires: React.FC = () => {
                           size="lg"
                           variant="flat"
                           color="primary"
-                          className="w-full bg-blue-50 text-base font-semibold text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                          className="w-full bg-blue-50 text-base font-semibold text-primary-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
                         >
                           Voir Projets
                         </Button>
@@ -553,10 +553,10 @@ const ListePartenaires: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-6">
                       <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-6 text-center dark:border-blue-700 dark:from-blue-900/30 dark:to-blue-800/30">
-                        <div className="mb-2 text-3xl font-bold text-blue-600 dark:text-blue-400">
+                        <div className="mb-2 text-3xl font-bold text-primary-800 dark:text-blue-400">
                           {selectedPartner.nombreProjets}
                         </div>
-                        <div className="text-base font-semibold text-blue-700 dark:text-blue-300">
+                        <div className="text-base font-semibold text-primary-800 dark:text-blue-300">
                           Projets actifs
                         </div>
                       </div>
@@ -586,7 +586,7 @@ const ListePartenaires: React.FC = () => {
                     <Button
                       color="primary"
                       variant="shadow"
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-semibold"
+                      className="bg-gradient-to-r from-primary to-primary-800 text-base font-semibold"
                       size="lg"
                       startContent={
                         <svg

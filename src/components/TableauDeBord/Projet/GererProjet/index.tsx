@@ -276,7 +276,7 @@ const GestionProjet = () => {
           {value.map((domain: string, index: number) => (
             <span
               key={index}
-              className="rounded-full bg-primary-100 px-2 py-1 text-xs text-primary-700"
+              className="rounded-full bg-primary px-2 py-1 text-sm font-medium text-white"
             >
               {domain}
             </span>
@@ -464,6 +464,7 @@ const GestionProjet = () => {
           <Link href="/tableaudebord/projet/ajouter">
             <Button
               color="primary"
+              className="bg-primary bg-gradient-to-r px-6 py-3 text-base font-semibold shadow-lg hover:from-primary-100 hover:to-primary-800"
               startContent={
                 <svg
                   width="20"

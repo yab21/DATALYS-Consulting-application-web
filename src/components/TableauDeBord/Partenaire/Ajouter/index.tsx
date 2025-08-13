@@ -192,7 +192,7 @@ const AjouterPartenaire: React.FC = () => {
                 variant="flat"
                 color="default"
                 size="lg"
-                className="bg-gray-50 text-base font-medium text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                className="bg-primary text-base font-medium text-white hover:bg-primary-800 dark:bg-primary dark:text-gray-200 dark:hover:bg-primary-800"
               >
                 Retour à la liste
               </Button>
@@ -513,7 +513,7 @@ const AjouterPartenaire: React.FC = () => {
                   <Button
                     color="primary"
                     size="lg"
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-semibold shadow-lg hover:from-blue-700 hover:to-indigo-700"
+                    className="flex-1 bg-primary text-base font-semibold shadow-lg hover:from-primary-100 hover:to-primary-800"
                     onPress={handleSubmit}
                     isLoading={isSubmitting}
                     startContent={
@@ -541,7 +541,7 @@ const AjouterPartenaire: React.FC = () => {
                     <Button
                       variant="flat"
                       size="lg"
-                      className="w-full bg-gray-50 text-base font-medium text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                      className="w-full bg-gray-300 text-base font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                       isDisabled={isSubmitting}
                     >
                       Annuler
