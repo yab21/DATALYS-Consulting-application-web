@@ -220,7 +220,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: groupIndex * 0.1 }}
               >
-                <h3 className="mb-4 rounded-xl border border-blue-200/30 bg-gradient-to-r from-blue-100/40 to-indigo-100/40 px-4 py-3 text-sm font-bold text-blue-800 shadow-sm dark:border-blue-500/30 dark:from-blue-900/40 dark:to-indigo-900/40 dark:text-blue-200">
+                <h3 className="mb-4 rounded-xl border border-gray-200/20 bg-gradient-to-br from-white/80 to-gray-50/60 px-4 py-3 text-sm font-bold text-gray-700 shadow-sm backdrop-blur-sm dark:border-gray-600/30 dark:from-gray-800/80 dark:to-gray-700/60 dark:text-gray-200">
                   {group.name}
                 </h3>
 
@@ -242,7 +242,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
         {/* Footer de la sidebar */}
         <motion.div
-          className="mt-auto border-t border-gray-200/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-6 dark:border-gray-700/50 dark:from-gray-800/50 dark:to-gray-700/50"
+          className="mt-auto border-t border-gray-200/30 bg-gradient-to-br from-gray-50/80 via-white/60 to-gray-100/40 p-6 backdrop-blur-sm dark:border-gray-600/40 dark:from-gray-800/90 dark:via-gray-700/70 dark:to-gray-600/50"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.5 }}
@@ -250,7 +250,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           <div className="text-center">
             {/* Logo avec effet de lueur */}
             <motion.div
-              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 p-3 shadow-lg shadow-blue-500/25 dark:from-blue-600 dark:to-indigo-700 dark:shadow-blue-600/30"
+              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-secondary to-primary/80 p-3 shadow-lg shadow-primary/20 ring-2 ring-primary/20 dark:from-primary dark:via-secondary dark:to-primary/80 dark:shadow-primary/30 dark:ring-primary/30"
               whileHover={{ scale: 1.05, rotate: 5 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
@@ -288,12 +288,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
               {/* Statut en ligne */}
               <motion.div
-                className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full bg-green-100 px-3 py-1 dark:bg-green-900/30"
+                className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 px-3 py-1 shadow-sm dark:from-green-900/40 dark:to-emerald-900/40"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.8 }}
               >
-                <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                <div className="h-2 w-2 animate-pulse rounded-full bg-gradient-to-r from-green-500 to-emerald-500" />
                 <span className="text-xs font-medium text-green-700 dark:text-green-300">
                   En ligne
                 </span>

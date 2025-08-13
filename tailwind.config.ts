@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 import defaultTheme from "tailwindcss/defaultTheme";
-const {nextui} = require("@nextui-org/react");
+const { nextui } = require("@nextui-org/react");
 
 const config: Config = {
   content: [
@@ -23,34 +23,34 @@ const config: Config = {
     extend: {
       colors: {
         zIndex: {
-          '50': '50',
-          '60': '60',
-          '70': '70',
-          '80': '80',
-          '90': '90',
-          '100': '100',
+          "50": "50",
+          "60": "60",
+          "70": "70",
+          "80": "80",
+          "90": "90",
+          "100": "100",
         },
         current: "currentColor",
         transparent: "transparent",
         white: "#FFFFFF",
         primary: {
-          DEFAULT: "#1E40AF",
+          DEFAULT: "#06B6D4",
           50: "#EFF6FF",
-          100: "#DBEAFE", 
+          100: "#05879E",
           200: "#BFDBFE",
           300: "#93C5FD",
           400: "#60A5FA",
           500: "#3B82F6",
           600: "#1E40AF",
           700: "#1E3A8A",
-          800: "#1E40AF",
+          800: "#046577",
           900: "#1E3A8A",
         },
         secondary: {
           DEFAULT: "#06B6D4",
           50: "#ECFEFF",
           100: "#CFFAFE",
-          200: "#A5F3FC", 
+          200: "#A5F3FC",
           300: "#67E8F9",
           400: "#22D3EE",
           500: "#06B6D4",
@@ -64,7 +64,7 @@ const config: Config = {
           50: "#FFFBEB",
           100: "#FEF3C7",
           200: "#FDE68A",
-          300: "#FCD34D", 
+          300: "#FCD34D",
           400: "#FBBF24",
           500: "#F59E0B",
           600: "#D97706",
@@ -74,7 +74,7 @@ const config: Config = {
         },
         datalys: {
           blue: "#1E40AF",
-          turquoise: "#06B6D4", 
+          turquoise: "#06B6D4",
           yellow: "#F59E0B",
           dark: "#0F172A",
         },
@@ -327,10 +327,13 @@ const config: Config = {
       },
       backgroundImage: {
         video: "url('../images/video/video.png')",
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'datalys-gradient': 'linear-gradient(135deg, #1E40AF 0%, #06B6D4 50%, #F59E0B 100%)',
-        'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic":
+          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+        "datalys-gradient":
+          "linear-gradient(135deg, #1E40AF 0%, #06B6D4 50%, #F59E0B 100%)",
+        "glass-gradient":
+          "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
       },
       content: {
         "icon-copy": 'url("../images/icon/icon-copy-alt.svg")',
@@ -419,35 +422,41 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(100%)" },
           "50%": { transform: "translateY(0)" },
         },
-        'float': {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
         },
-        'glow': {
-          '0%': { boxShadow: '0 0 5px rgba(30, 64, 175, 0.5)' },
-          '100%': { boxShadow: '0 0 20px rgba(30, 64, 175, 0.8), 0 0 30px rgba(6, 182, 212, 0.6)' },
+        glow: {
+          "0%": { boxShadow: "0 0 5px rgba(30, 64, 175, 0.5)" },
+          "100%": {
+            boxShadow:
+              "0 0 20px rgba(30, 64, 175, 0.8), 0 0 30px rgba(6, 182, 212, 0.6)",
+          },
         },
-        'slideIn': {
-          '0%': { transform: 'translateX(-100%)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
+        slideIn: {
+          "0%": { transform: "translateX(-100%)", opacity: "0" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
         },
-        'fadeIn': {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+        fadeIn: {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        'scaleIn': {
-          '0%': { transform: 'scale(0.95)', opacity: '0' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
+        scaleIn: {
+          "0%": { transform: "scale(0.95)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
         },
-        'shimmer': {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
-        'particles': {
-          '0%': { transform: 'translateY(100vh) rotate(0deg)', opacity: '0' },
-          '10%': { opacity: '1' },
-          '90%': { opacity: '1' },
-          '100%': { transform: 'translateY(-100vh) rotate(360deg)', opacity: '0' },
+        particles: {
+          "0%": { transform: "translateY(100vh) rotate(0deg)", opacity: "0" },
+          "10%": { opacity: "1" },
+          "90%": { opacity: "1" },
+          "100%": {
+            transform: "translateY(-100vh) rotate(360deg)",
+            opacity: "0",
+          },
         },
       },
       animation: {
@@ -467,13 +476,13 @@ const config: Config = {
         line1: "line 10s infinite linear",
         line2: "line-revert 8s infinite linear",
         line3: "line 7s infinite linear",
-        'float': 'float 3s ease-in-out infinite',
-        'glow': 'glow 2s ease-in-out infinite alternate',
-        'slideIn': 'slideIn 0.5s ease-out',
-        'fadeIn': 'fadeIn 0.6s ease-out',
-        'scaleIn': 'scaleIn 0.3s ease-out',
-        'shimmer': 'shimmer 2s linear infinite',
-        'particles': 'particles 20s linear infinite',
+        float: "float 3s ease-in-out infinite",
+        glow: "glow 2s ease-in-out infinite alternate",
+        slideIn: "slideIn 0.5s ease-out",
+        fadeIn: "fadeIn 0.6s ease-out",
+        scaleIn: "scaleIn 0.3s ease-out",
+        shimmer: "shimmer 2s linear infinite",
+        particles: "particles 20s linear infinite",
       },
     },
   },

@@ -289,7 +289,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
       <div className="mx-auto max-w-7xl space-y-6">
         {/* En-tête du partenaire */}
         <motion.div
-          className="rounded-xl bg-white dark:bg-gray-800 p-8 shadow-xl dark:shadow-gray-900/20 border-0 dark:border dark:border-gray-700"
+          className="rounded-xl border-0 bg-white p-8 shadow-xl dark:border dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/20"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -408,7 +408,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
 
         {/* Contenu principal avec onglets */}
         <motion.div
-          className="rounded-xl bg-white dark:bg-gray-800 shadow-xl dark:shadow-gray-900/20 border-0 dark:border dark:border-gray-700"
+          className="rounded-xl border-0 bg-white shadow-xl dark:border dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/20"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -421,7 +421,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
             classNames={{
               tabList: "bg-gray-50 dark:bg-gray-700 p-2 rounded-t-xl",
               tab: "data-[selected=true]:bg-white dark:data-[selected=true]:bg-gray-600 data-[selected=true]:shadow-lg",
-              tabContent: "text-gray-600 dark:text-gray-300 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-semibold"
+              tabContent:
+                "text-gray-600 dark:text-gray-300 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-semibold",
             }}
           >
             <Tab
@@ -441,7 +442,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                 </div>
               }
             >
-              <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
+              <div className="min-h-[500px] bg-gray-50 p-6 dark:bg-gray-800">
                 {/* En-tête des projets */}
                 <div className="mb-6 flex items-center justify-between">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -474,7 +475,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                   {projects.map((project) => (
                     <Card
                       key={project.id}
-                      className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all hover:shadow-lg hover:scale-[1.01]"
+                      className="border border-gray-200 bg-white transition-all hover:scale-[1.01] hover:shadow-lg dark:border-gray-600 dark:bg-gray-700"
                     >
                       <CardBody className="p-6">
                         <div className="mb-4 flex items-start justify-between">
@@ -538,9 +539,9 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                             <Link
                               href={`/tableaudebord/projet/pageprojet/${project.id}?tab=partners`}
                             >
-                              <Button 
-                                size="sm" 
-                                variant="flat" 
+                              <Button
+                                size="sm"
+                                variant="flat"
                                 color="secondary"
                               >
                                 Gérer Partenaires
@@ -577,7 +578,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                 </div>
               }
             >
-              <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
+              <div className="min-h-[500px] bg-gray-50 p-6 dark:bg-gray-800">
                 {/* En-tête des incidents */}
                 <div className="mb-6 flex items-center justify-between">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -609,7 +610,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                   {incidents.map((incident) => (
                     <Card
                       key={incident.id}
-                      className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all hover:shadow-lg hover:scale-[1.01]"
+                      className="border border-gray-200 bg-white transition-all hover:scale-[1.01] hover:shadow-lg dark:border-gray-600 dark:bg-gray-700"
                     >
                       <CardBody className="p-6">
                         <div className="flex items-start justify-between">
@@ -678,19 +679,27 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
         onClose={() => setShowCreateIncident(false)}
         size="xl"
         scrollBehavior="inside"
+        placement="center"
         classNames={{
-          base: "bg-white dark:bg-gray-900 max-h-[90vh]",
-          backdrop: "bg-black/50 backdrop-blur-sm"
+          base: "bg-white dark:bg-gray-900 max-h-[85vh] mt-16",
+          backdrop: "bg-black/50 backdrop-blur-sm",
+          wrapper: "z-[9999]",
         }}
       >
-        <ModalContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+        <ModalContent className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 pb-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-warning-50 to-orange-50 dark:from-warning-900/30 dark:to-orange-900/30 rounded-t-large">
+              <ModalHeader className="flex flex-col gap-1 rounded-t-large border-b border-gray-200 bg-gradient-to-r from-warning-50 to-orange-50 pb-6 dark:border-gray-700 dark:from-warning-900/30 dark:to-orange-900/30">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-warning-100 dark:bg-warning-900/50 rounded-lg">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-warning-600 dark:text-warning-400">
-                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                  <div className="rounded-lg bg-warning-100 p-2 dark:bg-warning-900/50">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="text-warning-600 dark:text-warning-400"
+                    >
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
                     </svg>
                   </div>
                   <div>
@@ -703,9 +712,9 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                   </div>
                 </div>
               </ModalHeader>
-              <ModalBody className="py-6 px-6 max-h-[60vh] overflow-y-auto">
+              <ModalBody className="max-h-[60vh] overflow-y-auto px-6 py-6">
                 <div className="space-y-6">
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
+                  <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
                     <Select
                       label="Projet concerné"
                       placeholder="Sélectionner un projet"
@@ -714,15 +723,24 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                         const selectedValue = Array.from(keys)[0] as string;
                         setSelectedProject(selectedValue || "");
                       }}
+                      variant="bordered"
+                      size="lg"
                       startContent={
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
-                          <path d="M7.25 6a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5A.75.75 0 0 0 7.25 6M12 6a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 12 6m4 .75a.75.75 0 0 1 1.5 0v9.5a.75.75 0 0 1-1.5 0z"/>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="text-gray-500 dark:text-gray-400"
+                        >
+                          <path d="M7.25 6a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5A.75.75 0 0 0 7.25 6M12 6a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 12 6m4 .75a.75.75 0 0 1 1.5 0v9.5a.75.75 0 0 1-1.5 0z" />
                         </svg>
                       }
                       classNames={{
-                        label: "text-gray-800 dark:text-gray-200 font-bold",
-                        trigger: "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600",
-                        value: "text-gray-900 dark:text-white"
+                        label: "text-gray-900 dark:text-white font-semibold text-base mb-2",
+                        trigger:
+                          "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                        value: "text-gray-900 dark:text-white font-medium text-base",
                       }}
                     >
                       {projects.map((project) => (
@@ -733,30 +751,51 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                     </Select>
                   </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
+                  <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
                     <Input
                       label="Titre de l'incident"
                       placeholder="Ex: Problème de connexion au serveur"
                       value={newIncident.titre}
                       onChange={(e) =>
-                        setNewIncident((prev) => ({ ...prev, titre: e.target.value }))
+                        setNewIncident((prev) => ({
+                          ...prev,
+                          titre: e.target.value,
+                        }))
                       }
                       variant="bordered"
                       size="lg"
+                      startContent={
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="text-gray-500 dark:text-gray-400"
+                        >
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                        </svg>
+                      }
                       classNames={{
-                        label: "text-gray-800 dark:text-gray-200 font-semibold",
-                        input: "text-gray-900 dark:text-white",
-                        inputWrapper: "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                        label: "text-gray-900 dark:text-white font-semibold text-base mb-2",
+                        input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-700 text-base pl-3",
+                        inputWrapper:
+                          "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
                       }}
                       startContent={
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="text-gray-400"
+                        >
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                         </svg>
                       }
                     />
                   </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
+                  <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
                     <Textarea
                       label="Description détaillée"
                       placeholder="Décrivez le problème en détail : quand est-il survenu, quels sont les symptômes, etc."
@@ -767,25 +806,38 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                           description: value,
                         }))
                       }
+                      variant="bordered"
+                      size="lg"
                       minRows={4}
                       startContent={
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="text-gray-400"
+                        >
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
                         </svg>
                       }
                       classNames={{
-                        label: "text-gray-800 dark:text-gray-200 font-bold",
-                        input: "text-gray-900 dark:text-white",
-                        inputWrapper: "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                        label: "text-gray-900 dark:text-white font-semibold text-base mb-2",
+                        input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-700 text-base p-3",
+                        inputWrapper:
+                          "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[120px]",
                       }}
                     />
                   </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
+                  <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
                     <Select
                       label="Niveau de priorité"
                       placeholder="Sélectionner une priorité"
-                      selectedKeys={newIncident.priorite ? [newIncident.priorite] : []}
+                      variant="bordered"
+                      size="lg"
+                      selectedKeys={
+                        newIncident.priorite ? [newIncident.priorite] : []
+                      }
                       onSelectionChange={(keys) => {
                         const selectedValue = Array.from(keys)[0] as string;
                         setNewIncident((prev) => ({
@@ -794,25 +846,40 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                         }));
                       }}
                       startContent={
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
-                          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="text-gray-500 dark:text-gray-400"
+                        >
+                          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
                         </svg>
                       }
                       classNames={{
-                        label: "text-gray-800 dark:text-gray-200 font-bold",
-                        trigger: "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600",
-                        value: "text-gray-900 dark:text-white"
+                        label: "text-gray-900 dark:text-white font-semibold text-base mb-2",
+                        trigger:
+                          "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                        value: "text-gray-900 dark:text-white font-medium text-base",
                       }}
                     >
-                      <SelectItem key="faible" value="faible">🟢 Faible - Impact mineur</SelectItem>
-                      <SelectItem key="moyenne" value="moyenne">🟡 Moyenne - Impact modéré</SelectItem>
-                      <SelectItem key="haute" value="haute">🟠 Haute - Impact important</SelectItem>
-                      <SelectItem key="critique" value="critique">🔴 Critique - Impact majeur</SelectItem>
+                      <SelectItem key="faible" value="faible">
+                        🟢 Faible - Impact mineur
+                      </SelectItem>
+                      <SelectItem key="moyenne" value="moyenne">
+                        🟡 Moyenne - Impact modéré
+                      </SelectItem>
+                      <SelectItem key="haute" value="haute">
+                        🟠 Haute - Impact important
+                      </SelectItem>
+                      <SelectItem key="critique" value="critique">
+                        🔴 Critique - Impact majeur
+                      </SelectItem>
                     </Select>
                   </div>
                 </div>
               </ModalBody>
-              <ModalFooter className="border-t border-gray-200 dark:border-gray-700 pt-6 bg-gray-50 dark:bg-gray-800 rounded-b-large">
+              <ModalFooter className="rounded-b-large border-t border-gray-200 bg-gray-50 pt-6 dark:border-gray-700 dark:bg-gray-800">
                 <Button
                   variant="flat"
                   onPress={() => setShowCreateIncident(false)}
@@ -821,15 +888,20 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                 >
                   Annuler
                 </Button>
-                <Button 
-                  color="warning" 
+                <Button
+                  color="warning"
                   variant="shadow"
                   onPress={handleCreateIncident}
                   className="text-base font-semibold"
                   size="lg"
                   startContent={
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
                     </svg>
                   }
                 >

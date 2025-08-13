@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Table,
   TableHeader,
@@ -21,8 +21,8 @@ import {
   CardBody,
   Spinner,
   cn,
-} from '@nextui-org/react';
-import { motion } from 'framer-motion';
+} from "@nextui-org/react";
+import { motion } from "framer-motion";
 
 // Types
 export interface Column {
@@ -31,9 +31,9 @@ export interface Column {
   sortable?: boolean;
   filterable?: boolean;
   width?: string | number;
-  align?: 'start' | 'center' | 'end';
+  align?: "start" | "center" | "end";
   render?: (value: any, item: any) => React.ReactNode;
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'enum';
+  type?: "text" | "number" | "date" | "boolean" | "enum";
   enumOptions?: { value: any; label: string; color?: string }[];
 }
 
@@ -47,7 +47,13 @@ export interface DataTableProps {
   actions?: {
     key: string;
     label: string;
-    color?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+    color?:
+      | "default"
+      | "primary"
+      | "secondary"
+      | "success"
+      | "warning"
+      | "danger";
     icon?: React.ReactNode;
   }[];
   searchable?: boolean;
@@ -79,10 +85,10 @@ export const DataTable: React.FC<DataTableProps> = ({
   const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set([]));
   const [sortDescriptor, setSortDescriptor] = useState<{
     column: string;
-    direction: 'ascending' | 'descending';
-  }>({ column: '', direction: 'ascending' });
-  const [filterValue, setFilterValue] = useState('');
-  const [statusFilter, setStatusFilter] = useState<Selection>('all');
+    direction: "ascending" | "descending";
+  }>({ column: "", direction: "ascending" });
+  const [filterValue, setFilterValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Selection>("all");
   const [page, setPage] = useState(1);
 
   // Filtrage des données
@@ -95,23 +101,26 @@ export const DataTable: React.FC<DataTableProps> = ({
         columns.some((column) => {
           const value = item[column.key];
           if (value == null) return false;
-          return value.toString().toLowerCase().includes(filterValue.toLowerCase());
-        })
+          return value
+            .toString()
+            .toLowerCase()
+            .includes(filterValue.toLowerCase());
+        }),
       );
     }
 
     // Filtre de statut (si applicable)
-    if (statusFilter !== 'all' && Array.from(statusFilter).length !== 0) {
+    if (statusFilter !== "all" && Array.from(statusFilter).length !== 0) {
       const statusValues = Array.from(statusFilter);
       filteredData = filteredData.filter((item) =>
         statusValues.some((status) => {
           // Chercher une colonne de type enum pour le statut
-          const statusColumn = columns.find(col => col.type === 'enum');
+          const statusColumn = columns.find((col) => col.type === "enum");
           if (statusColumn) {
             return item[statusColumn.key] === status;
           }
           return false;
-        })
+        }),
       );
     }
 
@@ -130,7 +139,7 @@ export const DataTable: React.FC<DataTableProps> = ({
       if (aValue < bValue) cmp = -1;
       else if (aValue > bValue) cmp = 1;
 
-      return sortDescriptor.direction === 'descending' ? -cmp : cmp;
+      return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [filteredItems, sortDescriptor]);
 
@@ -149,57 +158,69 @@ export const DataTable: React.FC<DataTableProps> = ({
   }, []);
 
   const onClear = useCallback(() => {
-    setFilterValue('');
+    setFilterValue("");
     setPage(1);
   }, []);
 
-  const handleSelectionChange = useCallback((keys: Selection) => {
-    setSelectedKeys(keys);
-    onSelectionChange?.(keys);
-  }, [onSelectionChange]);
+  const handleSelectionChange = useCallback(
+    (keys: Selection) => {
+      setSelectedKeys(keys);
+      onSelectionChange?.(keys);
+    },
+    [onSelectionChange],
+  );
 
-  const renderCell = useCallback((item: any, columnKey: string) => {
-    const column = columns.find(col => col.key === columnKey);
-    const cellValue = item[columnKey];
+  const renderCell = useCallback(
+    (item: any, columnKey: string) => {
+      const column = columns.find((col) => col.key === columnKey);
+      const cellValue = item[columnKey];
 
-    if (column?.render) {
-      return column.render(cellValue, item);
-    }
+      if (column?.render) {
+        return column.render(cellValue, item);
+      }
 
-    switch (column?.type) {
-      case 'boolean':
-        return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={cellValue ? 'success' : 'default'}
-          >
-            {cellValue ? 'Oui' : 'Non'}
-          </Chip>
-        );
-      case 'enum':
-        const option = column.enumOptions?.find(opt => opt.value === cellValue);
-        return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={option?.color as any || 'default'}
-          >
-            {option?.label || cellValue}
-          </Chip>
-        );
-      case 'date':
-        return cellValue ? new Date(cellValue).toLocaleDateString('fr-FR') : '-';
-      case 'number':
-        return typeof cellValue === 'number' ? cellValue.toLocaleString('fr-FR') : cellValue;
-      default:
-        return cellValue || '-';
-    }
-  }, [columns]);
+      switch (column?.type) {
+        case "boolean":
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={cellValue ? "success" : "default"}
+            >
+              {cellValue ? "Oui" : "Non"}
+            </Chip>
+          );
+        case "enum":
+          const option = column.enumOptions?.find(
+            (opt) => opt.value === cellValue,
+          );
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={(option?.color as any) || "default"}
+            >
+              {option?.label || cellValue}
+            </Chip>
+          );
+        case "date":
+          return cellValue
+            ? new Date(cellValue).toLocaleDateString("fr-FR")
+            : "-";
+        case "number":
+          return typeof cellValue === "number"
+            ? cellValue.toLocaleString("fr-FR")
+            : cellValue;
+        default:
+          return cellValue || "-";
+      }
+    },
+    [columns],
+  );
 
   // Options de statut pour le filtre
   const statusOptions = useMemo(() => {
-    const statusColumn = columns.find(col => col.type === 'enum');
+    const statusColumn = columns.find((col) => col.type === "enum");
     return statusColumn?.enumOptions || [];
   }, [columns]);
 
@@ -210,11 +231,13 @@ export const DataTable: React.FC<DataTableProps> = ({
         {(title || subtitle) && (
           <div className="flex flex-col gap-1">
             {title && <h3 className="text-lg font-semibold">{title}</h3>}
-            {subtitle && <p className="text-small text-default-400">{subtitle}</p>}
+            {subtitle && (
+              <p className="text-small text-default-400">{subtitle}</p>
+            )}
           </div>
         )}
-        
-        <div className="flex justify-between gap-3 items-end">
+
+        <div className="flex items-end justify-between gap-3">
           <div className="flex gap-3">
             {searchable && (
               <Input
@@ -222,8 +245,13 @@ export const DataTable: React.FC<DataTableProps> = ({
                 className="w-full sm:max-w-[44%]"
                 placeholder={searchPlaceholder}
                 startContent={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
                   </svg>
                 }
                 value={filterValue}
@@ -231,16 +259,21 @@ export const DataTable: React.FC<DataTableProps> = ({
                 onValueChange={onSearchChange}
               />
             )}
-            
+
             {statusOptions.length > 0 && (
               <Dropdown>
                 <DropdownTrigger className="hidden sm:flex">
-                  <Button 
+                  <Button
                     endContent={
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M7 10l5 5 5-5z"/>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M7 10l5 5 5-5z" />
                       </svg>
-                    } 
+                    }
                     variant="flat"
                   >
                     Statut
@@ -263,29 +296,19 @@ export const DataTable: React.FC<DataTableProps> = ({
               </Dropdown>
             )}
           </div>
-          
-          <div className="flex gap-3">
-            {actions.map((action) => (
-              <Button
-                key={action.key}
-                color={action.color}
-                endContent={action.icon}
-                size="sm"
-                onPress={() => onRowAction?.('bulk', action.key)}
-              >
-                {action.label}
-              </Button>
-            ))}
-          </div>
+
+          {/* Suppression des boutons d'action globaux - ils ne sont pas nécessaires */}
         </div>
-        
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {filteredItems.length} résultat{filteredItems.length > 1 ? 's' : ''}
+
+        <div className="flex items-center justify-between">
+          <span className="text-small text-default-400">
+            Total {filteredItems.length} résultat
+            {filteredItems.length > 1 ? "s" : ""}
           </span>
-          {selectable && selectedKeys !== 'all' && selectedKeys.size > 0 && (
-            <span className="text-default-400 text-small">
-              {selectedKeys.size} sur {filteredItems.length} sélectionné{selectedKeys.size > 1 ? 's' : ''}
+          {selectable && selectedKeys !== "all" && selectedKeys.size > 0 && (
+            <span className="text-small text-default-400">
+              {selectedKeys.size} sur {filteredItems.length} sélectionné
+              {selectedKeys.size > 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -311,16 +334,17 @@ export const DataTable: React.FC<DataTableProps> = ({
   // Pied de la table
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
+      <div className="flex items-center justify-between px-2 py-2">
         <span className="w-[30%] text-small text-default-400">
           {selectable && (
             <>
-              {selectedKeys === 'all' && 'Tous les éléments sélectionnés'}
-              {selectedKeys !== 'all' && `${selectedKeys.size} sélectionné${selectedKeys.size > 1 ? 's' : ''}`}
+              {selectedKeys === "all" && "Tous les éléments sélectionnés"}
+              {selectedKeys !== "all" &&
+                `${selectedKeys.size} sélectionné${selectedKeys.size > 1 ? "s" : ""}`}
             </>
           )}
         </span>
-        
+
         {pages > 1 && (
           <Pagination
             isCompact
@@ -332,13 +356,13 @@ export const DataTable: React.FC<DataTableProps> = ({
             onChange={setPage}
           />
         )}
-        
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+
+        <div className="hidden w-[30%] justify-end gap-2 sm:flex">
           <Button
             isDisabled={pages <= 1}
             size="sm"
             variant="flat"
-            onPress={() => setPage(prev => Math.max(prev - 1, 1))}
+            onPress={() => setPage((prev) => Math.max(prev - 1, 1))}
           >
             Précédent
           </Button>
@@ -346,7 +370,7 @@ export const DataTable: React.FC<DataTableProps> = ({
             isDisabled={pages <= 1}
             size="sm"
             variant="flat"
-            onPress={() => setPage(prev => Math.min(prev + 1, pages))}
+            onPress={() => setPage((prev) => Math.min(prev + 1, pages))}
           >
             Suivant
           </Button>
@@ -360,7 +384,7 @@ export const DataTable: React.FC<DataTableProps> = ({
       <Card className={className}>
         <CardBody className="flex items-center justify-center py-12">
           <Spinner size="lg" />
-          <p className="text-default-400 mt-4">Chargement des données...</p>
+          <p className="mt-4 text-default-400">Chargement des données...</p>
         </CardBody>
       </Card>
     );
@@ -392,7 +416,7 @@ export const DataTable: React.FC<DataTableProps> = ({
           {columns.map((column) => (
             <TableColumn
               key={column.key}
-              align={column.align || 'start'}
+              align={column.align || "start"}
               allowsSorting={column.sortable}
               width={column.width}
             >
@@ -400,14 +424,16 @@ export const DataTable: React.FC<DataTableProps> = ({
             </TableColumn>
           ))}
         </TableHeader>
-        
+
         <TableBody
           emptyContent={
             emptyContent || (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-2">📄</div>
-                <p className="text-default-400 font-medium">Aucune donnée disponible</p>
-                <p className="text-tiny text-default-300 mt-1">
+              <div className="py-8 text-center">
+                <div className="mb-2 text-4xl">📄</div>
+                <p className="font-medium text-default-400">
+                  Aucune donnée disponible
+                </p>
+                <p className="mt-1 text-tiny text-default-300">
                   Les données apparaîtront ici une fois ajoutées
                 </p>
               </div>

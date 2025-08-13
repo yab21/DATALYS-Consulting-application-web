@@ -22,18 +22,18 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           onClick={handleClick}
           className={`group relative flex items-center gap-3 rounded-xl px-4 py-3.5 font-semibold transition-all duration-300 ease-out ${
             isActive
-              ? "border border-blue-400/50 bg-gradient-to-r from-blue-400/30 to-indigo-400/30 text-blue-800 shadow-lg shadow-blue-400/30 dark:border-blue-500/50 dark:text-blue-100 dark:shadow-blue-500/20"
-              : "text-blue-700 hover:border hover:border-blue-300/50 hover:bg-gradient-to-r hover:from-blue-200/60 hover:to-indigo-200/60 hover:text-blue-800 hover:shadow-md hover:shadow-blue-300/30 dark:text-blue-200 dark:hover:border-gray-500/50 dark:hover:from-gray-600/60 dark:hover:to-gray-500/60 dark:hover:text-blue-100 dark:hover:shadow-gray-500/20"
+              ? "border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/15 to-secondary/10 text-primary-700 shadow-lg shadow-primary/10 ring-1 ring-primary/20 dark:border-primary/30 dark:from-primary/20 dark:via-primary/25 dark:to-secondary/20 dark:text-primary-100 dark:shadow-primary/20 dark:ring-primary/30"
+              : "text-gray-600 hover:border hover:border-gray-200/50 hover:bg-gradient-to-br hover:from-gray-50/80 hover:via-white/60 hover:to-gray-100/40 hover:text-gray-800 hover:shadow-md hover:shadow-gray-200/30 dark:text-gray-300 dark:hover:border-gray-600/50 dark:hover:from-gray-700/60 dark:hover:via-gray-600/50 dark:hover:to-gray-500/40 dark:hover:text-gray-100 dark:hover:shadow-gray-600/20"
           }`}
         >
           {/* Effet de lueur au survol */}
           <div
-            className={`absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-blue-400/15 to-indigo-400/15 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-blue-400/20 dark:to-indigo-400/20`}
+            className={`absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-secondary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-primary/10 dark:via-primary/15 dark:to-secondary/10`}
           ></div>
 
           {/* Icône avec animation */}
           <motion.div
-            className="flex-shrink-0"
+            className={`flex-shrink-0 ${isActive ? "text-primary" : "text-gray-500 group-hover:text-primary"}`}
             whileHover={{ rotate: 5, scale: 1.1 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
@@ -46,7 +46,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           {/* Badge de message */}
           {item.message && (
             <motion.span
-              className="absolute right-11.5 top-1/2 -translate-y-1/2 rounded-full bg-red-500 px-2 py-1 text-[10px] font-bold leading-[17px] text-white shadow-lg shadow-red-500/30"
+              className="absolute right-11.5 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-red-500 to-red-600 px-2 py-1 text-[10px] font-bold leading-[17px] text-white shadow-lg shadow-red-500/30 ring-1 ring-red-400/30"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 300 }}
@@ -58,7 +58,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           {/* Badge Pro */}
           {item.pro && (
             <motion.span
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-2 py-1 text-[10px] font-bold leading-[17px] text-white shadow-lg shadow-blue-500/30 dark:from-blue-400 dark:to-indigo-500"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg bg-gradient-to-br from-primary via-secondary to-primary/80 px-2 py-1 text-[10px] font-bold leading-[17px] text-white shadow-lg shadow-primary/20 ring-1 ring-primary/30 dark:from-primary dark:via-secondary dark:to-primary/80 dark:shadow-primary/30 dark:ring-primary/40"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 300 }}
@@ -70,7 +70,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           {/* Flèche pour les sous-menus */}
           {item.children && (
             <motion.svg
-              className={`absolute right-3.5 top-1/2 -translate-y-1/2 fill-current text-blue-600 transition-transform duration-300 dark:text-blue-300 ${
+              className={`absolute right-3.5 top-1/2 -translate-y-1/2 fill-current text-gray-400 transition-transform duration-300 group-hover:text-primary ${
                 !isActive && "rotate-180"
               }`}
               width="20"

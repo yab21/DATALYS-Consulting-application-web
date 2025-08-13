@@ -222,6 +222,7 @@ const AjouterPartenaire: React.FC = () => {
                         Nom du partenaire *
                       </label>
                       <Input
+                        variant="bordered"
                         placeholder="Ex: TechCorp Solutions"
                         value={formData.nom}
                         onChange={(e) =>
@@ -236,7 +237,7 @@ const AjouterPartenaire: React.FC = () => {
                           input:
                             "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
                           inputWrapper:
-                            "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400",
+                            "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
                         }}
                       />
                     </div>
@@ -246,6 +247,7 @@ const AjouterPartenaire: React.FC = () => {
                         Secteur d'activité *
                       </label>
                       <Select
+                        variant="bordered"
                         selectedKeys={
                           formData.secteur ? [formData.secteur] : []
                         }
@@ -260,8 +262,8 @@ const AjouterPartenaire: React.FC = () => {
                         className="text-base"
                         classNames={{
                           trigger:
-                            "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500",
-                          value: "text-gray-900 dark:text-white",
+                            "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                          value: "text-gray-900 dark:text-white font-medium",
                         }}
                       >
                         {SECTEURS.map((secteur) => (
@@ -282,6 +284,7 @@ const AjouterPartenaire: React.FC = () => {
                       Description *
                     </label>
                     <Textarea
+                      variant="bordered"
                       placeholder="Description de l'activité du partenaire et de ses services"
                       value={formData.description}
                       onChange={(e) =>
@@ -298,7 +301,7 @@ const AjouterPartenaire: React.FC = () => {
                         input:
                           "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
                         inputWrapper:
-                          "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400",
+                          "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 shadow-sm hover:shadow-md transition-all duration-200",
                       }}
                     />
                   </div>
@@ -362,6 +365,7 @@ const AjouterPartenaire: React.FC = () => {
                         Email *
                       </label>
                       <Input
+                        variant="bordered"
                         type="email"
                         placeholder="contact@partenaire.com"
                         value={formData.email}
@@ -377,7 +381,7 @@ const AjouterPartenaire: React.FC = () => {
                           input:
                             "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
                           inputWrapper:
-                            "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400",
+                            "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
                         }}
                       />
                     </div>
@@ -387,6 +391,7 @@ const AjouterPartenaire: React.FC = () => {
                         Téléphone *
                       </label>
                       <Input
+                        variant="bordered"
                         placeholder="+33 1 23 45 67 89"
                         value={formData.telephone}
                         onChange={(e) =>
@@ -401,7 +406,7 @@ const AjouterPartenaire: React.FC = () => {
                           input:
                             "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
                           inputWrapper:
-                            "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400",
+                            "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
                         }}
                       />
                     </div>
@@ -413,6 +418,7 @@ const AjouterPartenaire: React.FC = () => {
                         Responsable *
                       </label>
                       <Input
+                        variant="bordered"
                         placeholder="Nom du responsable"
                         value={formData.responsable}
                         onChange={(e) =>
@@ -427,7 +433,7 @@ const AjouterPartenaire: React.FC = () => {
                           input:
                             "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
                           inputWrapper:
-                            "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400",
+                            "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
                         }}
                       />
                     </div>
@@ -449,8 +455,8 @@ const AjouterPartenaire: React.FC = () => {
                         className="text-base"
                         classNames={{
                           trigger:
-                            "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500",
-                          value: "text-gray-900 dark:text-white",
+                            "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                          value: "text-gray-900 dark:text-white font-medium",
                         }}
                       >
                         <SelectItem
@@ -496,7 +502,7 @@ const AjouterPartenaire: React.FC = () => {
                         input:
                           "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
                         inputWrapper:
-                          "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400",
+                          "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 shadow-sm hover:shadow-md transition-all duration-200",
                       }}
                     />
                   </div>

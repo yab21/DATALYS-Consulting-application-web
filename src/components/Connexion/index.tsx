@@ -254,10 +254,10 @@ const Connexion: React.FC = () => {
                     placeholder="entrer@votre-email.com"
                     classNames={{
                       input:
-                        "text-gray-900 placeholder:text-gray-500 pl-10 text-base",
+                        "text-gray-900 placeholder:text-gray-500 pl-10 text-base dark:text-white dark:placeholder:text-gray-400",
                       inputWrapper:
-                        "border-gray-300 bg-white hover:border-blue-400 focus-within:border-blue-500 focus-within:bg-white transition-all duration-300 shadow-sm",
-                      base: "!text-gray-800",
+                        "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                      base: "!text-gray-800 dark:!text-gray-200",
                     }}
                     size="lg"
                     radius="lg"

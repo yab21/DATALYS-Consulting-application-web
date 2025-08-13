@@ -15,19 +15,19 @@ const SidebarDropdown = ({ item }: any) => {
             href={item.route}
             className={`group relative flex items-center gap-3 rounded-xl px-4 py-2.5 font-medium transition-all duration-300 ease-out ${
               window.location.pathname === item.route
-                ? "border border-blue-300/50 bg-gradient-to-r from-blue-300/40 to-indigo-300/40 text-blue-800 shadow-md shadow-blue-300/30 dark:border-blue-400/50 dark:text-blue-100 dark:shadow-blue-400/20"
-                : "text-blue-700 hover:border hover:border-blue-200/50 hover:bg-gradient-to-r hover:from-blue-200/50 hover:to-indigo-200/50 hover:text-blue-800 hover:shadow-sm hover:shadow-blue-200/30 dark:text-blue-200 dark:hover:border-gray-500/50 dark:hover:from-gray-600/50 dark:hover:to-gray-500/50 dark:hover:text-blue-100 dark:hover:shadow-gray-500/20"
+                ? "border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/15 to-secondary/10 text-primary-700 shadow-md shadow-primary/10 ring-1 ring-primary/20 dark:border-primary/30 dark:from-primary/20 dark:via-primary/25 dark:to-secondary/20 dark:text-primary-100 dark:shadow-primary/20 dark:ring-primary/30"
+                : "text-gray-500 hover:border hover:border-gray-200/50 hover:bg-gradient-to-br hover:from-gray-50/80 hover:via-white/60 hover:to-gray-100/40 hover:text-gray-700 hover:shadow-sm hover:shadow-gray-200/30 dark:text-gray-400 dark:hover:border-gray-600/50 dark:hover:from-gray-700/60 dark:hover:via-gray-600/50 dark:hover:to-gray-500/40 dark:hover:text-gray-200 dark:hover:shadow-gray-600/20"
             }`}
           >
             {/* Effet de lueur au survol */}
             <div
-              className={`absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-blue-300/20 to-indigo-300/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-blue-300/25 dark:to-indigo-300/25`}
+              className={`absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-primary/10 via-primary/15 to-secondary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-primary/15 dark:via-primary/20 dark:to-secondary/15`}
             ></div>
 
             {/* Indicateur actif */}
             {window.location.pathname === item.route && (
               <motion.div
-                className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-blue-400 to-indigo-500 shadow-lg shadow-blue-400/50 dark:from-blue-300 dark:to-indigo-400"
+                className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-primary via-secondary to-primary/80 shadow-lg shadow-primary/20 ring-1 ring-primary/30 dark:from-primary dark:via-secondary dark:to-primary/80 dark:shadow-primary/30 dark:ring-primary/40"
                 initial={{ scaleY: 0 }}
                 animate={{ scaleY: 1 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
@@ -40,7 +40,7 @@ const SidebarDropdown = ({ item }: any) => {
             {/* Badge Pro */}
             {item.pro && (
               <motion.span
-                className="ml-auto rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-2 py-1 text-[10px] font-bold leading-[17px] text-white shadow-md shadow-blue-500/30 dark:from-blue-400 dark:to-indigo-500"
+                className="ml-auto rounded-lg bg-gradient-to-br from-primary via-secondary to-primary/80 px-2 py-1 text-[10px] font-bold leading-[17px] text-white shadow-md shadow-primary/20 ring-1 ring-primary/30 dark:from-primary dark:via-secondary dark:to-primary/80 dark:shadow-primary/30 dark:ring-primary/40"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 300, delay: 0.2 }}

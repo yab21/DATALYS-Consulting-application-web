@@ -124,12 +124,19 @@ const ModifierCompte = () => {
                 type="text"
                 label="Nom"
                 variant="bordered"
-                color="primary"
                 placeholder="Entrer votre nom"
                 className="text-sm font-medium md:text-base"
                 name="nom"
+                size="lg"
                 onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
                 type="text"
