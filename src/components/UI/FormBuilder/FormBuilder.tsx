@@ -254,6 +254,12 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                     value={value || ''}
                     onValueChange={onChange}
                     minRows={3}
+                    classNames={{
+                      label: "text-gray-800 dark:text-gray-200 font-medium",
+                      description: "text-gray-600 dark:text-gray-400",
+                      input: "text-gray-900 dark:text-white",
+                      inputWrapper: "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    }}
                   />
                 );
 
@@ -273,6 +279,12 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                     onSelectionChange={(keys) => {
                       const selectedValue = Array.from(keys)[0];
                       onChange(selectedValue);
+                    }}
+                    classNames={{
+                      label: "text-gray-800 dark:text-gray-200 font-medium",
+                      description: "text-gray-600 dark:text-gray-400",
+                      trigger: "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600",
+                      value: "text-gray-900 dark:text-white"
                     }}
                   >
                     {field.options?.map((option) => (
@@ -298,6 +310,12 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                     selectionMode="multiple"
                     selectedKeys={value || []}
                     onSelectionChange={(keys) => onChange(Array.from(keys))}
+                    classNames={{
+                      label: "text-gray-800 dark:text-gray-200 font-medium",
+                      description: "text-gray-600 dark:text-gray-400",
+                      trigger: "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600",
+                      value: "text-gray-900 dark:text-white"
+                    }}
                   >
                     {field.options?.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
@@ -318,11 +336,14 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                       isRequired={field.required}
                       isDisabled={field.disabled}
                       isInvalid={!!fieldError}
+                      classNames={{
+                        label: "text-gray-900 dark:text-white"
+                      }}
                     >
                       {field.label}
                     </Checkbox>
                     {field.description && (
-                      <p className="text-small text-default-400">{field.description}</p>
+                      <p className="text-small text-gray-500 dark:text-gray-400">{field.description}</p>
                     )}
                     {fieldError && (
                       <p className="text-small text-danger">{fieldError.message as string}</p>
@@ -343,6 +364,10 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                     errorMessage={fieldError?.message as string}
                     value={value}
                     onValueChange={onChange}
+                    classNames={{
+                      label: "text-gray-800 dark:text-gray-200 font-medium",
+                      description: "text-gray-600 dark:text-gray-400"
+                    }}
                   >
                     {field.options?.map((option) => (
                       <Radio key={option.value} value={String(option.value)}>
@@ -357,14 +382,14 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
 
               case 'switch':
                 return (
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
                     <div>
-                      <label htmlFor={fieldId} className="text-medium font-medium">
+                      <label htmlFor={fieldId} className="text-medium font-medium text-gray-900 dark:text-white">
                         {field.label}
                         {field.required && <span className="text-danger ml-1">*</span>}
                       </label>
                       {field.description && (
-                        <p className="text-small text-default-400">{field.description}</p>
+                        <p className="text-small text-gray-500 dark:text-gray-400">{field.description}</p>
                       )}
                     </div>
                     <Switch
@@ -380,7 +405,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
               case 'slider':
                 return (
                   <div className="space-y-2">
-                    <label htmlFor={fieldId} className="text-medium font-medium">
+                    <label htmlFor={fieldId} className="text-medium font-medium text-gray-900 dark:text-white">
                       {field.label}
                       {field.required && <span className="text-danger ml-1">*</span>}
                     </label>
@@ -396,7 +421,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                       className="max-w-md"
                     />
                     {field.description && (
-                      <p className="text-small text-default-400">{field.description}</p>
+                      <p className="text-small text-gray-500 dark:text-gray-400">{field.description}</p>
                     )}
                     {fieldError && (
                       <p className="text-small text-danger">{fieldError.message as string}</p>
@@ -422,6 +447,12 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                     min={field.min}
                     max={field.max}
                     step={field.step}
+                    classNames={{
+                      label: "text-gray-800 dark:text-gray-200 font-medium",
+                      description: "text-gray-600 dark:text-gray-400",
+                      input: "text-gray-900 dark:text-white",
+                      inputWrapper: "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    }}
                   />
                 );
 
@@ -440,6 +471,12 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                     errorMessage={fieldError?.message as string}
                     value={value || ''}
                     onValueChange={onChange}
+                    classNames={{
+                      label: "text-gray-800 dark:text-gray-200 font-medium",
+                      description: "text-gray-600 dark:text-gray-400",
+                      input: "text-gray-900 dark:text-white",
+                      inputWrapper: "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    }}
                   />
                 );
             }

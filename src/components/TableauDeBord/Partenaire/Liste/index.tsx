@@ -441,9 +441,10 @@ const ListePartenaires: React.FC = () => {
       <Modal 
         isOpen={isOpen} 
         onClose={onClose} 
-        size="2xl" 
+        size="xl" 
+        scrollBehavior="inside"
         classNames={{
-          base: "bg-white dark:bg-gray-900",
+          base: "bg-white dark:bg-gray-900 max-h-[90vh]",
           backdrop: "bg-black/50 backdrop-blur-sm"
         }}
       >
@@ -476,8 +477,8 @@ const ListePartenaires: React.FC = () => {
                   </div>
                 </div>
               </ModalHeader>
-              <ModalBody className="py-8 px-6">
-                <div className="space-y-8">
+              <ModalBody className="py-6 px-6 max-h-[60vh] overflow-y-auto">
+                <div className="space-y-6">
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
                     <h4 className="mb-3 text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

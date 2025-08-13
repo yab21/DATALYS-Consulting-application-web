@@ -14,6 +14,9 @@ import {
   ModalFooter,
   Tabs,
   Tab,
+  Select,
+  SelectItem,
+  Textarea,
 } from "@nextui-org/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
@@ -673,9 +676,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
       <Modal
         isOpen={showCreateIncident}
         onClose={() => setShowCreateIncident(false)}
-        size="2xl"
+        size="xl"
+        scrollBehavior="inside"
         classNames={{
-          base: "bg-white dark:bg-gray-900",
+          base: "bg-white dark:bg-gray-900 max-h-[90vh]",
           backdrop: "bg-black/50 backdrop-blur-sm"
         }}
       >
@@ -699,27 +703,34 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                   </div>
                 </div>
               </ModalHeader>
-              <ModalBody className="py-8 px-6">
+              <ModalBody className="py-6 px-6 max-h-[60vh] overflow-y-auto">
                 <div className="space-y-6">
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
-                    <label className="mb-3 block text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M7.25 6a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5A.75.75 0 0 0 7.25 6M12 6a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 12 6m4 .75a.75.75 0 0 1 1.5 0v9.5a.75.75 0 0 1-1.5 0z"/>
-                      </svg>
-                      Projet concerné
-                    </label>
-                    <select
-                      value={selectedProject}
-                      onChange={(e) => setSelectedProject(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-warning-500 focus:border-transparent transition-all"
+                    <Select
+                      label="Projet concerné"
+                      placeholder="Sélectionner un projet"
+                      selectedKeys={selectedProject ? [selectedProject] : []}
+                      onSelectionChange={(keys) => {
+                        const selectedValue = Array.from(keys)[0] as string;
+                        setSelectedProject(selectedValue || "");
+                      }}
+                      startContent={
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
+                          <path d="M7.25 6a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5A.75.75 0 0 0 7.25 6M12 6a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 12 6m4 .75a.75.75 0 0 1 1.5 0v9.5a.75.75 0 0 1-1.5 0z"/>
+                        </svg>
+                      }
+                      classNames={{
+                        label: "text-gray-800 dark:text-gray-200 font-bold",
+                        trigger: "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600",
+                        value: "text-gray-900 dark:text-white"
+                      }}
                     >
-                      <option value="">Sélectionner un projet</option>
                       {projects.map((project) => (
-                        <option key={project.id} value={project.id}>
+                        <SelectItem key={project.id} value={project.id}>
                           {project.nom}
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
+                    </Select>
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
@@ -746,48 +757,58 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
-                    <label className="mb-3 block text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                      </svg>
-                      Description détaillée
-                    </label>
-                    <textarea
+                    <Textarea
+                      label="Description détaillée"
+                      placeholder="Décrivez le problème en détail : quand est-il survenu, quels sont les symptômes, etc."
                       value={newIncident.description}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setNewIncident((prev) => ({
                           ...prev,
-                          description: e.target.value,
+                          description: value,
                         }))
                       }
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-warning-500 focus:border-transparent transition-all resize-none"
-                      rows={4}
-                      placeholder="Décrivez le problème en détail : quand est-il survenu, quels sont les symptômes, etc."
+                      minRows={4}
+                      startContent={
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                        </svg>
+                      }
+                      classNames={{
+                        label: "text-gray-800 dark:text-gray-200 font-bold",
+                        input: "text-gray-900 dark:text-white",
+                        inputWrapper: "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                      }}
                     />
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-600">
-                    <label className="mb-3 block text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
-                      </svg>
-                      Niveau de priorité
-                    </label>
-                    <select
-                      value={newIncident.priorite}
-                      onChange={(e) =>
+                    <Select
+                      label="Niveau de priorité"
+                      placeholder="Sélectionner une priorité"
+                      selectedKeys={newIncident.priorite ? [newIncident.priorite] : []}
+                      onSelectionChange={(keys) => {
+                        const selectedValue = Array.from(keys)[0] as string;
                         setNewIncident((prev) => ({
                           ...prev,
-                          priorite: e.target.value as any,
-                        }))
+                          priorite: selectedValue as any,
+                        }));
+                      }}
+                      startContent={
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
+                          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                        </svg>
                       }
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-warning-500 focus:border-transparent transition-all"
+                      classNames={{
+                        label: "text-gray-800 dark:text-gray-200 font-bold",
+                        trigger: "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600",
+                        value: "text-gray-900 dark:text-white"
+                      }}
                     >
-                      <option value="faible">🟢 Faible - Impact mineur</option>
-                      <option value="moyenne">🟡 Moyenne - Impact modéré</option>
-                      <option value="haute">🟠 Haute - Impact important</option>
-                      <option value="critique">🔴 Critique - Impact majeur</option>
-                    </select>
+                      <SelectItem key="faible" value="faible">🟢 Faible - Impact mineur</SelectItem>
+                      <SelectItem key="moyenne" value="moyenne">🟡 Moyenne - Impact modéré</SelectItem>
+                      <SelectItem key="haute" value="haute">🟠 Haute - Impact important</SelectItem>
+                      <SelectItem key="critique" value="critique">🔴 Critique - Impact majeur</SelectItem>
+                    </Select>
                   </div>
                 </div>
               </ModalBody>
