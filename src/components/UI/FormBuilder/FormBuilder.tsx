@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Input,
   Textarea,
@@ -18,12 +18,12 @@ import {
   RadioGroup,
   Radio,
   Slider,
-  cn,
 } from '@nextui-org/react';
 import { useForm, Controller, FieldValues, Path } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 // Types pour les champs du formulaire
 export type FieldType = 
@@ -161,7 +161,6 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set(sections.map((_, index) => sections[index].defaultExpanded !== false ? index : -1).filter(i => i >= 0))
   );
-  const [currentStep, setCurrentStep] = useState(0);
 
   // Génération du schéma de validation
   const schema = validationSchema || generateValidationSchema(sections);
@@ -172,10 +171,8 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
     handleSubmit,
     watch,
     formState: { errors, isSubmitting, isValid },
-    setValue,
-    getValues,
   } = useForm({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema as any),
     defaultValues,
     mode: 'onChange',
   });
@@ -348,7 +345,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                     onValueChange={onChange}
                   >
                     {field.options?.map((option) => (
-                      <Radio key={option.value} value={option.value}>
+                      <Radio key={option.value} value={String(option.value)}>
                         {option.label}
                         {option.description && (
                           <p className="text-small text-default-400">{option.description}</p>
