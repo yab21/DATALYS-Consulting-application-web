@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Button,
@@ -13,9 +13,20 @@ import {
   cn,
 } from "@nextui-org/react";
 import { useNotifications } from "@/context/NotificationContext";
+import {
+  Bell,
+  Check,
+  Trash2,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Info,
+  XCircle,
+} from "lucide-react";
 
 const DropdownNotification = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const {
     notifications,
     unreadCount,
@@ -28,6 +39,25 @@ const DropdownNotification = () => {
 
   const notifying = unreadCount > 0;
 
+  // Détecter le mode sombre
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setIsDarkMode(isDark);
+    };
+
+    checkDarkMode();
+
+    // Observer les changements de classe
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const handleDropdownOpen = () => {
     setDropdownOpen(true);
     // Auto-activer les notifications temps réel à l'ouverture
@@ -38,6 +68,21 @@ const DropdownNotification = () => {
     e.preventDefault();
     e.stopPropagation();
     removeNotification(notificationId);
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "success":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "error":
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case "warning":
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case "info":
+        return <Info className="h-4 w-4 text-blue-500" />;
+      default:
+        return <Info className="h-4 w-4 text-gray-500" />;
+    }
   };
 
   const getTypeColor = (type: string) => {
@@ -55,18 +100,18 @@ const DropdownNotification = () => {
     }
   };
 
-  const getPriorityIcon = (priority: string) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "critical":
-        return <span className="text-red-500">🔴</span>;
+        return "bg-red-500";
       case "high":
-        return <span className="text-orange-500">🟠</span>;
+        return "bg-orange-500";
       case "medium":
-        return <span className="text-blue-500">🔵</span>;
+        return "bg-blue-500";
       case "low":
-        return <span className="text-gray-500">⚪</span>;
+        return "bg-gray-400";
       default:
-        return null;
+        return "bg-gray-400";
     }
   };
 
@@ -82,6 +127,56 @@ const DropdownNotification = () => {
     if (hours < 24) return `Il y a ${hours}h`;
     if (days < 7) return `Il y a ${days}j`;
     return timestamp.toLocaleDateString("fr-FR");
+  };
+
+  // Classes dynamiques basées sur le mode sombre
+  const getThemeClasses = {
+    button: isDarkMode
+      ? "bg-gray-800 hover:bg-gray-700 text-gray-300"
+      : "bg-gray-100 hover:bg-gray-200 text-gray-600",
+    header: isDarkMode
+      ? "border-gray-700 bg-gray-800/50"
+      : "border-gray-200 bg-gray-50",
+    headerText: isDarkMode ? "text-white" : "text-gray-900",
+    headerChip: isDarkMode
+      ? "bg-blue-900/30 text-blue-300"
+      : "bg-blue-100 text-blue-700",
+    headerChipDanger: isDarkMode
+      ? "bg-red-900/30 text-red-300"
+      : "bg-red-100 text-red-700",
+    headerStatus: isDarkMode ? "text-gray-400" : "text-gray-500",
+    markAllBg: isDarkMode ? "bg-gray-800/30" : "bg-gray-50",
+    markAllButton: isDarkMode
+      ? "bg-blue-900/30 text-blue-300 hover:bg-blue-900/50"
+      : "bg-blue-100 text-blue-700 hover:bg-blue-200",
+    emptyBg: isDarkMode ? "bg-gray-800" : "bg-gray-100",
+    emptyText: isDarkMode ? "text-gray-300" : "text-gray-600",
+    emptySubtext: isDarkMode ? "text-gray-400" : "text-gray-500",
+    seeAllBg: isDarkMode ? "bg-gray-800/30" : "bg-gray-50",
+    seeAllBorder: isDarkMode ? "border-gray-700" : "border-gray-200",
+    seeAllText: isDarkMode
+      ? "text-blue-400 hover:text-blue-300"
+      : "text-blue-600 hover:text-blue-700",
+    itemBorder: isDarkMode ? "border-gray-800" : "border-gray-100",
+    itemHover: isDarkMode ? "hover:bg-gray-800/50" : "hover:bg-gray-50",
+    unreadBg: isDarkMode ? "bg-blue-950/20" : "bg-blue-50/50",
+    itemTitle: isDarkMode ? "text-white" : "text-gray-900",
+    itemBody: isDarkMode ? "text-gray-300" : "text-gray-600",
+    itemTimestamp: isDarkMode ? "text-gray-400" : "text-gray-500",
+    itemCategory: isDarkMode
+      ? "bg-gray-800 text-gray-300"
+      : "bg-gray-100 text-gray-700",
+    actionButton: isDarkMode
+      ? "bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50"
+      : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
+    deleteButton: isDarkMode
+      ? "text-gray-500 hover:text-red-400"
+      : "text-gray-400 hover:text-red-500",
+    footerBorder: isDarkMode ? "border-gray-700" : "border-gray-100",
+    footerText: isDarkMode ? "text-gray-500" : "text-gray-500",
+    footerLink: isDarkMode
+      ? "text-blue-400 hover:text-blue-300"
+      : "text-blue-600 hover:text-blue-700",
   };
 
   return (
@@ -102,29 +197,15 @@ const DropdownNotification = () => {
             radius="full"
             variant="light"
             className={cn(
-              "relative h-12 w-12",
-              "bg-default-100 hover:bg-default-200",
-              "dark:bg-default-50 dark:hover:bg-default-100",
+              "relative h-12 w-12 transition-all duration-200",
+              getThemeClasses.button,
             )}
           >
             <div className="relative">
-              <svg
-                className="fill-default-500 dark:fill-default-300"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M10.0001 1.0415C6.43321 1.0415 3.54172 3.933 3.54172 7.49984V8.08659C3.54172 8.66736 3.36981 9.23513 3.04766 9.71836L2.09049 11.1541C0.979577 12.8205 1.82767 15.0855 3.75983 15.6125C4.3895 15.7842 5.0245 15.9294 5.66317 16.0482L5.66475 16.0525C6.30558 17.7624 8.01834 18.9582 10 18.9582C11.9817 18.9582 13.6944 17.7624 14.3352 16.0525L14.3368 16.0483C14.9755 15.9295 15.6106 15.7842 16.2403 15.6125C18.1724 15.0855 19.0205 12.8205 17.9096 11.1541L16.9524 9.71836C16.6303 9.23513 16.4584 8.66736 16.4584 8.08659V7.49984C16.4584 3.933 13.5669 1.0415 10.0001 1.0415Z"
-                />
-              </svg>
+              <Bell className="h-5 w-5" />
               {notifying && (
-                <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-danger">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger opacity-75" />
+                <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-500">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
                 </span>
               )}
             </div>
@@ -133,7 +214,7 @@ const DropdownNotification = () => {
 
         <DropdownMenu
           aria-label="Notifications"
-          className="relative z-50 h-[500px] w-[400px] overflow-y-scroll p-0"
+          className="max-h-[600px] w-96 overflow-hidden p-0"
           closeOnSelect={false}
           items={[
             { key: "header", type: "header" },
@@ -153,27 +234,47 @@ const DropdownNotification = () => {
                 <DropdownItem
                   key="header"
                   textValue="Notifications"
-                  className="h-16 gap-2 border-b border-default-200"
+                  className={cn("h-20 gap-3 border-b", getThemeClasses.header)}
                 >
                   <div className="flex w-full items-center justify-between">
                     <div>
-                      <span className="text-lg font-semibold">
+                      <span
+                        className={cn(
+                          "text-lg font-bold",
+                          getThemeClasses.headerText,
+                        )}
+                      >
                         Notifications
                       </span>
-                      <div className="mt-1 flex gap-1">
-                        <Chip size="sm" variant="flat" color="primary">
+                      <div className="mt-2 flex gap-2">
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color="primary"
+                          className={getThemeClasses.headerChip}
+                        >
                           {notifications.length} total
                         </Chip>
                         {unreadCount > 0 && (
-                          <Chip size="sm" variant="flat" color="danger">
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color="danger"
+                            className={getThemeClasses.headerChipDanger}
+                          >
                             {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
                           </Chip>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-green-500">●</span>
-                      <span className="text-xs text-default-400">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          getThemeClasses.headerStatus,
+                        )}
+                      >
                         Temps réel
                       </span>
                     </div>
@@ -187,15 +288,16 @@ const DropdownNotification = () => {
                 <DropdownItem
                   key="mark-all"
                   textValue="Tout marquer comme lu"
-                  className="py-2"
+                  className={cn("py-3", getThemeClasses.markAllBg)}
                 >
                   <Button
                     size="sm"
                     variant="flat"
                     color="primary"
-                    className="w-full"
+                    className={cn("w-full", getThemeClasses.markAllButton)}
                     onPress={markAllAsRead}
                   >
+                    <Check className="mr-2 h-4 w-4" />
                     Tout marquer comme lu
                   </Button>
                 </DropdownItem>
@@ -207,14 +309,31 @@ const DropdownNotification = () => {
                 <DropdownItem
                   key="empty"
                   textValue="Aucune notification"
-                  className="py-8"
+                  className="py-12 text-center"
                 >
-                  <div className="text-center">
-                    <div className="mb-2 text-4xl">🔔</div>
-                    <p className="font-medium text-default-400">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={cn(
+                        "mb-4 rounded-full p-4",
+                        getThemeClasses.emptyBg,
+                      )}
+                    >
+                      <Bell className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p
+                      className={cn(
+                        "text-lg font-semibold",
+                        getThemeClasses.emptyText,
+                      )}
+                    >
                       Aucune notification
                     </p>
-                    <p className="mt-1 text-tiny text-default-300">
+                    <p
+                      className={cn(
+                        "mt-1 text-sm",
+                        getThemeClasses.emptySubtext,
+                      )}
+                    >
                       Vous êtes à jour !
                     </p>
                   </div>
@@ -227,14 +346,18 @@ const DropdownNotification = () => {
                 <DropdownItem
                   key="see-all"
                   textValue="Voir toutes les notifications"
-                  className="border-t border-default-200 py-3"
+                  className={cn(
+                    "border-t py-3",
+                    getThemeClasses.seeAllBg,
+                    getThemeClasses.seeAllBorder,
+                  )}
                 >
                   <Link href="/tableaudebord/notifications" className="w-full">
                     <Button
                       size="sm"
                       variant="light"
                       color="primary"
-                      className="w-full"
+                      className={cn("w-full", getThemeClasses.seeAllText)}
                     >
                       Voir toutes les notifications ({notifications.length})
                     </Button>
@@ -248,18 +371,27 @@ const DropdownNotification = () => {
                 key={item.key}
                 textValue={item.title}
                 className={cn(
-                  "border-b border-default-100 py-4",
-                  !item.read && "dark:bg-primary-950/20 bg-primary-50",
+                  "border-b px-4 py-4 transition-colors duration-200",
+                  getThemeClasses.itemBorder,
+                  getThemeClasses.itemHover,
+                  !item.read && getThemeClasses.unreadBg,
                 )}
               >
-                <div className="flex w-full items-start gap-3">
-                  <div className="mt-1 flex flex-col items-center gap-1">
-                    {getPriorityIcon(item.priority)}
+                <div className="flex w-full items-start gap-4">
+                  {/* Priority Indicator */}
+                  <div className="mt-1 flex flex-col items-center gap-2">
+                    <div
+                      className={cn(
+                        "h-3 w-3 rounded-full",
+                        getPriorityColor(item.priority),
+                      )}
+                    />
                     {!item.read && (
-                      <div className="h-2 w-2 rounded-full bg-primary-500" />
+                      <div className="h-2 w-2 rounded-full bg-blue-500" />
                     )}
                   </div>
 
+                  {/* Notification Content */}
                   <div className="min-w-0 flex-grow">
                     <Link
                       href={item.link || "#"}
@@ -267,45 +399,74 @@ const DropdownNotification = () => {
                       onClick={() => markAsRead(item.id)}
                     >
                       <Card shadow="none" className="bg-transparent">
-                        <CardBody className="gap-2 p-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="line-clamp-1 text-sm font-semibold text-foreground">
-                              {item.title}
-                            </p>
+                        <CardBody className="gap-3 p-0">
+                          {/* Header with Type Icon and Title */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 flex-1 items-center gap-2">
+                              {getTypeIcon(item.type)}
+                              <p
+                                className={cn(
+                                  "line-clamp-1 text-sm font-semibold",
+                                  getThemeClasses.itemTitle,
+                                )}
+                              >
+                                {item.title}
+                              </p>
+                            </div>
                             <Chip
                               size="sm"
                               variant="flat"
                               color={getTypeColor(item.type)}
-                              className="flex-shrink-0"
+                              className="flex-shrink-0 text-xs font-medium"
                             >
                               {item.type}
                             </Chip>
                           </div>
 
-                          <p className="line-clamp-2 text-xs text-default-500">
+                          {/* Body */}
+                          <p
+                            className={cn(
+                              "line-clamp-2 text-sm leading-relaxed",
+                              getThemeClasses.itemBody,
+                            )}
+                          >
                             {item.body}
                           </p>
 
+                          {/* Footer with Timestamp and Category */}
                           <div className="flex items-center justify-between">
-                            <p className="text-tiny text-default-400">
+                            <div
+                              className={cn(
+                                "flex items-center gap-2 text-xs",
+                                getThemeClasses.itemTimestamp,
+                              )}
+                            >
+                              <Clock className="h-3 w-3" />
                               {formatTimestamp(item.timestamp)}
-                            </p>
+                            </div>
                             <Chip
                               size="sm"
                               variant="flat"
-                              className="text-tiny"
+                              className={cn(
+                                "text-xs font-medium",
+                                getThemeClasses.itemCategory,
+                              )}
                             >
                               {item.category}
                             </Chip>
                           </div>
 
+                          {/* Action Button */}
                           {item.action && (
-                            <div className="mt-2">
+                            <div className="mt-3">
                               <Button
                                 size="sm"
                                 variant="bordered"
                                 color="primary"
-                                className="text-xs"
+                                className={cn(
+                                  "h-8 text-xs",
+                                  getThemeClasses.actionButton,
+                                )}
                                 onPress={item.action.handler}
                               >
                                 {item.action.label}
@@ -317,25 +478,18 @@ const DropdownNotification = () => {
                     </Link>
                   </div>
 
+                  {/* Delete Button */}
                   <Button
                     isIconOnly
                     size="sm"
                     variant="light"
-                    className="flex-shrink-0 self-start opacity-60 hover:opacity-100"
+                    className={cn(
+                      "flex-shrink-0 self-start opacity-60 transition-all duration-200 hover:opacity-100",
+                      getThemeClasses.deleteButton,
+                    )}
                     onClick={(e) => deleteNotification(e, item.id)}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      className="text-default-400"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"
-                      />
-                    </svg>
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </DropdownItem>

@@ -22,13 +22,13 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           onClick={handleClick}
           className={`group relative flex items-center gap-3 rounded-xl px-4 py-3.5 font-semibold transition-all duration-300 ease-out ${
             isActive
-              ? "border border-sky-400/50 bg-gradient-to-r from-sky-400/30 to-sky-500/30 text-sky-800 shadow-lg shadow-sky-400/30 dark:border-sky-500/50 dark:text-sky-100 dark:shadow-sky-500/20"
-              : "text-sky-700 hover:border hover:border-sky-300/50 hover:bg-gradient-to-r hover:from-sky-200/60 hover:to-sky-300/60 hover:text-sky-800 hover:shadow-md hover:shadow-sky-300/30 dark:text-sky-200 dark:hover:border-slate-500/50 dark:hover:from-slate-600/60 dark:hover:to-slate-500/60 dark:hover:text-sky-100 dark:hover:shadow-slate-500/20"
+              ? "border border-blue-400/50 bg-gradient-to-r from-blue-400/30 to-indigo-400/30 text-blue-800 shadow-lg shadow-blue-400/30 dark:border-blue-500/50 dark:text-blue-100 dark:shadow-blue-500/20"
+              : "text-blue-700 hover:border hover:border-blue-300/50 hover:bg-gradient-to-r hover:from-blue-200/60 hover:to-indigo-200/60 hover:text-blue-800 hover:shadow-md hover:shadow-blue-300/30 dark:text-blue-200 dark:hover:border-gray-500/50 dark:hover:from-gray-600/60 dark:hover:to-gray-500/60 dark:hover:text-blue-100 dark:hover:shadow-gray-500/20"
           }`}
         >
           {/* Effet de lueur au survol */}
           <div
-            className={`absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-sky-400/15 to-sky-500/15 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-sky-400/20 dark:to-sky-500/20`}
+            className={`absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-blue-400/15 to-indigo-400/15 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-blue-400/20 dark:to-indigo-400/20`}
           ></div>
 
           {/* Icône avec animation */}
@@ -58,7 +58,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           {/* Badge Pro */}
           {item.pro && (
             <motion.span
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg bg-gradient-to-r from-sky-500 to-sky-600 px-2 py-1 text-[10px] font-bold leading-[17px] text-white shadow-lg shadow-sky-500/30 dark:from-sky-400 dark:to-sky-500"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-2 py-1 text-[10px] font-bold leading-[17px] text-white shadow-lg shadow-blue-500/30 dark:from-blue-400 dark:to-indigo-500"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 300 }}
@@ -70,7 +70,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           {/* Flèche pour les sous-menus */}
           {item.children && (
             <motion.svg
-              className={`absolute right-3.5 top-1/2 -translate-y-1/2 fill-current text-sky-600 transition-transform duration-300 dark:text-sky-300 ${
+              className={`absolute right-3.5 top-1/2 -translate-y-1/2 fill-current text-blue-600 transition-transform duration-300 dark:text-blue-300 ${
                 !isActive && "rotate-180"
               }`}
               width="20"

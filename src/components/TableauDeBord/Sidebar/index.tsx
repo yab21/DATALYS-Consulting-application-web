@@ -189,12 +189,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
           <motion.button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="block rounded-lg bg-sky-200/60 p-2 transition-all duration-300 hover:scale-110 hover:bg-sky-300/70 dark:bg-slate-600/60 dark:hover:bg-slate-500/70 lg:hidden"
+            className="block rounded-xl bg-blue-200/60 p-2 transition-all duration-300 hover:scale-110 hover:bg-blue-300/70 dark:bg-gray-600/60 dark:hover:bg-gray-500/70 lg:hidden"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
             <svg
-              className="fill-current text-sky-700 dark:text-slate-200"
+              className="fill-current text-blue-700 dark:text-gray-200"
               width="20"
               height="18"
               viewBox="0 0 20 18"
@@ -220,7 +220,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: groupIndex * 0.1 }}
               >
-                <h3 className="mb-4 rounded-lg border border-sky-300/30 bg-sky-200/40 px-3 py-2 text-sm font-bold text-sky-800 shadow-sm dark:border-slate-500/40 dark:bg-slate-600/40 dark:text-sky-200">
+                <h3 className="mb-4 rounded-xl border border-blue-200/30 bg-gradient-to-r from-blue-100/40 to-indigo-100/40 px-4 py-3 text-sm font-bold text-blue-800 shadow-sm dark:border-blue-500/30 dark:from-blue-900/40 dark:to-indigo-900/40 dark:text-blue-200">
                   {group.name}
                 </h3>
 
@@ -242,15 +242,20 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
         {/* Footer de la sidebar */}
         <motion.div
-          className="mt-auto border-t border-sky-300/40 bg-gradient-to-r from-sky-100/30 to-sky-200/30 p-4 dark:border-slate-600/50 dark:from-slate-700/40 dark:to-slate-600/40"
+          className="mt-auto border-t border-gray-200/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-6 dark:border-gray-700/50 dark:from-gray-800/50 dark:to-gray-700/50"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.5 }}
         >
           <div className="text-center">
-            <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-sky-400 to-sky-600 dark:from-sky-500 dark:to-sky-700">
+            {/* Logo avec effet de lueur */}
+            <motion.div
+              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 p-3 shadow-lg shadow-blue-500/25 dark:from-blue-600 dark:to-indigo-700 dark:shadow-blue-600/30"
+              whileHover={{ scale: 1.05, rotate: 5 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
               <svg
-                className="h-4 w-4 text-white"
+                className="h-6 w-6 text-white drop-shadow-sm"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -260,13 +265,40 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   clipRule="evenodd"
                 />
               </svg>
+            </motion.div>
+
+            {/* Informations de l'entreprise */}
+            <div className="space-y-2">
+              <motion.p
+                className="text-sm font-bold text-gray-800 dark:text-gray-200"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                DATALYS Consulting
+              </motion.p>
+              <motion.p
+                className="text-xs text-gray-600 dark:text-gray-400"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+              >
+                Version 2.0
+              </motion.p>
+
+              {/* Statut en ligne */}
+              <motion.div
+                className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full bg-green-100 px-3 py-1 dark:bg-green-900/30"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                  En ligne
+                </span>
+              </motion.div>
             </div>
-            <p className="text-xs font-bold text-sky-700 dark:text-sky-200">
-              DATALYS Consulting
-            </p>
-            <p className="text-xs text-sky-600 dark:text-sky-300">
-              Version 2.0
-            </p>
           </div>
         </motion.div>
       </aside>
