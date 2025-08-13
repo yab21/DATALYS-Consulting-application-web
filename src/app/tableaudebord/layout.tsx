@@ -20,9 +20,5 @@ export default function RootLayout({
     setTimeout(() => setLoading(false), 1000);
   }, []);
 
-  return (
-    <div>
-      {loading ? <Loader /> : children}
-    </div>
-  );
+  return <div>{loading ? <Loader /> : children}</div>;
 }

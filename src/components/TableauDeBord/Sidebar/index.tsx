@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import SidebarItem from "@/components/TableauDeBord/Sidebar/SidebarItem";
 import ClickOutside from "@/components/ClickOutside";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -27,9 +28,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             icon: (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="30"
-                height="30"
+                width="24"
+                height="24"
                 viewBox="0 0 24 24"
+                className="transition-all duration-300 group-hover:scale-110"
               >
                 <path
                   fill="currentColor"
@@ -50,9 +52,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             icon: (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="fill-current"
-                width="30"
-                height="30"
+                className="fill-current transition-all duration-300 group-hover:scale-110"
+                width="24"
+                height="24"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -68,12 +70,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             label: "Projet",
             route: "#",
             children: [
-              ...(isUserAdmin ? [{ label: "Ajouter", route: "/tableaudebord/projet/ajouter" }] : []),
+              ...(isUserAdmin
+                ? [{ label: "Ajouter", route: "/tableaudebord/projet/ajouter" }]
+                : []),
               { label: "Gérer", route: "/tableaudebord/projet/gerer" },
             ],
           },
         ],
-      }
+      },
     ];
 
     // Menu Autres
@@ -85,9 +89,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           icon: (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="fill-current"
-              width="30"
-              height="30"
+              className="fill-current transition-all duration-300 group-hover:scale-110"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
             >
               <path
@@ -115,9 +119,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="fill-current"
-            width="30"
-            height="30"
+            className="fill-current transition-all duration-300 group-hover:scale-110"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
           >
             <path
@@ -129,8 +133,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         label: "Partenaire",
         route: "#",
         children: [
-          { label: "Liste des partenaires", route: "/tableaudebord/partenaire/liste" },
-          { label: "Ajouter partenaire", route: "/tableaudebord/partenaire/ajouter" },
+          {
+            label: "Liste des partenaires",
+            route: "/tableaudebord/partenaire/liste",
+          },
+          {
+            label: "Ajouter partenaire",
+            route: "/tableaudebord/partenaire/ajouter",
+          },
         ],
       });
     }
@@ -142,37 +152,49 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   return (
     <ClickOutside onClick={() => setSidebarOpen(false)}>
       <aside
-        className={`absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden border-r border-stroke bg-white dark:border-stroke-dark dark:bg-gray-dark lg:static lg:translate-x-0 ${
+        className={`absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden border-r border-sky-300/40 bg-gradient-to-b from-sky-50/90 via-sky-100/70 to-sky-200/50 shadow-2xl shadow-sky-500/20 backdrop-blur-xl dark:border-slate-600/50 dark:from-slate-800/90 dark:via-slate-700/80 dark:to-slate-600/70 dark:shadow-slate-900/50 lg:static lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } duration-300 ease-linear`}
+        } duration-500 ease-out`}
       >
         {/* <!-- SIDEBAR HEADER --> */}
-        <div className="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5 xl:py-10">
-          <Link href="/tableaudebord">
-            <Image
-              width={300}
-              height={100}
-              src="/images/logo/logo-2.png"
-              alt="Logo"
-              className="dark:hidden"
-              priority
-            />
-            <Image
-              width={300}
-              height={100}
-              src="/images/logo/logo.png"
-              alt="Logo"
-              className="hidden dark:block"
-              priority
-            />
+        <motion.div
+          className="flex items-center justify-between gap-2 border-b border-sky-300/40 bg-gradient-to-r from-sky-100/50 to-sky-200/40 px-6 py-5.5 dark:border-slate-600/50 dark:from-slate-700/60 dark:to-slate-600/50 lg:py-6.5 xl:py-10"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <Link href="/tableaudebord" className="group">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Image
+                width={300}
+                height={100}
+                src="/images/logo/logo-2.png"
+                alt="Logo"
+                className="drop-shadow-lg dark:hidden"
+                priority
+              />
+              <Image
+                width={300}
+                height={100}
+                src="/images/logo/logo.png"
+                alt="Logo"
+                className="hidden drop-shadow-lg dark:block"
+                priority
+              />
+            </motion.div>
           </Link>
 
-          <button
+          <motion.button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="block lg:hidden"
+            className="block rounded-lg bg-sky-200/60 p-2 transition-all duration-300 hover:scale-110 hover:bg-sky-300/70 dark:bg-slate-600/60 dark:hover:bg-slate-500/70 lg:hidden"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
             <svg
-              className="fill-current"
+              className="fill-current text-sky-700 dark:text-slate-200"
               width="20"
               height="18"
               viewBox="0 0 20 18"
@@ -184,20 +206,25 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 fill=""
               />
             </svg>
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
         {/* <!-- SIDEBAR HEADER --> */}
 
         <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
           {/* <!-- Sidebar Menu --> */}
-          <nav className="mt-1 px-4 lg:px-6">
+          <nav className="mt-4 px-4 lg:px-6">
             {getMenuGroups().map((group, groupIndex) => (
-              <div key={groupIndex}>
-                <h3 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
+              <motion.div
+                key={groupIndex}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: groupIndex * 0.1 }}
+              >
+                <h3 className="mb-4 rounded-lg border border-sky-300/30 bg-sky-200/40 px-3 py-2 text-sm font-bold text-sky-800 shadow-sm dark:border-slate-500/40 dark:bg-slate-600/40 dark:text-sky-200">
                   {group.name}
                 </h3>
 
-                <ul className="mb-6 flex flex-col gap-2">
+                <ul className="mb-8 flex flex-col gap-2">
                   {group.menuItems.map((menuItem, menuIndex) => (
                     <SidebarItem
                       key={menuIndex}
@@ -207,11 +234,41 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     />
                   ))}
                 </ul>
-              </div>
+              </motion.div>
             ))}
           </nav>
           {/* <!-- Sidebar Menu --> */}
         </div>
+
+        {/* Footer de la sidebar */}
+        <motion.div
+          className="mt-auto border-t border-sky-300/40 bg-gradient-to-r from-sky-100/30 to-sky-200/30 p-4 dark:border-slate-600/50 dark:from-slate-700/40 dark:to-slate-600/40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          <div className="text-center">
+            <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-sky-400 to-sky-600 dark:from-sky-500 dark:to-sky-700">
+              <svg
+                className="h-4 w-4 text-white"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <p className="text-xs font-bold text-sky-700 dark:text-sky-200">
+              DATALYS Consulting
+            </p>
+            <p className="text-xs text-sky-600 dark:text-sky-300">
+              Version 2.0
+            </p>
+          </div>
+        </motion.div>
       </aside>
     </ClickOutside>
   );

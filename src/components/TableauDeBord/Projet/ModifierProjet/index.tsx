@@ -1,7 +1,15 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { db } from "@/firebase/firebaseConfig";
-import { doc, getDoc, updateDoc, getDocs, query, collection, where } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  getDocs,
+  query,
+  collection,
+  where,
+} from "firebase/firestore";
 import { Input, Select, SelectItem } from "@nextui-org/react";
 import { Button } from "@nextui-org/button";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
@@ -60,14 +68,14 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
     try {
       const auth = getAuth();
       const currentUser = auth.currentUser;
-      
+
       if (!currentUser) {
         setError("Utilisateur non connecté");
         return;
       }
 
       if (!id) return;
-      
+
       const docRef = doc(db, "projects", id);
       const updateData = {
         intitule: projectData.intitule,
@@ -81,7 +89,7 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
 
       // Notifier les administrateurs
       const adminsSnapshot = await getDocs(
-        query(collection(db, "users"), where("isAdmin", "==", true))
+        query(collection(db, "users"), where("isAdmin", "==", true)),
       );
 
       adminsSnapshot.docs.forEach(async (adminDoc) => {
@@ -90,9 +98,9 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
           {
             title: "Projet modifié",
             body: `a modifié le projet "${projectData.intitule}"`,
-            link: `/tableaudebord/projet/pageprojet/${id}`
+            link: `/tableaudebord/projet/pageprojet/${id}`,
           },
-          currentUser.uid
+          currentUser.uid,
         );
       });
 
@@ -103,9 +111,9 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
           {
             title: "Projet modifié",
             body: `modifié le projet "${projectData.intitule}"`,
-            link: `/tableaudebord/projet/pageprojet/${id}`
+            link: `/tableaudebord/projet/pageprojet/${id}`,
           },
-          currentUser.uid
+          currentUser.uid,
         );
       }
 
@@ -186,7 +194,10 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
                 selectedKeys={new Set(projectData.domaine)}
                 onSelectionChange={(keys) => {
                   const selectedDomaines = Array.from(keys) as string[];
-                  setProjectData(prev => ({ ...prev, domaine: selectedDomaines }));
+                  setProjectData((prev) => ({
+                    ...prev,
+                    domaine: selectedDomaines,
+                  }));
                 }}
                 className="text-base"
                 labelPlacement="outside"

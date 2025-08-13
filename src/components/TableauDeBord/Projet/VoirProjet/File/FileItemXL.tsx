@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { 
-  Modal, 
-  ModalContent, 
-  ModalHeader, 
-  ModalBody, 
-  ModalFooter, 
-  Button, 
-  useDisclosure 
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  useDisclosure,
 } from "@nextui-org/react";
 import { getAuth } from "firebase/auth";
-import { doc, getDoc, getFirestore, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getFirestore,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import RenameModal from "../Common/RenameModal";
 import MoveModal from "../Common/MoveModal";
 
@@ -155,11 +161,7 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
             >
               Déplacer
             </Button>
-            <Button
-              size="sm"
-              color="warning"
-              onPress={togglePrivate}
-            >
+            <Button size="sm" color="warning" onPress={togglePrivate}>
               {file.isPrivate ? "Rendre public" : "Rendre privé"}
             </Button>
             <Button
@@ -193,11 +195,7 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
       />
 
       {/* Modal de prévisualisation */}
-      <Modal 
-        isOpen={isOpen} 
-        onClose={onClose}
-        size="2xl"
-      >
+      <Modal isOpen={isOpen} onClose={onClose} size="2xl">
         <ModalContent>
           {(onClose) => (
             <>
@@ -241,7 +239,11 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
             <Button color="danger" onPress={handleDelete}>
               Supprimer
             </Button>
-            <Button color="primary" variant="light" onPress={() => setShowDeleteModal(false)}>
+            <Button
+              color="primary"
+              variant="light"
+              onPress={() => setShowDeleteModal(false)}
+            >
               Annuler
             </Button>
           </ModalFooter>

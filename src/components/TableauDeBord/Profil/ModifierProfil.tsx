@@ -3,7 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseConfig";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from "@nextui-org/react";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Input,
+} from "@nextui-org/react";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
@@ -26,7 +34,11 @@ interface ModifierProfilProps {
   onUpdate: () => void;
 }
 
-const ModifierProfil: React.FC<ModifierProfilProps> = ({ userData, onClose, onUpdate }) => {
+const ModifierProfil: React.FC<ModifierProfilProps> = ({
+  userData,
+  onClose,
+  onUpdate,
+}) => {
   const [formData, setFormData] = useState<Partial<UserData>>({
     lastName: userData.lastName || "",
     firstName: userData.firstName || "",
@@ -51,7 +63,7 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({ userData, onClose, onUp
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,14 +103,18 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({ userData, onClose, onUp
       onClose();
     } catch (error) {
       console.error("Erreur lors de la mise à jour du profil :", error);
-      setError(error instanceof Error ? error.message : "Une erreur est survenue lors de la mise à jour du profil");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue lors de la mise à jour du profil",
+      );
     }
   };
 
   return (
-    <Modal 
-      isOpen={true} 
-      onOpenChange={onClose} 
+    <Modal
+      isOpen={true}
+      onOpenChange={onClose}
       placement="top-center"
       size="2xl"
     >
@@ -109,12 +125,8 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({ userData, onClose, onUp
               Modifier le Profil
             </ModalHeader>
             <ModalBody>
-              {error && (
-                <div className="text-red-500 mb-4">
-                  {error}
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+              {error && <div className="mb-4 text-red-500">{error}</div>}
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
                 <Input
                   type="text"
                   name="lastName"

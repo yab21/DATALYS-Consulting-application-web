@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Dropdown,
@@ -15,7 +15,13 @@ import {
   ModalFooter,
 } from "@nextui-org/react";
 import { getAuth } from "firebase/auth";
-import { doc, getDoc, getFirestore, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getFirestore,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import RenameModal from "../Common/RenameModal";
 import MoveModal from "../Common/MoveModal";
 
@@ -30,11 +36,19 @@ interface FolderItemSmallProps {
   onFolderUpdated: () => void;
 }
 
-function FolderItemSmall({ folder, onClick, onFolderUpdated }: FolderItemSmallProps) {
+function FolderItemSmall({
+  folder,
+  onClick,
+  onFolderUpdated,
+}: FolderItemSmallProps) {
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
-  const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
+  const {
+    isOpen: isDeleteModalOpen,
+    onOpen: onDeleteModalOpen,
+    onClose: onDeleteModalClose,
+  } = useDisclosure();
 
   useEffect(() => {
     const checkUserAdmin = async () => {
@@ -141,10 +155,16 @@ function FolderItemSmall({ folder, onClick, onFolderUpdated }: FolderItemSmallPr
               aria-label="Folder Actions"
               className="bg-white text-dark dark:bg-dark-2 dark:text-white"
             >
-              <DropdownItem key="renommer" onPress={() => setShowRenameModal(true)}>
+              <DropdownItem
+                key="renommer"
+                onPress={() => setShowRenameModal(true)}
+              >
                 Renommer
               </DropdownItem>
-              <DropdownItem key="deplacer" onPress={() => setShowMoveModal(true)}>
+              <DropdownItem
+                key="deplacer"
+                onPress={() => setShowMoveModal(true)}
+              >
                 Déplacer
               </DropdownItem>
               <DropdownItem key="supprimer" onPress={onDeleteModalOpen}>
@@ -181,13 +201,19 @@ function FolderItemSmall({ folder, onClick, onFolderUpdated }: FolderItemSmallPr
         <ModalContent>
           <ModalHeader>Confirmer la suppression</ModalHeader>
           <ModalBody>
-            <p>Êtes-vous sûr de vouloir supprimer le dossier "{folder.name}" ?</p>
+            <p>
+              Êtes-vous sûr de vouloir supprimer le dossier "{folder.name}" ?
+            </p>
           </ModalBody>
           <ModalFooter>
             <Button color="danger" onPress={handleDelete}>
               Supprimer
             </Button>
-            <Button color="primary" variant="light" onPress={onDeleteModalClose}>
+            <Button
+              color="primary"
+              variant="light"
+              onPress={onDeleteModalClose}
+            >
               Annuler
             </Button>
           </ModalFooter>

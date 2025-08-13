@@ -26,13 +26,11 @@ export default function DefaultLayout({
 
           {/* <!-- ===== Main Content Star ===== --> */}
           <main className="flex-1">
-            <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 flex flex-col min-h-[calc(100vh-80px)]">
-              <div className="flex-1">
-                {children}
-              </div>
+            <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-screen-2xl flex-col p-4 md:p-6 2xl:p-10">
+              <div className="flex-1">{children}</div>
               <footer className="mt-auto py-4">
                 <div className="flex justify-center">
-                  <p className="text-dark text-sm md:text-base">
+                  <p className="text-sm text-dark md:text-base">
                     All Rights Reserved by
                     <Link
                       className="ml-1 font-medium text-primary"
@@ -53,4 +51,4 @@ export default function DefaultLayout({
       {/* <!-- ===== Page Wrapper End ===== --> */}
     </>
   );
-} 
+}

@@ -37,13 +37,13 @@ const FileList: React.FC<FileListProps> = ({ files, onFileDeleted }) => {
   }, []);
 
   // Filtrer les fichiers en fonction des autorisations
-  const filteredFiles = files.filter(file => {
+  const filteredFiles = files.filter((file) => {
     // Les administrateurs peuvent voir tous les fichiers
     if (isUserAdmin) return true;
-    
+
     // Les utilisateurs non-admin ne peuvent pas voir les fichiers privés
     if (file.isPrivate) return false;
-    
+
     return true;
   });
 
@@ -60,14 +60,10 @@ const FileList: React.FC<FileListProps> = ({ files, onFileDeleted }) => {
       {/* Liste des fichiers */}
       {filteredFiles.length > 0 ? (
         filteredFiles.map((file) => (
-          <FileItem 
-            key={file.id} 
-            file={file} 
-            onFileDeleted={onFileDeleted}
-          />
+          <FileItem key={file.id} file={file} onFileDeleted={onFileDeleted} />
         ))
       ) : (
-        <div className="text-center p-4 text-gray-500">
+        <div className="p-4 text-center text-gray-500">
           Aucun fichier disponible
         </div>
       )}

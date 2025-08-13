@@ -17,16 +17,18 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Mail,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 interface ForgotPasswordForm {
+  email: string;
   newPassword: string;
   confirmPassword: string;
 }
 
 const MotDePasseOublie = () => {
-  const [step, setStep] = useState<"form" | "success">("form");
+  const [step, setStep] = useState<"email" | "reset" | "success">("email");
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isVisibleNewPassword, setIsVisibleNewPassword] = useState(false);
   const [isVisibleConfirmPassword, setIsVisibleConfirmPassword] =
@@ -46,10 +48,15 @@ const MotDePasseOublie = () => {
   const toggleVisibilityConfirmPassword = () =>
     setIsVisibleConfirmPassword(!isVisibleConfirmPassword);
 
-  const onSubmit = async (data: ForgotPasswordForm) => {
+  const onEmailSubmit = async (data: { email: string }) => {
+    // Simulate email verification
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setStep("reset");
+  };
+
+  const onPasswordSubmit = async (data: ForgotPasswordForm) => {
     // Simulate password update
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
     setStep("success");
 
     // Start countdown
@@ -70,7 +77,7 @@ const MotDePasseOublie = () => {
     visible: {
       opacity: 1,
       transition: {
-        delayChildren: 0.2,
+        delayChildren: 0.1,
         staggerChildren: 0.1,
       },
     },
@@ -84,465 +91,562 @@ const MotDePasseOublie = () => {
       transition: {
         type: "spring",
         stiffness: 100,
+        damping: 15,
       },
     },
   };
 
-  const floatingIcons = [
-    { Icon: Shield, delay: 0, position: { left: "15%", top: "20%" } },
-    { Icon: Key, delay: 0.8, position: { right: "20%", top: "30%" } },
-    { Icon: RefreshCw, delay: 1.2, position: { left: "10%", bottom: "25%" } },
-  ];
-
   return (
-    <div className="mot-de-passe-oublie relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-primary-900 to-secondary-900">
-      {/* Animated Background Particles */}
-      <div className="floating-particles absolute inset-0 z-0"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Subtle Background Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.05)_0%,transparent_50%)]"></div>
 
-      {/* Floating Icons */}
-      {floatingIcons.map(({ Icon, delay, position }, index) => (
+      <div className="relative flex min-h-screen">
+        {/* Left Panel - Brand Section */}
         <motion.div
-          key={index}
-          className="absolute hidden text-white/10 lg:block"
-          style={position}
-          animate={{
-            y: [-15, 15, -15],
-            rotate: [0, 180, 360],
-            scale: [0.8, 1.1, 0.8],
-          }}
-          transition={{
-            duration: 6,
-            delay: delay,
-            repeat: Infinity,
-            repeatType: "reverse",
-          }}
-        >
-          <Icon size={35} />
-        </motion.div>
-      ))}
-
-      <div className="relative z-10 flex min-h-screen">
-        {/* Left Panel - Hero Section */}
-        <motion.div
-          className="relative hidden flex-col items-center justify-center p-6 lg:flex lg:w-1/2"
+          className="relative hidden flex-col items-center justify-center bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 lg:flex lg:w-1/2"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
         >
-          {/* Enterprise Space Card with Background Image */}
-          <motion.div
-            className="relative flex h-full w-full flex-col justify-center overflow-hidden rounded-3xl text-center"
-            variants={itemVariants}
-          >
-            {/* Animated Background Image */}
+          {/* Subtle Background Pattern */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.1)_0%,transparent_50%),radial-gradient(circle_at_75%_75%,rgba(255,255,255,0.05)_0%,transparent_50%)]"></div>
+
+          <div className="relative z-10 flex flex-col items-center text-center">
+            {/* Logo */}
             <motion.div
-              className="absolute inset-0 z-0"
-              animate={{
-                scale: [1, 1.05, 1],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                repeatType: "reverse",
-              }}
+              className="mb-8"
+              variants={itemVariants}
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
               <Image
-                src="/images/slider/new/reseau&securite1.jpg"
-                alt="Espace Entreprise"
-                fill
-                className="object-cover"
+                src="/images/logo/logo.png"
+                alt="DATALYS Consulting"
+                width={120}
+                height={80}
+                className="drop-shadow-lg"
               />
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-primary-900/70 to-secondary-900/80"></div>
             </motion.div>
 
-            {/* Content Overlay */}
-            <motion.div
-              className="relative z-10 flex h-full flex-col justify-center p-8"
+            {/* Main Title */}
+            <motion.h1
+              className="mb-6 text-4xl font-bold leading-tight text-white lg:text-5xl"
               variants={itemVariants}
             >
-              {/* Logo */}
+              Récupération de{" "}
+              <span className="text-blue-200">mot de passe</span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              className="mb-12 max-w-md text-lg leading-relaxed text-blue-100 lg:text-xl"
+              variants={itemVariants}
+            >
+              Sécurisez votre compte en créant un nouveau mot de passe fort et
+              unique
+            </motion.p>
+
+            {/* Security Features */}
+            <motion.div
+              className="grid w-full max-w-lg grid-cols-1 gap-4 lg:grid-cols-2"
+              variants={itemVariants}
+            >
               <motion.div
-                className="mb-6 flex justify-center"
-                whileHover={{ scale: 1.02 }}
+                className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
+                whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <Image
-                  src="/images/logo/logo.png"
-                  alt="DATALYS Consulting"
-                  width={140}
-                  height={90}
-                  className="drop-shadow-2xl"
-                />
-              </motion.div>
-
-              {/* Message d'interpellation */}
-              <motion.div
-                className="mb-6 rounded-2xl border border-white/20 bg-gradient-to-r from-primary-500/20 via-accent-500/20 to-secondary-500/20 p-4 backdrop-blur-sm"
-                variants={itemVariants}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="flex-shrink-0 rounded-full border border-primary-400/30 bg-primary-500/30 p-3">
-                    <Key className="h-6 w-6 text-primary-400" />
-                  </div>
-                  <div>
-                    <p className="mb-2 text-base font-bold text-white/90">
-                      🔐 Sécurité renforcée
-                    </p>
-                    <p className="text-base leading-relaxed text-white/70">
-                      Cette page vous permet de mettre à jour votre mot de passe
-                      directement. Assurez-vous de choisir un mot de passe fort
-                      et unique pour sécuriser votre compte.
-                    </p>
+                <div className="mb-3 flex items-center justify-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                    <Shield className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
+                <h3 className="mb-2 text-sm font-semibold text-white">
+                  Sécurité Renforcée
+                </h3>
+                <p className="text-xs text-blue-100">
+                  Protection maximale de votre compte
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="mb-3 flex items-center justify-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                    <Key className="h-5 w-5 text-blue-200" />
+                  </div>
+                </div>
+                <h3 className="mb-2 text-sm font-semibold text-white">
+                  Accès Sécurisé
+                </h3>
+                <p className="text-xs text-blue-100">
+                  Procédure de récupération sécurisée
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="mb-3 flex items-center justify-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                    <RefreshCw className="h-5 w-5 text-blue-200" />
+                  </div>
+                </div>
+                <h3 className="mb-2 text-sm font-semibold text-white">
+                  Processus Simple
+                </h3>
+                <p className="text-xs text-blue-100">
+                  Mise à jour rapide et efficace
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="mb-3 flex items-center justify-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                    <Lock className="h-5 w-5 text-blue-200" />
+                  </div>
+                </div>
+                <h3 className="mb-2 text-sm font-semibold text-white">
+                  Validation Automatique
+                </h3>
+                <p className="text-xs text-blue-100">
+                  Vérification en temps réel
+                </p>
               </motion.div>
             </motion.div>
-          </motion.div>
+          </div>
         </motion.div>
 
-        {/* Right Panel - Reset Form */}
+        {/* Right Panel - Form */}
         <motion.div
-          className="relative flex w-full items-center justify-center p-6 lg:w-1/2"
-          initial={{ opacity: 0, x: 50 }}
+          className="flex w-full items-center justify-center p-6 lg:w-1/2"
+          initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
         >
           {/* Mobile Logo */}
           <motion.div
-            className="absolute left-1/2 top-8 z-20 -translate-x-1/2 transform lg:hidden"
+            className="absolute left-1/2 top-6 z-20 -translate-x-1/2 transform lg:hidden"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
             <Image
               src="/images/logo/logo-2.png"
-              width={120}
-              height={120}
+              width={100}
+              height={100}
               alt="DATALYS"
-              className="drop-shadow-xl"
+              className="drop-shadow-lg"
             />
           </motion.div>
 
-          {/* Reset Card */}
+          {/* Form Container */}
           <motion.div
-            className="flex h-full w-full items-center justify-center lg:mt-0"
-            initial={{ opacity: 0, scale: 0.9 }}
+            className="mt-16 w-full max-w-md lg:mt-0"
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            {/* Glass Card */}
-            <div className="via-white/8 hover:shadow-3xl relative flex h-full w-full flex-col justify-center rounded-3xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-8 shadow-2xl shadow-black/20 backdrop-blur-xl transition-all duration-500 hover:scale-[1.02] hover:border-white/30 hover:shadow-black/30">
-              {/* Animated border glow */}
-              <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-primary-400/20 via-secondary-400/20 to-accent-400/20 opacity-0 transition-opacity duration-500 hover:opacity-100"></div>
-
-              {/* Subtle inner glow */}
-              <div className="absolute inset-1 rounded-3xl bg-gradient-to-br from-primary-500/5 via-transparent to-secondary-500/5"></div>
-
-              <div>
-                {step === "form" ? (
+            {/* Form Card */}
+            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10">
+              {step === "email" && (
+                <motion.div
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {/* Header */}
                   <motion.div
-                    initial={{ opacity: 1 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    transition={{ duration: 0.5 }}
+                    className="mb-8 text-center"
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
                   >
-                    {/* Header */}
+                    <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
+                      Mot de passe oublié
+                    </h2>
+                    <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                    <p className="mt-4 text-gray-600">
+                      Entrez votre adresse email pour recevoir un lien de
+                      récupération
+                    </p>
+                  </motion.div>
+
+                  {/* Email Form */}
+                  <form
+                    onSubmit={handleSubmit(onEmailSubmit)}
+                    className="space-y-6"
+                  >
                     <motion.div
-                      className="mb-8 text-center"
                       variants={itemVariants}
                       initial="hidden"
                       animate="visible"
+                      transition={{ delay: 0.5 }}
                     >
-                      <h2 className="mb-3 bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-3xl font-bold text-transparent text-white lg:text-4xl">
-                        Mise à jour du mot de passe
-                      </h2>
-                      <div className="mx-auto h-1 w-20 rounded-full bg-gradient-to-r from-primary-400 via-accent-400 to-secondary-400 shadow-lg shadow-primary-400/25"></div>
-                      <p className="mt-4 text-sm font-medium text-white/60">
-                        Entrez votre nouveau mot de passe
-                      </p>
+                      <div className="mb-2">
+                        <label className="mb-2 block text-base font-semibold text-gray-800">
+                          Adresse email
+                        </label>
+                      </div>
+                      <Input
+                        {...register("email", {
+                          required: "L'adresse email est requise",
+                          pattern: {
+                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                            message: "Adresse email invalide",
+                          },
+                        })}
+                        type="email"
+                        variant="bordered"
+                        placeholder="entrer@votre-email.com"
+                        classNames={{
+                          input:
+                            "text-gray-900 placeholder:text-gray-500 pl-10 text-base",
+                          inputWrapper:
+                            "border-gray-300 bg-white hover:border-blue-400 focus-within:border-blue-500 focus-within:bg-white transition-all duration-300 shadow-sm",
+                          base: "!text-gray-800",
+                        }}
+                        size="lg"
+                        radius="lg"
+                        isInvalid={!!errors.email}
+                        errorMessage={errors.email?.message}
+                        startContent={
+                          <Mail className="h-5 w-5 text-gray-500" />
+                        }
+                      />
                     </motion.div>
 
-                    {/* Form */}
-                    <form
-                      onSubmit={handleSubmit(onSubmit)}
-                      className="flex flex-col items-center space-y-7"
-                    >
-                      {/* New Password Input */}
-                      <motion.div
-                        variants={itemVariants}
-                        initial="hidden"
-                        animate="visible"
-                        transition={{ delay: 0.6 }}
-                        className="w-full max-w-sm"
-                      >
-                        <div className="input-focus-effect group relative">
-                          <Input
-                            {...register("newPassword", {
-                              required: "Nouveau mot de passe requis",
-                              minLength: {
-                                value: 8,
-                                message:
-                                  "Le mot de passe doit contenir au moins 8 caractères",
-                              },
-                            })}
-                            type={isVisibleNewPassword ? "text" : "password"}
-                            label="Nouveau mot de passe"
-                            variant="bordered"
-                            placeholder="••••••••"
-                            classNames={{
-                              input:
-                                "text-white placeholder:text-white/50 pl-10 pr-10",
-                              inputWrapper:
-                                "border-white/20 bg-white/5 backdrop-blur-md hover:border-primary-400 focus-within:border-primary-400 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary-400/20",
-                              label:
-                                "!text-white !font-semibold text-base [&]:text-white [&]:font-semibold",
-                              base: "!text-white",
-                            }}
-                            size="lg"
-                            radius="lg"
-                            isInvalid={!!errors.newPassword}
-                            errorMessage={errors.newPassword?.message}
-                            startContent={
-                              <Lock className="h-5 w-5 flex-shrink-0 text-white/60 transition-colors duration-300 group-hover:text-primary-400" />
-                            }
-                            endContent={
-                              <motion.button
-                                className="text-white/60 transition-colors hover:text-primary-400 focus:outline-none"
-                                type="button"
-                                onClick={toggleVisibilityNewPassword}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                {isVisibleNewPassword ? (
-                                  <EyeOff className="h-5 w-5" />
-                                ) : (
-                                  <Eye className="h-5 w-5" />
-                                )}
-                              </motion.button>
-                            }
-                          />
-                        </div>
-                      </motion.div>
-
-                      {/* Confirm Password Input */}
-                      <motion.div
-                        variants={itemVariants}
-                        initial="hidden"
-                        animate="visible"
-                        transition={{ delay: 0.7 }}
-                        className="w-full max-w-sm"
-                      >
-                        <div className="input-focus-effect group relative">
-                          <Input
-                            {...register("confirmPassword", {
-                              required: "Confirmation du mot de passe requise",
-                              validate: (value) =>
-                                value === newPassword ||
-                                "Les mots de passe ne correspondent pas",
-                            })}
-                            type={
-                              isVisibleConfirmPassword ? "text" : "password"
-                            }
-                            label="Confirmer le mot de passe"
-                            variant="bordered"
-                            placeholder="••••••••"
-                            classNames={{
-                              input:
-                                "text-white placeholder:text-white/50 pl-10 pr-10",
-                              inputWrapper:
-                                "border-white/20 bg-white/5 backdrop-blur-md hover:border-primary-400 focus-within:border-primary-400 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary-400/20",
-                              label:
-                                "!text-white !font-semibold text-base [&]:text-white [&]:font-semibold",
-                              base: "!text-white",
-                            }}
-                            size="lg"
-                            radius="lg"
-                            isInvalid={!!errors.confirmPassword}
-                            errorMessage={errors.confirmPassword?.message}
-                            startContent={
-                              <Lock className="h-5 w-5 flex-shrink-0 text-white/60 transition-colors duration-300 group-hover:text-primary-400" />
-                            }
-                            endContent={
-                              <motion.button
-                                className="text-white/60 transition-colors hover:text-primary-400 focus:outline-none"
-                                type="button"
-                                onClick={toggleVisibilityConfirmPassword}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                {isVisibleConfirmPassword ? (
-                                  <EyeOff className="h-5 w-5" />
-                                ) : (
-                                  <Eye className="h-5 w-5" />
-                                )}
-                              </motion.button>
-                            }
-                          />
-                        </div>
-                      </motion.div>
-
-                      {/* Submit Button */}
-                      <motion.div
-                        variants={itemVariants}
-                        initial="hidden"
-                        animate="visible"
-                        transition={{ delay: 0.8 }}
-                        className="w-full max-w-sm"
-                      >
-                        <Button
-                          type="submit"
-                          className="w-full rounded-2xl border-0 bg-gradient-to-r from-primary-500 via-primary-600 to-secondary-500 py-5 text-lg font-bold text-white shadow-xl shadow-primary-500/25 transition-all duration-300 hover:scale-105 hover:bg-gradient-to-r hover:from-primary-600 hover:via-primary-700 hover:to-secondary-600 hover:shadow-2xl hover:shadow-primary-500/40"
-                          size="lg"
-                        >
-                          <div className="flex items-center justify-center gap-3">
-                            <Key className="h-5 w-5" />
-                            <span>Mettre à jour le mot de passe</span>
-                          </div>
-                        </Button>
-                      </motion.div>
-
-                      {/* Back to Login */}
-                      <motion.div
-                        className="text-center"
-                        variants={itemVariants}
-                        initial="hidden"
-                        animate="visible"
-                        transition={{ delay: 0.9 }}
-                      >
-                        <Link
-                          href="/connexion"
-                          className="group inline-flex items-center gap-2 font-medium text-white/70 transition-all duration-300 hover:text-white hover:underline hover:shadow-sm hover:shadow-white/25"
-                        >
-                          <motion.div
-                            whileHover={{ x: -5 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                          >
-                            <ArrowLeft className="h-4 w-4" />
-                          </motion.div>
-                          Retour à la connexion
-                        </Link>
-                      </motion.div>
-                    </form>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="text-center"
-                  >
-                    {/* Success Animation */}
                     <motion.div
-                      className="mb-8 flex justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 200,
-                        delay: 0.2,
-                      }}
-                    >
-                      <motion.div
-                        className="relative rounded-full bg-gradient-to-r from-green-400 to-green-600 p-6"
-                        animate={{
-                          boxShadow: [
-                            "0 0 20px rgba(34, 197, 94, 0.4)",
-                            "0 0 40px rgba(34, 197, 94, 0.6)",
-                            "0 0 20px rgba(34, 197, 94, 0.4)",
-                          ],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatType: "reverse",
-                        }}
-                      >
-                        <CheckCircle className="h-12 w-12 text-white" />
-                      </motion.div>
-                    </motion.div>
-
-                    <motion.h2
-                      className="mb-4 text-3xl font-bold text-white"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
-                    >
-                      Mot de passe mis à jour !
-                    </motion.h2>
-
-                    <motion.p
-                      className="mb-6 leading-relaxed text-white/80"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
                       transition={{ delay: 0.6 }}
                     >
-                      Votre mot de passe a été mis à jour avec succès.
-                      <br />
-                      <span className="font-semibold text-accent-400">
-                        Vous pouvez maintenant vous connecter avec votre nouveau
-                        mot de passe.
-                      </span>
-                    </motion.p>
-
-                    {/* Countdown */}
-                    {countdown && (
-                      <motion.div
-                        className="glassmorphism-dark mb-6 rounded-xl p-4"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.8 }}
+                      <Button
+                        type="submit"
+                        className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-6 text-lg font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-600/40"
+                        size="lg"
                       >
-                        <p className="mb-2 text-sm text-white/80">
-                          Redirection automatique dans
-                        </p>
-                        <motion.div
-                          className="flex items-center justify-center gap-2 text-2xl font-bold text-accent-400"
-                          animate={{ scale: [1, 1.1, 1] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                        >
-                          <Clock className="h-6 w-6" />
-                          {countdown}s
-                        </motion.div>
-                      </motion.div>
-                    )}
+                        <div className="flex items-center justify-center gap-2">
+                          <Mail className="h-5 w-5" />
+                          <span>Envoyer le lien de récupération</span>
+                        </div>
+                      </Button>
+                    </motion.div>
 
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 1 }}
+                      className="text-center"
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.7 }}
                     >
                       <Link
                         href="/connexion"
-                        className="inline-flex items-center gap-2 font-medium text-white/70 transition-colors hover:text-white"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition-colors duration-300 hover:text-blue-700 hover:underline"
                       >
                         <ArrowLeft className="h-4 w-4" />
-                        Retourner maintenant
+                        Retour à la connexion
                       </Link>
                     </motion.div>
-                  </motion.div>
-                )}
-
-                {/* Footer */}
-                <motion.div
-                  className="mt-10 border-t border-white/10 pt-6 text-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.2 }}
-                >
-                  <p className="text-sm text-white/60">
-                    All Rights Reserved by{" "}
-                    <Link
-                      href="https://www.datalysconsulting.com/"
-                      className="font-semibold text-accent-400 transition-all duration-300 hover:text-accent-300 hover:underline hover:shadow-sm hover:shadow-accent-400/25"
-                      target="_blank"
-                    >
-                      DATALYS Consulting
-                    </Link>
-                  </p>
+                  </form>
                 </motion.div>
-              </div>
+              )}
+
+              {step === "reset" && (
+                <motion.div
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  {/* Header */}
+                  <motion.div
+                    className="mb-8 text-center"
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
+                      Nouveau mot de passe
+                    </h2>
+                    <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                    <p className="mt-4 text-gray-600">
+                      Créez un nouveau mot de passe sécurisé
+                    </p>
+                  </motion.div>
+
+                  {/* Password Form */}
+                  <form
+                    onSubmit={handleSubmit(onPasswordSubmit)}
+                    className="space-y-6"
+                  >
+                    <motion.div
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.5 }}
+                    >
+                      <div className="mb-2">
+                        <label className="mb-2 block text-base font-semibold text-gray-800">
+                          Nouveau mot de passe
+                        </label>
+                      </div>
+                      <Input
+                        {...register("newPassword", {
+                          required: "Nouveau mot de passe requis",
+                          minLength: {
+                            value: 8,
+                            message:
+                              "Le mot de passe doit contenir au moins 8 caractères",
+                          },
+                        })}
+                        type={isVisibleNewPassword ? "text" : "password"}
+                        variant="bordered"
+                        placeholder="••••••••"
+                        classNames={{
+                          input:
+                            "text-gray-900 placeholder:text-gray-500 pl-10 pr-10 text-base",
+                          inputWrapper:
+                            "border-gray-300 bg-white hover:border-blue-400 focus-within:border-blue-500 focus-within:bg-white transition-all duration-300 shadow-sm",
+                          base: "!text-gray-800",
+                        }}
+                        size="lg"
+                        radius="lg"
+                        isInvalid={!!errors.newPassword}
+                        errorMessage={errors.newPassword?.message}
+                        startContent={
+                          <Lock className="h-5 w-5 text-gray-500" />
+                        }
+                        endContent={
+                          <button
+                            className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
+                            type="button"
+                            onClick={toggleVisibilityNewPassword}
+                          >
+                            {isVisibleNewPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </button>
+                        }
+                      />
+                    </motion.div>
+
+                    <motion.div
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.6 }}
+                    >
+                      <div className="mb-2">
+                        <label className="mb-2 block text-base font-semibold text-gray-800">
+                          Confirmer le mot de passe
+                        </label>
+                      </div>
+                      <Input
+                        {...register("confirmPassword", {
+                          required: "Confirmation du mot de passe requise",
+                          validate: (value) =>
+                            value === newPassword ||
+                            "Les mots de passe ne correspondent pas",
+                        })}
+                        type={isVisibleConfirmPassword ? "text" : "password"}
+                        variant="bordered"
+                        placeholder="••••••••"
+                        classNames={{
+                          input:
+                            "text-gray-900 placeholder:text-gray-500 pl-10 pr-10 text-base",
+                          inputWrapper:
+                            "border-gray-300 bg-white hover:border-blue-400 focus-within:border-blue-500 focus-within:bg-white transition-all duration-300 shadow-sm",
+                          base: "!text-gray-800",
+                        }}
+                        size="lg"
+                        radius="lg"
+                        isInvalid={!!errors.confirmPassword}
+                        errorMessage={errors.confirmPassword?.message}
+                        startContent={
+                          <Lock className="h-5 w-5 text-gray-500" />
+                        }
+                        endContent={
+                          <button
+                            className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
+                            type="button"
+                            onClick={toggleVisibilityConfirmPassword}
+                          >
+                            {isVisibleConfirmPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </button>
+                        }
+                      />
+                    </motion.div>
+
+                    <motion.div
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.7 }}
+                    >
+                      <Button
+                        type="submit"
+                        className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-6 text-lg font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-600/40"
+                        size="lg"
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <Key className="h-5 w-5" />
+                          <span>Mettre à jour le mot de passe</span>
+                        </div>
+                      </Button>
+                    </motion.div>
+
+                    <motion.div
+                      className="text-center"
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.8 }}
+                    >
+                      <Link
+                        href="/connexion"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition-colors duration-300 hover:text-blue-700 hover:underline"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        Retour à la connexion
+                      </Link>
+                    </motion.div>
+                  </form>
+                </motion.div>
+              )}
+
+              {step === "success" && (
+                <motion.div
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-center"
+                >
+                  {/* Success Animation */}
+                  <motion.div
+                    className="mb-8 flex justify-center"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 200,
+                      delay: 0.2,
+                    }}
+                  >
+                    <motion.div
+                      className="relative rounded-full bg-gradient-to-r from-green-400 to-green-600 p-6"
+                      animate={{
+                        boxShadow: [
+                          "0 0 20px rgba(34, 197, 94, 0.4)",
+                          "0 0 40px rgba(34, 197, 94, 0.6)",
+                          "0 0 20px rgba(34, 197, 94, 0.4)",
+                        ],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        repeatType: "reverse",
+                      }}
+                    >
+                      <CheckCircle className="h-12 w-12 text-white" />
+                    </motion.div>
+                  </motion.div>
+
+                  <motion.h2
+                    className="mb-4 text-3xl font-bold text-gray-900"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    Mot de passe mis à jour !
+                  </motion.h2>
+
+                  <motion.p
+                    className="mb-6 leading-relaxed text-gray-600"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    Votre mot de passe a été mis à jour avec succès.
+                    <br />
+                    <span className="font-semibold text-blue-600">
+                      Vous pouvez maintenant vous connecter avec votre nouveau
+                      mot de passe.
+                    </span>
+                  </motion.p>
+
+                  {/* Countdown */}
+                  {countdown && (
+                    <motion.div
+                      className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.8 }}
+                    >
+                      <p className="mb-2 text-sm text-gray-600">
+                        Redirection automatique dans
+                      </p>
+                      <motion.div
+                        className="flex items-center justify-center gap-2 text-2xl font-bold text-blue-600"
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        <Clock className="h-6 w-6" />
+                        {countdown}s
+                      </motion.div>
+                    </motion.div>
+                  )}
+
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                  >
+                    <Link
+                      href="/connexion"
+                      className="inline-flex items-center gap-2 font-medium text-blue-600 transition-colors hover:text-blue-700"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Retourner maintenant
+                    </Link>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {/* Footer */}
+              <motion.div
+                className="mt-8 border-t border-gray-100 pt-6 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.2 }}
+              >
+                <p className="text-sm text-gray-500">
+                  All Rights Reserved by{" "}
+                  <Link
+                    href="https://www.datalysconsulting.com/"
+                    className="font-semibold text-blue-600 transition-colors duration-300 hover:text-blue-700 hover:underline"
+                    target="_blank"
+                  >
+                    DATALYS Consulting
+                  </Link>
+                </p>
+              </motion.div>
             </div>
           </motion.div>
         </motion.div>

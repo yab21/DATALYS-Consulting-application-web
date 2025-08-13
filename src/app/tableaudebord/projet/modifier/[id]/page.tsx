@@ -1,4 +1,3 @@
-import React from "react";
 import ModifierProjet from "@/components/TableauDeBord/Projet/ModifierProjet";
 import { Metadata } from "next";
 import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
@@ -21,11 +20,11 @@ export async function generateStaticParams() {
     console.log("Generating static params for project modification pages...");
     const projectsRef = collection(db, "projects");
     const projectsSnapshot = await getDocs(projectsRef);
-    
+
     const params = projectsSnapshot.docs.map((doc) => ({
       id: doc.id,
     }));
-    
+
     console.log("Generated params:", params);
     return params;
   } catch (error) {
@@ -38,7 +37,7 @@ export const revalidate = 3600; // Revalider toutes les heures
 
 const Page = async ({ params }: Props) => {
   console.log("Rendering project modification page for ID:", params.id);
-  
+
   return (
     <DefaultLayout>
       <ModifierProjet id={params.id} />

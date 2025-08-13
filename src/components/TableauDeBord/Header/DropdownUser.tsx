@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import ClickOutside from "@/components/ClickOutside";
 import { useRouter } from "next/navigation";
@@ -13,7 +13,6 @@ const DropdownUser = () => {
     profileImage: "/images/user.png", // Image par défaut
   });
   const router = useRouter();
-
 
   const handleSignOut = () => {
     router.push("/connexion");

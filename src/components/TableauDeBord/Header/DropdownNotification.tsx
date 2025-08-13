@@ -16,14 +16,14 @@ import { useNotifications } from "@/context/NotificationContext";
 
 const DropdownNotification = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
     markAllAsRead,
     removeNotification,
     subscribeToRealTime,
-    unsubscribeFromRealTime 
+    unsubscribeFromRealTime,
   } = useNotifications();
 
   const notifying = unreadCount > 0;
@@ -42,23 +42,28 @@ const DropdownNotification = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'success': return 'success';
-      case 'error': return 'danger';
-      case 'warning': return 'warning';
-      case 'info': return 'primary';
-      default: return 'default';
+      case "success":
+        return "success";
+      case "error":
+        return "danger";
+      case "warning":
+        return "warning";
+      case "info":
+        return "primary";
+      default:
+        return "default";
     }
   };
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'critical':
+      case "critical":
         return <span className="text-red-500">🔴</span>;
-      case 'high':
+      case "high":
         return <span className="text-orange-500">🟠</span>;
-      case 'medium':
+      case "medium":
         return <span className="text-blue-500">🔵</span>;
-      case 'low':
+      case "low":
         return <span className="text-gray-500">⚪</span>;
       default:
         return null;
@@ -76,7 +81,7 @@ const DropdownNotification = () => {
     if (minutes < 60) return `Il y a ${minutes}m`;
     if (hours < 24) return `Il y a ${hours}h`;
     if (days < 7) return `Il y a ${days}j`;
-    return timestamp.toLocaleDateString('fr-FR');
+    return timestamp.toLocaleDateString("fr-FR");
   };
 
   return (
@@ -128,14 +133,18 @@ const DropdownNotification = () => {
 
         <DropdownMenu
           aria-label="Notifications"
-          className="relative z-50 overflow-y-scroll w-[400px] h-[500px] p-0"
+          className="relative z-50 h-[500px] w-[400px] overflow-y-scroll p-0"
           closeOnSelect={false}
           items={[
             { key: "header", type: "header" },
             ...(unreadCount > 3 ? [{ key: "mark-all", type: "mark-all" }] : []),
-            ...notifications.slice(0, 10).map(n => ({ key: n.id, ...n })),
-            ...(notifications.length === 0 ? [{ key: "empty", type: "empty" }] : []),
-            ...(notifications.length > 10 ? [{ key: "see-all", type: "see-all" }] : [])
+            ...notifications.slice(0, 10).map((n) => ({ key: n.id, ...n })),
+            ...(notifications.length === 0
+              ? [{ key: "empty", type: "empty" }]
+              : []),
+            ...(notifications.length > 10
+              ? [{ key: "see-all", type: "see-all" }]
+              : []),
           ]}
         >
           {(item: any) => {
@@ -148,8 +157,10 @@ const DropdownNotification = () => {
                 >
                   <div className="flex w-full items-center justify-between">
                     <div>
-                      <span className="text-lg font-semibold">Notifications</span>
-                      <div className="flex gap-1 mt-1">
+                      <span className="text-lg font-semibold">
+                        Notifications
+                      </span>
+                      <div className="mt-1 flex gap-1">
                         <Chip size="sm" variant="flat" color="primary">
                           {notifications.length} total
                         </Chip>
@@ -162,7 +173,9 @@ const DropdownNotification = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-green-500">●</span>
-                      <span className="text-xs text-default-400">Temps réel</span>
+                      <span className="text-xs text-default-400">
+                        Temps réel
+                      </span>
                     </div>
                   </div>
                 </DropdownItem>
@@ -188,14 +201,20 @@ const DropdownNotification = () => {
                 </DropdownItem>
               );
             }
-            
+
             if (item.type === "empty") {
               return (
-                <DropdownItem key="empty" textValue="Aucune notification" className="py-8">
+                <DropdownItem
+                  key="empty"
+                  textValue="Aucune notification"
+                  className="py-8"
+                >
                   <div className="text-center">
-                    <div className="text-4xl mb-2">🔔</div>
-                    <p className="text-default-400 font-medium">Aucune notification</p>
-                    <p className="text-tiny text-default-300 mt-1">
+                    <div className="mb-2 text-4xl">🔔</div>
+                    <p className="font-medium text-default-400">
+                      Aucune notification
+                    </p>
+                    <p className="mt-1 text-tiny text-default-300">
                       Vous êtes à jour !
                     </p>
                   </div>
@@ -208,7 +227,7 @@ const DropdownNotification = () => {
                 <DropdownItem
                   key="see-all"
                   textValue="Voir toutes les notifications"
-                  className="py-3 border-t border-default-200"
+                  className="border-t border-default-200 py-3"
                 >
                   <Link href="/tableaudebord/notifications" className="w-full">
                     <Button
@@ -229,19 +248,19 @@ const DropdownNotification = () => {
                 key={item.key}
                 textValue={item.title}
                 className={cn(
-                  "py-4 border-b border-default-100",
-                  !item.read && "bg-primary-50 dark:bg-primary-950/20",
+                  "border-b border-default-100 py-4",
+                  !item.read && "dark:bg-primary-950/20 bg-primary-50",
                 )}
               >
                 <div className="flex w-full items-start gap-3">
-                  <div className="flex flex-col items-center gap-1 mt-1">
+                  <div className="mt-1 flex flex-col items-center gap-1">
                     {getPriorityIcon(item.priority)}
                     {!item.read && (
-                      <div className="w-2 h-2 rounded-full bg-primary-500" />
+                      <div className="h-2 w-2 rounded-full bg-primary-500" />
                     )}
                   </div>
-                  
-                  <div className="flex-grow min-w-0">
+
+                  <div className="min-w-0 flex-grow">
                     <Link
                       href={item.link || "#"}
                       className="block"
@@ -250,7 +269,7 @@ const DropdownNotification = () => {
                       <Card shadow="none" className="bg-transparent">
                         <CardBody className="gap-2 p-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-semibold text-foreground line-clamp-1">
+                            <p className="line-clamp-1 text-sm font-semibold text-foreground">
                               {item.title}
                             </p>
                             <Chip
@@ -262,20 +281,24 @@ const DropdownNotification = () => {
                               {item.type}
                             </Chip>
                           </div>
-                          
-                          <p className="text-xs text-default-500 line-clamp-2">
+
+                          <p className="line-clamp-2 text-xs text-default-500">
                             {item.body}
                           </p>
-                          
+
                           <div className="flex items-center justify-between">
                             <p className="text-tiny text-default-400">
                               {formatTimestamp(item.timestamp)}
                             </p>
-                            <Chip size="sm" variant="flat" className="text-tiny">
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              className="text-tiny"
+                            >
                               {item.category}
                             </Chip>
                           </div>
-                          
+
                           {item.action && (
                             <div className="mt-2">
                               <Button
@@ -293,7 +316,7 @@ const DropdownNotification = () => {
                       </Card>
                     </Link>
                   </div>
-                  
+
                   <Button
                     isIconOnly
                     size="sm"
