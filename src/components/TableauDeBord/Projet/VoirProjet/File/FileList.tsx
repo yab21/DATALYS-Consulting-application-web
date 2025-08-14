@@ -9,6 +9,7 @@ interface FileListProps {
     size: number;
     modifiedAt: number;
     imageUrl: string;
+    projectId: string;
     isPrivate?: boolean;
   }>;
   onFileDeleted: () => void;

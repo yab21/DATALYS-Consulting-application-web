@@ -13,7 +13,8 @@ interface UploadFileModalProps {
 }
 
 const UploadFileModal: React.FC<UploadFileModalProps> = ({ isOpen, onClose, onFileUploaded, parentFolderId, projectId }) => {
-  const { setShowToastMsg } = useContext(ShowToastContext) || {};
+  const context = useContext(ShowToastContext) as { setShowToastMsg: (msg: string) => void } | null;
+  const setShowToastMsg = context?.setShowToastMsg || (() => {});
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,9 +49,7 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({ isOpen, onClose, onFi
       onFileUploaded();
       onClose();
       
-      if (setShowToastMsg) {
-        setShowToastMsg(`Fichier "${selectedFile.name}" uploadé avec succès !`);
-      }
+      setShowToastMsg(`Fichier "${selectedFile.name}" uploadé avec succès !`);
 
     } catch (error) {
       console.error("Erreur de téléchargement du fichier :", error);

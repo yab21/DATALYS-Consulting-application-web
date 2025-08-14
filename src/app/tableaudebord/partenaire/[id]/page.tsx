@@ -10,16 +10,18 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function VoirPartenairePage({ params }: PageProps) {
+export default async function VoirPartenairePage({ params }: PageProps) {
+  const { id } = await params;
+  
   return (
     <NextUIProvider>
       <DefaultLayout>
-        <VoirPartenaire partnerId={params.id} />
+        <VoirPartenaire partnerId={id} />
       </DefaultLayout>
     </NextUIProvider>
   );

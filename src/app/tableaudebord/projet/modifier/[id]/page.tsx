@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function generateStaticParams() {
@@ -36,11 +36,12 @@ export async function generateStaticParams() {
 export const revalidate = 3600; // Revalider toutes les heures
 
 const Page = async ({ params }: Props) => {
-  console.log("Rendering project modification page for ID:", params.id);
+  const { id } = await params;
+  console.log("Rendering project modification page for ID:", id);
 
   return (
     <DefaultLayout>
-      <ModifierProjet id={params.id} />
+      <ModifierProjet id={id} />
     </DefaultLayout>
   );
 };

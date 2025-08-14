@@ -410,7 +410,10 @@ export const DataTable: React.FC<DataTableProps> = ({
         topContent={topContent}
         topContentPlacement="outside"
         onSelectionChange={handleSelectionChange}
-        onSortChange={setSortDescriptor}
+        onSortChange={(descriptor) => setSortDescriptor({
+          column: descriptor.column as string,
+          direction: descriptor.direction as "ascending" | "descending"
+        })}
       >
         <TableHeader>
           {columns.map((column) => (
@@ -418,7 +421,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               key={column.key}
               align={column.align || "start"}
               allowsSorting={column.sortable}
-              width={column.width}
+              width={column.width as any}
             >
               {column.label}
             </TableColumn>

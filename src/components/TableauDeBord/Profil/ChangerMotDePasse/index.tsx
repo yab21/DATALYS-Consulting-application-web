@@ -293,7 +293,7 @@ const ChangerMotDePasse = () => {
               <div className="mt-4">
                 <Checkbox
                   isSelected={keepOtherSessionsActive}
-                  onChange={(checked) => setKeepOtherSessionsActive(checked)}
+                  onValueChange={(checked) => setKeepOtherSessionsActive(checked)}
                   color="primary"
                   size="sm"
                   className="text-base"

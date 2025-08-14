@@ -367,7 +367,7 @@ export const VirtualizedTable = <T extends Record<string, any>>({
               itemData={listData}
               width="100%"
             >
-              {TableRow}
+              {TableRow as any}
             </List>
           ) : (
             <div className="overflow-auto h-full">

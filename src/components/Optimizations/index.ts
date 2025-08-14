@@ -185,14 +185,18 @@ export const PerformanceUtils = {
 export function withLazyLoading<P extends object>(
   importFunc: () => Promise<{ default: React.ComponentType<P> }>,
   fallback?: React.ReactNode
-) {
+): React.ComponentType<P> {
   const LazyLoadedComponent = React.lazy(importFunc);
   
-  const WrappedComponent = (props: P) => React.createElement(
-    React.Suspense,
-    { fallback: fallback || React.createElement(LoadingSpinner) },
-    React.createElement(LazyLoadedComponent, props)
-  );
+  const WrappedComponent: React.ComponentType<P> = (props: P) => {
+    return React.createElement(
+      React.Suspense,
+      { fallback: fallback || React.createElement('div', { className: 'loading' }, 'Loading...') },
+      React.createElement(LazyLoadedComponent, props as any)
+    );
+  };
+  
+  WrappedComponent.displayName = `LazyLoaded(Component)`;
   
   return WrappedComponent;
 }
@@ -204,9 +208,13 @@ export function withDataCache<P extends object, T>(
   fetcher: () => Promise<T>,
   options?: any
 ) {
-  return (props: P) => {
+  const CachedComponent = (props: P) => {
     // Note: useApiCache would be used here in a real implementation
     // For now, returning a simple wrapper
     return React.createElement(Component, { ...props, data: null as any });
   };
+  
+  CachedComponent.displayName = `WithDataCache(${Component.displayName || Component.name || 'Component'})`;
+  
+  return CachedComponent;
 }

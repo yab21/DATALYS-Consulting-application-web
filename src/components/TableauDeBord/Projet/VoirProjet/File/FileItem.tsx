@@ -30,7 +30,7 @@ interface FileItemProps {
 }
 
 const FileItem: React.FC<FileItemProps> = ({ file, onFileDeleted }) => {
-  const context = useContext(ShowToastContext);
+  const context = useContext(ShowToastContext) as { setShowToastMsg: (msg: string) => void } | null;
   const setShowToastMsg = context?.setShowToastMsg || (() => {});
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isUserAdmin] = useState(true); // Simulation - utilisateur est admin

@@ -82,13 +82,13 @@ const LazyImage: React.FC<LazyImageProps> = ({
     img.onload = (event) => {
       setIsLoaded(true);
       setIsLoading(false);
-      onLoad?.(event);
+      onLoad?.(event as Event);
     };
     
     img.onerror = (event) => {
       setHasError(true);
       setIsLoading(false);
-      onError?.(event);
+      onError?.(event as Event);
     };
 
     // Optimiser l'URL de l'image
@@ -200,7 +200,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: isLoaded ? 1 : 0 }}
                 transition={{ duration: 0.5 }}
-                {...props}
+                {...(props as any)}
               />
             )}
           </>

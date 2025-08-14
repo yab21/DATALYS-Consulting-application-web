@@ -318,15 +318,7 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
   const { hasPermission, canManageUser } = usePermissions();
   const { addNotification } = useNotifications();
 
-  // Vérifier si l'utilisateur peut gérer les permissions
-  if (!hasPermission('manage_users')) {
-    return (
-      <ProtectedComponent requiredPermission="manage_users">
-        <div></div>
-      </ProtectedComponent>
-    );
-  }
-
+  // Définir tous les callbacks avant les returns conditionnels
   const handleEditUser = useCallback((user: User) => {
     if (!canManageUser(user)) {
       addNotification({
@@ -461,6 +453,21 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
       </Chip>
     );
   }, []);
+
+  // Permission check after all hooks are defined
+  if (!hasPermission('manage_users')) {
+    return (
+      <Card>
+        <CardBody className="text-center py-8">
+          <div className="text-4xl mb-4">⛔</div>
+          <h3 className="text-lg font-semibold text-warning mb-2">Permission insuffisante</h3>
+          <p className="text-default-400">
+            Vous n'avez pas la permission de gérer les utilisateurs pour accéder à cette section.
+          </p>
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
     <div className={cn("w-full space-y-6", className)}>

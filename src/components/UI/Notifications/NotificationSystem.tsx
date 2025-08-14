@@ -56,7 +56,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     setNotifications(prev => [newNotification, ...prev]);
 
-    if (!notification.persistent && newNotification.duration > 0) {
+    if (!notification.persistent && newNotification.duration && newNotification.duration > 0) {
       setTimeout(() => {
         hideNotification(id);
       }, newNotification.duration);

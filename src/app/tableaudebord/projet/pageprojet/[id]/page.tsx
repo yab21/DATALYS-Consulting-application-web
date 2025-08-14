@@ -24,11 +24,12 @@ export async function generateStaticParams() {
 // Ajoutez cette ligne pour activer l'ISR
 export const revalidate = 3600; // Revalider toutes les heures
 
-const Page = ({ params }: { params: { id: string } }) => {
+const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
   return (
     <ParentFolderIdProvider>
       <DefaultLayout>
-        <PageProjet id={params.id} />
+        <PageProjet id={id} />
       </DefaultLayout>
     </ParentFolderIdProvider>
   );

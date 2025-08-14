@@ -1,7 +1,19 @@
 import React from "react";
 import { Checkbox, Link, User, Chip, cn } from "@nextui-org/react";
 
-export const CustomCheckbox = ({ user, value }) => {
+interface UserType {
+  name: string;
+  username: string;
+  url: string;
+  role: string;
+}
+
+interface CustomCheckboxProps {
+  user: UserType;
+  value: string;
+}
+
+export const CustomCheckbox: React.FC<CustomCheckboxProps> = ({ user, value }) => {
   return (
     <Checkbox
       aria-label={user.name}

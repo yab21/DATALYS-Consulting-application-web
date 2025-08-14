@@ -31,6 +31,7 @@ interface ModifierProfilProps {
   userData: UserData;
   onClose: () => void;
   onUpdate: () => void;
+  onCancel?: () => void;
 }
 
 const ModifierProfil: React.FC<ModifierProfilProps> = ({
