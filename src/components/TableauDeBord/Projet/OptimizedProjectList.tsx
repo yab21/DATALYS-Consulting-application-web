@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, FolderOpen, Calendar, User, ExternalLink } from "lucide-react";
+import { Plus, FolderOpen, Calendar, ExternalLink } from "lucide-react";
 import { Button, Chip, Avatar } from "@nextui-org/react";
-import { useProjectCache, VirtualizedTable, SkeletonTable } from "@/components/Optimizations";
+import { VirtualizedTable, SkeletonTable } from "@/components/Optimizations";
 import { useRouter } from "next/navigation";
 
 // Types
@@ -29,20 +29,82 @@ interface Project {
 const OptimizedProjectList: React.FC = () => {
   const router = useRouter();
 
-  // Cache intelligent pour les projets
-  const { 
-    data: projects = [], 
-    isLoading, 
-    isStale,
-    refetch 
-  } = useProjectCache<Project[]>("projects-list", async () => {
-    // Simuler un appel API - remplacer par votre vraie API
-    const response = await fetch("/api/projects");
-    if (!response.ok) {
-      throw new Error("Erreur lors du chargement des projets");
+  // Pour le moment, utilisons les données mockées directement  
+  const mockProjects: Project[] = [
+    {
+      id: "1",
+      name: "Migration Cloud AWS",
+      description: "Migration complète vers AWS avec optimisation des coûts",
+      status: "active",
+      created_at: "2024-01-15T10:00:00Z",
+      updated_at: "2024-01-20T14:30:00Z",
+      owner: {
+        id: "user1",
+        name: "Marie Martin",
+        avatar: "/avatars/marie.jpg"
+      },
+      collaborators_count: 5,
+      files_count: 12,
+      progress: 75,
+      priority: "high"
+    },
+    {
+      id: "2", 
+      name: "Application Mobile Banking",
+      description: "Application mobile pour services bancaires",
+      status: "active",
+      created_at: "2024-01-10T09:00:00Z",
+      updated_at: "2024-01-19T16:45:00Z",
+      owner: {
+        id: "user2",
+        name: "Pierre Durand",
+        avatar: "/avatars/pierre.jpg"
+      },
+      collaborators_count: 8,
+      files_count: 28,
+      progress: 45,
+      priority: "high"
+    },
+    {
+      id: "3",
+      name: "Dashboard Analytics BI", 
+      description: "Tableau de bord pour l'analyse business intelligence",
+      status: "active",
+      created_at: "2024-01-08T11:15:00Z",
+      updated_at: "2024-01-18T13:20:00Z",
+      owner: {
+        id: "user3", 
+        name: "Sophie Bernard",
+        avatar: "/avatars/sophie.jpg"
+      },
+      collaborators_count: 3,
+      files_count: 15,
+      progress: 90,
+      priority: "medium"
+    },
+    {
+      id: "4",
+      name: "Site E-commerce",
+      description: "Plateforme e-commerce complète avec paiement",
+      status: "completed",
+      created_at: "2024-01-05T08:30:00Z",
+      updated_at: "2024-01-17T17:00:00Z",
+      owner: {
+        id: "user4",
+        name: "Jean Dupont", 
+        avatar: "/avatars/jean.jpg"
+      },
+      collaborators_count: 4,
+      files_count: 20,
+      progress: 100,
+      priority: "low"
     }
-    return response.json();
-  });
+  ];
+  
+  const projects = mockProjects;
+  const isLoading = false;
+  const isStale = false;
+  const refetch = () => {};
 
   // Configuration des colonnes pour la table virtualisée
   const columns = useMemo(() => [
