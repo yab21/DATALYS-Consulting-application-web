@@ -9,8 +9,10 @@ import {
   ModalFooter,
   Button,
   Input,
+  Avatar,
 } from "@nextui-org/react";
 import { useNotifications } from "@/context/NotificationContext";
+import { User, Mail, Building, Users, Upload, X } from "lucide-react";
 
 interface UserData {
   uid?: string;
@@ -132,101 +134,230 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
     <Modal
       isOpen={true}
       onOpenChange={onClose}
-      placement="top-center"
-      size="2xl"
+      placement="center"
+      size="3xl"
+      scrollBehavior="inside"
+      classNames={{
+        base: "bg-white dark:bg-gray-900 max-h-[90vh] mt-8",
+        backdrop: "bg-black/50 backdrop-blur-sm",
+        wrapper: "z-[9999]",
+      }}
     >
-      <ModalContent>
+      <ModalContent className="bg-white dark:bg-gray-900">
         {(onClose) => (
           <>
-            <ModalHeader className="flex flex-col gap-1 pb-17 md:pb-0">
-              Modifier le Profil
+            <ModalHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-sky-100 p-2 dark:bg-sky-900/30">
+                  <User className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Modifier le Profil
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Mettez à jour vos informations personnelles et professionnelles
+                  </p>
+                </div>
+              </div>
             </ModalHeader>
-            <ModalBody>
-              {error && <div className="mb-4 text-red-500">{error}</div>}
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
-                <Input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Nom"
-                  label="Nom"
-                  variant="bordered"
-                  className="w-full"
-                />
-                <Input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="Prénom"
-                  label="Prénom"
-                  variant="bordered"
-                  className="w-full"
-                />
-                <Input
-                  type="text"
-                  name="function"
-                  value={formData.function}
-                  onChange={handleChange}
-                  placeholder="Fonction"
-                  label="Fonction"
-                  variant="bordered"
-                  className="w-full"
-                />
-                <Input
-                  type="text"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleChange}
-                  placeholder="Société"
-                  label="Société"
-                  variant="bordered"
-                  className="w-full"
-                />
-                <Input
-                  type="text"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  placeholder="Département"
-                  label="Département"
-                  variant="bordered"
-                  className="w-full"
-                />
-                <Input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                  label="Email"
-                  variant="bordered"
-                  className="w-full"
-                />
-                <div className="mb-4">
-                  <div className="flex items-center justify-center">
-                    <img
-                      src={formData.profileImage || "/images/user.png"}
-                      alt="Profile"
-                      className="h-24 w-24 rounded-full object-cover"
-                    />
+            <ModalBody className="py-6">
+              {error && (
+                <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+                  <div className="flex items-center gap-2">
+                    <X className="h-4 w-4" />
+                    <span className="font-medium">Erreur:</span>
                   </div>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="mt-2"
-                  />
+                  <p className="mt-1 text-sm">{error}</p>
+                </div>
+              )}
+              
+              <div className="space-y-8">
+                {/* Photo de profil */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
+                  <h4 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">
+                    Photo de profil
+                  </h4>
+                  <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-x-6 sm:space-y-0">
+                    <Avatar
+                      src={newProfileImage ? URL.createObjectURL(newProfileImage) : formData.profileImage || "/images/user.png"}
+                      alt="Photo de profil"
+                      className="h-24 w-24 border-4 border-gray-200 dark:border-gray-600"
+                    />
+                    <div className="flex-1">
+                      <label className="block">
+                        <div className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-sky-400 hover:bg-sky-50 dark:border-gray-600 dark:hover:border-sky-500 dark:hover:bg-sky-900/10">
+                          <Upload className="h-5 w-5 text-gray-400" />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Cliquez pour changer la photo
+                          </span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        JPG, PNG ou GIF (max. 5MB)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations personnelles */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
+                  <div className="mb-4 flex items-center gap-3">
+                    <User className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+                    <h4 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Informations personnelles
+                    </h4>
+                  </div>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div>
+                      <label className="mb-3 block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        Prénom *
+                      </label>
+                      <Input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        placeholder="Entrez votre prénom"
+                        variant="bordered"
+                        size="lg"
+                        classNames={{
+                          input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                          inputWrapper: "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-3 block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        Nom *
+                      </label>
+                      <Input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        placeholder="Entrez votre nom"
+                        variant="bordered"
+                        size="lg"
+                        classNames={{
+                          input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                          inputWrapper: "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                        }}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="mb-3 block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        Adresse email *
+                      </label>
+                      <Input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="exemple@email.com"
+                        variant="bordered"
+                        size="lg"
+                        startContent={<Mail className="h-4 w-4 text-gray-400" />}
+                        classNames={{
+                          input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                          inputWrapper: "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations professionnelles */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
+                  <div className="mb-4 flex items-center gap-3">
+                    <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <h4 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Informations professionnelles
+                    </h4>
+                  </div>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div>
+                      <label className="mb-3 block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        Fonction
+                      </label>
+                      <Input
+                        type="text"
+                        name="function"
+                        value={formData.function}
+                        onChange={handleChange}
+                        placeholder="Ex: Développeur Full Stack"
+                        variant="bordered"
+                        size="lg"
+                        classNames={{
+                          input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                          inputWrapper: "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-3 block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        Entreprise
+                      </label>
+                      <Input
+                        type="text"
+                        name="company"
+                        value={formData.company}
+                        onChange={handleChange}
+                        placeholder="Ex: DATALYS Consulting"
+                        variant="bordered"
+                        size="lg"
+                        startContent={<Building className="h-4 w-4 text-gray-400" />}
+                        classNames={{
+                          input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                          inputWrapper: "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                        }}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="mb-3 block text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        Département
+                      </label>
+                      <Input
+                        type="text"
+                        name="department"
+                        value={formData.department}
+                        onChange={handleChange}
+                        placeholder="Ex: Département IT"
+                        variant="bordered"
+                        size="lg"
+                        startContent={<Users className="h-4 w-4 text-gray-400" />}
+                        classNames={{
+                          input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                          inputWrapper: "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </ModalBody>
-            <ModalFooter>
-              <Button color="danger" variant="light" onPress={onClose}>
+            <ModalFooter className="border-t border-gray-200 dark:border-gray-700 pt-4">
+              <Button
+                variant="flat"
+                onPress={onClose}
+                size="lg"
+                className="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 font-medium"
+              >
                 Annuler
               </Button>
-              <Button color="primary" onPress={handleSubmit}>
-                Enregistrer
+              <Button
+                color="primary"
+                onPress={handleSubmit}
+                size="lg"
+                className="bg-sky-500 hover:bg-sky-600 text-white font-semibold shadow-lg"
+              >
+                Enregistrer les modifications
               </Button>
             </ModalFooter>
           </>

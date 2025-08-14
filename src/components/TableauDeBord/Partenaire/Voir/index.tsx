@@ -287,118 +287,161 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
       <Breadcrumb pageName={`Partenaire: ${partner.nom}`} />
 
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* En-tête du partenaire */}
+        {/* En-tête amélioré du partenaire avec couleurs DATALYS */}
         <motion.div
-          className="rounded-xl border-0 bg-white p-8 shadow-xl dark:border dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/20"
-          initial={{ opacity: 0, y: 20 }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-50 via-teal-50 to-cyan-100 p-1 shadow-2xl shadow-cyan-500/20 dark:from-cyan-900/30 dark:via-teal-900/30 dark:to-cyan-900/30"
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <div className="flex flex-col gap-6 lg:flex-row">
-            {/* Logo et infos principales */}
-            <div className="flex flex-col gap-6 sm:flex-row lg:flex-1">
-              <div className="relative flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100">
-                {partner.logo ? (
-                  <Image
-                    src={partner.logo}
-                    alt={partner.nom}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="text-3xl font-bold text-gray-400">
-                    {partner.nom.charAt(0).toUpperCase()}
+          <div className="rounded-3xl bg-white/95 p-10 backdrop-blur-sm dark:bg-gray-900/95">
+            <div className="flex flex-col gap-8 lg:flex-row">
+              {/* Logo et infos principales */}
+              <div className="flex flex-col gap-8 sm:flex-row lg:flex-1">
+                <div className="relative group">
+                  <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-cyan-500 to-teal-600 opacity-20 blur-lg group-hover:opacity-30 transition-opacity duration-300"></div>
+                  <div className="relative flex h-32 w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-100 to-teal-100 shadow-xl dark:from-cyan-900/50 dark:to-teal-900/50">
+                    {partner.logo ? (
+                      <Image
+                        src={partner.logo}
+                        alt={partner.nom}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="text-4xl font-black bg-gradient-to-r from-cyan-600 to-teal-600 bg-clip-text text-transparent">
+                        {partner.nom.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
 
-              <div className="flex-1">
-                <div className="mb-4 flex items-start justify-between">
-                  <div>
-                    <h1 className="mb-2 text-2xl font-bold text-dark dark:text-white">
-                      {partner.nom}
-                    </h1>
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      <Chip size="sm" variant="flat" color="secondary">
-                        {partner.secteur}
+                <div className="flex-1">
+                  <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <h1 className="text-4xl font-black bg-gradient-to-r from-slate-800 to-cyan-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-cyan-400">
+                        {partner.nom}
+                      </h1>
+                      <div className="h-6 w-1 bg-gradient-to-b from-cyan-500 to-teal-600 rounded-full"></div>
+                    </div>
+                    <div className="mb-4 flex flex-wrap gap-3">
+                      <Chip 
+                        size="lg" 
+                        variant="solid" 
+                        className="bg-gradient-to-r from-cyan-500 to-teal-600 text-white font-bold shadow-lg shadow-cyan-500/25"
+                      >
+                        📊 {partner.secteur}
                       </Chip>
-                      <Chip size="sm" variant="flat" color="success">
-                        {partner.statut}
+                      <Chip 
+                        size="lg" 
+                        variant="solid" 
+                        className="bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-lg shadow-emerald-500/25"
+                      >
+                        ✅ {partner.statut}
+                      </Chip>
+                      <Chip 
+                        size="lg" 
+                        variant="flat" 
+                        className="bg-cyan-50 text-cyan-700 font-semibold dark:bg-cyan-900/30 dark:text-cyan-300"
+                      >
+                        🤝 Partenaire depuis {new Date().getFullYear() - partner.dateCreation.getFullYear()} ans
                       </Chip>
                     </div>
                   </div>
-                </div>
 
-                <p className="mb-4 text-gray-600 dark:text-gray-400">
-                  {partner.description}
-                </p>
+                  <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300 bg-gradient-to-r from-gray-50 to-cyan-50 dark:from-gray-800/50 dark:to-cyan-900/20 p-4 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
+                    {partner.description}
+                  </p>
 
-                <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      Email:
-                    </span>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {partner.email}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      Téléphone:
-                    </span>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {partner.telephone}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      Responsable:
-                    </span>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {partner.responsable}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      Partenaire depuis:
-                    </span>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {partner.dateCreation.toLocaleDateString("fr-FR")}
-                    </p>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 border border-cyan-200/50 dark:border-cyan-700/50">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#06B6D4] shadow-lg shadow-cyan-500/25">
+                        <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Email</div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{partner.email}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 border border-teal-200/50 dark:border-teal-700/50">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500 shadow-lg shadow-teal-500/25">
+                        <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Téléphone</div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{partner.telephone}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border border-emerald-200/50 dark:border-emerald-700/50">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 shadow-lg shadow-emerald-500/25">
+                        <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Responsable</div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{partner.responsable}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900/20 dark:to-gray-900/20 border border-slate-200/50 dark:border-slate-700/50">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-500 shadow-lg shadow-slate-500/25">
+                        <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Partenaire depuis</div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{partner.dateCreation.toLocaleDateString("fr-FR")}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Statistiques */}
-            <div className="lg:w-80">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="rounded-lg bg-primary-50 p-4 text-center dark:bg-primary-900/20">
-                  <div className="text-2xl font-bold text-primary-600">
-                    {projects.length}
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    Projets
-                  </div>
+              {/* Statistiques améliorées avec couleurs DATALYS */}
+              <div className="lg:w-96">
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">📊 Statistiques</h3>
                 </div>
-                <div className="rounded-lg bg-orange-50 p-4 text-center dark:bg-orange-900/20">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {
-                      incidents.filter(
-                        (i) => i.statut !== "resolu" && i.statut !== "ferme",
-                      ).length
-                    }
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-[#06B6D4] to-cyan-600 rounded-2xl blur-sm opacity-25 group-hover:opacity-40 transition-opacity duration-300"></div>
+                    <div className="relative bg-white dark:bg-gray-800 p-6 rounded-2xl border border-cyan-200/50 dark:border-cyan-700/50 text-center">
+                      <div className="text-4xl font-black text-[#06B6D4] dark:text-cyan-400 mb-2">{projects.length}</div>
+                      <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Projets Actifs</div>
+                      <div className="mt-2 h-1 bg-cyan-100 dark:bg-cyan-900/30 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#06B6D4] to-cyan-600 rounded-full transform transition-all duration-1000 ease-out" style={{width: "85%"}}></div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    Incidents
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur-sm opacity-25 group-hover:opacity-40 transition-opacity duration-300"></div>
+                    <div className="relative bg-white dark:bg-gray-800 p-6 rounded-2xl border border-orange-200/50 dark:border-orange-700/50 text-center">
+                      <div className="text-4xl font-black text-orange-600 dark:text-orange-400 mb-2">
+                        {incidents.filter((i) => i.statut !== "resolu" && i.statut !== "ferme").length}
+                      </div>
+                      <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Incidents Ouverts</div>
+                      <div className="mt-2 h-1 bg-orange-100 dark:bg-orange-900/30 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transform transition-all duration-1000 ease-out" style={{width: "65%"}}></div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="rounded-lg bg-green-50 p-4 text-center dark:bg-green-900/20">
-                  <div className="text-2xl font-bold text-green-600">
-                    {projects.reduce((sum, p) => sum + p.nombreFichiers, 0)}
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    Fichiers
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-2xl blur-sm opacity-25 group-hover:opacity-40 transition-opacity duration-300"></div>
+                    <div className="relative bg-white dark:bg-gray-800 p-6 rounded-2xl border border-teal-200/50 dark:border-teal-700/50 text-center">
+                      <div className="text-4xl font-black text-teal-600 dark:text-teal-400 mb-2">
+                        {projects.reduce((sum, p) => sum + p.nombreFichiers, 0)}
+                      </div>
+                      <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Fichiers Gérés</div>
+                      <div className="mt-2 h-1 bg-teal-100 dark:bg-teal-900/30 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transform transition-all duration-1000 ease-out" style={{width: "92%"}}></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -406,12 +449,12 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
           </div>
         </motion.div>
 
-        {/* Contenu principal avec onglets */}
+        {/* Contenu principal avec onglets améliorés */}
         <motion.div
-          className="rounded-xl border-0 bg-white shadow-xl dark:border dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/20"
-          initial={{ opacity: 0, y: 20 }}
+          className="rounded-3xl border-0 bg-gradient-to-br from-white via-cyan-50/30 to-teal-50/30 shadow-2xl shadow-cyan-500/5 dark:border dark:border-gray-700/50 dark:from-gray-800 dark:via-gray-800/90 dark:to-gray-800/80 dark:shadow-gray-900/30"
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
         >
           <Tabs
             selectedKey={activeTab}
@@ -419,10 +462,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
             className="w-full"
             size="lg"
             classNames={{
-              tabList: "bg-gray-50 dark:bg-gray-700 p-2 rounded-t-xl",
-              tab: "data-[selected=true]:bg-white dark:data-[selected=true]:bg-gray-600 data-[selected=true]:shadow-lg",
+              tabList: "bg-gradient-to-r from-cyan-50 via-teal-50 to-cyan-50 dark:from-gray-700 dark:via-gray-700/90 dark:to-gray-700 p-3 rounded-t-3xl border-b border-cyan-200/50 dark:border-gray-600/50",
+              tab: "data-[selected=true]:bg-white data-[selected=true]:shadow-xl data-[selected=true]:shadow-cyan-500/10 dark:data-[selected=true]:bg-gray-600 dark:data-[selected=true]:shadow-gray-900/20 rounded-2xl transition-all duration-300 data-[selected=true]:scale-105",
               tabContent:
-                "text-gray-600 dark:text-gray-300 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-semibold",
+                "text-gray-600 dark:text-gray-300 data-[selected=true]:text-[#06B6D4] dark:data-[selected=true]:text-cyan-400 font-bold text-base data-[selected=true]:drop-shadow-sm",
             }}
           >
             <Tab
@@ -687,7 +730,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
         }}
       >
         <ModalContent className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          {(onClose) => (
+          {() => (
             <>
               <ModalHeader className="flex flex-col gap-1 rounded-t-large border-b border-gray-200 bg-gradient-to-r from-warning-50 to-orange-50 pb-6 dark:border-gray-700 dark:from-warning-900/30 dark:to-orange-900/30">
                 <div className="flex items-center gap-3">
@@ -766,11 +809,11 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                       size="lg"
                       startContent={
                         <svg
-                          width="16"
-                          height="16"
+                          width="18"
+                          height="18"
                           viewBox="0 0 24 24"
                           fill="currentColor"
-                          className="text-gray-500 dark:text-gray-400"
+                          className="text-gray-400"
                         >
                           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                         </svg>
@@ -781,17 +824,6 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
                         inputWrapper:
                           "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
                       }}
-                      startContent={
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="text-gray-400"
-                        >
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                        </svg>
-                      }
                     />
                   </div>
 

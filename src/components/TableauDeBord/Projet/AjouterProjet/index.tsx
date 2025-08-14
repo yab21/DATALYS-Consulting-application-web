@@ -187,61 +187,84 @@ const CreerProjet: React.FC = () => {
       <Breadcrumb pageName="Créer un Projet" />
 
       <div className="mx-auto max-w-6xl space-y-8 p-4">
-        {/* En-tête */}
+        {/* En-tête amélioré avec couleurs DATALYS */}
         <motion.div
-          className="rounded-3xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 p-8 shadow-xl shadow-gray-200/50 dark:border-gray-700 dark:from-gray-800 dark:to-gray-800/80 dark:shadow-gray-900/50"
-          initial={{ opacity: 0, y: 20 }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600 p-1 shadow-2xl shadow-cyan-500/25"
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white">
-                Nouveau Projet
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-300">
-                Remplissez les informations ci-dessous pour créer un nouveau
-                projet
-              </p>
-            </div>
+          <div className="rounded-3xl bg-white p-10 dark:bg-gray-900/95">
+            <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative">
+                <div className="absolute -left-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-20 blur-xl"></div>
+                <h1 className="relative mb-4 bg-gradient-to-r from-[#06B6D4] to-teal-600 bg-clip-text text-4xl font-black text-transparent dark:from-cyan-400 dark:to-teal-400">
+                  🚀 Nouveau Projet
+                </h1>
+                <p className="text-lg text-gray-600 dark:text-gray-300">
+                  Créez et configurez votre nouveau projet DATALYS avec tous les paramètres nécessaires
+                </p>
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-green-400"></div>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Configuration du projet • Étape 1 sur 1
+                  </span>
+                </div>
+              </div>
 
-            <Link href="/tableaudebord/projet/gerer">
-              <Button
-                variant="flat"
-                color="default"
-                size="lg"
-                className="bg-primary text-base font-medium text-white hover:bg-primary-800 dark:bg-primary dark:text-gray-200 dark:hover:bg-primary-800"
-              >
-                Retour à la liste
-              </Button>
-            </Link>
+              <Link href="/tableaudebord/projet/gerer">
+                <Button
+                  variant="solid"
+                  size="lg"
+                  className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 shadow-lg transition-all duration-300 hover:from-gray-200 hover:to-gray-300 hover:shadow-xl dark:from-gray-700 dark:to-gray-800 dark:text-gray-300 dark:hover:from-gray-600 dark:hover:to-gray-700"
+                  startContent={
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  }
+                >
+                  Retour à la liste
+                </Button>
+              </Link>
+            </div>
           </div>
         </motion.div>
 
-        {/* Formulaire */}
+        {/* Formulaire amélioré */}
         <motion.div
-          className="rounded-3xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 shadow-xl shadow-gray-200/50 dark:border-gray-700 dark:from-gray-800 dark:to-gray-800/80 dark:shadow-gray-900/50"
-          initial={{ opacity: 0, y: 20 }}
+          className="rounded-3xl border border-gray-200/50 bg-white/80 shadow-2xl shadow-gray-200/20 backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80 dark:shadow-gray-900/40"
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
         >
           <Card className="bg-transparent shadow-none">
-            <CardBody className="p-8">
-              <div className="space-y-8">
+            <CardBody className="p-10">
+              <div className="space-y-12">
                 {/* Informations Générales */}
-                <div>
-                  <h3 className="mb-6 text-xl font-bold text-gray-900 dark:text-white">
-                    Informations Générales
-                  </h3>
+                <div className="relative">
+                  <div className="absolute -left-6 top-2 h-12 w-1 rounded-full bg-gradient-to-b from-[#06B6D4] to-teal-600"></div>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#06B6D4] to-teal-600 shadow-lg shadow-cyan-500/25">
+                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      Informations Générales
+                    </h3>
+                  </div>
 
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div>
-                      <label className="mb-3 block text-base font-semibold text-gray-800 dark:text-gray-200">
+                  <div className="grid gap-8 md:grid-cols-2">
+                    <div className="group">
+                      <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
+                        <svg className="h-4 w-4 text-[#06B6D4]" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         Intitulé du projet *
                       </label>
                       <Input
                         variant="bordered"
-                        placeholder="Ex: Migration vers le Cloud"
+                        placeholder="Ex: Migration Cloud AWS"
                         value={formData.intitule}
                         onChange={(e) =>
                           handleInputChange("intitule", e.target.value)
@@ -253,15 +276,18 @@ const CreerProjet: React.FC = () => {
                         className="text-base"
                         classNames={{
                           input:
-                            "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                            "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium",
                           inputWrapper:
-                            "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                            "bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-[#06B6D4] dark:hover:border-cyan-500 focus-within:border-[#06B6D4] dark:focus-within:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-cyan-200/50 dark:group-hover:shadow-cyan-900/25",
                         }}
                       />
                     </div>
 
-                    <div>
-                      <label className="mb-3 block text-base font-semibold text-gray-800 dark:text-gray-200">
+                    <div className="group">
+                      <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
+                        <svg className="h-4 w-4 text-[#06B6D4]" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+                        </svg>
                         Nom de la société *
                       </label>
                       <Input
@@ -278,16 +304,19 @@ const CreerProjet: React.FC = () => {
                         className="text-base"
                         classNames={{
                           input:
-                            "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                            "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium",
                           inputWrapper:
-                            "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                            "bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-[#06B6D4] dark:hover:border-cyan-500 focus-within:border-[#06B6D4] dark:focus-within:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-cyan-200/50 dark:group-hover:shadow-cyan-900/25",
                         }}
                       />
                     </div>
                   </div>
 
-                  <div className="mt-6">
-                    <label className="mb-3 block text-base font-semibold text-gray-800 dark:text-gray-200">
+                  <div className="mt-8 group">
+                    <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
+                      <svg className="h-4 w-4 text-[#06B6D4]" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
                       Chef de projet *
                     </label>
                     <Input
@@ -304,16 +333,19 @@ const CreerProjet: React.FC = () => {
                       className="text-base"
                       classNames={{
                         input:
-                          "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                          "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium",
                         inputWrapper:
-                          "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400",
+                          "bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-[#06B6D4] dark:hover:border-cyan-500 focus-within:border-[#06B6D4] dark:focus-within:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-cyan-200/50 dark:group-hover:shadow-cyan-900/25",
                       }}
                     />
                   </div>
 
-                  <div className="mt-6">
-                    <label className="mb-3 block text-base font-semibold text-gray-800 dark:text-gray-200">
-                      Domaine du projet *
+                  <div className="mt-8 group">
+                    <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
+                      <svg className="h-4 w-4 text-[#06B6D4]" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
+                      </svg>
+                      Domaines du projet *
                     </label>
                     <Select
                       variant="bordered"
@@ -325,10 +357,10 @@ const CreerProjet: React.FC = () => {
                       selectionMode="multiple"
                       size="lg"
                       className="text-base"
-                      placeholder="Sélectionnez les domaines"
+                      placeholder="Sélectionnez un ou plusieurs domaines"
                       classNames={{
                         trigger:
-                          "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                          "bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-[#06B6D4] dark:hover:border-cyan-500 focus-within:border-[#06B6D4] dark:focus-within:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-cyan-200/50 dark:group-hover:shadow-cyan-900/25",
                         value: "text-gray-900 dark:text-white font-medium",
                       }}
                     >
@@ -336,7 +368,7 @@ const CreerProjet: React.FC = () => {
                         <SelectItem
                           key={domaine.value}
                           value={domaine.value}
-                          className="text-gray-900 dark:text-white"
+                          className="text-gray-900 dark:text-white hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
                         >
                           {domaine.label}
                         </SelectItem>
@@ -344,38 +376,50 @@ const CreerProjet: React.FC = () => {
                     </Select>
                   </div>
 
-                  <div className="mt-6">
-                    <label className="mb-3 block text-base font-semibold text-gray-800 dark:text-gray-200">
+                  <div className="mt-8 group">
+                    <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
+                      <svg className="h-4 w-4 text-[#06B6D4]" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
+                      </svg>
                       Description du projet
                     </label>
                     <Textarea
                       variant="bordered"
-                      placeholder="Décrivez les objectifs et le contexte du projet..."
+                      placeholder="Description détaillée du projet, objectifs, livrables attendus et contraintes techniques..."
                       value={formData.description}
                       onChange={(e) =>
                         handleInputChange("description", e.target.value)
                       }
-                      minRows={3}
-                      maxRows={5}
+                      minRows={4}
+                      maxRows={6}
                       isInvalid={!!errors.description}
                       errorMessage={errors.description}
                       size="lg"
                       className="text-base"
                       classNames={{
                         input:
-                          "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                          "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium leading-relaxed",
                         inputWrapper:
-                          "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 shadow-sm hover:shadow-md transition-all duration-200",
+                          "bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-[#06B6D4] dark:hover:border-cyan-500 focus-within:border-[#06B6D4] dark:focus-within:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-cyan-200/50 dark:group-hover:shadow-cyan-900/25",
                       }}
                     />
                   </div>
                 </div>
 
                 {/* Configuration du Projet */}
-                <div>
-                  <h3 className="mb-6 text-xl font-bold text-gray-900 dark:text-white">
-                    Configuration du Projet
-                  </h3>
+                <div className="relative">
+                  <div className="absolute -left-6 top-2 h-12 w-1 rounded-full bg-gradient-to-b from-teal-500 to-emerald-600"></div>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 shadow-lg shadow-teal-500/25">
+                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      Configuration du Projet
+                    </h3>
+                  </div>
 
                   {/* Visibilité */}
                   <div className="mb-6">
@@ -506,36 +550,47 @@ const CreerProjet: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-4 border-t border-gray-200 pt-8 dark:border-gray-700 sm:flex-row">
+                {/* Actions améliorées */}
+                <div className="relative mt-12">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-gray-600"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white px-6 text-sm font-medium text-gray-500 dark:bg-gray-900 dark:text-gray-400">Actions</span>
+                  </div>
+                </div>
+                
+                <div className="mt-8 flex flex-col gap-6 sm:flex-row">
                   <Button
                     color="primary"
                     size="lg"
-                    className="flex-1 bg-primary text-base font-semibold shadow-lg hover:from-primary-100 hover:to-primary-800"
+                    className="flex-1 bg-gradient-to-r from-[#06B6D4] to-teal-600 text-lg font-bold shadow-2xl shadow-cyan-500/25 transition-all duration-300 hover:from-cyan-600 hover:to-teal-700 hover:shadow-cyan-500/40 hover:-translate-y-1 active:scale-95"
                     onPress={handleSubmit}
                     isLoading={isSubmitting}
                     startContent={
                       !isSubmitting && (
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
                       )
                     }
                   >
-                    {isSubmitting ? "Création en cours..." : "Créer le Projet"}
+                    {isSubmitting
+                      ? "Création en cours..."
+                      : "🚀 Créer le Projet"}
                   </Button>
 
                   <Link href="/tableaudebord/projet/gerer" className="flex-1">
                     <Button
-                      variant="flat"
+                      variant="bordered"
                       size="lg"
-                      className="w-full bg-gray-300 text-base font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                      className="w-full border-2 border-gray-300 bg-gradient-to-r from-gray-50 to-white text-lg font-semibold text-gray-700 shadow-lg transition-all duration-300 hover:border-gray-400 hover:from-gray-100 hover:to-gray-50 hover:shadow-xl hover:-translate-y-0.5 dark:border-gray-600 dark:from-gray-800 dark:to-gray-700 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:from-gray-700 dark:hover:to-gray-600"
                       isDisabled={isSubmitting}
+                      startContent={
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      }
                     >
                       Annuler
                     </Button>

@@ -142,109 +142,178 @@ const ModifierCompte = () => {
                 type="text"
                 label="Prénom"
                 variant="bordered"
-                color="primary"
                 placeholder="Entrer votre prénom"
                 className="text-sm font-medium md:text-base"
                 name="prenom"
+                size="lg"
                 onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
                 type="text"
                 label="Nom d'utilisateur"
                 variant="bordered"
-                color="primary"
                 placeholder="Entrer votre nom d'utilisateur"
                 className="text-sm font-medium md:text-base"
                 name="utilisateur"
+                size="lg"
                 onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
                 type="text"
-                color="primary"
                 label="Fonction"
                 variant="bordered"
                 placeholder="Entrer votre fonction"
                 className="text-sm font-medium md:text-base"
                 name="role"
+                size="lg"
                 // onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
                 type="text"
-                color="primary"
                 label="Société"
                 variant="bordered"
                 placeholder="Entrer le nom de la société"
                 className="text-sm font-medium md:text-base"
                 name="company"
+                size="lg"
                 // onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
                 type="text"
-                color="primary"
                 label="Département de la société"
                 variant="bordered"
                 placeholder="Entrer le département"
                 className="text-sm font-medium md:text-base"
                 name="department"
+                size="lg"
                 // onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
                 type="text"
-                color="primary"
                 label="Nom du projet"
                 variant="bordered"
                 placeholder="Entrer le nom du projet"
                 className="text-sm font-medium md:text-base"
                 name="projectName"
+                size="lg"
                 // onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
                 type="text"
                 label="Adresse e-mail"
                 variant="bordered"
-                color="primary"
                 placeholder="Entrer votre adresse e-mail"
                 className="text-sm font-medium md:text-base"
                 name="email"
+                size="lg"
                 onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
-                type="text"
+                type="password"
                 label="Mot de passe"
                 variant="bordered"
-                color="primary"
                 placeholder="Entrer votre mot de passe"
                 className="text-sm font-medium md:text-base"
                 name="motdepasse"
+                size="lg"
                 onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Input
-                type="text"
+                type="password"
                 label="Confirmer le mot de passe"
                 variant="bordered"
-                color="primary"
                 placeholder="Veuillez confirmer votre mot de passe"
                 className="text-sm font-medium md:text-base"
                 name="cmotdepasse"
+                size="lg"
                 onChange={handleChange}
                 required
+                classNames={{
+                  input:
+                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
+                  inputWrapper:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               />
               <Select
                 label="Domaine du projet"
-                color="primary"
                 variant="bordered"
                 placeholder="Choisir le domaine de projet"
                 selectionMode="single"
                 className="text-sm font-medium md:text-base"
+                size="lg"
                 onSelectionChange={handleSelectChange}
+                classNames={{
+                  trigger:
+                    "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                  value: "text-gray-900 dark:text-white font-medium",
+                  label: "text-gray-800 dark:text-gray-200 font-semibold",
+                }}
               >
                 {domaines.map((domaine) => (
                   <SelectItem key={domaine.key} value={domaine.label}>

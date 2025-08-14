@@ -5,6 +5,7 @@ import "@/css/satoshi.css";
 import "@/css/style.css";
 import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 export default function RootLayout({
   children,
@@ -20,5 +21,9 @@ export default function RootLayout({
     setTimeout(() => setLoading(false), 1000);
   }, []);
 
-  return <div>{loading ? <Loader /> : children}</div>;
+  return (
+    <ProtectedRoute>
+      <div>{loading ? <Loader /> : children}</div>
+    </ProtectedRoute>
+  );
 }

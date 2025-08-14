@@ -18,8 +18,10 @@ import {
   Eye,
   EyeOff,
   Mail,
+  Loader2,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { AuthService } from "@/services/auth";
 
 interface ForgotPasswordForm {
   email: string;
@@ -33,6 +35,9 @@ const MotDePasseOublie = () => {
   const [isVisibleNewPassword, setIsVisibleNewPassword] = useState(false);
   const [isVisibleConfirmPassword, setIsVisibleConfirmPassword] =
     useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const router = useRouter();
 
   const {
@@ -49,27 +54,65 @@ const MotDePasseOublie = () => {
     setIsVisibleConfirmPassword(!isVisibleConfirmPassword);
 
   const onEmailSubmit = async (data: { email: string }) => {
-    // Simulate email verification
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setStep("reset");
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const result = await AuthService.resetPasswordRequest(data.email);
+      
+      if (result.status === "success") {
+        // L'utilisateur recevra un email avec un lien de réinitialisation
+        // On affiche un message de succès mais on reste sur la même étape
+        setErrorMessage(""); // Clear any previous error
+        // Optionally show success message that email was sent
+      } else {
+        setErrorMessage(result.message || "Erreur lors de la demande de réinitialisation");
+      }
+    } catch (error) {
+      setErrorMessage("Erreur de connexion. Veuillez réessayer.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onPasswordSubmit = async (data: ForgotPasswordForm) => {
-    // Simulate password update
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setStep("success");
+    setIsLoading(true);
+    setErrorMessage("");
 
-    // Start countdown
-    let count = 5;
-    setCountdown(count);
-    const timer = setInterval(() => {
-      count--;
-      setCountdown(count);
-      if (count <= 0) {
-        clearInterval(timer);
-        router.push("/connexion");
+    try {
+      // En réalité, le token viendrait des paramètres URL du lien email
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token') || resetToken;
+      
+      if (!token) {
+        setErrorMessage("Token de réinitialisation manquant. Veuillez utiliser le lien reçu par email.");
+        return;
       }
-    }, 1000);
+
+      const result = await AuthService.resetPassword(token, data.newPassword);
+      
+      if (result.status === "success") {
+        setStep("success");
+
+        // Start countdown
+        let count = 5;
+        setCountdown(count);
+        const timer = setInterval(() => {
+          count--;
+          setCountdown(count);
+          if (count <= 0) {
+            clearInterval(timer);
+            router.push("/connexion");
+          }
+        }, 1000);
+      } else {
+        setErrorMessage(result.message || "Erreur lors de la réinitialisation du mot de passe");
+      }
+    } catch (error) {
+      setErrorMessage("Erreur de connexion. Veuillez réessayer.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const containerVariants = {
@@ -104,7 +147,7 @@ const MotDePasseOublie = () => {
       <div className="relative flex min-h-screen">
         {/* Left Panel - Brand Section */}
         <motion.div
-          className="relative hidden flex-col items-center justify-center bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 lg:flex lg:w-1/2"
+          className="relative hidden flex-col items-center justify-center bg-gradient-to-br from-primary via-primary-800 to-primary-800 p-8 lg:flex lg:w-1/2"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
@@ -123,8 +166,8 @@ const MotDePasseOublie = () => {
               <Image
                 src="/images/logo/logo.png"
                 alt="DATALYS Consulting"
-                width={120}
-                height={80}
+                width={140}
+                height={100}
                 className="drop-shadow-lg"
               />
             </motion.div>
@@ -158,7 +201,7 @@ const MotDePasseOublie = () => {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
                     <Shield className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
@@ -176,7 +219,7 @@ const MotDePasseOublie = () => {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
                     <Key className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
@@ -194,7 +237,7 @@ const MotDePasseOublie = () => {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
                     <RefreshCw className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
@@ -212,7 +255,7 @@ const MotDePasseOublie = () => {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
                     <Lock className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
@@ -275,12 +318,23 @@ const MotDePasseOublie = () => {
                     <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
                       Mot de passe oublié
                     </h2>
-                    <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                    <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
                     <p className="mt-4 text-gray-600">
                       Entrez votre adresse email pour recevoir un lien de
                       récupération
                     </p>
                   </motion.div>
+
+                  {/* Error Message */}
+                  {errorMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-800"
+                    >
+                      {errorMessage}
+                    </motion.div>
+                  )}
 
                   {/* Email Form */}
                   <form
@@ -334,12 +388,17 @@ const MotDePasseOublie = () => {
                     >
                       <Button
                         type="submit"
-                        className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-6 text-lg font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-600/40"
+                        disabled={isLoading}
+                        className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:opacity-70 disabled:cursor-not-allowed"
                         size="lg"
                       >
                         <div className="flex items-center justify-center gap-2">
-                          <Mail className="h-5 w-5" />
-                          <span>Envoyer le lien de récupération</span>
+                          {isLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Mail className="h-5 w-5" />
+                          )}
+                          <span>{isLoading ? "Envoi en cours..." : "Envoyer le lien de récupération"}</span>
                         </div>
                       </Button>
                     </motion.div>
@@ -353,7 +412,7 @@ const MotDePasseOublie = () => {
                     >
                       <Link
                         href="/connexion"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition-colors duration-300 hover:text-blue-700 hover:underline"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         Retour à la connexion
@@ -379,11 +438,22 @@ const MotDePasseOublie = () => {
                     <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
                       Nouveau mot de passe
                     </h2>
-                    <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                    <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
                     <p className="mt-4 text-gray-600">
                       Créez un nouveau mot de passe sécurisé
                     </p>
                   </motion.div>
+
+                  {/* Error Message */}
+                  {errorMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-800"
+                    >
+                      {errorMessage}
+                    </motion.div>
+                  )}
 
                   {/* Password Form */}
                   <form
@@ -502,12 +572,17 @@ const MotDePasseOublie = () => {
                     >
                       <Button
                         type="submit"
-                        className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-6 text-lg font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-600/40"
+                        disabled={isLoading}
+                        className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:opacity-70 disabled:cursor-not-allowed"
                         size="lg"
                       >
                         <div className="flex items-center justify-center gap-2">
-                          <Key className="h-5 w-5" />
-                          <span>Mettre à jour le mot de passe</span>
+                          {isLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Key className="h-5 w-5" />
+                          )}
+                          <span>{isLoading ? "Mise à jour en cours..." : "Mettre à jour le mot de passe"}</span>
                         </div>
                       </Button>
                     </motion.div>
@@ -521,7 +596,7 @@ const MotDePasseOublie = () => {
                     >
                       <Link
                         href="/connexion"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition-colors duration-300 hover:text-blue-700 hover:underline"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         Retour à la connexion
@@ -585,7 +660,7 @@ const MotDePasseOublie = () => {
                   >
                     Votre mot de passe a été mis à jour avec succès.
                     <br />
-                    <span className="font-semibold text-blue-600">
+                    <span className="font-semibold text-primary">
                       Vous pouvez maintenant vous connecter avec votre nouveau
                       mot de passe.
                     </span>
@@ -603,7 +678,7 @@ const MotDePasseOublie = () => {
                         Redirection automatique dans
                       </p>
                       <motion.div
-                        className="flex items-center justify-center gap-2 text-2xl font-bold text-blue-600"
+                        className="flex items-center justify-center gap-2 text-2xl font-bold text-primary"
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ duration: 1, repeat: Infinity }}
                       >
@@ -620,7 +695,7 @@ const MotDePasseOublie = () => {
                   >
                     <Link
                       href="/connexion"
-                      className="inline-flex items-center gap-2 font-medium text-blue-600 transition-colors hover:text-blue-700"
+                      className="inline-flex items-center gap-2 font-medium text-primary transition-colors hover:text-primary-800"
                     >
                       <ArrowLeft className="h-4 w-4" />
                       Retourner maintenant
@@ -640,7 +715,7 @@ const MotDePasseOublie = () => {
                   All Rights Reserved by{" "}
                   <Link
                     href="https://www.datalysconsulting.com/"
-                    className="font-semibold text-blue-600 transition-colors duration-300 hover:text-blue-700 hover:underline"
+                    className="font-semibold text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
                     target="_blank"
                   >
                     DATALYS Consulting

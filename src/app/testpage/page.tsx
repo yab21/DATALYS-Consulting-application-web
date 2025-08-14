@@ -20,7 +20,7 @@ const TestPage = () => {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Test de la déconnexion</h1>
+      <h1 className="mb-4 text-2xl font-bold">Test de la déconnexion</h1>
       <Button color="danger" onClick={handleLogout}>
         Se déconnecter
       </Button>

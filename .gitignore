@@ -27,6 +27,7 @@ yarn-error.log*
 
 # local env file
 .env
+.env.local
 
 # vercel
 .vercel
@@ -45,5 +46,6 @@ jsvectormap.d.ts
 ecosystem.config.js
 PROJECT_ANALYSE.md
 ANALYSE_PRODUCTION.md
+PERFORMANCE-OPTIMIZATION-GUIDE.md
 README.md
 

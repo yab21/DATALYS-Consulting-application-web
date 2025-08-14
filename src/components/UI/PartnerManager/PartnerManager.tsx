@@ -378,59 +378,86 @@ const PartnerManager: React.FC<PartnerManagerProps> = ({
         onClose={() => setShowAddModal(false)}
         size="2xl"
         scrollBehavior="inside"
+        placement="center"
+        classNames={{
+          base: "bg-white dark:bg-gray-900 max-h-[85vh] mt-16",
+          backdrop: "bg-black/50 backdrop-blur-sm",
+          wrapper: "z-[9999]",
+        }}
       >
-        <ModalContent>
-          <ModalHeader>
+        <ModalContent className="bg-white dark:bg-gray-900">
+          <ModalHeader className="border-b border-gray-200 dark:border-gray-700 pb-4">
             <div>
-              <h3 className="text-xl font-semibold">Ajouter des Partenaires</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Ajouter des Partenaires</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Projet: {projectName}
               </p>
             </div>
           </ModalHeader>
-          <ModalBody>
+          <ModalBody className="py-6">
             <div className="space-y-6">
-              {/* Recherche */}
-              <Input
-                placeholder="Rechercher un partenaire..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                startContent={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-                  </svg>
-                }
-              />
+              {/* Container pour la recherche */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
+                <label className="mb-3 block text-base font-semibold text-gray-900 dark:text-white">
+                  Rechercher un partenaire
+                </label>
+                <Input
+                  variant="bordered"
+                  placeholder="Tapez le nom du partenaire..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  size="lg"
+                  classNames={{
+                    input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                    inputWrapper: "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                  }}
+                  startContent={
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
+                      <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                    </svg>
+                  }
+                />
+              </div>
 
-              {/* Rôle pour les nouveaux partenaires */}
-              <Select
-                label="Rôle dans le projet"
-                placeholder="Sélectionner un rôle"
-                selectedKeys={[newPartnerRole]}
-                onSelectionChange={(keys) => {
-                  const key = Array.from(keys)[0] as string;
-                  if (key) setNewPartnerRole(key);
-                }}
-              >
-                {PARTNER_ROLES.map((role) => (
-                  <SelectItem key={role.value} value={role.value}>
-                    {role.label}
-                  </SelectItem>
-                ))}
-              </Select>
+              {/* Container pour le rôle */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
+                <label className="mb-3 block text-base font-semibold text-gray-900 dark:text-white">
+                  Rôle dans le projet
+                </label>
+                <Select
+                  variant="bordered"
+                  placeholder="Sélectionner un rôle"
+                  selectedKeys={[newPartnerRole]}
+                  onSelectionChange={(keys) => {
+                    const key = Array.from(keys)[0] as string;
+                    if (key) setNewPartnerRole(key);
+                  }}
+                  size="lg"
+                  classNames={{
+                    trigger: "bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-400 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300 min-h-[48px]",
+                    value: "text-gray-900 dark:text-white font-medium text-base",
+                  }}
+                >
+                  {PARTNER_ROLES.map((role) => (
+                    <SelectItem key={role.value} value={role.value} className="text-gray-900 dark:text-white">
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
 
-              <Divider />
+              <Divider className="bg-gray-200 dark:bg-gray-600" />
 
-              {/* Liste des partenaires disponibles */}
-              <div>
-                <h4 className="mb-4 font-medium">
+              {/* Container pour la liste des partenaires */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-600 dark:bg-gray-800">
+                <h4 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">
                   Partenaires disponibles ({availablePartners.length})
                 </h4>
                 
                 {availablePartners.length === 0 ? (
-                  <Card className="border-2 border-dashed border-gray-300">
+                  <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
                     <CardBody className="p-6 text-center">
-                      <p className="text-gray-500">
+                      <p className="text-gray-500 dark:text-gray-400">
                         {searchTerm 
                           ? "Aucun partenaire trouvé pour cette recherche"
                           : "Tous les partenaires sont déjà associés au projet"
@@ -443,10 +470,10 @@ const PartnerManager: React.FC<PartnerManagerProps> = ({
                     {availablePartners.map((partner) => (
                       <Card
                         key={partner.id}
-                        className={`cursor-pointer transition-all ${
+                        className={`cursor-pointer transition-all hover:shadow-md ${
                           selectedPartners.includes(partner.id)
-                            ? "border-2 border-primary bg-primary-50 dark:bg-primary-900/20"
-                            : "border border-gray-200"
+                            ? "border-2 border-sky-500 bg-sky-50 dark:bg-sky-900/20 shadow-md"
+                            : "border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700"
                         }`}
                         onClick={() => {
                           setSelectedPartners(prev =>
@@ -461,6 +488,9 @@ const PartnerManager: React.FC<PartnerManagerProps> = ({
                             <Checkbox
                               isSelected={selectedPartners.includes(partner.id)}
                               onChange={() => {}} // Géré par le clic sur la carte
+                              classNames={{
+                                wrapper: "after:bg-sky-500 after:text-white"
+                              }}
                             />
                             
                             <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
@@ -495,10 +525,12 @@ const PartnerManager: React.FC<PartnerManagerProps> = ({
               </div>
             </div>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter className="border-t border-gray-200 dark:border-gray-700 pt-4">
             <Button
-              variant="light"
+              variant="flat"
               onPress={() => setShowAddModal(false)}
+              size="lg"
+              className="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 font-medium"
             >
               Annuler
             </Button>
@@ -507,8 +539,10 @@ const PartnerManager: React.FC<PartnerManagerProps> = ({
               onPress={handleAddPartners}
               isLoading={loading}
               isDisabled={selectedPartners.length === 0 || loading}
+              size="lg"
+              className="bg-sky-500 hover:bg-sky-600 text-white font-semibold shadow-lg"
             >
-              Ajouter {selectedPartners.length > 0 && `(${selectedPartners.length})`}
+              {loading ? "Ajout en cours..." : `Ajouter ${selectedPartners.length > 0 ? `(${selectedPartners.length})` : ''}`}
             </Button>
           </ModalFooter>
         </ModalContent>

@@ -26,7 +26,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   };
 
   const colorClasses = {
-    primary: "border-primary-500",
+    primary: "border-[#06B6D4]",
     secondary: "border-secondary-500", 
     accent: "border-accent-500",
     white: "border-white",
@@ -79,7 +79,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
         {/* Point central DATALYS */}
         <motion.div
-          className={`absolute w-2 h-2 ${variant === 'white' ? 'bg-white' : 'bg-primary-500'} rounded-full`}
+          className={`absolute w-2 h-2 ${variant === 'white' ? 'bg-white' : 'bg-[#06B6D4]'} rounded-full`}
           animate={{ 
             scale: [1, 1.5, 1],
           }}
