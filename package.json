@@ -24,6 +24,7 @@
     "@nextui-org/table": "^2.0.39",
     "@nextui-org/tabs": "^2.0.35",
     "@nextui-org/user": "^2.0.33",
+    "@types/react-window": "^1.8.8",
     "apexcharts": "^3.45.2",
     "core-js": "^3.35.0",
     "flatpickr": "^4.6.13",
@@ -41,6 +42,8 @@
     "react-quill": "^2.0.0",
     "react-select": "^5.8.0",
     "react-table": "^7.8.0",
+    "react-window": "^1.8.11",
+    "react-window-infinite-loader": "^1.0.10",
     "regenerator-runtime": "^0.14.1",
     "zod": "^4.0.17",
     "zustand": "^5.0.7"

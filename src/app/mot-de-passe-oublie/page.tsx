@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AuthService } from "@/services/auth";
+import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
 
 interface ForgotPasswordForm {
   email: string;
@@ -39,6 +40,7 @@ const MotDePasseOublie = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [resetToken, setResetToken] = useState("");
   const router = useRouter();
+  const { showNotification } = useNotifications();
 
   const {
     register,
@@ -62,11 +64,17 @@ const MotDePasseOublie = () => {
       
       if (result.status === "success") {
         // L'utilisateur recevra un email avec un lien de réinitialisation
-        // On affiche un message de succès mais on reste sur la même étape
         setErrorMessage(""); // Clear any previous error
-        // Optionally show success message that email was sent
+        showNotification(notificationHelpers.success(
+          "Email envoyé !",
+          "Vérifiez votre boîte mail pour le lien de réinitialisation."
+        ));
       } else {
         setErrorMessage(result.message || "Erreur lors de la demande de réinitialisation");
+        showNotification(notificationHelpers.error(
+          "Erreur d'envoi",
+          result.message || "Impossible d'envoyer l'email de réinitialisation."
+        ));
       }
     } catch (error) {
       setErrorMessage("Erreur de connexion. Veuillez réessayer.");
@@ -93,6 +101,10 @@ const MotDePasseOublie = () => {
       
       if (result.status === "success") {
         setStep("success");
+        showNotification(notificationHelpers.success(
+          "Mot de passe mis à jour !",
+          "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe."
+        ));
 
         // Start countdown
         let count = 5;
@@ -107,6 +119,10 @@ const MotDePasseOublie = () => {
         }, 1000);
       } else {
         setErrorMessage(result.message || "Erreur lors de la réinitialisation du mot de passe");
+        showNotification(notificationHelpers.error(
+          "Erreur de réinitialisation",
+          result.message || "Impossible de mettre à jour le mot de passe."
+        ));
       }
     } catch (error) {
       setErrorMessage("Erreur de connexion. Veuillez réessayer.");

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthService, User } from "@/services/auth";
+import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
 
 export interface AuthState {
   user: User | null;
@@ -17,6 +18,7 @@ export const useAuth = () => {
     isLoading: true,
   });
   const router = useRouter();
+  const { showNotification } = useNotifications();
 
   // Vérifier l'authentification au montage du composant
   useEffect(() => {
@@ -57,9 +59,17 @@ export const useAuth = () => {
           isAuthenticated: false,
           isLoading: false,
         });
+        showNotification(notificationHelpers.success(
+          "Déconnexion réussie",
+          "À bientôt ! Vous pouvez vous reconnecter à tout moment."
+        ));
         router.push("/connexion");
       } else {
         console.error("Erreur de déconnexion:", result.message);
+        showNotification(notificationHelpers.warning(
+          "Déconnexion partielle",
+          "Vous avez été déconnecté localement."
+        ));
         // Rediriger quand même vers la page de connexion
         setAuthState({
           user: null,
@@ -70,6 +80,10 @@ export const useAuth = () => {
       }
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
+      showNotification(notificationHelpers.error(
+        "Erreur de déconnexion",
+        "Problème de connexion, mais vous avez été déconnecté localement."
+      ));
       // En cas d'erreur, forcer la déconnexion locale
       setAuthState({
         user: null,

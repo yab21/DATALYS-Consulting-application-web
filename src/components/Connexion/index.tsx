@@ -16,11 +16,11 @@ import {
   Zap,
   TrendingUp,
   Users,
-  Loader2,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth";
+import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
 
 interface LoginForm {
   email: string;
@@ -33,6 +33,7 @@ const Connexion: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { showNotification } = useNotifications();
   
   const {
     register,
@@ -56,14 +57,30 @@ const Connexion: React.FC = () => {
         if (data.rememberMe) {
           localStorage.setItem("rememberMe", "true");
         }
-        // Rediriger vers le tableau de bord
-        router.push("/tableaudebord");
+        
+        showNotification(notificationHelpers.success(
+          "Connexion réussie !",
+          `Bienvenue ${result.data?.name || "sur DATALYS"} 🎉`
+        ));
+        
+        // Rediriger vers le tableau de bord après une courte pause pour voir la notification
+        setTimeout(() => {
+          router.push("/tableaudebord");
+        }, 1000);
       } else {
         setError(result.message || "Erreur lors de la connexion");
+        showNotification(notificationHelpers.error(
+          "Échec de la connexion",
+          result.message || "Vérifiez vos identifiants et réessayez."
+        ));
       }
     } catch (error) {
       console.error("Erreur de connexion:", error);
       setError("Erreur de connexion. Veuillez réessayer.");
+      showNotification(notificationHelpers.error(
+        "Erreur de connexion",
+        "Problème de réseau. Vérifiez votre connexion internet."
+      ));
     } finally {
       setIsLoading(false);
     }
@@ -420,19 +437,12 @@ const Connexion: React.FC = () => {
                     className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                          <span>Connexion en cours...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Se connecter</span>
-                          <ArrowRight className="h-5 w-5" />
-                        </>
-                      )}
-                    </div>
+                    {!isLoading && (
+                      <div className="flex items-center justify-center gap-2">
+                        <span>Se connecter</span>
+                        <ArrowRight className="h-5 w-5" />
+                      </div>
+                    )}
                   </Button>
                 </motion.div>
               </form>
