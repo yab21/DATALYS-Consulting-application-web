@@ -233,15 +233,15 @@ install_monitoring() {
 setup_env() {
     log_info "🔧 Configuration des variables d'environnement..."
     
-    cat > $APP_PATH/shared/.env.production << 'EOF'
+    cat > $APP_PATH/shared/.env << 'EOF'
 NODE_ENV=production
 PORT=3000
 NEXT_TELEMETRY_DISABLED=1
 # Ajoutez vos autres variables d'environnement ici
 EOF
 
-    chmod 600 $APP_PATH/shared/.env.production
-    chown www-data:www-data $APP_PATH/shared/.env.production
+    chmod 600 $APP_PATH/shared/.env
+    chown www-data:www-data $APP_PATH/shared/.env
     
     log_success "✅ Variables d'environnement configurées"
 }
