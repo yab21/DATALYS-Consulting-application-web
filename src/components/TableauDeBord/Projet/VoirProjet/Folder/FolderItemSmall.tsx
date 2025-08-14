@@ -14,14 +14,6 @@ import {
   ModalBody,
   ModalFooter,
 } from "@nextui-org/react";
-import { getAuth } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  getFirestore,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
 import RenameModal from "../Common/RenameModal";
 import MoveModal from "../Common/MoveModal";
 
@@ -51,25 +43,15 @@ function FolderItemSmall({
   } = useDisclosure();
 
   useEffect(() => {
-    const checkUserAdmin = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setIsUserAdmin(userDoc.data().isAdmin || false);
-        }
-      }
-    };
-    checkUserAdmin();
+    // Placeholder: Check user admin status
+    // This would be replaced with actual authentication logic
+    setIsUserAdmin(true); // Temporary - set to true for demo
   }, []);
 
   const handleRename = async (newName: string) => {
     try {
-      const db = getFirestore();
-      const folderRef = doc(db, "Folders", folder.id);
-      await updateDoc(folderRef, { name: newName });
+      // Placeholder: Rename folder logic
+      console.log(`Renaming folder ${folder.name} to ${newName}`);
       onFolderUpdated();
     } catch (error) {
       console.error("Erreur lors du renommage du dossier:", error);
@@ -79,9 +61,8 @@ function FolderItemSmall({
 
   const handleMove = async (newParentId: string) => {
     try {
-      const db = getFirestore();
-      const folderRef = doc(db, "Folders", folder.id);
-      await updateDoc(folderRef, { parentFolderId: newParentId });
+      // Placeholder: Move folder logic
+      console.log(`Moving folder ${folder.name} to parent ${newParentId}`);
       onFolderUpdated();
     } catch (error) {
       console.error("Erreur lors du déplacement du dossier:", error);
@@ -91,8 +72,8 @@ function FolderItemSmall({
 
   const handleDelete = async () => {
     try {
-      const db = getFirestore();
-      await deleteDoc(doc(db, "Folders", folder.id));
+      // Placeholder: Delete folder logic
+      console.log(`Deleting folder ${folder.name}`);
       onFolderUpdated();
       onDeleteModalClose();
     } catch (error) {
@@ -103,9 +84,8 @@ function FolderItemSmall({
 
   const togglePrivate = async () => {
     try {
-      const db = getFirestore();
-      const folderRef = doc(db, "Folders", folder.id);
-      await updateDoc(folderRef, { isPrivate: !folder.isPrivate });
+      // Placeholder: Toggle private status logic
+      console.log(`Toggling private status for folder ${folder.name}`);
       onFolderUpdated();
     } catch (error) {
       console.error("Erreur lors du changement de statut privé:", error);

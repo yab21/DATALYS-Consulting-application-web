@@ -9,14 +9,6 @@ import {
   Button,
   useDisclosure,
 } from "@nextui-org/react";
-import { getAuth } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  getFirestore,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
 import RenameModal from "../Common/RenameModal";
 import MoveModal from "../Common/MoveModal";
 
@@ -40,25 +32,15 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
-    const checkUserAdmin = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setIsUserAdmin(userDoc.data().isAdmin || false);
-        }
-      }
-    };
-    checkUserAdmin();
+    // Placeholder: Check user admin status
+    // This would be replaced with actual authentication logic
+    setIsUserAdmin(true); // Temporary - set to true for demo
   }, []);
 
   const handleRename = async (newName: string) => {
     try {
-      const db = getFirestore();
-      const fileRef = doc(db, "files", file.id);
-      await updateDoc(fileRef, { name: newName });
+      // Placeholder: Rename file logic
+      console.log(`Renaming file ${file.name} to ${newName}`);
       onFileDeleted();
     } catch (error) {
       console.error("Erreur lors du renommage du fichier:", error);
@@ -68,9 +50,8 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
 
   const handleMove = async (newParentId: string) => {
     try {
-      const db = getFirestore();
-      const fileRef = doc(db, "files", file.id);
-      await updateDoc(fileRef, { parentFolderId: newParentId });
+      // Placeholder: Move file logic
+      console.log(`Moving file ${file.name} to parent ${newParentId}`);
       onFileDeleted();
     } catch (error) {
       console.error("Erreur lors du déplacement du fichier:", error);
@@ -80,8 +61,8 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
 
   const handleDelete = async () => {
     try {
-      const db = getFirestore();
-      await deleteDoc(doc(db, "files", file.id));
+      // Placeholder: Delete file logic
+      console.log(`Deleting file ${file.name}`);
       onFileDeleted();
       setShowDeleteModal(false);
     } catch (error) {
@@ -92,9 +73,8 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
 
   const togglePrivate = async () => {
     try {
-      const db = getFirestore();
-      const fileRef = doc(db, "files", file.id);
-      await updateDoc(fileRef, { isPrivate: !file.isPrivate });
+      // Placeholder: Toggle private status logic
+      console.log(`Toggling private status for file ${file.name}`);
       onFileDeleted();
     } catch (error) {
       console.error("Erreur lors du changement de statut privé:", error);

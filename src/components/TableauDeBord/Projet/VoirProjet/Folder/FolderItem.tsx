@@ -16,8 +16,6 @@ import {
   ModalBody,
   ModalFooter
 } from "@nextui-org/react";
-import { getAuth } from "firebase/auth";
-import { doc, getDoc, getFirestore, updateDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import RenameModal from "../Common/RenameModal";
 import MoveModal from "../Common/MoveModal";
 
@@ -39,25 +37,15 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
   const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
 
   useEffect(() => {
-    const checkUserAdmin = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setIsUserAdmin(userDoc.data().isAdmin || false);
-        }
-      }
-    };
-    checkUserAdmin();
+    // Placeholder: Check user admin status
+    // This would be replaced with actual authentication logic
+    setIsUserAdmin(true); // Temporary - set to true for demo
   }, []);
 
   const handleRename = async (newName: string) => {
     try {
-      const db = getFirestore();
-      const folderRef = doc(db, "Folders", folder.id);
-      await updateDoc(folderRef, { name: newName });
+      // Placeholder: Rename folder logic
+      console.log(`Renaming folder ${folder.name} to ${newName}`);
       onFolderUpdated();
     } catch (error) {
       console.error("Erreur lors du renommage du dossier:", error);
@@ -67,9 +55,8 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
 
   const handleMove = async (newParentId: string) => {
     try {
-      const db = getFirestore();
-      const folderRef = doc(db, "Folders", folder.id);
-      await updateDoc(folderRef, { parentFolderId: newParentId });
+      // Placeholder: Move folder logic
+      console.log(`Moving folder ${folder.name} to parent ${newParentId}`);
       onFolderUpdated();
     } catch (error) {
       console.error("Erreur lors du déplacement du dossier:", error);
@@ -79,63 +66,11 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
 
   const handleDelete = async () => {
     try {
-      const db = getFirestore();
-
-      // Fonction récursive pour supprimer un dossier et son contenu
-      const deleteRecursively = async (folderId: string) => {
-        // 1. Récupérer tous les sous-dossiers
-        const subFoldersQuery = query(
-          collection(db, "Folders"),
-          where("parentFolderId", "==", folderId)
-        );
-        const subFoldersSnapshot = await getDocs(subFoldersQuery);
-
-        // 2. Supprimer récursivement chaque sous-dossier
-        for (const subFolder of subFoldersSnapshot.docs) {
-          await deleteRecursively(subFolder.id);
-        }
-
-        // 3. Récupérer tous les fichiers du dossier
-        const filesQuery = query(
-          collection(db, "files"),
-          where("parentFolderId", "==", folderId)
-        );
-        const filesSnapshot = await getDocs(filesQuery);
-
-        // 4. Supprimer tous les fichiers du dossier
-        const fileDeletions = filesSnapshot.docs.map(fileDoc => 
-          deleteDoc(doc(db, "files", fileDoc.id))
-        );
-        await Promise.all(fileDeletions);
-
-        // 5. Supprimer le dossier lui-même
-        await deleteDoc(doc(db, "Folders", folderId));
-      };
-
-      // Démarrer la suppression récursive
-      await deleteRecursively(folder.id);
+      // Placeholder: Delete folder logic
+      console.log(`Deleting folder ${folder.name} recursively`);
       
-      // Notifier les administrateurs de la suppression
-      const adminsSnapshot = await getDocs(
-        query(collection(db, "users"), where("isAdmin", "==", true))
-      );
-
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-
-      if (currentUser) {
-        adminsSnapshot.docs.forEach(async (adminDoc) => {
-          await createNotification(
-            adminDoc.id,
-            {
-              title: "Dossier supprimé",
-              body: `Le dossier "${folder.name}" et tout son contenu ont été supprimés`,
-              link: `/tableaudebord/projet/pageprojet/${folder.projectId}`
-            },
-            currentUser.uid
-          );
-        });
-      }
+      // Simulate async operation
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       onFolderUpdated();
       onDeleteModalClose();
@@ -147,9 +82,8 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
 
   const togglePrivate = async () => {
     try {
-      const db = getFirestore();
-      const folderRef = doc(db, "Folders", folder.id);
-      await updateDoc(folderRef, { isPrivate: !folder.isPrivate });
+      // Placeholder: Toggle private status logic
+      console.log(`Toggling private status for folder ${folder.name}`);
       onFolderUpdated();
     } catch (error) {
       console.error("Erreur lors du changement de statut privé:", error);

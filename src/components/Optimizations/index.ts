@@ -186,14 +186,14 @@ export function withLazyLoading<P extends object>(
   importFunc: () => Promise<{ default: React.ComponentType<P> }>,
   fallback?: React.ReactNode
 ) {
+  const LazyLoadedComponent = React.lazy(importFunc);
+  
   const WrappedComponent = (props: P) => React.createElement(
-    LazyComponent as any,
-    {
-      importFunc,
-      fallback,
-      ...props
-    }
+    React.Suspense,
+    { fallback: fallback || React.createElement(LoadingSpinner) },
+    React.createElement(LazyLoadedComponent, props)
   );
+  
   return WrappedComponent;
 }
 

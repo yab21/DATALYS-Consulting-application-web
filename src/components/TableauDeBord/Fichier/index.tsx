@@ -13,10 +13,10 @@ import { Button } from "@nextui-org/button";
 
 const Ficher = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [size, setSize] = React.useState("2xl");
+  const [size, setSize] = React.useState<"sm" | "md" | "lg" | "xl" | "2xl" | "xs" | "3xl" | "4xl" | "5xl" | "full">("2xl");
   const sizes = "2xl";
 
-  const handleOpen = (size) => {
+  const handleOpen = (size: "sm" | "md" | "lg" | "xl" | "2xl" | "xs" | "3xl" | "4xl" | "5xl" | "full") => {
     setSize(size);
     onOpen();
   };
@@ -191,7 +191,7 @@ const Ficher = () => {
                           </ModalHeader>
                           <ModalBody>
                             <Iframe
-                              src="/file/CAHIER DE CHARGES FONCTIONNEL - DATALYS-Consulting.pdf"
+                              url="/file/CAHIER DE CHARGES FONCTIONNEL - DATALYS-Consulting.pdf"
                               width="640px"
                               height="320px"
                             ></Iframe>

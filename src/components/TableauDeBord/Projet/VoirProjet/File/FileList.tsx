@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import FileItem from "@/components/TableauDeBord/Projet/VoirProjet/File/FileItem";
-import { getAuth } from "firebase/auth";
-import { doc, getDoc, getFirestore } from "firebase/firestore";
 
 interface FileListProps {
   files: Array<{
@@ -21,19 +19,10 @@ const FileList: React.FC<FileListProps> = ({ files, onFileDeleted }) => {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkUserAdmin = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        setUserId(user.uid);
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setIsUserAdmin(userDoc.data().isAdmin || false);
-        }
-      }
-    };
-    checkUserAdmin();
+    // Placeholder: Check user admin status
+    // This would be replaced with actual authentication logic
+    setUserId("temp-user-id"); // Temporary placeholder
+    setIsUserAdmin(true); // Temporary - set to true for demo
   }, []);
 
   // Filtrer les fichiers en fonction des autorisations

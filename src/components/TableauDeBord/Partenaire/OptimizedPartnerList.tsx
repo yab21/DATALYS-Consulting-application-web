@@ -128,7 +128,7 @@ const OptimizedPartnerList: React.FC = () => {
   ];
 
   // Utiliser les données mockées si l'API n'est pas disponible
-  const displayPartners = partners.length > 0 ? partners : mockPartners;
+  const displayPartners = Array.isArray(partners) && partners.length > 0 ? partners : mockPartners;
 
   // Configuration des colonnes pour la table virtualisée
   const columns = useMemo(() => [
@@ -416,7 +416,7 @@ const OptimizedPartnerList: React.FC = () => {
           <SkeletonTable rows={6} className="space-y-4" />
         ) : (
           <VirtualizedTable
-            data={displayPartners}
+            data={displayPartners as Partner[]}
             columns={columns}
             onItemClick={(partner) => router.push(`/tableaudebord/partenaire/voir/${partner.id}`)}
             onSelectionChange={handleSelectionChange}
