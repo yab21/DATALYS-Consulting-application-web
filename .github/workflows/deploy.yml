@@ -32,11 +32,9 @@ jobs:
 
       - name: 🔍 Run TypeScript check
         run: npm run type-check
-        continue-on-error: true
 
       - name: 🧪 Run tests (if available)
         run: npm run test --if-present
-        continue-on-error: true
 
       - name: 🏗️ Build application
         run: npm run build
