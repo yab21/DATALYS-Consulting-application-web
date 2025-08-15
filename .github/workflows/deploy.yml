@@ -81,11 +81,12 @@ jobs:
           export RELEASE_DIR="${{ env.DEPLOY_PATH }}/releases/$TIMESTAMP"
           echo "RELEASE_DIR=$RELEASE_DIR" >> $GITHUB_ENV
 
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
             set -e
             mkdir -p $RELEASE_DIR
             mkdir -p ${{ env.DEPLOY_PATH }}/shared/logs
             mkdir -p ${{ env.DEPLOY_PATH }}/shared/node_modules
+            echo 'Directories created successfully'
           "
 
       - name: 📦 Deploy application files
@@ -100,7 +101,7 @@ jobs:
             ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
 
           # Créer les liens symboliques
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
@@ -109,24 +110,52 @@ jobs:
           "
 
       - name: 📋 Install production dependencies
+        timeout-minutes: 15
         run: |
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+          # Option 1: Essayer l'installation normale
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o ConnectTimeout=60 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             
-            if [ ! -f package-lock.json ]; then
-              echo 'Generating package-lock.json...'
-              npm install --package-lock-only
+            # Vérifier l'espace disque disponible
+            df -h
+            
+            # Clean npm cache si nécessaire
+            npm cache clean --force 2>/dev/null || true
+            
+            # Vérifier si nous avons un cache de node_modules
+            if [ -d '${{ env.DEPLOY_PATH }}/shared/node_modules' ] && [ -n \"\$(ls -A ${{ env.DEPLOY_PATH }}/shared/node_modules)\" ]; then
+              echo 'Copying cached node_modules...'
+              cp -rf ${{ env.DEPLOY_PATH }}/shared/node_modules ./
             fi
             
-            npm ci --omit=dev --ignore-scripts
+            if [ ! -f package-lock.json ]; then
+              echo 'Generating package-lock.json...'
+              NODE_OPTIONS='--max_old_space_size=512' timeout 300 npm install --package-lock-only || {
+                echo 'Package-lock generation failed, continuing without it...'
+              }
+            fi
+            
+            # Installation avec optimisations mémoire
+            echo 'Installing dependencies with memory optimization...'
+            NODE_OPTIONS='--max_old_space_size=1024' timeout 900 npm ci --omit=dev --ignore-scripts --no-audit --no-fund --prefer-offline || {
+              echo 'npm ci failed, trying alternative installation...'
+              rm -rf node_modules package-lock.json
+              NODE_OPTIONS='--max_old_space_size=1024' timeout 900 npm install --production --no-audit --no-fund --prefer-offline --legacy-peer-deps
+            }
+            
+            # Sauvegarder node_modules pour les prochaines fois
+            echo 'Caching node_modules for future deployments...'
+            rm -rf ${{ env.DEPLOY_PATH }}/shared/node_modules
+            cp -rf node_modules ${{ env.DEPLOY_PATH }}/shared/
+            
             echo 'Dependencies installed successfully'
           "
 
       - name: 🔄 Switch to new release
         run: |
           echo "🔗 Switching to release: $TIMESTAMP"
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
             set -e
             # Créer le lien symbolique vers la nouvelle release
             cd ${{ env.DEPLOY_PATH }}
@@ -141,18 +170,19 @@ jobs:
             ln -sf releases/$TIMESTAMP current
             echo 'Symlink updated to new release'
             
-            # Restart PM2
+            # Restart PM2 with timeout
             cd current
-            pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
+            timeout 60 pm2 reload ecosystem.config.js --env production || timeout 60 pm2 start ecosystem.config.js --env production
             pm2 save
             echo 'PM2 reloaded successfully'
           "
 
       - name: 🧹 Cleanup old releases
         run: |
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}/releases
             ls -t | tail -n +6 | xargs -r rm -rf
+            echo 'Old releases cleaned up'
           "
 
       - name: ✅ Health check
