@@ -115,16 +115,17 @@ jobs:
       - name: 📋 Install production dependencies
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-          set -e
-          cd $RELEASE_DIR  # Utilisez la variable directement
-          
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only
-          fi
-          
-          npm ci --omit=dev --ignore-scripts
-        "
-
+            set -e
+            cd $RELEASE_DIR
+            
+            if [ ! -f package-lock.json ]; then
+              echo 'Generating package-lock.json...'
+              npm install --package-lock-only
+            fi
+            
+            npm ci --omit=dev --ignore-scripts
+            echo 'Dependencies installed successfully'
+          "
 
       - name: 🔄 Switch to new release
         run: |
