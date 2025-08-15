@@ -22,7 +22,10 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AuthService } from "@/services/auth";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import {
+  useNotifications,
+  notificationHelpers,
+} from "@/components/UI/Notifications/NotificationSystem";
 
 interface ForgotPasswordForm {
   email: string;
@@ -61,20 +64,27 @@ const MotDePasseOublie = () => {
 
     try {
       const result = await AuthService.resetPasswordRequest(data.email);
-      
+
       if (result.status === "success") {
         // L'utilisateur recevra un email avec un lien de réinitialisation
         setErrorMessage(""); // Clear any previous error
-        showNotification(notificationHelpers.success(
-          "Email envoyé !",
-          "Vérifiez votre boîte mail pour le lien de réinitialisation."
-        ));
+        showNotification(
+          notificationHelpers.success(
+            "Email envoyé !",
+            "Vérifiez votre boîte mail pour le lien de réinitialisation.",
+          ),
+        );
       } else {
-        setErrorMessage(result.message || "Erreur lors de la demande de réinitialisation");
-        showNotification(notificationHelpers.error(
-          "Erreur d'envoi",
-          result.message || "Impossible d'envoyer l'email de réinitialisation."
-        ));
+        setErrorMessage(
+          result.message || "Erreur lors de la demande de réinitialisation",
+        );
+        showNotification(
+          notificationHelpers.error(
+            "Erreur d'envoi",
+            result.message ||
+              "Impossible d'envoyer l'email de réinitialisation.",
+          ),
+        );
       }
     } catch (error) {
       setErrorMessage("Erreur de connexion. Veuillez réessayer.");
@@ -90,21 +100,25 @@ const MotDePasseOublie = () => {
     try {
       // En réalité, le token viendrait des paramètres URL du lien email
       const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token') || resetToken;
-      
+      const token = urlParams.get("token") || resetToken;
+
       if (!token) {
-        setErrorMessage("Token de réinitialisation manquant. Veuillez utiliser le lien reçu par email.");
+        setErrorMessage(
+          "Token de réinitialisation manquant. Veuillez utiliser le lien reçu par email.",
+        );
         return;
       }
 
       const result = await AuthService.resetPassword(token, data.newPassword);
-      
+
       if (result.status === "success") {
         setStep("success");
-        showNotification(notificationHelpers.success(
-          "Mot de passe mis à jour !",
-          "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe."
-        ));
+        showNotification(
+          notificationHelpers.success(
+            "Mot de passe mis à jour !",
+            "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
+          ),
+        );
 
         // Start countdown
         let count = 5;
@@ -118,11 +132,16 @@ const MotDePasseOublie = () => {
           }
         }, 1000);
       } else {
-        setErrorMessage(result.message || "Erreur lors de la réinitialisation du mot de passe");
-        showNotification(notificationHelpers.error(
-          "Erreur de réinitialisation",
-          result.message || "Impossible de mettre à jour le mot de passe."
-        ));
+        setErrorMessage(
+          result.message ||
+            "Erreur lors de la réinitialisation du mot de passe",
+        );
+        showNotification(
+          notificationHelpers.error(
+            "Erreur de réinitialisation",
+            result.message || "Impossible de mettre à jour le mot de passe.",
+          ),
+        );
       }
     } catch (error) {
       setErrorMessage("Erreur de connexion. Veuillez réessayer.");
@@ -346,7 +365,7 @@ const MotDePasseOublie = () => {
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-800"
+                      className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
                     >
                       {errorMessage}
                     </motion.div>
@@ -405,7 +424,7 @@ const MotDePasseOublie = () => {
                       <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:cursor-not-allowed disabled:opacity-70"
                         size="lg"
                       >
                         <div className="flex items-center justify-center gap-2">
@@ -414,7 +433,11 @@ const MotDePasseOublie = () => {
                           ) : (
                             <Mail className="h-5 w-5" />
                           )}
-                          <span>{isLoading ? "Envoi en cours..." : "Envoyer le lien de récupération"}</span>
+                          <span>
+                            {isLoading
+                              ? "Envoi en cours..."
+                              : "Envoyer le lien de récupération"}
+                          </span>
                         </div>
                       </Button>
                     </motion.div>
@@ -465,7 +488,7 @@ const MotDePasseOublie = () => {
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-800"
+                      className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
                     >
                       {errorMessage}
                     </motion.div>
@@ -589,7 +612,7 @@ const MotDePasseOublie = () => {
                       <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:cursor-not-allowed disabled:opacity-70"
                         size="lg"
                       >
                         <div className="flex items-center justify-center gap-2">
@@ -598,7 +621,11 @@ const MotDePasseOublie = () => {
                           ) : (
                             <Key className="h-5 w-5" />
                           )}
-                          <span>{isLoading ? "Mise à jour en cours..." : "Mettre à jour le mot de passe"}</span>
+                          <span>
+                            {isLoading
+                              ? "Mise à jour en cours..."
+                              : "Mettre à jour le mot de passe"}
+                          </span>
                         </div>
                       </Button>
                     </motion.div>
@@ -669,7 +696,7 @@ const MotDePasseOublie = () => {
                   </motion.h2>
 
                   <motion.p
-                    className="mb-6 leading-relaxed text-gray-600"
+                    className="mb-6 leading-relaxed text-gray-500"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
