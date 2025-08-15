@@ -24,7 +24,8 @@ const CreerUnCompte = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
+    useState(false);
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +42,6 @@ const CreerUnCompte = () => {
   const handleRoleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, isAdmin: e.target.checked });
   };
-
 
   const handleSubmit = () => {
     setError(null);
@@ -64,7 +64,7 @@ const CreerUnCompte = () => {
     }
 
     setLoading(true);
-    
+
     // Simulate account creation
     setTimeout(() => {
       alert("Compte créé avec succès ! (Simulation)");
@@ -74,20 +74,23 @@ const CreerUnCompte = () => {
     }, 1500);
   };
 
-  const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
-  const toggleConfirmPasswordVisibility = () => setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
+  const togglePasswordVisibility = () =>
+    setIsPasswordVisible(!isPasswordVisible);
+  const toggleConfirmPasswordVisibility = () =>
+    setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
 
   return (
     <>
       <Breadcrumb pageName="Créer un compte" />
       <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px]">
-        <div className="mt-8 rounded-[20px] bg-white p-8 shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <div className="mt-8 rounded-[20px] bg-white p-7 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <div className="mb-8 text-center">
             <h3 className="mb-2 text-[28px] font-bold text-dark dark:text-white">
               Créer un compte
             </h3>
             <p className="text-base text-gray-600 dark:text-gray-400">
-              Remplissez les informations pour créer un nouveau compte utilisateur
+              Remplissez les informations pour créer un nouveau compte
+              utilisateur
             </p>
           </div>
 
