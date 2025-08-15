@@ -83,7 +83,7 @@ const CreerUnCompte = () => {
     <>
       <Breadcrumb pageName="Créer un compte" />
       <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px]">
-        <div className="mt-8 rounded-[20px] bg-white p-7 shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <div className="mt-8 rounded-[20px] bg-white p-8 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <div className="mb-8 text-center">
             <h3 className="mb-2 text-[28px] font-bold text-dark dark:text-white">
               Créer un compte
