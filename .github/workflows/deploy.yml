@@ -109,47 +109,71 @@ jobs:
             echo 'Files deployed and symlinks created'
           "
 
-      - name: 📋 Install production dependencies
-        timeout-minutes: 15
+      - name: 📋 Install production dependencies (Optimized)
+        timeout-minutes: 20
         run: |
-          # Option 1: Essayer l'installation normale
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o ConnectTimeout=60 root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ConnectTimeout=60 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             
-            # Vérifier l'espace disque disponible
-            df -h
+            echo '🔍 Checking system resources...'
+            df -h | head -5
+            free -h
             
-            # Clean npm cache si nécessaire
-            npm cache clean --force 2>/dev/null || true
+            # Variables d'optimisation
+            export NODE_OPTIONS='--max_old_space_size=1536 --no-warnings'
+            export NPM_CONFIG_AUDIT=false
+            export NPM_CONFIG_FUND=false
+            export NPM_CONFIG_UPDATE_NOTIFIER=false
+            export NPM_CONFIG_PROGRESS=false
             
-            # Vérifier si nous avons un cache de node_modules
-            if [ -d '${{ env.DEPLOY_PATH }}/shared/node_modules' ] && [ -n \"\$(ls -A ${{ env.DEPLOY_PATH }}/shared/node_modules)\" ]; then
-              echo 'Copying cached node_modules...'
-              cp -rf ${{ env.DEPLOY_PATH }}/shared/node_modules ./
+            # Stratégie intelligente de cache
+            CACHED_MODULES='${{ env.DEPLOY_PATH }}/shared/node_modules'
+            CURRENT_PACKAGE_JSON=\$(cat package.json | md5sum | cut -d' ' -f1)
+            CACHED_HASH_FILE='${{ env.DEPLOY_PATH }}/shared/package-hash.txt'
+            
+            if [ -f \"\$CACHED_HASH_FILE\" ] && [ -d \"\$CACHED_MODULES\" ]; then
+              CACHED_HASH=\$(cat \$CACHED_HASH_FILE)
+              if [ \"\$CURRENT_PACKAGE_JSON\" = \"\$CACHED_HASH\" ]; then
+                echo '⚡ Using exact package.json cache - copying node_modules...'
+                cp -rf \$CACHED_MODULES ./
+                echo 'Dependencies restored from cache successfully!'
+                exit 0
+              else
+                echo '📦 Package.json changed, partial cache reuse...'
+                cp -rf \$CACHED_MODULES ./ 2>/dev/null || true
+              fi
             fi
             
+            # Installation optimisée
+            echo '📥 Installing/updating dependencies...'
+            
             if [ ! -f package-lock.json ]; then
-              echo 'Generating package-lock.json...'
-              NODE_OPTIONS='--max_old_space_size=512' timeout 300 npm install --package-lock-only || {
-                echo 'Package-lock generation failed, continuing without it...'
+              echo '🔒 Generating package-lock.json...'
+              timeout 180 npm install --package-lock-only --silent || {
+                echo '⚠️  Package-lock generation timeout, using alternative...'
+                rm -f package-lock.json
               }
             fi
             
-            # Installation avec optimisations mémoire
-            echo 'Installing dependencies with memory optimization...'
-            NODE_OPTIONS='--max_old_space_size=1024' timeout 900 npm ci --omit=dev --ignore-scripts --no-audit --no-fund --prefer-offline || {
-              echo 'npm ci failed, trying alternative installation...'
+            # Installation principale avec fallback
+            timeout 480 npm ci --omit=dev --ignore-scripts --silent --prefer-offline 2>/dev/null || {
+              echo '🔄 npm ci failed, trying npm install...'
               rm -rf node_modules package-lock.json
-              NODE_OPTIONS='--max_old_space_size=1024' timeout 900 npm install --production --no-audit --no-fund --prefer-offline --legacy-peer-deps
+              timeout 480 npm install --production --silent --prefer-offline --legacy-peer-deps
+            } || {
+              echo '🆘 Both methods failed, trying minimal install...'
+              rm -rf node_modules
+              timeout 300 npm install --production --silent --no-optional --ignore-engines
             }
             
-            # Sauvegarder node_modules pour les prochaines fois
-            echo 'Caching node_modules for future deployments...'
-            rm -rf ${{ env.DEPLOY_PATH }}/shared/node_modules
-            cp -rf node_modules ${{ env.DEPLOY_PATH }}/shared/
+            # Sauvegarder le cache optimisé
+            echo '💾 Caching for future deployments...'
+            rm -rf \$CACHED_MODULES
+            cp -rf node_modules \$CACHED_MODULES/
+            echo \$CURRENT_PACKAGE_JSON > \$CACHED_HASH_FILE
             
-            echo 'Dependencies installed successfully'
+            echo '✅ Dependencies installed successfully'
           "
 
       - name: 🔄 Switch to new release
