@@ -73,37 +73,50 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: 🏗️ Create deployment directory
+      - name: 🏗️ Create deployment directory and setup
         run: |
+          # Generate timestamp once and reuse it
+          export TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          export RELEASE_DIR="${{ env.DEPLOY_PATH }}/releases/$TIMESTAMP"
+          echo "RELEASE_DIR=$RELEASE_DIR" >> $GITHUB_ENV
+
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            mkdir -p ${{ env.DEPLOY_PATH }}/releases/$(date +%Y%m%d_%H%M%S)
+            set -e
+            mkdir -p $RELEASE_DIR
             mkdir -p ${{ env.DEPLOY_PATH }}/shared/logs
             mkdir -p ${{ env.DEPLOY_PATH }}/shared/node_modules
           "
 
       - name: 📦 Deploy application files
         run: |
-          RELEASE_DIR="${{ env.DEPLOY_PATH }}/releases/$(date +%Y%m%d_%H%M%S)"
-
-          # Synchroniser les fichiers
+          # Use the stored RELEASE_DIR variable
           rsync -avz --delete \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.env*' \
             ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
 
-          # Créer les liens symboliques
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            cd $RELEASE_DIR
-            ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
-            ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
-          "
+
+              # Synchroniser les fichiers
+              rsync -avz --delete \
+                --exclude='.git' \
+                --exclude='node_modules' \
+                --exclude='.env*' \
+                ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
+
+              # Créer les liens symboliques
+              ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+                cd $RELEASE_DIR
+                ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
+                ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
+              "
 
       - name: 📋 Install production dependencies
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}/releases/$(date +%Y%m%d_%H%M%S)
-            npm ci --only=production --ignore-scripts
+            npm ci --omit=dev --ignore-scripts
           "
 
       - name: 🔄 Switch to new release
