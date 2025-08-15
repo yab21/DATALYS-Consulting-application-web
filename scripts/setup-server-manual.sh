@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 🛠️ Script d'installation serveur pour DATALYS Consulting App
+# 🛠️ Script de Configuration Serveur Manuel pour DATALYS Consulting App
 # À exécuter sur le serveur VPS Hostinger (82.112.253.137)
 
 set -e
@@ -27,6 +27,14 @@ log_success() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Vérification des privilèges root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        log_error "Ce script doit être exécuté en tant que root (sudo)"
+        exit 1
+    fi
 }
 
 # Mise à jour du système
@@ -58,6 +66,7 @@ install_pm2() {
     
     npm install -g pm2
     pm2 startup systemd -u root --hp /root
+    systemctl enable pm2-root
     
     log_success "✅ PM2 installé et configuré"
 }
@@ -86,7 +95,7 @@ install_certbot() {
 setup_directories() {
     log_info "📁 Configuration des répertoires..."
     
-    mkdir -p $APP_PATH/{releases,shared/{logs,uploads}}
+    mkdir -p $APP_PATH/{releases,shared/{logs,uploads,env}}
     mkdir -p /var/log/nginx
     
     # Permissions
@@ -94,6 +103,26 @@ setup_directories() {
     chmod -R 755 $APP_PATH
     
     log_success "✅ Répertoires configurés"
+}
+
+# Configuration des variables d'environnement
+setup_env() {
+    log_info "🔧 Configuration des variables d'environnement..."
+    
+    cat > $APP_PATH/shared/env/.env.production << 'EOF'
+NODE_ENV=production
+PORT=3000
+NEXT_TELEMETRY_DISABLED=1
+# Ajoutez vos variables spécifiques ici
+# DATABASE_URL=...
+# API_KEY=...
+# etc.
+EOF
+
+    chmod 600 $APP_PATH/shared/env/.env.production
+    chown www-data:www-data $APP_PATH/shared/env/.env.production
+    
+    log_success "✅ Variables d'environnement configurées"
 }
 
 # Configuration Nginx
@@ -105,12 +134,14 @@ setup_nginx() {
     
     # Configuration du site
     cat > /etc/nginx/sites-available/$APP_NAME << 'EOF'
+# Redirection HTTP vers HTTPS
 server {
     listen 80;
     server_name applicationweb.datalysconsulting.com www.applicationweb.datalysconsulting.com;
     return 301 https://$server_name$request_uri;
 }
 
+# Configuration HTTPS
 server {
     listen 443 ssl http2;
     server_name applicationweb.datalysconsulting.com www.applicationweb.datalysconsulting.com;
@@ -121,21 +152,21 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_types text/plain text/css text/xml text/javascript application/javascript application/json;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/json application/xml+rss;
 
     # Rate Limiting
     limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
     limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
 
-    # Static files caching
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+    # Static files avec cache optimisé
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
         access_log off;
         proxy_pass http://127.0.0.1:3000;
     }
 
-    # API routes with rate limiting
+    # API routes avec rate limiting
     location /api/ {
         limit_req zone=api burst=20 nodelay;
         proxy_pass http://127.0.0.1:3000;
@@ -149,7 +180,7 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
-    # Login rate limiting
+    # Login avec rate limiting strict
     location /connexion {
         limit_req zone=login burst=3 nodelay;
         proxy_pass http://127.0.0.1:3000;
@@ -160,7 +191,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Main application
+    # Application principale
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
@@ -172,11 +203,18 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
 
+        # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+        
+        # Buffer settings
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 8 4k;
     }
 
+    # Logs
     access_log /var/log/nginx/datalys-app.access.log;
     error_log /var/log/nginx/datalys-app.error.log;
 }
@@ -225,31 +263,17 @@ install_monitoring() {
     
     # Configuration PM2 monitoring
     pm2 install pm2-logrotate
+    pm2 set pm2-logrotate:max_size 10M
+    pm2 set pm2-logrotate:retain 7
+    pm2 set pm2-logrotate:compress true
     
     log_success "✅ Outils de monitoring installés"
 }
 
-# Configuration des variables d'environnement
-setup_env() {
-    log_info "🔧 Configuration des variables d'environnement..."
-    
-    cat > $APP_PATH/shared/.env << 'EOF'
-NODE_ENV=production
-PORT=3000
-NEXT_TELEMETRY_DISABLED=1
-# Ajoutez vos autres variables d'environnement ici
-EOF
-
-    chmod 600 $APP_PATH/shared/.env
-    chown www-data:www-data $APP_PATH/shared/.env
-    
-    log_success "✅ Variables d'environnement configurées"
-}
-
 # Menu principal
 main() {
-    echo "🛠️  Configuration serveur DATALYS Consulting App"
-    echo "================================================="
+    echo "🛠️  Configuration serveur manuelle DATALYS Consulting App"
+    echo "========================================================="
     echo "Serveur: $(hostname -I | awk '{print $1}')"
     echo "Domaine: $DOMAIN"
     echo ""
@@ -260,36 +284,31 @@ main() {
         exit 1
     fi
     
+    check_root
     update_system
     install_nodejs
     install_pm2
     install_nginx
     install_certbot
     setup_directories
+    setup_env
     setup_nginx
     setup_ssl
     setup_firewall
     install_monitoring
-    setup_env
     
     echo ""
     log_success "🎉 Installation terminée!"
     echo ""
     echo "📋 Prochaines étapes:"
-    echo "1. Configurez vos secrets GitHub (SSH_PRIVATE_KEY)"
-    echo "2. Poussez votre code sur la branche 'develop'"
-    echo "3. L'application sera automatiquement déployée!"
+    echo "1. Assurez-vous que votre clé SSH est configurée"
+    echo "2. Depuis votre machine locale, exécutez:"
+    echo "   ./scripts/deploy-manual.sh deploy"
     echo ""
     echo "🔗 URL: https://$DOMAIN"
     echo "📊 Monitoring PM2: pm2 list"
     echo "📝 Logs: pm2 logs $APP_NAME"
 }
 
-# Vérification des privilèges root
-if [[ $EUID -ne 0 ]]; then
-   log_error "Ce script doit être exécuté en tant que root (sudo)"
-   exit 1
-fi
-
 # Exécution
-main "$@"
+main "$@" 
