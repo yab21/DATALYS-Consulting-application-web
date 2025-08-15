@@ -90,27 +90,23 @@ jobs:
 
       - name: 📦 Deploy application files
         run: |
-          # Use the stored RELEASE_DIR variable
+          echo "📤 Deploying files to: $RELEASE_DIR"
+
+          # Synchroniser les fichiers (UNE SEULE FOIS)
           rsync -avz --delete \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.env*' \
             ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
 
-
-              # Synchroniser les fichiers
-              rsync -avz --delete \
-                --exclude='.git' \
-                --exclude='node_modules' \
-                --exclude='.env*' \
-                ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
-
-              # Créer les liens symboliques
-              ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-                cd $RELEASE_DIR
-                ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
-                ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
-              "
+          # Créer les liens symboliques
+          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+            set -e
+            cd $RELEASE_DIR
+            ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
+            ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
+            echo 'Files deployed and symlinks created'
+          "
 
       - name: 📋 Install production dependencies
         run: |
@@ -129,15 +125,27 @@ jobs:
 
       - name: 🔄 Switch to new release
         run: |
+          echo "🔗 Switching to release: $TIMESTAMP"
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+            set -e
             # Créer le lien symbolique vers la nouvelle release
             cd ${{ env.DEPLOY_PATH }}
-            ln -sfn releases/$(date +%Y%m%d_%H%M%S) current
+            
+            # Backup current if exists
+            if [ -L current ]; then
+              rm -f previous
+              mv current previous
+            fi
+            
+            # Create new symlink using stored TIMESTAMP
+            ln -sf releases/$TIMESTAMP current
+            echo 'Symlink updated to new release'
             
             # Restart PM2
             cd current
             pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
             pm2 save
+            echo 'PM2 reloaded successfully'
           "
 
       - name: 🧹 Cleanup old releases
