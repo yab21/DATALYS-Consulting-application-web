@@ -1,7 +1,7 @@
 // Configuration API pour DATALYS Consulting
 
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:32015',
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082',
   
   ENDPOINTS: {
     AUTH: {

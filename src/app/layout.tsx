@@ -9,6 +9,7 @@ import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
 import { NotificationProvider } from "@/components/UI/Notifications/NotificationSystem";
 import { PerformanceUtils } from "@/components/Optimizations";
+import { AuthProvider } from "@/context/AuthContext";
 
 export default function RootLayout({
   children,
@@ -47,9 +48,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning={true}>
-        <NotificationProvider>
-          {loading ? <Loader /> : children}
-        </NotificationProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            {loading ? <Loader /> : children}
+          </NotificationProvider>
+        </AuthProvider>
       </body>
     </html>
   );

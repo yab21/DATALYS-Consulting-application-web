@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardBody,
@@ -9,79 +9,74 @@ import {
   Textarea,
   Select,
   SelectItem,
-  Chip,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
 } from "@nextui-org/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { partnersService, CreatePartnerFormData } from "@/services/partners";
+import { useAuth } from "@/context/AuthContext";
+import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
 
 // Types
 interface PartnerForm {
-  nom: string;
-  logo: string;
-  secteur: string;
-  description: string;
+  name: string;
+  logo: File | null;
   email: string;
-  telephone: string;
-  adresse: string;
-  responsable: string;
-  statut: "actif" | "inactif" | "suspendu";
+  phone: string;
+  address: string;
+  is_active: boolean;
 }
 
-// Options prédéfinies
-const SECTEURS = [
-  "Technologie",
-  "Finance",
-  "Santé",
-  "Logistique",
-  "Commerce",
-  "Industrie",
-  "Education",
-  "Immobilier",
-  "Agriculture",
-  "Autre",
-];
 
 const AjouterPartenaire: React.FC = () => {
   const router = useRouter();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { user, isAuthenticated } = useAuth();
+  const { showNotification } = useNotifications();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<PartnerForm>({
-    nom: "",
-    logo: "",
-    secteur: "",
-    description: "",
+    name: "",
+    logo: null,
     email: "",
-    telephone: "",
-    adresse: "",
-    responsable: "",
-    statut: "actif",
+    phone: "",
+    address: "",
+    is_active: true,
   });
+
+  // Debug de l'authentification
+  useEffect(() => {
+    console.log("🔐 État d'authentification:", {
+      isAuthenticated,
+      user,
+      hasToken: !!localStorage.getItem('authToken')
+    });
+  }, [isAuthenticated, user]);
+
+  // Fonction de test de l'API (accessible dans la console)
+  const testAPI = async () => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      partnersService.setToken(token);
+      return await partnersService.testCreateEndpoint();
+    }
+    return { error: 'Pas de token' };
+  };
+
+  // Exposer la fonction de test globalement pour le debug
+  useEffect(() => {
+    (window as any).testAPI = testAPI;
+  }, []);
 
   // Validation du formulaire
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.nom.trim()) {
-      newErrors.nom = "Le nom du partenaire est requis";
+    if (!formData.name.trim()) {
+      newErrors.name = "Le nom du partenaire est requis";
     }
 
-    if (!formData.secteur) {
-      newErrors.secteur = "Le secteur est requis";
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = "La description est requise";
-    }
 
     if (!formData.email.trim()) {
       newErrors.email = "L'email est requis";
@@ -89,12 +84,12 @@ const AjouterPartenaire: React.FC = () => {
       newErrors.email = "Format d'email invalide";
     }
 
-    if (!formData.telephone.trim()) {
-      newErrors.telephone = "Le téléphone est requis";
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Le téléphone est requis";
     }
 
-    if (!formData.responsable.trim()) {
-      newErrors.responsable = "Le responsable est requis";
+    if (!formData.address.trim()) {
+      newErrors.address = "L'adresse est requise";
     }
 
     setErrors(newErrors);
@@ -122,47 +117,112 @@ const AjouterPartenaire: React.FC = () => {
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Simulation d'upload - en production, vous uploaderiez vers un service
-      const mockUrl = `/images/partners/${file.name}`;
-      handleInputChange("logo", mockUrl);
-      console.log("Logo uploadé:", file.name);
+      setFormData((prev) => ({
+        ...prev,
+        logo: file,
+      }));
+      console.log("Logo sélectionné:", file.name);
     }
   };
 
   // Soumission du formulaire
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    console.log("🚀 Début de la soumission du formulaire");
+    
+    // Debug d'authentification détaillé
+    const token = localStorage.getItem('authToken');
+    console.log("🔑 Debug authentification:", {
+      isAuthenticated,
+      user,
+      token: token ? `${token.substring(0, 20)}...` : null,
+      userObject: user,
+    });
+    
+    if (!validateForm()) {
+      console.log("❌ Validation du formulaire échouée");
+      return;
+    }
+
+    if (!isAuthenticated || !user) {
+      const errorMsg = "Vous devez être connecté pour créer un partenaire";
+      console.log("❌ Utilisateur non authentifié");
+      showNotification(notificationHelpers.error(
+        "Erreur d'authentification",
+        errorMsg
+      ));
+      return;
+    }
+
+    // Vérifier explicitement le token dans le service
+    if (!token) {
+      console.log("❌ Aucun token trouvé dans localStorage");
+      showNotification(notificationHelpers.error(
+        "Erreur d'authentification",
+        "Token d'authentification manquant"
+      ));
+      return;
+    }
 
     setIsSubmitting(true);
+    console.log("📤 Envoi des données à l'API...");
 
     try {
-      // Simulation de l'envoi - en production, vous feriez un appel API
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // S'assurer que le token est bien défini dans le service
+      partnersService.setToken(token);
+      console.log("🔐 Token défini dans le service");
 
-      const newPartner = {
-        id: `partner-${Date.now()}`,
-        ...formData,
-        dateCreation: new Date(),
-        nombreProjets: 0,
-        nombreIncidents: 0,
+      // Préparer les données pour l'API
+      const partnerData: CreatePartnerFormData = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        is_active: formData.is_active,
+        logo: formData.logo || undefined,
       };
 
-      console.log("Nouveau partenaire créé:", newPartner);
+      console.log("📋 Données préparées:", {
+        ...partnerData,
+        logo: partnerData.logo ? `Fichier: ${partnerData.logo.name} (${partnerData.logo.size} bytes)` : 'Aucun logo'
+      });
+      console.log("👤 Utilisateur connecté:", { id: user?.id, name: user?.name, email: user?.email });
+      console.log("🌐 URL de base API:", process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082');
 
-      // Afficher la modal de confirmation
-      onOpen();
+      // Créer le partenaire via l'API
+      console.log("📡 Appel API en cours...");
+      const result = await partnersService.createPartner(partnerData, user?.id);
+      
+      console.log("📨 Réponse de l'API:", result);
+      
+      if (result.code === 200) {
+        console.log("✅ Partenaire créé avec succès:", result);
+        
+        showNotification(notificationHelpers.success(
+          "Partenaire créé ! 🎉",
+          `Le partenaire ${formData.name} a été créé avec succès`
+        ));
+        
+        // Rediriger vers la liste des partenaires après un court délai
+        setTimeout(() => {
+          router.push("/tableaudebord/partenaire/liste");
+        }, 1500);
+      } else {
+        throw new Error(result.message?.message || "Erreur lors de la création");
+      }
     } catch (error) {
-      console.error("Erreur lors de la création:", error);
+      console.error("❌ Erreur lors de la création:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+      
+      showNotification(notificationHelpers.error(
+        "Erreur de création",
+        errorMessage
+      ));
     } finally {
       setIsSubmitting(false);
+      console.log("🏁 Fin de la soumission");
     }
   };
 
-  // Retour à la liste
-  const handleReturnToList = () => {
-    onClose();
-    router.push("/tableaudebord/partenaire/liste");
-  };
 
   return (
     <>
@@ -247,12 +307,12 @@ const AjouterPartenaire: React.FC = () => {
                       <Input
                         variant="bordered"
                         placeholder="Ex: TechCorp Solutions"
-                        value={formData.nom}
+                        value={formData.name}
                         onChange={(e) =>
-                          handleInputChange("nom", e.target.value)
+                          handleInputChange("name", e.target.value)
                         }
-                        isInvalid={!!errors.nom}
-                        errorMessage={errors.nom}
+                        isInvalid={!!errors.name}
+                        errorMessage={errors.name}
                         isRequired
                         size="lg"
                         className="text-base"
@@ -268,72 +328,31 @@ const AjouterPartenaire: React.FC = () => {
                     <div className="group">
                       <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
                         <svg className="h-4 w-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H3.862a2 2 0 01-1.995-1.858L1 7m18 0l-2.5-5H15.5m3.5 5l-8 8L3 7m16 0H3m0 0l2.5-5H9.5M7 9v8M13 9v8"/>
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                         </svg>
-                        Secteur d'activité *
+                        Adresse *
                       </label>
-                      <Select
+                      <Textarea
                         variant="bordered"
-                        selectedKeys={
-                          formData.secteur ? [formData.secteur] : []
+                        placeholder="Adresse complète du partenaire (rue, ville, code postal, pays)"
+                        value={formData.address}
+                        onChange={(e) =>
+                          handleInputChange("address", e.target.value)
                         }
-                        onSelectionChange={(keys) => {
-                          const value = Array.from(keys)[0] as string;
-                          handleInputChange("secteur", value || "");
-                        }}
-                        isInvalid={!!errors.secteur}
-                        errorMessage={errors.secteur}
-                        isRequired
+                        minRows={3}
+                        maxRows={4}
                         size="lg"
                         className="text-base"
                         classNames={{
-                          trigger:
-                            "bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-cyan-400 dark:hover:border-cyan-500 focus-within:border-cyan-500 dark:focus-within:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-cyan-200/50 dark:group-hover:shadow-cyan-900/25",
-                          value: "text-gray-900 dark:text-white font-medium",
+                          input:
+                            "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium leading-relaxed",
+                          inputWrapper:
+                            "bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-emerald-400 dark:hover:border-emerald-500 focus-within:border-emerald-500 dark:focus-within:border-emerald-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-emerald-200/50 dark:group-hover:shadow-emerald-900/25",
                         }}
-                      >
-                        {SECTEURS.map((secteur) => (
-                          <SelectItem
-                            key={secteur}
-                            value={secteur}
-                            className="text-gray-900 dark:text-white hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
-                          >
-                            {secteur}
-                          </SelectItem>
-                        ))}
-                      </Select>
+                      />
                     </div>
                   </div>
 
-                  <div className="mt-8 group">
-                    <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
-                      <svg className="h-4 w-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
-                      </svg>
-                      Description *
-                    </label>
-                    <Textarea
-                      variant="bordered"
-                      placeholder="Description détaillée de l'activité du partenaire, ses services et domaines d'expertise"
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleInputChange("description", e.target.value)
-                      }
-                      minRows={4}
-                      maxRows={6}
-                      isInvalid={!!errors.description}
-                      errorMessage={errors.description}
-                      isRequired
-                      size="lg"
-                      className="text-base"
-                      classNames={{
-                        input:
-                          "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium leading-relaxed",
-                        inputWrapper:
-                          "bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-cyan-400 dark:hover:border-cyan-500 focus-within:border-cyan-500 dark:focus-within:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-cyan-200/50 dark:group-hover:shadow-cyan-900/25",
-                      }}
-                    />
-                  </div>
                 </div>
 
                 {/* Logo */}
@@ -457,12 +476,12 @@ const AjouterPartenaire: React.FC = () => {
                       <Input
                         variant="bordered"
                         placeholder="+33 1 23 45 67 89"
-                        value={formData.telephone}
+                        value={formData.phone}
                         onChange={(e) =>
-                          handleInputChange("telephone", e.target.value)
+                          handleInputChange("phone", e.target.value)
                         }
-                        isInvalid={!!errors.telephone}
-                        errorMessage={errors.telephone}
+                        isInvalid={!!errors.phone}
+                        errorMessage={errors.phone}
                         isRequired
                         size="lg"
                         className="text-base"
@@ -476,35 +495,7 @@ const AjouterPartenaire: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="mt-8 grid gap-8 md:grid-cols-2">
-                    <div className="group">
-                      <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
-                        <svg className="h-4 w-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                        </svg>
-                        Responsable *
-                      </label>
-                      <Input
-                        variant="bordered"
-                        placeholder="Nom du responsable"
-                        value={formData.responsable}
-                        onChange={(e) =>
-                          handleInputChange("responsable", e.target.value)
-                        }
-                        isInvalid={!!errors.responsable}
-                        errorMessage={errors.responsable}
-                        isRequired
-                        size="lg"
-                        className="text-base"
-                        classNames={{
-                          input:
-                            "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium",
-                          inputWrapper:
-                            "bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-emerald-400 dark:hover:border-emerald-500 focus-within:border-emerald-500 dark:focus-within:border-emerald-400 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:shadow-emerald-200/50 dark:group-hover:shadow-emerald-900/25",
-                        }}
-                      />
-                    </div>
-
+                  <div className="mt-8">
                     <div className="group">
                       <label className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
                         <svg className="h-4 w-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
@@ -513,13 +504,10 @@ const AjouterPartenaire: React.FC = () => {
                         Statut
                       </label>
                       <Select
-                        selectedKeys={[formData.statut]}
+                        selectedKeys={[formData.is_active ? "actif" : "inactif"]}
                         onSelectionChange={(keys) => {
-                          const value = Array.from(keys)[0] as
-                            | "actif"
-                            | "inactif"
-                            | "suspendu";
-                          handleInputChange("statut", value);
+                          const value = Array.from(keys)[0] as string;
+                          setFormData(prev => ({ ...prev, is_active: value === "actif" }));
                         }}
                         size="lg"
                         className="text-base"
@@ -564,9 +552,9 @@ const AjouterPartenaire: React.FC = () => {
                     <Textarea
                       variant="bordered"
                       placeholder="Adresse complète du partenaire (rue, ville, code postal, pays)"
-                      value={formData.adresse}
+                      value={formData.address}
                       onChange={(e) =>
-                        handleInputChange("adresse", e.target.value)
+                        handleInputChange("address", e.target.value)
                       }
                       minRows={3}
                       maxRows={4}
@@ -637,112 +625,6 @@ const AjouterPartenaire: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Modal de confirmation améliorée */}
-      <Modal isOpen={isOpen} onClose={onClose} size="2xl" className="dark">
-        <ModalContent className="bg-white dark:bg-gray-900 border-0 shadow-2xl">
-          <ModalHeader className="relative overflow-hidden border-b border-gray-200/50 pb-6 pt-8 dark:border-gray-700/50">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20"></div>
-            <div className="relative flex items-center gap-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 shadow-2xl shadow-green-500/30">
-                <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">
-                  Partenaire Créé ! 🎉
-                </h3>
-                <p className="text-lg text-gray-600 dark:text-gray-300">
-                  Nouveau partenariat établi avec succès
-                </p>
-              </div>
-            </div>
-          </ModalHeader>
-          <ModalBody className="px-8 py-8">
-            <div className="space-y-8">
-              <div className="text-center">
-                <p className="text-xl leading-relaxed text-gray-600 dark:text-gray-300 mb-4">
-                  🤝 Le partenaire{" "}
-                  <span className="font-black text-transparent bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text dark:from-cyan-400 dark:to-blue-400">
-                    {formData.nom}
-                  </span>{" "}
-                  a rejoint notre écosystème !
-                </p>
-              </div>
-
-              <div className="relative rounded-3xl bg-gradient-to-br from-gray-50 via-white to-gray-100 p-8 shadow-xl dark:from-gray-800 dark:via-gray-750 dark:to-gray-700">
-                <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-gradient-to-r from-cyan-400/20 to-blue-500/20 blur-2xl"></div>
-                <div className="relative mb-6 flex items-center gap-6">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-2xl shadow-cyan-500/25">
-                    <span className="text-3xl font-black text-white">
-                      {formData.nom.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                      {formData.nom}
-                    </h4>
-                    <div className="flex flex-wrap gap-3">
-                      <Chip
-                        size="lg"
-                        variant="solid"
-                        className="bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold shadow-lg"
-                      >
-                        📊 {formData.secteur}
-                      </Chip>
-                      <Chip
-                        size="lg"
-                        variant="solid"
-                        className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold shadow-lg"
-                      >
-                        {formData.statut === 'actif' ? '✅' : formData.statut === 'suspendu' ? '⏸️' : '⚪'} {formData.statut}
-                      </Chip>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 text-lg text-gray-700 dark:text-gray-300">
-                  <div className="flex items-center gap-4 rounded-2xl bg-white/50 dark:bg-gray-700/50 p-4 backdrop-blur-sm">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30">
-                      <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                      </svg>
-                    </div>
-                    <span className="font-medium">{formData.email}</span>
-                  </div>
-                  <div className="flex items-center gap-4 rounded-2xl bg-white/50 dark:bg-gray-700/50 p-4 backdrop-blur-sm">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30">
-                      <svg className="h-5 w-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <span className="font-medium">{formData.responsable}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter className="relative overflow-hidden border-t border-gray-200/50 pt-6 pb-8 dark:border-gray-700/50">
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 via-white/30 to-gray-50/50 dark:from-gray-800/50 dark:via-gray-900/30 dark:to-gray-800/50"></div>
-            <div className="relative w-full flex justify-center">
-              <Button
-                color="primary"
-                size="lg"
-                onPress={handleReturnToList}
-                className="px-12 py-4 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-xl font-bold shadow-2xl shadow-blue-500/25 transition-all duration-300 hover:from-cyan-600 hover:via-blue-700 hover:to-indigo-700 hover:shadow-blue-500/40 hover:-translate-y-1 active:scale-95"
-                startContent={
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                  </svg>
-                }
-              >
-                📋 Voir la Liste des Partenaires
-              </Button>
-            </div>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </>
   );
 };

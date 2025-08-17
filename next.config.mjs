@@ -2,10 +2,69 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['firebasestorage.googleapis.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8081',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8082',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '82.112.253.137',
+        port: '8081',
+      },
+      {
+        protocol: 'http',
+        hostname: '82.112.253.137',
+        port: '8082',
+        pathname: '/files/serve/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '82.112.253.137',
+        port: '8082',
+      },
+      {
+        protocol: 'http',
+        hostname: '82.112.253.137',
+      },
+      {
+        protocol: 'https',
+        hostname: '82.112.253.137',
+      },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+      },
+      // En développement, autoriser tous les domaines
+      ...(process.env.NODE_ENV === 'development' ? [{
+        protocol: 'http',
+        hostname: '**',
+        port: '',
+      }, {
+        protocol: 'https',
+        hostname: '**',
+        port: '',
+      }] : [])
+    ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp'],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   experimental: {
     serverActions: {

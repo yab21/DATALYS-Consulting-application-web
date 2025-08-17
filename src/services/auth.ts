@@ -37,19 +37,35 @@ export class AuthService {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Accept": "*/*",
+            "Cache-Control": "no-cache",
           },
           body: JSON.stringify(credentials),
         },
       );
 
-      const result: ApiResponse<LoginResponse> = await response.json();
-
-      if (response.ok && result.status === "success") {
-        // Stocker le token et les informations utilisateur
-        this.storeAuthData(result.data!);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return result;
+      const result = await response.json();
+
+      // Adapter la réponse de l'API réelle au format attendu
+      if (result.status === "success" && result.data) {
+        // Stocker le token et les informations utilisateur
+        this.storeAuthData(result.data);
+        
+        return {
+          status: "success",
+          message: result.message,
+          data: result.data,
+        };
+      } else {
+        return {
+          status: "error",
+          message: result.message || "Erreur de connexion",
+        };
+      }
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);
       return {
@@ -171,7 +187,7 @@ export class AuthService {
   /**
    * Effacer les données d'authentification
    */
-  private static clearAuthData(): void {
+  static clearAuthData(): void {
     if (typeof window === "undefined") return;
 
     // Supprimer du localStorage
