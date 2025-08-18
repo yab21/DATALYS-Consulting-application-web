@@ -17,9 +17,22 @@ interface SidebarProps {
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
-  const { isAdmin, isPartner, hasPermission, canCreate } = useAuth();
+  const { user, isAdmin, isPartner, hasPermission, canCreate, isLoading } = useAuth();
+
+  console.log("🎨 Sidebar rendu - état auth:", {
+    user: user?.name,
+    role_id: user?.role_id,
+    isLoading,
+    isAdmin: isAdmin(),
+    isPartner: isPartner()
+  });
 
   // Définir les menus en fonction des autorisations
+  // Ne pas rendre la sidebar tant que l'auth n'est pas chargé
+  if (isLoading || !user) {
+    return null;
+  }
+
   const getMenuGroups = () => {
     const baseMenuGroups = [
       {

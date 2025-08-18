@@ -62,15 +62,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const storedUser = localStorage.getItem('userInfo');
 
         if (storedToken && storedUser) {
-          setToken(storedToken);
           const userData = JSON.parse(storedUser);
+          
+          // Assurer que role_id est un nombre
+          if (userData.role_id) {
+            userData.role_id = parseInt(userData.role_id);
+          }
+          
+          console.log('🔍 Données utilisateur chargées:', {
+            name: userData.name,
+            role_id: userData.role_id,
+            partner_id: userData.partner_id
+          });
+
+          setToken(storedToken);
           setUser(userData);
           
-          // Créer l'utilisateur avec permissions
+          // Créer l'utilisateur avec permissions immédiatement
           const userWithPerms: UserWithPermissions = {
             ...userData,
             permissions: PermissionManager.getUserPermissions(userData)
           };
+          
+          console.log('🔧 Permissions calculées:', {
+            isAdmin: PermissionManager.isAdmin(userWithPerms),
+            isPartner: PermissionManager.isPartner(userWithPerms),
+            permissionCount: userWithPerms.permissions?.length || 0
+          });
+          
           setUserWithPermissions(userWithPerms);
         }
       } catch (error) {
@@ -99,12 +118,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           email: response.data.email,
           name: response.data.name,
           is_active: response.data.is_active,
-          role_id: response.data.role_id,
+          role_id: parseInt(response.data.role_id), // Assurer que c'est un nombre
           partner_id: response.data.partner_id, // Ajouter partner_id depuis l'API
           created_at: response.data.created_at,
           updated_at: response.data.updated_at,
           requires_password_change: response.data.requires_password_change,
         };
+        
+        console.log('🔍 Données de connexion:', {
+          name: userData.name,
+          role_id: userData.role_id,
+          partner_id: userData.partner_id,
+          requires_password_change: userData.requires_password_change
+        });
 
         setUser(userData);
         setToken(response.data.token);
@@ -143,7 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email: userData.email,
         name: userData.name,
         is_active: userData.is_active,
-        role_id: userData.role_id,
+        role_id: typeof userData.role_id === 'string' ? parseInt(userData.role_id) : userData.role_id, // Assurer que c'est un nombre
         partner_id: userData.partner_id,
         created_at: userData.created_at,
         updated_at: userData.updated_at,

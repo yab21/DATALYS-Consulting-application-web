@@ -86,7 +86,7 @@ interface ActivityItem {
 }
 
 const ModernDashboard: React.FC = () => {
-  const { user, isAdmin, isPartner, hasPermission } = useAuth();
+  const { user, userWithPermissions, isAdmin, isPartner, hasPermission, isLoading: authLoading } = useAuth();
   const { showNotification } = useNotifications();
   
   // États principaux
@@ -156,8 +156,16 @@ const ModernDashboard: React.FC = () => {
   );
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    // Attendre que les données d'authentification soient chargées
+    if (!authLoading && user) {
+      console.log("🚀 Auth chargé, démarrage du dashboard pour:", {
+        name: user.name,
+        role_id: user.role_id,
+        isAdmin: isAdmin()
+      });
+      loadDashboardData();
+    }
+  }, [authLoading, user]);
 
   const loadDashboardData = async () => {
     try {
@@ -260,7 +268,7 @@ const ModernDashboard: React.FC = () => {
     return `Il y a ${Math.round(diffInHours / 24)} jours`;
   };
 
-  if (loading) {
+  if (authLoading || !user || loading) {
     return (
       <div className="space-y-8 p-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
