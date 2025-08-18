@@ -10,6 +10,7 @@ export const API_CONFIG = {
       REFRESH: '/auth/refresh',
       FORGOT_PASSWORD: '/auth/forgot-password',
       RESET_PASSWORD: '/auth/reset-password',
+      CHANGE_TEMP_PASSWORD: '/auth/change-temp-password',
     },
     USER: {
       PROFILE: '/user/profile',
@@ -101,4 +102,5 @@ export interface LoginResponse {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  requires_password_change?: boolean; // Indique si l'utilisateur doit changer son mot de passe
 }

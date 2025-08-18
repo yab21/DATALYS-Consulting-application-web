@@ -58,6 +58,20 @@ const Connexion: React.FC = () => {
           localStorage.setItem("rememberMe", "true");
         }
         
+        // Vérifier si l'utilisateur doit changer son mot de passe
+        if (result.data?.requires_password_change) {
+          showNotification(notificationHelpers.warning(
+            "Changement de mot de passe requis",
+            "Vous devez changer votre mot de passe temporaire"
+          ));
+          
+          // Rediriger vers la page de changement de mot de passe
+          setTimeout(() => {
+            router.push(`/changer-mot-de-passe-temporaire?email=${encodeURIComponent(data.email)}`);
+          }, 1500);
+          return;
+        }
+        
         showNotification(notificationHelpers.success(
           "Connexion réussie !",
           `Bienvenue ${result.data?.name || "sur DATALYS"} 🎉`

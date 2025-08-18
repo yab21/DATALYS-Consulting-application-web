@@ -21,6 +21,7 @@ interface User {
   partner_id?: number; // ID du partenaire associé (pour les clients)
   created_at: string;
   updated_at: string;
+  requires_password_change?: boolean; // Indique si l'utilisateur doit changer son mot de passe
 }
 
 interface AuthContextType {
@@ -30,6 +31,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithUserData: (userData: LoginResponse) => Promise<void>; // Nouvelle méthode pour connexion avec données existantes
   logout: () => void;
   // Helpers pour les permissions
   hasPermission: (permission: Permission) => boolean;
@@ -101,6 +103,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           partner_id: response.data.partner_id, // Ajouter partner_id depuis l'API
           created_at: response.data.created_at,
           updated_at: response.data.updated_at,
+          requires_password_change: response.data.requires_password_change,
         };
 
         setUser(userData);
@@ -117,6 +120,50 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
         throw new Error(response.message || 'Erreur de connexion');
       }
+    } catch (error) {
+      // Nettoyer l'état en cas d'erreur
+      setUser(null);
+      setUserWithPermissions(null);
+      setToken(null);
+      AuthService.clearAuthData();
+      
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fonction de connexion avec données utilisateur existantes (pour changement de mot de passe)
+  const loginWithUserData = async (userData: LoginResponse): Promise<void> => {
+    try {
+      setIsLoading(true);
+
+      const user: User = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        is_active: userData.is_active,
+        role_id: userData.role_id,
+        partner_id: userData.partner_id,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at,
+        requires_password_change: userData.requires_password_change,
+      };
+
+      setUser(user);
+      setToken(userData.token);
+
+      // Créer l'utilisateur avec permissions
+      const userWithPerms: UserWithPermissions = {
+        ...user,
+        permissions: PermissionManager.getUserPermissions(user)
+      };
+      setUserWithPermissions(userWithPerms);
+
+      // Sauvegarder les données d'authentification
+      localStorage.setItem('authToken', userData.token);
+      localStorage.setItem('userInfo', JSON.stringify(user));
+
     } catch (error) {
       // Nettoyer l'état en cas d'erreur
       setUser(null);
@@ -190,6 +237,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading,
     isAuthenticated: !!user && !!token,
     login,
+    loginWithUserData,
     logout,
     hasPermission,
     isAdmin,
