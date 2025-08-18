@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { partnersService, Partner } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
+import { Permission } from "@/lib/permissions";
 
 // Types pour l'affichage (adapté de l'API) - peut être étendu si nécessaire
 
@@ -32,7 +33,14 @@ const ListePartenaires: React.FC = () => {
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { 
+    isAuthenticated, 
+    isLoading: authLoading,
+    isAdmin,
+    hasPermission,
+    canCreate,
+    getCRUDPermissions
+  } = useAuth();
 
   const handleImageError = (partnerId: number, imageUrl?: string) => {
     if (process.env.NODE_ENV === 'development') {
@@ -120,6 +128,14 @@ const ListePartenaires: React.FC = () => {
       if (!isAuthenticated) {
         console.log("❌ Utilisateur non authentifié");
         setError("Vous devez être connecté pour voir les partenaires");
+        setLoading(false);
+        return;
+      }
+
+      // Vérification des permissions - Seuls les admins peuvent voir les partenaires
+      if (!isAdmin()) {
+        console.log("❌ Accès refusé - Utilisateur non administrateur");
+        setError("Accès refusé. Seuls les administrateurs peuvent gérer les partenaires.");
         setLoading(false);
         return;
       }
@@ -280,25 +296,27 @@ const ListePartenaires: React.FC = () => {
               </div>
             </div>
 
-            <Link href="/tableaudebord/partenaire/ajouter">
-              <Button
-                color="primary"
-                size="lg"
-                className="bg-primary bg-gradient-to-r px-6 py-3 text-base font-semibold shadow-lg hover:from-primary-100 hover:to-primary-800"
-                startContent={
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                  </svg>
-                }
-              >
-                Nouveau Partenaire
-              </Button>
-            </Link>
+            {canCreate() && hasPermission(Permission.CREATE_PARTNERS) && (
+              <Link href="/tableaudebord/partenaire/ajouter">
+                <Button
+                  color="primary"
+                  size="lg"
+                  className="bg-primary bg-gradient-to-r px-6 py-3 text-base font-semibold shadow-lg hover:from-primary-100 hover:to-primary-800"
+                  startContent={
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
+                  }
+                >
+                  Nouveau Partenaire
+                </Button>
+              </Link>
+            )}
           </div>
         </motion.div>
 

@@ -3,33 +3,52 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuthService } from '@/services/auth';
 import { ApiResponse, LoginResponse } from '@/lib/api-config';
+import { 
+  UserWithPermissions, 
+  Permission, 
+  PermissionManager, 
+  getCRUDPermissions,
+  CRUDPermissions 
+} from '@/lib/permissions';
 
-// Types
+// Types étendus avec permissions
 interface User {
   id: number;
   email: string;
   name: string;
   is_active: boolean;
   role_id: number;
+  partner_id?: number; // ID du partenaire associé (pour les clients)
   created_at: string;
   updated_at: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  userWithPermissions: UserWithPermissions | null;
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  // Helpers pour les permissions
+  hasPermission: (permission: Permission) => boolean;
+  isAdmin: () => boolean;
+  isPartner: () => boolean;
+  canAccessProject: (projectPartnerId: number) => boolean;
+  canModify: () => boolean;
+  canDelete: () => boolean;
+  canCreate: () => boolean;
+  getCRUDPermissions: (entityType: 'projects' | 'partners' | 'users' | 'documents') => CRUDPermissions;
 }
 
 // Contexte d'authentification
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Provider d'authentification
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userWithPermissions, setUserWithPermissions] = useState<UserWithPermissions | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,7 +61,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (storedToken && storedUser) {
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          
+          // Créer l'utilisateur avec permissions
+          const userWithPerms: UserWithPermissions = {
+            ...userData,
+            permissions: PermissionManager.getUserPermissions(userData)
+          };
+          setUserWithPermissions(userWithPerms);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des données d\'authentification:', error);
@@ -71,12 +98,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           name: response.data.name,
           is_active: response.data.is_active,
           role_id: response.data.role_id,
+          partner_id: response.data.partner_id, // Ajouter partner_id depuis l'API
           created_at: response.data.created_at,
           updated_at: response.data.updated_at,
         };
 
         setUser(userData);
         setToken(response.data.token);
+
+        // Créer l'utilisateur avec permissions
+        const userWithPerms: UserWithPermissions = {
+          ...userData,
+          permissions: PermissionManager.getUserPermissions(userData)
+        };
+        setUserWithPermissions(userWithPerms);
 
         // Les données sont automatiquement sauvegardées par AuthService.login
       } else {
@@ -85,6 +120,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       // Nettoyer l'état en cas d'erreur
       setUser(null);
+      setUserWithPermissions(null);
       setToken(null);
       AuthService.clearAuthData();
       
@@ -97,19 +133,72 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Fonction de déconnexion
   const logout = (): void => {
     setUser(null);
+    setUserWithPermissions(null);
     setToken(null);
     
     // Nettoyer les données d'authentification
     AuthService.clearAuthData();
   };
 
+  // Helpers pour les permissions
+  const hasPermission = (permission: Permission): boolean => {
+    if (!userWithPermissions) return false;
+    return PermissionManager.hasPermission(userWithPermissions, permission);
+  };
+
+  const isAdmin = (): boolean => {
+    if (!userWithPermissions) return false;
+    return PermissionManager.isAdmin(userWithPermissions);
+  };
+
+  const isPartner = (): boolean => {
+    if (!userWithPermissions) return false;
+    return PermissionManager.isPartner(userWithPermissions);
+  };
+
+  const canAccessProject = (projectPartnerId: number): boolean => {
+    if (!userWithPermissions) return false;
+    return PermissionManager.canAccessProject(userWithPermissions, projectPartnerId);
+  };
+
+  const canModify = (): boolean => {
+    if (!userWithPermissions) return false;
+    return PermissionManager.canModify(userWithPermissions);
+  };
+
+  const canDelete = (): boolean => {
+    if (!userWithPermissions) return false;
+    return PermissionManager.canDelete(userWithPermissions);
+  };
+
+  const canCreate = (): boolean => {
+    if (!userWithPermissions) return false;
+    return PermissionManager.canCreate(userWithPermissions);
+  };
+
+  const getCRUDPermissionsHelper = (entityType: 'projects' | 'partners' | 'users' | 'documents'): CRUDPermissions => {
+    if (!userWithPermissions) {
+      return { canRead: false, canCreate: false, canUpdate: false, canDelete: false };
+    }
+    return getCRUDPermissions(userWithPermissions, entityType);
+  };
+
   const contextValue: AuthContextType = {
     user,
+    userWithPermissions,
     token,
     isLoading,
     isAuthenticated: !!user && !!token,
     login,
     logout,
+    hasPermission,
+    isAdmin,
+    isPartner,
+    canAccessProject,
+    canModify,
+    canDelete,
+    canCreate,
+    getCRUDPermissions: getCRUDPermissionsHelper,
   };
 
   return (

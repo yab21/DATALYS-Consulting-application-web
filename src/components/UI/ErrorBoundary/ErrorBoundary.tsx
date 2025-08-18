@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button, Card, CardBody, Chip } from '@nextui-org/react';
+import { errorHandler } from '@/lib/error-handler';
 
 interface Props {
   children: ReactNode;
@@ -35,6 +36,15 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    // Analyser l'erreur avec le gestionnaire d'erreurs
+    const errorDetails = errorHandler.analyzeError(error, {
+      component: errorInfo.componentStack?.split('\n')[1]?.trim(),
+      action: 'component_render'
+    });
+    
+    // Gérer l'erreur
+    errorHandler.handleError(errorDetails);
     
     this.setState({
       error,

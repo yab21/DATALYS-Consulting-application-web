@@ -91,6 +91,20 @@ const nextConfig = {
           },
         ],
       },
+      // Allow service worker to be accessible
+      {
+        source: '/firebase-messaging-sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Content-Type',
+            value: 'application/javascript',
+          },
+        ],
+      },
     ];
   },
 };

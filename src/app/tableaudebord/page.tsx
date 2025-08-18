@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
 import { NextUIProvider } from "@nextui-org/react";
 import React from "react";
-import TableauDeBord from "@/components/TableauDeBord/index";
+import ModernDashboard from "@/components/TableauDeBord/Dashboard/ModernDashboard";
 
 export const metadata: Metadata = {
   title: "Tableau de bord | DATALYS Consulting",
@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <NextUIProvider>
       <DefaultLayout>
-        <TableauDeBord />
+        <ModernDashboard />
       </DefaultLayout>
     </NextUIProvider>
   );

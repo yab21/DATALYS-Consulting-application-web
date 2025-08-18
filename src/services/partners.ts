@@ -373,7 +373,7 @@ class PartnersService {
       return { status: response.status, body: result };
     } catch (error) {
       console.error('🧪 Erreur test:', error);
-      return { error: error.message };
+      return { error: error instanceof Error ? error.message : 'Erreur inconnue' };
     }
   }
 }

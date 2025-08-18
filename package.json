@@ -30,6 +30,7 @@
     "@types/react-window": "^1.8.8",
     "apexcharts": "^3.45.2",
     "core-js": "^3.35.0",
+    "firebase": "^12.1.0",
     "flatpickr": "^4.6.13",
     "form-data": "^4.0.4",
     "framer-motion": "^11.3.27",

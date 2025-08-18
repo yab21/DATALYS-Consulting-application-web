@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation";
 import { partnersService, CreatePartnerFormData } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { Permission } from "@/lib/permissions";
+import { PermissionGuard } from "@/components/Security/PermissionGuard";
 
 // Types
 interface PartnerForm {
@@ -31,7 +33,13 @@ interface PartnerForm {
 
 const AjouterPartenaire: React.FC = () => {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { 
+    user, 
+    isAuthenticated, 
+    isAdmin, 
+    hasPermission, 
+    canCreate 
+  } = useAuth();
   const { showNotification } = useNotifications();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -45,14 +53,38 @@ const AjouterPartenaire: React.FC = () => {
     is_active: true,
   });
 
-  // Debug de l'authentification
+  // Vérification des permissions et authentification
   useEffect(() => {
     console.log("🔐 État d'authentification:", {
       isAuthenticated,
       user,
-      hasToken: !!localStorage.getItem('authToken')
+      hasToken: !!localStorage.getItem('authToken'),
+      isAdmin: isAdmin(),
+      canCreate: canCreate(),
+      hasCreatePermission: hasPermission(Permission.CREATE_PARTNERS)
     });
-  }, [isAuthenticated, user]);
+
+    // Rediriger si l'utilisateur n'a pas les permissions nécessaires
+    if (isAuthenticated && !isAdmin()) {
+      console.log("❌ Accès refusé - Utilisateur non administrateur");
+      showNotification(notificationHelpers.error(
+        "Accès refusé",
+        "Seuls les administrateurs peuvent créer des partenaires"
+      ));
+      router.push("/tableaudebord");
+      return;
+    }
+
+    if (isAuthenticated && !hasPermission(Permission.CREATE_PARTNERS)) {
+      console.log("❌ Accès refusé - Permission CREATE_PARTNERS manquante");
+      showNotification(notificationHelpers.error(
+        "Permissions insuffisantes",
+        "Vous n'avez pas la permission de créer des partenaires"
+      ));
+      router.push("/tableaudebord");
+      return;
+    }
+  }, [isAuthenticated, user, isAdmin, canCreate, hasPermission, router, showNotification]);
 
   // Fonction de test de l'API (accessible dans la console)
   const testAPI = async () => {
@@ -225,7 +257,7 @@ const AjouterPartenaire: React.FC = () => {
 
 
   return (
-    <>
+    <PermissionGuard permissions={[Permission.CREATE_PARTNERS, Permission.CREATE_PARTNERS_ACCOUNTS]}>
       <Breadcrumb pageName="Ajouter un Partenaire" />
 
       <div className="mx-auto max-w-5xl space-y-8">
@@ -624,8 +656,7 @@ const AjouterPartenaire: React.FC = () => {
           </Card>
         </motion.div>
       </div>
-
-    </>
+    </PermissionGuard>
   );
 };
 

@@ -7,6 +7,8 @@ import ClickOutside from "@/components/ClickOutside";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
+import { Permission } from "@/lib/permissions";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -15,8 +17,7 @@ interface SidebarProps {
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
-  // Simulate admin user for demo purposes
-  const [isUserAdmin] = useState(true);
+  const { isAdmin, isPartner, hasPermission, canCreate } = useAuth();
 
   // Définir les menus en fonction des autorisations
   const getMenuGroups = () => {
@@ -70,9 +71,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             label: "Projet",
             route: "#",
             children: [
-              ...(isUserAdmin
+              // Ajouter projet - seulement pour les admins avec permission
+              ...(isAdmin() && hasPermission(Permission.CREATE_PROJECTS_ALL_PARTNERS)
                 ? [{ label: "Ajouter", route: "/tableaudebord/projet/ajouter" }]
                 : []),
+              // Gérer projets - pour tous les utilisateurs (ils verront selon leurs permissions)
               { label: "Gérer", route: "/tableaudebord/projet/gerer" },
             ],
           },
@@ -84,6 +87,26 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     const autresMenu = {
       name: "AUTRES",
       menuItems: [
+        // Menu Mon Espace - pour les partenaires uniquement
+        ...(isPartner() ? [{
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="fill-current transition-all duration-300 group-hover:scale-110"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="fill-current"
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+              />
+            </svg>
+          ),
+          label: "Mon Espace",
+          route: "/tableaudebord/mon-espace",
+        }] : []),
+
         // Menu Profil - pour tous les utilisateurs
         {
           icon: (
@@ -113,36 +136,182 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       ],
     };
 
-    // Ajouter le menu Utilisateur uniquement pour les admins
-    if (isUserAdmin) {
-      autresMenu.menuItems.unshift({
-        icon: (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="fill-current transition-all duration-300 group-hover:scale-110"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill="fill-current"
-              d="M14 7V5h8v2zm0 4V9h8v2zm0 4v-2h8v2zm-6-1q-1.25 0-2.125-.875T5 11t.875-2.125T8 8t2.125.875T11 11t-.875 2.125T8 14m-6 6v-1.9q0-.525.25-1t.7-.75q1.125-.675 2.388-1.012T8 15t2.663.338t2.387 1.012q.45.275.7.75t.25 1V20zm2.15-2h7.7q-.875-.5-1.85-.75T8 17t-2 .25t-1.85.75M8 12q.425 0 .713-.288T9 11t-.288-.712T8 10t-.712.288T7 11t.288.713T8 12m0 6"
-            />
-          </svg>
-        ),
-        label: "Partenaire",
-        route: "#",
-        children: [
+    // Menu Recherche (pour tous les utilisateurs)
+    autresMenu.menuItems.unshift({
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="fill-current transition-all duration-300 group-hover:scale-110"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="fill-current"
+            d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+          />
+        </svg>
+      ),
+      label: "Recherche",
+      route: "/tableaudebord/recherche",
+    });
+
+    // Menu Messages (pour tous les utilisateurs)
+    autresMenu.menuItems.unshift({
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="fill-current transition-all duration-300 group-hover:scale-110"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="fill-current"
+            d="M8 12h8v2H8zm0-3h8v2H8zm0-3h8v2H8zM4 2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2z"
+          />
+        </svg>
+      ),
+      label: "Messages",
+      route: "/tableaudebord/messages",
+    });
+
+    // Menu Support Technique (pour tous les utilisateurs)
+    autresMenu.menuItems.unshift({
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="fill-current transition-all duration-300 group-hover:scale-110"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="fill-current"
+            d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4zM6.5 10.5L10.5 6.5 8.5 4.5l-4 4 2 2z"
+          />
+        </svg>
+      ),
+      label: "Support",
+      route: "/tableaudebord/support",
+    });
+
+    // Ajouter les menus Admin uniquement pour les admins avec permissions
+    if (isAdmin()) {
+
+      // Menu Incidents (Admin seulement)
+      if (hasPermission(Permission.VIEW_ALL_INCIDENTS)) {
+        autresMenu.menuItems.unshift({
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="fill-current transition-all duration-300 group-hover:scale-110"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="fill-current"
+                d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
+              />
+            </svg>
+          ),
+          label: "Incidents",
+          route: "/tableaudebord/incidents",
+        });
+      }
+
+      // Menu Analytics supprimé - maintenant intégré dans le tableau de bord principal
+
+      // Menu Paramètres (Rôles et Permissions)
+      if (hasPermission(Permission.MANAGE_ROLES_PERMISSIONS)) {
+        autresMenu.menuItems.unshift({
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="fill-current transition-all duration-300 group-hover:scale-110"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="fill-current"
+                d="M12 1l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-2.01L12 1zM12 5.5L10.5 8.5 7.5 9.5l2.5 2.44-.59 3.56L12 14.25l2.59 1.25-.59-3.56L16.5 9.5l-3-.5L12 5.5z"
+              />
+            </svg>
+          ),
+          label: "Paramètres",
+          route: "#",
+          children: [
+            { label: "Gérer rôles", route: "/tableaudebord/parametres/roles" },
+            { label: "Gérer permissions", route: "/tableaudebord/parametres/permissions" },
+          ],
+        });
+      }
+
+      // Menu Gestion des Utilisateurs
+      if (hasPermission(Permission.CREATE_USERS)) {
+        autresMenu.menuItems.unshift({
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="fill-current transition-all duration-300 group-hover:scale-110"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="fill-current"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          ),
+          label: "Utilisateurs",
+          route: "#",
+          children: [
+            { label: "Liste des utilisateurs", route: "/tableaudebord/gestion-utilisateurs" },
+            { label: "Ajouter utilisateur", route: "/tableaudebord/gestion-utilisateurs/ajouter" },
+          ],
+        });
+      }
+
+      // Menu Partenaires
+      if (hasPermission(Permission.CREATE_PARTNERS)) {
+        const partnerChildren = [
           {
             label: "Liste des partenaires",
             route: "/tableaudebord/partenaire/liste",
-          },
-          {
+          }
+        ];
+
+        // Ajouter "Ajouter partenaire" seulement si l'utilisateur a la permission
+        if (hasPermission(Permission.CREATE_PARTNERS)) {
+          partnerChildren.push({
             label: "Ajouter partenaire",
             route: "/tableaudebord/partenaire/ajouter",
-          },
-        ],
-      });
+          });
+        }
+
+        autresMenu.menuItems.unshift({
+          icon: (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="fill-current transition-all duration-300 group-hover:scale-110"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="fill-current"
+                d="M14 7V5h8v2zm0 4V9h8v2zm0 4v-2h8v2zm-6-1q-1.25 0-2.125-.875T5 11t.875-2.125T8 8t2.125.875T11 11t-.875 2.125T8 14m-6 6v-1.9q0-.525.25-1t.7-.75q1.125-.675 2.388-1.012T8 15t2.663.338t2.387 1.012q.45.275.7.75t.25 1V20zm2.15-2h7.7q-.875-.5-1.85-.75T8 17t-2 .25t-1.85.75M8 12q.425 0 .713-.288T9 11t-.288-.712T8 10t-.712.288T7 11t.288.713T8 12m0 6"
+              />
+            </svg>
+          ),
+          label: "Partenaire",
+          route: "#",
+          children: partnerChildren,
+        });
+      }
     }
 
     baseMenuGroups.push(autresMenu);
@@ -152,7 +321,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   return (
     <ClickOutside onClick={() => setSidebarOpen(false)}>
       <aside
-        className={`absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden border-r border-sky-300/40 bg-gradient-to-b from-sky-50/90 via-sky-100/70 to-sky-200/50 shadow-2xl shadow-sky-500/20 backdrop-blur-xl dark:border-slate-600/50 dark:from-slate-800/90 dark:via-slate-700/80 dark:to-slate-600/70 dark:shadow-slate-900/50 lg:static lg:translate-x-0 ${
+        className={`absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col border-r border-sky-300/40 bg-gradient-to-b from-sky-50/90 via-sky-100/70 to-sky-200/50 shadow-2xl shadow-sky-500/20 backdrop-blur-xl dark:border-slate-600/50 dark:from-slate-800/90 dark:via-slate-700/80 dark:to-slate-600/70 dark:shadow-slate-900/50 lg:static lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } duration-500 ease-out`}
       >
@@ -210,7 +379,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         </motion.div>
         {/* <!-- SIDEBAR HEADER --> */}
 
-        <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
+        <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear flex-1">
           {/* <!-- Sidebar Menu --> */}
           <nav className="mt-4 px-4 lg:px-6">
             {getMenuGroups().map((group, groupIndex) => (
@@ -220,11 +389,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: groupIndex * 0.1 }}
               >
-                <h3 className="mb-4 rounded-xl border border-gray-200/20 bg-gradient-to-br from-white/80 to-gray-50/60 px-4 py-3 text-sm font-bold text-gray-700 shadow-sm backdrop-blur-sm dark:border-gray-600/30 dark:from-gray-800/80 dark:to-gray-700/60 dark:text-gray-200">
+                <h3 className="mb-3 ml-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {group.name}
                 </h3>
 
-                <ul className="mb-8 flex flex-col gap-2">
+                <ul className="mb-6 flex flex-col gap-1">
                   {group.menuItems.map((menuItem, menuIndex) => (
                     <SidebarItem
                       key={menuIndex}
@@ -242,7 +411,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
         {/* Footer de la sidebar */}
         <motion.div
-          className="mt-auto border-t border-gray-200/30 bg-gradient-to-br from-gray-50/80 via-white/60 to-gray-100/40 p-6 backdrop-blur-sm dark:border-gray-600/40 dark:from-gray-800/90 dark:via-gray-700/70 dark:to-gray-600/50"
+          className="border-t border-gray-200/30 bg-gradient-to-br from-gray-50/80 via-white/60 to-gray-100/40 p-4 backdrop-blur-sm dark:border-gray-600/40 dark:from-gray-800/90 dark:via-gray-700/70 dark:to-gray-600/50 flex-shrink-0"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.5 }}

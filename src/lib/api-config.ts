@@ -35,6 +35,29 @@ export const API_CONFIG = {
       LIST: '/files',
       DELETE: '/files',
       DOWNLOAD: '/files/download',
+    },
+    SEARCH: {
+      GLOBAL: '/search/global',
+      SUGGESTIONS: '/search/suggestions',
+      SAVED: '/search/saved',
+    },
+    USERS: {
+      GET_BY_CRITERIA: '/users/getByCriteria',
+      CREATE: '/users/create',
+      UPDATE: '/users/update',
+      DELETE: '/users/delete',
+    },
+    ROLES: {
+      GET_BY_CRITERIA: '/roles/getByCriteria',
+      CREATE: '/roles/create',
+      UPDATE: '/roles/update',
+      DELETE: '/roles/delete',
+    },
+    PERMISSIONS: {
+      GET_BY_CRITERIA: '/user_project_permissions/getByCriteria',
+      CREATE: '/user_project_permissions/create',
+      UPDATE: '/user_project_permissions/update',
+      DELETE: '/user_project_permissions/delete',
     }
   }
 } as const;
@@ -74,6 +97,7 @@ export interface LoginResponse {
   email: string;
   token: string;
   role_id: number;
+  partner_id?: number; // ID du partenaire associé (pour les clients)
   is_active: boolean;
   created_at: string;
   updated_at: string;

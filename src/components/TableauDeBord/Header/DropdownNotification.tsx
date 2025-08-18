@@ -12,7 +12,7 @@ import {
   Chip,
   cn,
 } from "@nextui-org/react";
-import { useNotifications } from "@/context/NotificationContext";
+import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
 import {
   Bell,
   Check,
@@ -29,15 +29,24 @@ const DropdownNotification = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const {
     notifications,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-    removeNotification,
-    subscribeToRealTime,
-    unsubscribeFromRealTime,
+    hideNotification,
+    clearAllNotifications,
   } = useNotifications();
 
+  // Calculer les notifications non lues (simulation)
+  const unreadCount = notifications.length;
   const notifying = unreadCount > 0;
+
+  // Adapters pour compatibilité avec l'ancien système
+  const adaptNotification = (item: any) => ({
+    ...item,
+    body: item.message || 'Notification',
+    read: false, // toutes les notifications sont non-lues dans le système simple
+    priority: 'medium' as const,
+    category: 'system' as const,
+    timestamp: new Date(),
+    link: '#'
+  });
 
   // Détecter le mode sombre
   useEffect(() => {
@@ -60,14 +69,13 @@ const DropdownNotification = () => {
 
   const handleDropdownOpen = () => {
     setDropdownOpen(true);
-    // Auto-activer les notifications temps réel à l'ouverture
-    subscribeToRealTime();
+    // Auto-activer les notifications temps réel à l'ouverture (simulé)
   };
 
   const deleteNotification = (e: React.MouseEvent, notificationId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    removeNotification(notificationId);
+    hideNotification(notificationId);
   };
 
   const getTypeIcon = (type: string) => {
@@ -219,7 +227,7 @@ const DropdownNotification = () => {
           items={[
             { key: "header", type: "header" },
             ...(unreadCount > 3 ? [{ key: "mark-all", type: "mark-all" }] : []),
-            ...notifications.slice(0, 10).map((n) => ({ key: n.id, ...n })),
+            ...notifications.slice(0, 10).map((n) => ({ key: n.id, ...adaptNotification(n) })),
             ...(notifications.length === 0
               ? [{ key: "empty", type: "empty" }]
               : []),
@@ -295,7 +303,7 @@ const DropdownNotification = () => {
                     variant="flat"
                     color="primary"
                     className={cn("w-full", getThemeClasses.markAllButton)}
-                    onPress={markAllAsRead}
+                    onPress={clearAllNotifications}
                   >
                     <Check className="mr-2 h-4 w-4" />
                     Tout marquer comme lu
@@ -396,7 +404,7 @@ const DropdownNotification = () => {
                     <Link
                       href={item.link || "#"}
                       className="block"
-                      onClick={() => markAsRead(item.id)}
+                      onClick={() => hideNotification(item.id)}
                     >
                       <Card shadow="none" className="bg-transparent">
                         <CardBody className="gap-3 p-0">
