@@ -163,22 +163,33 @@ const ModernDashboard: React.FC = () => {
         role_id: user.role_id,
         isAdmin: isAdmin()
       });
-      loadDashboardData();
+      // Délai pour s'assurer que toutes les permissions sont calculées
+      setTimeout(() => {
+        loadDashboardData();
+      }, 100);
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, isAdmin, isPartner]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       
-      console.log("🔍 Chargement des données dashboard admin...");
+      console.log("🔍 Chargement des données dashboard...");
+      console.log("👤 Utilisateur:", {
+        id: user?.id,
+        name: user?.name,
+        role_id: user?.role_id,
+        partner_id: user?.partner_id,
+        isAdmin: isAdmin(),
+        isPartner: isPartner()
+      });
       
       if (isAdmin()) {
         // Charger les données admin
         const adminDashboard = await dashboardService.getDashboardAdmin();
         console.log("📡 Réponse API admin:", adminDashboard);
         
-        if (adminDashboard && (adminDashboard.success === true || adminDashboard.data)) {
+        if (adminDashboard && ((adminDashboard as any).code === 200 || (adminDashboard as any).success === true || adminDashboard.data)) {
           const data = adminDashboard.data || adminDashboard;
           
           // Extraire les données de l'API
@@ -249,6 +260,111 @@ const ModernDashboard: React.FC = () => {
         } else {
           console.error("❌ API admin a échoué");
         }
+      } else if (isPartner()) {
+        console.log("🤝 Chargement des données partenaire...");
+        
+        // Utiliser l'ID utilisateur comme partner_id temporairement
+        // car partner_id n'est pas fourni dans la réponse de connexion
+        const partnerId = user?.partner_id || user?.id;
+        
+        if (!partnerId) {
+          console.error("❌ Impossible de déterminer le partner_id");
+          return;
+        }
+        
+        try {
+          console.log("📞 Appel API dashboard partenaire avec ID:", partnerId);
+          const partnerDashboard = await dashboardService.getDashboardPartner(partnerId);
+          console.log("📡 Réponse API partenaire:", partnerDashboard);
+          
+          if (partnerDashboard && ((partnerDashboard as any).code === 200 || (partnerDashboard as any).success) && partnerDashboard.data) {
+            const data = partnerDashboard.data;
+            
+            // Extraire les données partenaire selon le format API réel
+            const summary = (data as any).summary || {};
+            const incidentStats = (data as any).incident_stats || {};
+            const recentIncidents = (data as any).recent_incidents || [];
+            
+            console.log("📊 Données partenaire extraites:", { summary, incidentStats, recentIncidents });
+            
+            // Convertir les données partenaire pour le format local
+            setStats({
+              projects: {
+                total: summary.total_projects || 0,
+                active: summary.active_projects || 0,
+                completed: (summary.total_projects || 0) - (summary.active_projects || 0),
+                pending: 0,
+                growth: 0,
+              },
+              partners: {
+                total: 1, // Le partenaire lui-même
+                active: 1,
+                new_this_month: 0,
+                growth: 0,
+              },
+              files: {
+                total: summary.total_files || 0,
+                size_gb: 0,
+                recent_uploads: 0,
+                growth: 0,
+              },
+              messages: {
+                total: incidentStats.total || 0,
+                unread: summary.open_incidents || 0,
+                support_tickets: incidentStats.total || 0,
+                growth: 0,
+              },
+              incidents: {
+                total: incidentStats.total || 0,
+                open: summary.open_incidents || 0,
+                critical: incidentStats.by_priority?.critique || 0,
+                resolved: (incidentStats.total || 0) - (summary.open_incidents || 0),
+                growth: 0,
+              },
+            });
+
+            // Convertir les incidents récents en activités
+            const convertedActivities = recentIncidents.slice(0, 10).map((incident: any) => ({
+              id: incident.id.toString(),
+              type: incident.type,
+              title: incident.title,
+              description: incident.description,
+              time: formatTimeAgo(incident.created_at),
+              user: { name: `Utilisateur ${incident.created_by}` },
+              status: incident.priority === 'critique' ? 'danger' : 
+                     incident.priority === 'haute' ? 'warning' : 'info',
+            }));
+            setActivities(convertedActivities);
+            
+            console.log("✅ Données partenaire appliquées au dashboard");
+          } else {
+            console.error("❌ API partenaire a échoué");
+          }
+        } catch (error) {
+          console.error("❌ Erreur lors du chargement des données partenaire:", error);
+          
+          // Afficher des données par défaut pour les partenaires
+          setStats({
+            projects: { total: 0, active: 0, completed: 0, pending: 0, growth: 0 },
+            partners: { total: 1, active: 1, new_this_month: 0, growth: 0 },
+            files: { total: 0, size_gb: 0, recent_uploads: 0, growth: 0 },
+            messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
+            incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
+          });
+          setActivities([]);
+        }
+      } else {
+        console.log("⚠️ Utilisateur sans rôle admin ou partner_id manquant");
+        
+        // Données par défaut
+        setStats({
+          projects: { total: 0, active: 0, completed: 0, pending: 0, growth: 0 },
+          partners: { total: 0, active: 0, new_this_month: 0, growth: 0 },
+          files: { total: 0, size_gb: 0, recent_uploads: 0, growth: 0 },
+          messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
+          incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
+        });
+        setActivities([]);
       }
     } catch (error) {
       console.error("❌ Erreur lors du chargement:", error);
@@ -324,8 +440,8 @@ const ModernDashboard: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Dashboard API Admin Overview - Toutes les données */}
-      {isAdmin() && (
+      {/* Dashboard Overview - Données selon le rôle */}
+      {(isAdmin() || isPartner()) && (
         <div className="space-y-8">
           {/* 1. Global Summary */}
           <motion.div
@@ -338,7 +454,7 @@ const ModernDashboard: React.FC = () => {
                 <div className="flex items-center gap-3 mb-6">
                   <BarChart3 className="h-5 w-5 text-blue-600" />
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Résumé Global
+                    {isAdmin() ? "Résumé Global" : "Mes Statistiques"}
                   </h3>
                 </div>
                 
@@ -380,7 +496,8 @@ const ModernDashboard: React.FC = () => {
             </Card>
           </motion.div>
 
-          {/* 2. Partner Stats */}
+          {/* 2. Partner Stats - Seulement pour les admins */}
+          {isAdmin() && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -419,6 +536,7 @@ const ModernDashboard: React.FC = () => {
               </CardBody>
             </Card>
           </motion.div>
+          )}
 
           {/* 3. Incident Priority Stats */}
           <motion.div
@@ -584,16 +702,6 @@ const ModernDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Pour les partenaires non-admin */}
-      {!isAdmin() && (
-        <div className="space-y-8">
-          <Card className="bg-white/70 backdrop-blur-sm dark:bg-slate-800/70">
-            <CardBody className="p-6">
-              <p className="text-slate-500 dark:text-slate-400">Dashboard partenaire en cours de développement...</p>
-            </CardBody>
-          </Card>
-        </div>
-      )}
     </div>
   );
 };
