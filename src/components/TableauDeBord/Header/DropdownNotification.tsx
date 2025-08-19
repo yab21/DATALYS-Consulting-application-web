@@ -34,25 +34,6 @@ const DropdownNotification = () => {
     addNotification,
   } = useAdvancedNotifications();
 
-  // Debug des notifications
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔔 Notifications dans DropdownNotification:', notifications.length);
-      
-      // Import et expose le testeur FCM
-      import('@/utils/fcm-test').then(module => {
-        (window as any).testFCM = module.testFCMBackend;
-        (window as any).testHighPriorityMessage = module.testHighPriorityMessage;
-        (window as any).testCompleteFCMFlow = module.testCompleteFCMFlow;
-        (window as any).startFCMMonitoring = module.startFCMMonitoring;
-        console.log('🧪 Tests FCM disponibles:');
-        console.log('  - testCompleteFCMFlow() : test complet du flux FCM');
-        console.log('  - startFCMMonitoring() : surveiller les notifications');
-        console.log('  - testFCM() : tester le backend FCM');
-        console.log('  - testHighPriorityMessage() : envoyer message haute priorité');
-      });
-    }
-  }, [notifications]);
 
   // Calculer les notifications non lues (simulation)
   const unreadCount = notifications.length;

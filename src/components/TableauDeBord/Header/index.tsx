@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import DarkModeSwitcher from "./DarkModeSwitcher";
-import DropdownNotification from "./DropdownNotification";
+import SimpleDropdownNotification from "./SimpleDropdownNotification";
 import DropdownUser from "./DropdownUser";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -129,7 +129,7 @@ const Header = (props: {
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <DropdownNotification />
+              <SimpleDropdownNotification />
             </motion.div>
             {/* <!-- Notification Menu Area --> */}
           </motion.ul>
