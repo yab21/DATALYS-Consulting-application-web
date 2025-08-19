@@ -170,28 +170,15 @@ const SupportTechnique: React.FC = () => {
   };
 
   const loadSupportStats = async () => {
-    try {
-      const response = await messagesService.getCommunicationStats();
-      setStats({
-        open_tickets: response.open_support_tickets,
-        in_progress: supportTickets.filter(t => t.status === 'en_cours').length,
-        resolved: response.resolved_tickets,
-        critical: response.critical_priority,
-        avg_resolution_time: response.avg_response_time,
-        satisfaction_rate: 87 // Stat mockée
-      });
-    } catch (error) {
-      console.error('Erreur chargement stats support:', error);
-      // Stats par défaut
-      setStats({
-        open_tickets: supportTickets.filter(t => t.status === 'ouvert').length,
-        in_progress: supportTickets.filter(t => t.status === 'en_cours').length,
-        resolved: supportTickets.filter(t => t.status === 'resolu').length,
-        critical: supportTickets.filter(t => t.priority === 'critique').length,
-        avg_resolution_time: 24,
-        satisfaction_rate: 87
-      });
-    }
+    // Calculate stats directly from supportTickets data
+    setStats({
+      open_tickets: supportTickets.filter(t => t.status === 'ouvert').length,
+      in_progress: supportTickets.filter(t => t.status === 'en_cours').length,
+      resolved: supportTickets.filter(t => t.status === 'resolu').length,
+      critical: supportTickets.filter(t => t.priority === 'critique').length,
+      avg_resolution_time: 24,
+      satisfaction_rate: 87
+    });
   };
 
   const handleCreateTicket = async () => {

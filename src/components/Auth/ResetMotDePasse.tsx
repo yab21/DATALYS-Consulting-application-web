@@ -1,106 +1,104 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Input, Checkbox } from "@nextui-org/react";
-import { Button } from "@nextui-org/button";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
-  Eye,
-  EyeOff,
-  Mail,
+  Input,
+  Button,
+  Link,
+} from "@nextui-org/react";
+import { 
+  Eye, 
+  EyeOff, 
   Lock,
-  ArrowRight,
   Shield,
+  CheckCircle,
+  ArrowRight,
   Zap,
-  TrendingUp,
-  Users,
+  AlertTriangle,
+  Key
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth";
-import { useAuth } from "@/context/AuthContext";
 import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
 
-interface LoginForm {
-  email: string;
-  password: string;
-  rememberMe: boolean;
+interface ResetPasswordForm {
+  newPassword: string;
+  confirmPassword: string;
 }
 
-const Connexion: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+const ResetMotDePasse: React.FC = () => {
   const router = useRouter();
-  const { login } = useAuth();
+  const searchParams = useSearchParams();
   const { showNotification } = useNotifications();
-  
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string>("");
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>();
+    watch,
+  } = useForm<ResetPasswordForm>();
 
-  const toggleVisibility = () => setIsVisible(!isVisible);
+  const newPassword = watch("newPassword");
 
-  const onSubmit = async (data: LoginForm) => {
+  // Récupérer le token depuis les paramètres URL
+  useEffect(() => {
+    const urlToken = searchParams?.get("token");
+    if (urlToken) {
+      setToken(urlToken);
+      setTokenError("");
+    } else {
+      setTokenError("Token de réinitialisation manquant. Veuillez utiliser le lien reçu par email.");
+    }
+  }, [searchParams]);
+
+  const onSubmit = async (data: ResetPasswordForm) => {
+    if (!token) {
+      setTokenError("Token de réinitialisation manquant.");
+      return;
+    }
+
     setIsLoading(true);
-    setError("");
 
     try {
-      // D'abord, utiliser AuthService pour vérifier la première connexion
-      const result = await AuthService.login({
-        email: data.email,
-        password: data.password,
-      });
+      const result = await AuthService.resetPassword(token, data.newPassword);
 
       if (result.status === "success") {
-        // Vérifier si l'utilisateur doit changer son mot de passe
-        if (result.data?.requires_password_change) {
-          showNotification(notificationHelpers.warning(
-            "Changement de mot de passe requis",
-            "Vous devez changer votre mot de passe temporaire"
-          ));
-          
-          // Rediriger vers la page de changement de mot de passe
-          setTimeout(() => {
-            router.push(`/changer-mot-de-passe-temporaire?email=${encodeURIComponent(data.email)}`);
-          }, 1500);
-          return;
-        }
+        showNotification(
+          notificationHelpers.success(
+            "Mot de passe mis à jour !",
+            "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe."
+          )
+        );
 
-        // Si pas de changement de mot de passe requis, utiliser le contexte AuthContext
-        await login(data.email, data.password);
-        
-        if (data.rememberMe) {
-          localStorage.setItem("rememberMe", "true");
-        }
-        
-        showNotification(notificationHelpers.success(
-          "Connexion réussie !",
-          `Bienvenue ${result.data?.name || "sur DATALYS"} 🎉`
-        ));
-        
-        // Rediriger vers le tableau de bord
+        // Redirection vers la page de connexion
         setTimeout(() => {
-          router.push("/tableaudebord");
-        }, 1000);
+          router.push("/connexion");
+        }, 2000);
       } else {
-        setError(result.message || "Erreur lors de la connexion");
-        showNotification(notificationHelpers.error(
-          "Échec de la connexion",
-          result.message || "Vérifiez vos identifiants et réessayez."
-        ));
+        showNotification(
+          notificationHelpers.error(
+            "Erreur de réinitialisation",
+            result.message || "Impossible de mettre à jour le mot de passe."
+          )
+        );
       }
     } catch (error) {
-      console.error("Erreur de connexion:", error);
-      setError("Erreur de connexion. Veuillez réessayer.");
-      showNotification(notificationHelpers.error(
-        "Erreur de connexion",
-        "Problème de réseau. Vérifiez votre connexion internet."
-      ));
+      console.error("Erreur reset mot de passe:", error);
+      showNotification(
+        notificationHelpers.error(
+          "Erreur",
+          "Une erreur s'est produite lors de la réinitialisation."
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -129,6 +127,39 @@ const Connexion: React.FC = () => {
       },
     },
   };
+
+  // Si pas de token, afficher une erreur
+  if (tokenError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full"
+        >
+          <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mx-auto mb-4">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Lien invalide
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {tokenError}
+            </p>
+            <Link href="/mot-de-passe-oublie">
+              <Button
+                color="primary"
+                className="bg-gradient-to-r from-primary to-primary-800"
+              >
+                Demander un nouveau lien
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -168,7 +199,7 @@ const Connexion: React.FC = () => {
               className="mb-6 text-4xl font-bold leading-tight text-white lg:text-5xl"
               variants={itemVariants}
             >
-              Espace <span className="text-blue-200">Entreprise</span>
+              Nouveau <span className="text-blue-200">Mot de Passe</span>
             </motion.h1>
 
             {/* Subtitle */}
@@ -176,8 +207,7 @@ const Connexion: React.FC = () => {
               className="mb-12 max-w-md text-lg leading-relaxed text-blue-100 lg:text-xl"
               variants={itemVariants}
             >
-              Transformez votre espace de travail numérique avec nos solutions
-              innovantes et sécurisées
+              Créez un nouveau mot de passe sécurisé pour protéger votre compte
             </motion.p>
 
             {/* Feature Cards */}
@@ -196,10 +226,10 @@ const Connexion: React.FC = () => {
                   </div>
                 </div>
                 <h3 className="mb-2 text-sm font-semibold text-white">
-                  Sécurité Avancée
+                  Sécurité Maximale
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Protection des données et accès sécurisé
+                  Protection avancée de votre compte
                 </p>
               </motion.div>
 
@@ -210,14 +240,14 @@ const Connexion: React.FC = () => {
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
-                    <TrendingUp className="h-5 w-5 text-blue-200" />
+                    <Key className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
                 <h3 className="mb-2 text-sm font-semibold text-white">
-                  Performance
+                  Accès Sécurisé
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Optimisation et efficacité maximale
+                  Authentification renforcée
                 </p>
               </motion.div>
 
@@ -228,14 +258,14 @@ const Connexion: React.FC = () => {
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
-                    <Users className="h-5 w-5 text-blue-200" />
+                    <CheckCircle className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
                 <h3 className="mb-2 text-sm font-semibold text-white">
-                  Collaboration
+                  Validation Instantanée
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Travail d'équipe simplifié
+                  Vérification en temps réel
                 </p>
               </motion.div>
 
@@ -250,17 +280,17 @@ const Connexion: React.FC = () => {
                   </div>
                 </div>
                 <h3 className="mb-2 text-sm font-semibold text-white">
-                  Support 24/7
+                  Processus Rapide
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Assistance technique permanente
+                  Mise à jour en quelques secondes
                 </p>
               </motion.div>
             </motion.div>
           </div>
         </motion.div>
 
-        {/* Right Panel - Login Form */}
+        {/* Right Panel - Reset Form */}
         <motion.div
           className="flex w-full flex-col items-center justify-center p-6 lg:w-1/2"
           initial={{ opacity: 0, x: 30 }}
@@ -283,7 +313,7 @@ const Connexion: React.FC = () => {
             />
           </motion.div>
 
-          {/* Login Form Container */}
+          {/* Form Container */}
           <motion.div
             className="w-full max-w-md"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -300,33 +330,17 @@ const Connexion: React.FC = () => {
                 animate="visible"
               >
                 <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
-                  Connexion
+                  Réinitialiser
                 </h2>
                 <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
                 <p className="mt-4 text-gray-600">
-                  Accédez à votre espace entreprise
+                  Créez votre nouveau mot de passe
                 </p>
               </motion.div>
 
-              {/* Error Message */}
-              {error && (
-                <motion.div
-                  className="rounded-lg bg-red-50 p-4 border border-red-200"
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <div className="flex items-center gap-3">
-                    <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-red-700 font-medium">{error}</span>
-                  </div>
-                </motion.div>
-              )}
-
               {/* Form */}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Email Input */}
+                {/* New Password Input */}
                 <motion.div
                   variants={itemVariants}
                   initial="hidden"
@@ -335,60 +349,22 @@ const Connexion: React.FC = () => {
                 >
                   <div className="mb-2">
                     <label className="mb-2 block text-base font-semibold text-gray-800">
-                      Adresse email
+                      Nouveau mot de passe
                     </label>
                   </div>
                   <Input
-                    {...register("email", {
-                      required: "L'email est requis",
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Adresse email invalide"
-                      }
-                    })}
-                    type="email"
-                    variant="bordered"
-                    placeholder="entrer@votre-email.com"
-                    isInvalid={!!errors.email}
-                    errorMessage={errors.email?.message}
-                    classNames={{
-                      input:
-                        "text-gray-900 placeholder:text-gray-500 pl-10 text-base dark:text-white dark:placeholder:text-gray-400",
-                      inputWrapper:
-                        "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
-                      base: "!text-gray-800 dark:!text-gray-200",
-                    }}
-                    size="lg"
-                    radius="lg"
-                    startContent={<Mail className="h-5 w-5 text-gray-500" />}
-                  />
-                </motion.div>
-
-                {/* Password Input */}
-                <motion.div
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  transition={{ delay: 0.6 }}
-                >
-                  <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
-                      Mot de passe
-                    </label>
-                  </div>
-                  <Input
-                    {...register("password", {
-                      required: "Le mot de passe est requis",
+                    {...register("newPassword", {
+                      required: "Le nouveau mot de passe est requis",
                       minLength: {
-                        value: 6,
-                        message: "Le mot de passe doit contenir au moins 6 caractères"
+                        value: 8,
+                        message: "Le mot de passe doit contenir au moins 8 caractères"
                       }
                     })}
-                    type={isVisible ? "text" : "password"}
+                    type={showNewPassword ? "text" : "password"}
                     variant="bordered"
-                    placeholder="••••••••"
-                    isInvalid={!!errors.password}
-                    errorMessage={errors.password?.message}
+                    placeholder="Choisissez un nouveau mot de passe"
+                    isInvalid={!!errors.newPassword}
+                    errorMessage={errors.newPassword?.message}
                     classNames={{
                       input:
                         "text-gray-900 placeholder:text-gray-500 pl-10 pr-10 text-base dark:text-white dark:placeholder:text-gray-400",
@@ -403,9 +379,9 @@ const Connexion: React.FC = () => {
                       <button
                         className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
                         type="button"
-                        onClick={toggleVisibility}
+                        onClick={() => setShowNewPassword(!showNewPassword)}
                       >
-                        {isVisible ? (
+                        {showNewPassword ? (
                           <EyeOff className="h-5 w-5" />
                         ) : (
                           <Eye className="h-5 w-5" />
@@ -415,40 +391,61 @@ const Connexion: React.FC = () => {
                   />
                 </motion.div>
 
-                {/* Remember Me & Forgot Password */}
+                {/* Confirm Password Input */}
                 <motion.div
-                  className="flex items-center justify-between"
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: 0.6 }}
+                >
+                  <div className="mb-2">
+                    <label className="mb-2 block text-base font-semibold text-gray-800">
+                      Confirmer le nouveau mot de passe
+                    </label>
+                  </div>
+                  <Input
+                    {...register("confirmPassword", {
+                      required: "La confirmation du mot de passe est requise",
+                      validate: (value) =>
+                        value === newPassword || "Les mots de passe ne correspondent pas"
+                    })}
+                    type={showConfirmPassword ? "text" : "password"}
+                    variant="bordered"
+                    placeholder="Répétez votre nouveau mot de passe"
+                    isInvalid={!!errors.confirmPassword}
+                    errorMessage={errors.confirmPassword?.message}
+                    classNames={{
+                      input:
+                        "text-gray-900 placeholder:text-gray-500 pl-10 pr-10 text-base dark:text-white dark:placeholder:text-gray-400",
+                      inputWrapper:
+                        "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
+                      base: "!text-gray-800 dark:!text-gray-200",
+                    }}
+                    size="lg"
+                    radius="lg"
+                    startContent={<CheckCircle className="h-5 w-5 text-gray-500" />}
+                    endContent={
+                      <button
+                        className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    }
+                  />
+                </motion.div>
+
+                {/* Submit Button */}
+                <motion.div
                   variants={itemVariants}
                   initial="hidden"
                   animate="visible"
                   transition={{ delay: 0.7 }}
-                >
-                  <Checkbox
-                    {...register("rememberMe")}
-                    classNames={{
-                      base: "text-gray-800",
-                      wrapper:
-                        "before:border-gray-400 after:bg-primary hover:before:border-primary transition-colors duration-300",
-                      label:
-                        "text-gray-800 text-sm font-medium hover:text-gray-900 transition-colors duration-300",
-                    }}
-                  >
-                    Se souvenir de moi
-                  </Checkbox>
-                  <Link
-                    href="/mot-de-passe-oublie"
-                    className="text-sm font-semibold text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
-                  >
-                    Mot de passe oublié ?
-                  </Link>
-                </motion.div>
-
-                {/* Login Button */}
-                <motion.div
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  transition={{ delay: 0.8 }}
                 >
                   <Button
                     type="submit"
@@ -459,7 +456,7 @@ const Connexion: React.FC = () => {
                   >
                     {!isLoading && (
                       <div className="flex items-center justify-center gap-2">
-                        <span>Se connecter</span>
+                        <span>{isLoading ? "Mise à jour..." : "Mettre à jour le mot de passe"}</span>
                         <ArrowRight className="h-5 w-5" />
                       </div>
                     )}
@@ -473,16 +470,15 @@ const Connexion: React.FC = () => {
                 variants={itemVariants}
                 initial="hidden"
                 animate="visible"
-                transition={{ delay: 0.9 }}
+                transition={{ delay: 0.8 }}
               >
                 <p className="text-sm text-gray-500">
-                  All Rights Reserved by{" "}
+                  Besoin d'aide ?{" "}
                   <Link
-                    href="https://www.datalysconsulting.com/"
+                    href="/connexion"
                     className="font-semibold text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
-                    target="_blank"
                   >
-                    DATALYS Consulting
+                    Retour à la connexion
                   </Link>
                 </p>
               </motion.div>
@@ -494,4 +490,4 @@ const Connexion: React.FC = () => {
   );
 };
 
-export default Connexion;
+export default ResetMotDePasse;

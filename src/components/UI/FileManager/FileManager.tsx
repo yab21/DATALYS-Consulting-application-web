@@ -26,7 +26,7 @@ import {
 } from '@nextui-org/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotifications } from '@/components/UI/Notifications/NotificationSystem';
-import filesService, { FileItem as ApiFileItem, FolderItem, UploadFileRequest, CreateFolderRequest, FileFilters } from '@/services/files';
+import { filesService } from '@/services/files';
 
 // Types
 export interface FileItem {

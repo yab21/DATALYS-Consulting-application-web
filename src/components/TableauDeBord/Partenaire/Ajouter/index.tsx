@@ -9,6 +9,12 @@ import {
   Textarea,
   Select,
   SelectItem,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@nextui-org/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Link from "next/link";
@@ -23,7 +29,6 @@ import { PermissionGuard } from "@/components/Security/PermissionGuard";
 // Types
 interface PartnerForm {
   name: string;
-  logo: File | null;
   email: string;
   phone: string;
   address: string;
@@ -42,11 +47,17 @@ const AjouterPartenaire: React.FC = () => {
   } = useAuth();
   const { showNotification } = useNotifications();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStep, setSubmitStep] = useState<'idle' | 'creating' | 'uploading' | 'completed'>('idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Nouveaux états pour le modal de logo
+  const [createdPartnerId, setCreatedPartnerId] = useState<number | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const { isOpen: isLogoModalOpen, onOpen: onLogoModalOpen, onClose: onLogoModalClose } = useDisclosure();
 
   const [formData, setFormData] = useState<PartnerForm>({
     name: "",
-    logo: null,
     email: "",
     phone: "",
     address: "",
@@ -145,16 +156,51 @@ const AjouterPartenaire: React.FC = () => {
     }
   };
 
-  // Gestion de l'upload de logo
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Nouvelle gestion du logo dans le modal
+  const handleLogoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        logo: file,
-      }));
+      setLogoFile(file);
       console.log("Logo sélectionné:", file.name);
     }
+  };
+
+  // Upload du logo via le modal
+  const handleLogoUpload = async () => {
+    if (!logoFile || !createdPartnerId) return;
+
+    setLogoUploading(true);
+    try {
+      // Appel au service pour uploader le logo
+      await partnersService.uploadPartnerLogo(createdPartnerId, logoFile);
+      
+      showNotification(notificationHelpers.success(
+        "Logo ajouté ! 🎨",
+        "Le logo a été ajouté avec succès au partenaire"
+      ));
+      
+      onLogoModalClose();
+      
+      // Rediriger vers la liste après un délai
+      setTimeout(() => {
+        router.push("/tableaudebord/partenaire/liste");
+      }, 1500);
+      
+    } catch (error) {
+      console.error("Erreur upload logo:", error);
+      showNotification(notificationHelpers.error(
+        "Erreur upload logo",
+        "Impossible d'ajouter le logo. Vous pourrez l'ajouter plus tard via la modification du partenaire."
+      ));
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  // Ignorer le logo et aller directement à la liste
+  const handleSkipLogo = () => {
+    onLogoModalClose();
+    router.push("/tableaudebord/partenaire/liste");
   };
 
   // Soumission du formulaire
@@ -196,6 +242,7 @@ const AjouterPartenaire: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setSubmitStep('creating');
     console.log("📤 Envoi des données à l'API...");
 
     try {
@@ -203,24 +250,24 @@ const AjouterPartenaire: React.FC = () => {
       partnersService.setToken(token);
       console.log("🔐 Token défini dans le service");
 
-      // Préparer les données pour l'API
+      // Préparer les données pour l'API (sans logo)
       const partnerData: CreatePartnerFormData = {
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         address: formData.address.trim(),
         is_active: formData.is_active,
-        logo: formData.logo || undefined,
+        logo: undefined, // Pas de logo dans cette étape
       };
 
-      console.log("📋 Données préparées:", {
-        ...partnerData,
-        logo: partnerData.logo ? `Fichier: ${partnerData.logo.name} (${partnerData.logo.size} bytes)` : 'Aucun logo'
-      });
-      console.log("👤 Utilisateur connecté:", { id: user?.id, name: user?.name, email: user?.email });
-      console.log("🌐 URL de base API:", process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082');
+      console.log("📋 Données préparées (sans logo):", partnerData);
 
-      // Créer le partenaire via l'API
+      // Notification initiale
+      showNotification(notificationHelpers.info(
+        "Création en cours...",
+        `Création du partenaire ${formData.name}`
+      ));
+      
       console.log("📡 Appel API en cours...");
       const result = await partnersService.createPartner(partnerData, user?.id);
       
@@ -228,27 +275,76 @@ const AjouterPartenaire: React.FC = () => {
       
       if (result.code === 200) {
         console.log("✅ Partenaire créé avec succès:", result);
+        setSubmitStep('completed');
         
+        // Récupérer l'ID du partenaire créé
+        const partnerId = result.items?.[0]?.id;
+        if (partnerId) {
+          setCreatedPartnerId(partnerId);
+        }
+        
+        // Notification de succès
         showNotification(notificationHelpers.success(
           "Partenaire créé ! 🎉",
-          `Le partenaire ${formData.name} a été créé avec succès`
+          `${formData.name} a été créé avec succès`
         ));
         
-        // Rediriger vers la liste des partenaires après un court délai
+        // Ouvrir le modal pour uploader le logo
         setTimeout(() => {
-          router.push("/tableaudebord/partenaire/liste");
-        }, 1500);
+          onLogoModalOpen();
+        }, 1000);
       } else {
         throw new Error(result.message?.message || "Erreur lors de la création");
       }
     } catch (error) {
       console.error("❌ Erreur lors de la création:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+      
+      let errorTitle = "Erreur de création";
+      let errorMessage = "Erreur inconnue";
+      
+      if (error instanceof Error) {
+        // Essayer d'extraire le message JSON de l'erreur API
+        try {
+          // Le message d'erreur peut contenir du JSON, essayons de l'extraire
+          const errorString = error.message;
+          
+          // Vérifier si le message contient du JSON
+          const jsonMatch = errorString.match(/\{.*\}/);
+          if (jsonMatch) {
+            const errorData = JSON.parse(jsonMatch[0]);
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } else {
+            errorMessage = errorString;
+          }
+        } catch {
+          errorMessage = error.message;
+        }
+        
+        // Vérifier les cas d'erreur spécifiques
+        if (errorMessage.includes("téléphone") && errorMessage.includes("existe déjà")) {
+          errorTitle = "📞 Numéro de téléphone déjà utilisé";
+          
+          // Extraire le numéro de téléphone du message
+          const phoneMatch = errorMessage.match(/'([+0-9]+)'/);
+          const phoneNumber = phoneMatch ? phoneMatch[1] : formData.phone;
+          
+          errorMessage = `Le numéro de téléphone ${phoneNumber} est déjà associé à un autre partenaire.\n\nVeuillez vérifier et utiliser un numéro différent.`;
+        } else if (errorMessage.includes("email") && errorMessage.includes("existe déjà")) {
+          errorTitle = "📧 Adresse email déjà utilisée";
+          errorMessage = `Cette adresse email est déjà associée à un autre partenaire. Veuillez utiliser une adresse différente.`;
+        } else if (errorMessage.includes("name") && errorMessage.includes("existe déjà")) {
+          errorTitle = "🏢 Nom de partenaire déjà utilisé";
+          errorMessage = `Ce nom de partenaire existe déjà. Veuillez choisir un nom différent.`;
+        }
+      }
       
       showNotification(notificationHelpers.error(
-        "Erreur de création",
+        errorTitle,
         errorMessage
       ));
+      setSubmitStep('idle');
     } finally {
       setIsSubmitting(false);
       console.log("🏁 Fin de la soumission");
@@ -387,71 +483,6 @@ const AjouterPartenaire: React.FC = () => {
 
                 </div>
 
-                {/* Logo */}
-                <div className="relative">
-                  <div className="absolute -left-6 top-2 h-12 w-1 rounded-full bg-gradient-to-b from-purple-500 to-pink-600"></div>
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg shadow-purple-500/25">
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      Logo du Partenaire
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center gap-8">
-                    <div className="relative group">
-                      <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-white hover:border-purple-400 transition-all duration-300 dark:border-gray-600 dark:from-gray-800 dark:to-gray-700 dark:hover:border-purple-500">
-                        {formData.logo ? (
-                          <div className="p-4 text-center text-sm">
-                            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 mx-auto shadow-lg shadow-green-400/25">
-                              <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                            <div className="font-semibold text-gray-700 dark:text-gray-300">
-                              Logo ajouté
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center text-sm text-gray-400 dark:text-gray-500 group-hover:text-purple-500 transition-colors duration-300">
-                            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 mx-auto dark:from-gray-700 dark:to-gray-600 group-hover:from-purple-100 group-hover:to-purple-200 dark:group-hover:from-purple-900/30 dark:group-hover:to-purple-800/30 transition-all duration-300">
-                              <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                            <div className="font-medium">Logo</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex-1 space-y-4">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="block w-full text-base text-gray-600 file:mr-6
-                          file:cursor-pointer file:rounded-2xl file:border-0
-                          file:bg-gradient-to-r file:from-purple-50 file:to-pink-50 file:px-8
-                          file:py-4 file:text-base
-                          file:font-semibold file:text-purple-700
-                          hover:file:from-purple-100 hover:file:to-pink-100 hover:file:shadow-lg
-                          file:transition-all file:duration-300
-                          dark:text-gray-400 dark:file:from-purple-900/30 dark:file:to-pink-900/30
-                          dark:file:text-purple-400 dark:hover:file:from-purple-800/40 dark:hover:file:to-pink-800/40"
-                      />
-                      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        <svg className="h-4 w-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        PNG, JPG, GIF jusqu'à 2MB • Recommandé: 256x256px
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Contact */}
                 <div className="relative">
@@ -627,9 +658,12 @@ const AjouterPartenaire: React.FC = () => {
                       )
                     }
                   >
-                    {isSubmitting
-                      ? "Création en cours..."
-                      : "🚀 Créer le Partenaire"}
+                    {isSubmitting ? (
+                      submitStep === 'creating' ? "📝 Création du partenaire..." :
+                      submitStep === 'uploading' ? "🖼️ Upload du logo..." :
+                      submitStep === 'completed' ? "✅ Terminé !" :
+                      "Création en cours..."
+                    ) : "🚀 Créer le Partenaire"}
                   </Button>
 
                   <Link
@@ -656,6 +690,115 @@ const AjouterPartenaire: React.FC = () => {
           </Card>
         </motion.div>
       </div>
+
+      {/* Modal pour upload de logo */}
+      <Modal 
+        isOpen={isLogoModalOpen} 
+        onClose={onLogoModalClose}
+        size="lg"
+        placement="center"
+        classNames={{
+          base: "bg-white dark:bg-gray-800",
+          backdrop: "bg-black/60 backdrop-blur-sm",
+          header: "border-b border-gray-200 dark:border-gray-600",
+          footer: "border-t border-gray-200 dark:border-gray-600",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 text-white">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Ajouter un logo
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Ajoutez un logo pour votre partenaire (optionnel)
+                  </p>
+                </div>
+              </ModalHeader>
+              
+              <ModalBody className="py-6">
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="flex h-32 w-32 items-center justify-center mx-auto overflow-hidden rounded-3xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-white hover:border-purple-400 transition-all duration-300 dark:border-gray-600 dark:from-gray-800 dark:to-gray-700 dark:hover:border-purple-500">
+                      {logoFile ? (
+                        <div className="p-4 text-center text-sm">
+                          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 mx-auto shadow-lg shadow-green-400/25">
+                            <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <div className="font-semibold text-gray-700 dark:text-gray-300">
+                            Logo sélectionné
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center text-sm text-gray-400 dark:text-gray-500">
+                          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 mx-auto dark:from-gray-700 dark:to-gray-600">
+                            <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="font-medium">Sélectionner un logo</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoSelect}
+                      className="block w-full text-base text-gray-600 file:mr-6
+                        file:cursor-pointer file:rounded-2xl file:border-0
+                        file:bg-gradient-to-r file:from-purple-50 file:to-pink-50 file:px-8
+                        file:py-4 file:text-base
+                        file:font-semibold file:text-purple-700
+                        hover:file:from-purple-100 hover:file:to-pink-100 hover:file:shadow-lg
+                        file:transition-all file:duration-300
+                        dark:text-gray-400 dark:file:from-purple-900/30 dark:file:to-pink-900/30
+                        dark:file:text-purple-400 dark:hover:file:from-purple-800/40 dark:hover:file:to-pink-800/40"
+                    />
+                    
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                      <svg className="h-4 w-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      PNG, JPG, GIF jusqu'à 2MB • Recommandé: 256x256px
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="light"
+                  onPress={handleSkipLogo}
+                  isDisabled={logoUploading}
+                >
+                  Ignorer le logo
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={handleLogoUpload}
+                  isLoading={logoUploading}
+                  isDisabled={!logoFile}
+                  className="bg-gradient-to-r from-purple-500 to-pink-600"
+                >
+                  {logoUploading ? "Upload en cours..." : "Ajouter le logo"}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </PermissionGuard>
   );
 };

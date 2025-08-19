@@ -424,49 +424,6 @@ class MessagesService {
     }
   }
 
-  /**
-   * Récupérer les statistiques de communication
-   */
-  async getCommunicationStats(): Promise<{
-    total_messages: number;
-    unread_messages: number;
-    open_support_tickets: number;
-    resolved_tickets: number;
-    critical_priority: number;
-    avg_response_time: number;
-  }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/messages/stats`, {
-        method: 'GET',
-        headers: this.getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        // Si l'API n'existe pas encore, retourner des stats par défaut
-        return {
-          total_messages: 0,
-          unread_messages: 0,
-          open_support_tickets: 0,
-          resolved_tickets: 0,
-          critical_priority: 0,
-          avg_response_time: 0
-        };
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Erreur récupération stats:', error);
-      // Retourner des stats par défaut en cas d'erreur
-      return {
-        total_messages: 0,
-        unread_messages: 0,
-        open_support_tickets: 0,
-        resolved_tickets: 0,
-        critical_priority: 0,
-        avg_response_time: 0
-      };
-    }
-  }
 }
 
 // Instance singleton du service

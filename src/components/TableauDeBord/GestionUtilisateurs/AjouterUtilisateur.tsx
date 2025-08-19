@@ -66,7 +66,7 @@ const AjouterUtilisateur: React.FC = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role_name: "partner", // Valeur par défaut correspondant à l'API
+    role_name: "admin", // Valeur par défaut pour les admins uniquement
     is_active: true,
   });
 
@@ -106,8 +106,6 @@ const AjouterUtilisateur: React.FC = () => {
         let partnersData;
         if (response.code === 200 && response.items) {
           partnersData = response.items;
-        } else if (response.status === 'success' && response.data) {
-          partnersData = response.data;
         } else if (Array.isArray(response)) {
           partnersData = response;
         } else {
@@ -264,7 +262,7 @@ const AjouterUtilisateur: React.FC = () => {
               Créer un Utilisateur
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Ajoutez un nouvel administrateur ou un compte partenaire
+              Ajoutez un nouvel administrateur au système
             </p>
           </div>
           <Link href="/tableaudebord/gestion-utilisateurs">
@@ -458,40 +456,9 @@ const AjouterUtilisateur: React.FC = () => {
                       <SelectItem key="admin" value="admin">
                         Administrateur - Contrôle total
                       </SelectItem>
-                      <SelectItem key="partner" value="partner">
-                        Partenaire - Lecture seule
-                      </SelectItem>
                     </Select>
                   </div>
 
-                  {formData.role_name === "partner" && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Partenaire associé <span className="text-gray-400">(optionnel)</span>
-                      </label>
-                      <Select
-                        placeholder="Sélectionner un partenaire"
-                        selectedKeys={formData.partner_id ? [formData.partner_id.toString()] : []}
-                        onSelectionChange={(keys) => {
-                          const value = Array.from(keys)[0] as string;
-                          handleInputChange("partner_id", parseInt(value));
-                        }}
-                        isInvalid={!!errors.partner_id}
-                        errorMessage={errors.partner_id}
-                        size="lg"
-                        variant="bordered"
-                        startContent={<Users className="h-4 w-4 text-gray-400" />}
-                        className="bg-white dark:bg-gray-700"
-                        isLoading={loadingPartners}
-                      >
-                        {partners.map((partner) => (
-                          <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
-                            {partner.name}
-                          </SelectItem>
-                        ))}
-                      </Select>
-                    </div>
-                  )}
                 </div>
 
                 {/* Description du rôle */}

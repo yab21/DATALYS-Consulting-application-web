@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { ParentFolderIdProvider } from "@/context/ParentFolderIdContext";
-import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
 import PageProjet from "@/components/TableauDeBord/Projet/VoirProjet";
 
 export const metadata: Metadata = {
@@ -28,9 +27,7 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   return (
     <ParentFolderIdProvider>
-      <DefaultLayout>
-        <PageProjet id={id} />
-      </DefaultLayout>
+      <PageProjet id={id} />
     </ParentFolderIdProvider>
   );
 };

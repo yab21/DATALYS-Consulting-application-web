@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useFCMIntegration } from '@/hooks/useFCMIntegration';
 import { useAdvancedNotifications } from './AdvancedNotificationProvider';
+import NotificationPermissionCard from './NotificationPermissionCard';
 
 export default function FCMSettings() {
   const { 
@@ -115,6 +116,19 @@ export default function FCMSettings() {
       </CardHeader>
 
       <CardBody className="space-y-4">
+        {/* Carte de permission explicite */}
+        <NotificationPermissionCard 
+          onPermissionGranted={() => {
+            // Relancer l'initialisation FCM si les permissions sont accordées
+            window.location.reload();
+          }}
+          onPermissionDenied={() => {
+            console.log('Permissions refusées par l\'utilisateur');
+          }}
+        />
+
+        <Divider />
+
         {/* Status général */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">

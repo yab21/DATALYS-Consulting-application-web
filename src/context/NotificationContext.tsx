@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types
 export interface Notification {
@@ -45,99 +45,17 @@ interface NotificationProviderProps {
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(false);
+  // État pour le temps réel sera ajouté plus tard si nécessaire
 
-  // Initialiser avec des notifications de démo
-  useEffect(() => {
-    const initialNotifications: Notification[] = [
-      {
-        id: generateId(),
-        title: "Bienvenue sur DATALYS",
-        body: "Découvrez toutes les fonctionnalités de votre tableau de bord professionnel",
-        type: "info",
-        timestamp: new Date(),
-        read: false,
-        link: "/tableaudebord",
-        priority: "medium",
-        category: "system"
-      },
-      {
-        id: generateId(),
-        title: "Nouveau partenaire ajouté",
-        body: "TechCorp Solutions a été ajouté à votre liste de partenaires",
-        type: "success",
-        timestamp: new Date(Date.now() - 1800000), // 30 min ago
-        read: false,
-        link: "/tableaudebord/partenaire/liste",
-        priority: "medium",
-        category: "partner"
-      },
-      {
-        id: generateId(),
-        title: "Sauvegarde automatique",
-        body: "Vos données ont été sauvegardées avec succès",
-        type: "success",
-        timestamp: new Date(Date.now() - 3600000), // 1h ago
-        read: true,
-        priority: "low",
-        category: "system"
-      },
-    ];
-    
-    setNotifications(initialNotifications);
-  }, []);
+  // Les notifications sont maintenant générées uniquement par les actions utilisateur réelles
+  // Plus de notifications de démo ou de test
 
-  // Simuler des notifications temps réel
-  useEffect(() => {
-    if (!isRealTimeEnabled) return;
-
-    const interval = setInterval(() => {
-      // Simuler des notifications aléatoires
-      const randomNotifications = [
-        {
-          title: "Fichier uploadé",
-          body: "Le fichier document.pdf a été ajouté au projet",
-          type: "success" as const,
-          priority: "low" as const,
-          category: "project" as const,
-          link: "/tableaudebord/projet"
-        },
-        {
-          title: "Incident résolu",
-          body: "L'incident de connectivité VPN a été résolu",
-          type: "success" as const,
-          priority: "medium" as const,
-          category: "system" as const,
-        },
-        {
-          title: "Nouvelle demande d'accès",
-          body: "Un utilisateur demande l'accès au projet Migration Cloud",
-          type: "warning" as const,
-          priority: "high" as const,
-          category: "user" as const,
-          action: {
-            label: "Gérer",
-            handler: () => console.log("Gérer la demande d'accès")
-          }
-        }
-      ];
-
-      // Ajouter une notification aléatoire toutes les 30 secondes
-      if (Math.random() > 0.7) {
-        const randomNotif = randomNotifications[Math.floor(Math.random() * randomNotifications.length)];
-        addNotification({
-          ...randomNotif,
-          read: false
-        });
-      }
-    }, 30000); // 30 secondes
-
-    return () => clearInterval(interval);
-  }, [isRealTimeEnabled]);
+  // Le système temps réel sera implémenté avec de vraies notifications du backend
+  // Plus de simulation de notifications aléatoires
 
   // Fonctions utilitaires
   const generateId = (): string => {
-    return `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `notif_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   };
 
   const addNotification = (notificationData: Omit<Notification, 'id' | 'timestamp'>) => {
@@ -154,7 +72,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       new Notification(newNotification.title, {
         body: newNotification.body,
         icon: '/images/logo.png',
-        badge: '/images/badge.png',
         tag: newNotification.id,
       });
     }
@@ -190,16 +107,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   };
 
   const subscribeToRealTime = () => {
-    setIsRealTimeEnabled(true);
-    
-    // Demander permission pour les notifications navigateur
+    // Pour l'instant, juste demander la permission pour les notifications navigateur
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
+    // Le système temps réel sera implémenté plus tard avec WebSockets/SSE
   };
 
   const unsubscribeFromRealTime = () => {
-    setIsRealTimeEnabled(false);
+    // Fonction réservée pour l'implémentation future du temps réel
   };
 
   const unreadCount = notifications.filter(notif => !notif.read).length;

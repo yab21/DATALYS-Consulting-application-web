@@ -12,7 +12,7 @@ import {
   Chip,
   cn,
 } from "@nextui-org/react";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useAdvancedNotifications } from "@/components/UI/Notifications/AdvancedNotificationProvider";
 import {
   Bell,
   Check,
@@ -29,9 +29,30 @@ const DropdownNotification = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const {
     notifications,
-    hideNotification,
-    clearAllNotifications,
-  } = useNotifications();
+    removeNotification: hideNotification,
+    clearAll: clearAllNotifications,
+    addNotification,
+  } = useAdvancedNotifications();
+
+  // Debug des notifications
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔔 Notifications dans DropdownNotification:', notifications.length);
+      
+      // Import et expose le testeur FCM
+      import('@/utils/fcm-test').then(module => {
+        (window as any).testFCM = module.testFCMBackend;
+        (window as any).testHighPriorityMessage = module.testHighPriorityMessage;
+        (window as any).testCompleteFCMFlow = module.testCompleteFCMFlow;
+        (window as any).startFCMMonitoring = module.startFCMMonitoring;
+        console.log('🧪 Tests FCM disponibles:');
+        console.log('  - testCompleteFCMFlow() : test complet du flux FCM');
+        console.log('  - startFCMMonitoring() : surveiller les notifications');
+        console.log('  - testFCM() : tester le backend FCM');
+        console.log('  - testHighPriorityMessage() : envoyer message haute priorité');
+      });
+    }
+  }, [notifications]);
 
   // Calculer les notifications non lues (simulation)
   const unreadCount = notifications.length;
@@ -41,11 +62,11 @@ const DropdownNotification = () => {
   const adaptNotification = (item: any) => ({
     ...item,
     body: item.message || 'Notification',
-    read: false, // toutes les notifications sont non-lues dans le système simple
-    priority: 'medium' as const,
-    category: 'system' as const,
-    timestamp: new Date(),
-    link: '#'
+    read: item.isRead || false,
+    priority: item.priority || 'medium',
+    category: item.category || 'system',
+    timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
+    link: item.relatedId ? `/tableaudebord/messages/${item.relatedId}` : '#'
   });
 
   // Détecter le mode sombre

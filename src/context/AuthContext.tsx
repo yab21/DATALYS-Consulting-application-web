@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           email: response.data.email,
           name: response.data.name,
           is_active: response.data.is_active,
-          role_id: parseInt(response.data.role_id), // Assurer que c'est un nombre
+          role_id: typeof response.data.role_id === 'string' ? parseInt(response.data.role_id) : response.data.role_id, // Assurer que c'est un nombre
           partner_id: response.data.partner_id, // Ajouter partner_id depuis l'API
           created_at: response.data.created_at,
           updated_at: response.data.updated_at,

@@ -45,10 +45,16 @@ export function useFCMIntegration() {
 
         // Vérifier le support
         const isSupported = fcmService.isSupported();
+        
+        // Mettre à jour le statut avec le support détecté
+        setFCMStatus(prev => ({
+          ...prev,
+          isSupported
+        }));
+
         if (!isSupported) {
           setFCMStatus(prev => ({
             ...prev,
-            isSupported: false,
             isLoading: false,
             error: 'FCM non supporté sur ce navigateur'
           }));

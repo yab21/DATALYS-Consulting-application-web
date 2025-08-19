@@ -45,13 +45,47 @@ class FCMService {
 
   async requestPermission(): Promise<string> {
     try {
+      // Vérifier d'abord si les notifications sont supportées
+      if (!('Notification' in window)) {
+        console.warn('Ce navigateur ne supporte pas les notifications');
+        return 'denied';
+      }
+
+      // Si déjà accordée, retourner immédiatement
+      if (Notification.permission === 'granted') {
+        console.log('Permission de notification déjà accordée');
+        return 'granted';
+      }
+
+      // Si déjà refusée, ne pas redemander
+      if (Notification.permission === 'denied') {
+        console.warn('Permission de notification déjà refusée par l\'utilisateur');
+        return 'denied';
+      }
+
+      // Demander la permission de manière explicite
+      console.log('Demande de permission de notification...');
       const permission = await Notification.requestPermission();
-      console.log('Permission de notification:', permission);
+      console.log('Réponse de permission de notification:', permission);
+      
       return permission;
     } catch (error) {
       console.error('Erreur lors de la demande de permission:', error);
       return 'denied';
     }
+  }
+
+  // Nouvelle méthode pour vérifier le statut des permissions
+  getPermissionStatus(): string {
+    if (!('Notification' in window)) {
+      return 'unsupported';
+    }
+    return Notification.permission;
+  }
+
+  // Nouvelle méthode pour savoir si on peut demander la permission
+  canRequestPermission(): boolean {
+    return 'Notification' in window && Notification.permission === 'default';
   }
 
   async getRegistrationToken(): Promise<string | null> {
@@ -63,36 +97,102 @@ class FCMService {
         }
       }
 
-      // Enregistrer le service worker
+      // Enregistrer le service worker et attendre qu'il soit prêt
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       console.log('Service Worker enregistré:', registration);
 
-      // Obtenir le token
-      const token = await getToken(this.messaging, {
-        vapidKey: vapidKey,
-        serviceWorkerRegistration: registration
-      });
+      // Attendre que le service worker soit activé
+      await this.waitForServiceWorkerReady(registration);
 
-      if (token) {
-        console.log('Token FCM reçu:', token);
-        this.currentToken = token;
-        
-        // Sauvegarder le token localement
-        localStorage.setItem('fcm-token', token);
-        
-        return token;
-      } else {
-        console.log('Aucun token de registration disponible');
-        return null;
+      // Obtenir le token avec retry logic
+      let token = null;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (!token && attempts < maxAttempts) {
+        try {
+          attempts++;
+          console.log(`Tentative ${attempts}/${maxAttempts} d'obtention du token FCM`);
+          
+          token = await getToken(this.messaging, {
+            vapidKey: vapidKey,
+            serviceWorkerRegistration: registration
+          });
+
+          if (token) {
+            console.log('Token FCM reçu:', token);
+            this.currentToken = token;
+            
+            // Sauvegarder le token localement
+            localStorage.setItem('fcm-token', token);
+            
+            return token;
+          }
+        } catch (error) {
+          console.warn(`Tentative ${attempts} échouée:`, error);
+          if (attempts < maxAttempts) {
+            // Attendre un peu avant de réessayer
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          } else {
+            throw error;
+          }
+        }
       }
+
+      console.log('Aucun token de registration disponible après', maxAttempts, 'tentatives');
+      return null;
     } catch (error) {
       console.error('Erreur lors de l\'obtention du token:', error);
       return null;
     }
   }
 
+  private async waitForServiceWorkerReady(registration: ServiceWorkerRegistration): Promise<void> {
+    return new Promise((resolve) => {
+      // Si le service worker est déjà actif
+      if (registration.active) {
+        console.log('Service Worker déjà actif');
+        resolve();
+        return;
+      }
+
+      // Si le service worker est en cours d'installation
+      if (registration.installing) {
+        console.log('Service Worker en cours d\'installation, attente...');
+        registration.installing.addEventListener('statechange', function() {
+          if (this.state === 'activated') {
+            console.log('Service Worker activé');
+            resolve();
+          }
+        });
+        return;
+      }
+
+      // Si le service worker est en attente
+      if (registration.waiting) {
+        console.log('Service Worker en attente, activation...');
+        registration.waiting.addEventListener('statechange', function() {
+          if (this.state === 'activated') {
+            console.log('Service Worker activé');
+            resolve();
+          }
+        });
+        return;
+      }
+
+      // Fallback: attendre un peu et résoudre
+      console.log('Service Worker dans un état inconnu, attente de 2 secondes...');
+      setTimeout(() => {
+        console.log('Timeout atteint, continuation...');
+        resolve();
+      }, 2000);
+    });
+  }
+
   async sendTokenToServer(token: string, userId: number): Promise<boolean> {
     try {
+      console.log('Envoi du token FCM au serveur:', { endpoint: FCM_TOKEN_ENDPOINT, userId });
+      
       const response = await fetch(FCM_TOKEN_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -104,7 +204,7 @@ class FCMService {
           user_id: userId,
           device_info: {
             userAgent: navigator.userAgent,
-            platform: (navigator as any).userAgentData?.platform || navigator.platform,
+            platform: (navigator as any).userAgentData?.platform || (navigator as any).platform || 'unknown',
             language: navigator.language
           }
         })
@@ -114,33 +214,59 @@ class FCMService {
         console.log('Token FCM envoyé au serveur avec succès');
         return true;
       } else {
-        console.error('Erreur lors de l\'envoi du token au serveur');
+        const errorText = await response.text();
+        console.error('Erreur lors de l\'envoi du token au serveur:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
         return false;
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi du token au serveur:', error);
+      
+      // Gestion spécifique des erreurs CORS
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Possible erreur CORS - vérifiez la configuration du serveur');
+        console.warn('Endpoint utilisé:', FCM_TOKEN_ENDPOINT);
+        console.warn('Le backend doit autoriser les requêtes depuis:', window.location.origin);
+      }
+      
       return false;
     }
   }
 
   setupForegroundMessageListener(addNotification: (notification: any) => void): void {
     if (!this.messaging) {
-      console.warn('Messaging non initialisé');
+      console.warn('❌ Messaging non initialisé');
       return;
     }
 
+    console.log('🎯 Configuration du listener FCM en cours...');
+
     onMessage(this.messaging, (payload: MessagePayload) => {
-      console.log('Message reçu en premier plan:', payload);
+      console.log('🚨 FCM Message reçu en premier plan:', payload);
+      console.log('📋 Notification payload:', payload.notification);
+      console.log('📋 Data payload:', payload.data);
 
       // Convertir le message FCM en notification interne
       const notification = this.convertFCMToNotification(payload);
-      addNotification(notification);
-
-      // Afficher une notification système si l'utilisateur n'est pas sur la page
-      if (document.hidden) {
+      console.log('🔔 Notification convertie pour l\'UI:', notification);
+      
+      try {
+        addNotification(notification);
+        console.log('✅ Notification ajoutée au système UI avec succès');
+        
+        // Force l'affichage d'une notification système aussi
         this.showSystemNotification(payload);
+        console.log('🔔 Notification système affichée');
+        
+      } catch (error) {
+        console.error('❌ Erreur lors de l\'ajout de notification:', error);
       }
     });
+    
+    console.log('✅ Listener FCM configuré avec succès');
   }
 
   private convertFCMToNotification(payload: MessagePayload): any {
@@ -232,16 +358,46 @@ class FCMService {
     }
   }
 
+  // Nouvelle méthode pour forcer la régénération du token
+  async forceTokenRegeneration(): Promise<string | null> {
+    try {
+      console.log('🔄 Forçage de la régénération du token FCM...');
+      
+      // Nettoyer complètement l'état actuel
+      this.currentToken = null;
+      localStorage.removeItem('fcm-token');
+      
+      // Réinitialiser le messaging service
+      if (this.messaging && this.app) {
+        this.messaging = null;
+        this.isInitialized = false;
+      }
+      
+      // Forcer une nouvelle initialisation
+      await this.initialize();
+      
+      // Obtenir un nouveau token
+      const newToken = await this.getRegistrationToken();
+      
+      if (newToken) {
+        console.log('✅ Nouveau token FCM généré:', newToken.substring(0, 20) + '...');
+      } else {
+        console.error('❌ Échec de la génération du nouveau token');
+      }
+      
+      return newToken;
+    } catch (error) {
+      console.error('❌ Erreur lors de la régénération forcée:', error);
+      return null;
+    }
+  }
+
   getCurrentToken(): string | null {
     return this.currentToken || localStorage.getItem('fcm-token');
   }
 
   isSupported(): boolean {
     return 'Notification' in window && 'serviceWorker' in navigator;
-  }
-
-  getPermissionStatus(): NotificationPermission {
-    return Notification.permission;
   }
 }
 
@@ -280,11 +436,12 @@ export async function initializeFCMForUser(
       return false;
     }
 
-    // Envoyer le token au serveur
+    // Envoyer le token au serveur (échec non critique)
     const tokenSent = await fcmService.sendTokenToServer(token, userId);
     if (!tokenSent) {
-      console.warn('Impossible d\'envoyer le token au serveur');
+      console.warn('Impossible d\'envoyer le token au serveur - continuer avec les notifications locales');
       // Ne pas échouer complètement, les notifications locales peuvent encore fonctionner
+      // L'utilisateur peut toujours recevoir des notifications via l'interface locale
     }
 
     // Configurer les listeners

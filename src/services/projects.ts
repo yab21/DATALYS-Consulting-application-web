@@ -1,7 +1,6 @@
 // Service de gestion des projets pour DATALYS Consulting
 
 import {
-  API_CONFIG,
   buildApiUrl,
   getDefaultHeaders,
 } from "@/lib/api-config";
@@ -9,7 +8,8 @@ import {
 export interface Project {
   id: number;
   title: string;
-  partner_id: number;
+  partner_name?: string; // Nouveau: nom du partenaire
+  partner_id?: number; // Gardé pour compatibilité réponse API
   is_active: boolean;
   is_deleted: boolean;
   created_at: string;
@@ -20,8 +20,41 @@ export interface Project {
 
 export interface CreateProjectFormData {
   title: string;
-  partner_id: number;
+  partner_name: string; // Nouveau: utilise partner_name
   is_active?: boolean;
+}
+
+// Nouvelles interfaces pour les requêtes API
+export interface ProjectCreateRequest {
+  user: {
+    id: number;
+  };
+  datas: Array<{
+    title: string;
+    partner_name: string;
+  }>;
+}
+
+export interface ProjectUpdateRequest {
+  user: {
+    id: number;
+  };
+  datas: Array<{
+    id: number;
+    title: string;
+    partner_name?: string;
+    is_active: boolean;
+  }>;
+}
+
+export interface ProjectDeleteRequest {
+  user: {
+    id: number;
+  };
+  datas: Array<{
+    id: number;
+    title: string;
+  }>;
 }
 
 export interface ProjectApiResponse<T = Project[]> {
@@ -39,7 +72,7 @@ export interface ProjectByCriteriaRequest {
   size: number;
   data: {
     is_active?: boolean;
-    partner_id?: number;
+    partner_name?: string; // Nouveau: filtrage par nom de partenaire
   };
 }
 
@@ -104,7 +137,14 @@ export class ProjectsService {
       console.log("✅ Réponse getByCriteria complète:", result);
 
       if (result.code === 200 && result.items) {
-        return result.items;
+        // Transformer les données pour extraire le nom du partenaire
+        const transformedProjects = result.items.map((project: any) => ({
+          ...project,
+          partner_name: project.partner?.name || null
+        }));
+        
+        console.log("📝 Projets transformés avec partner_name:", transformedProjects.slice(0, 2));
+        return transformedProjects;
       } else {
         throw new Error(result.message?.message || 'Erreur lors de la récupération des projets');
       }
@@ -115,18 +155,18 @@ export class ProjectsService {
   }
 
   /**
-   * Récupérer les projets par partenaire
+   * Récupérer les projets par partenaire (par nom)
    */
-  async getProjectsByPartner(partnerId: number): Promise<Project[]> {
+  async getProjectsByPartner(partnerName: string): Promise<Project[]> {
     try {
-      console.log(`📡 Appel API getProjectsByPartner pour partenaire ${partnerId}...`);
+      console.log(`📡 Appel API getProjectsByPartner pour partenaire ${partnerName}...`);
       
       const requestBody: ProjectByCriteriaRequest = {
         index: 0,
         size: 100,
         data: {
           is_active: true,
-          partner_id: partnerId
+          partner_name: partnerName
         }
       };
 
@@ -149,7 +189,13 @@ export class ProjectsService {
       console.log("✅ Réponse getByCriteria pour partenaire:", result);
 
       if (result.code === 200 && result.items) {
-        return result.items;
+        // Transformer les données pour extraire le nom du partenaire
+        const transformedProjects = result.items.map((project: any) => ({
+          ...project,
+          partner_name: project.partner?.name || null
+        }));
+        
+        return transformedProjects;
       } else {
         throw new Error(result.message?.message || 'Erreur lors de la récupération des projets');
       }
@@ -162,24 +208,28 @@ export class ProjectsService {
   /**
    * Créer un nouveau projet
    */
-  async createProject(projectData: CreateProjectFormData, userId?: number): Promise<ProjectApiResponse<Project[]>> {
+  async createProject(projectData: CreateProjectFormData, userId: number): Promise<ProjectApiResponse<Project[]>> {
     try {
       console.log("📡 Création d'un nouveau projet...");
       
-      const finalProjectData = {
-        ...projectData,
-        is_active: projectData.is_active ?? true,
-        created_by: userId
+      const requestBody: ProjectCreateRequest = {
+        user: {
+          id: userId
+        },
+        datas: [{
+          title: projectData.title,
+          partner_name: projectData.partner_name
+        }]
       };
 
-      console.log("📋 Données du projet à créer:", finalProjectData);
+      console.log("📋 Données du projet à créer:", requestBody);
 
       const response = await fetch(
         buildApiUrl('/projects/create'),
         {
           method: 'POST',
           headers: this.getAuthHeaders(),
-          body: JSON.stringify(finalProjectData),
+          body: JSON.stringify(requestBody),
         }
       );
 
@@ -204,23 +254,30 @@ export class ProjectsService {
   /**
    * Mettre à jour un projet
    */
-  async updateProject(projectId: number, projectData: Partial<CreateProjectFormData>, userId?: number): Promise<ProjectApiResponse<Project[]>> {
+  async updateProject(projectId: number, title: string, isActive: boolean, userId: number, partnerName?: string): Promise<ProjectApiResponse<Project[]>> {
     try {
       console.log(`📡 Mise à jour du projet ${projectId}...`);
       
-      const finalProjectData = {
-        ...projectData,
-        updated_by: userId
+      const requestBody: ProjectUpdateRequest = {
+        user: {
+          id: userId
+        },
+        datas: [{
+          id: projectId,
+          title: title,
+          is_active: isActive,
+          ...(partnerName && { partner_name: partnerName })
+        }]
       };
 
-      console.log("📋 Données de mise à jour:", finalProjectData);
+      console.log("📋 Données de mise à jour:", requestBody);
 
       const response = await fetch(
-        buildApiUrl(`/projects/${projectId}`),
+        buildApiUrl('/projects/update'),
         {
-          method: 'PUT',
+          method: 'POST',
           headers: this.getAuthHeaders(),
-          body: JSON.stringify(finalProjectData),
+          body: JSON.stringify(requestBody),
         }
       );
 
@@ -245,16 +302,28 @@ export class ProjectsService {
   /**
    * Supprimer un projet (soft delete)
    */
-  async deleteProject(projectId: number, userId?: number): Promise<ProjectApiResponse<Project[]>> {
+  async deleteProject(projectId: number, projectTitle: string, userId: number): Promise<{code: number; message: {code: number; message: string}}> {
     try {
       console.log(`📡 Suppression du projet ${projectId}...`);
       
+      const requestBody: ProjectDeleteRequest = {
+        user: {
+          id: userId
+        },
+        datas: [{
+          id: projectId,
+          title: projectTitle
+        }]
+      };
+
+      console.log("📋 Données de suppression:", requestBody);
+
       const response = await fetch(
-        buildApiUrl(`/projects/${projectId}`),
+        buildApiUrl('/projects/delete'),
         {
-          method: 'DELETE',
+          method: 'POST',
           headers: this.getAuthHeaders(),
-          body: JSON.stringify({ updated_by: userId }),
+          body: JSON.stringify(requestBody),
         }
       );
 
@@ -266,7 +335,7 @@ export class ProjectsService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result: ProjectApiResponse<Project[]> = await response.json();
+      const result = await response.json();
       console.log("✅ Projet supprimé avec succès:", result);
 
       return result;
@@ -277,39 +346,45 @@ export class ProjectsService {
   }
 
   /**
-   * Obtenir un projet par ID
+   * Obtenir la liste des noms de partenaires pour la sélection
    */
-  async getProjectById(projectId: number): Promise<Project | null> {
+  async getPartnerNames(): Promise<string[]> {
     try {
-      console.log(`📡 Récupération du projet ${projectId}...`);
+      console.log("📡 Récupération des noms de partenaires...");
       
+      // Utiliser le service partners pour récupérer la liste
       const response = await fetch(
-        buildApiUrl(`/projects/${projectId}`),
+        buildApiUrl('/partners/getByCriteria'),
         {
-          method: 'GET',
+          method: 'POST',
           headers: this.getAuthHeaders(),
+          body: JSON.stringify({
+            index: 0,
+            size: 100,
+            data: {
+              is_active: true
+            }
+          }),
         }
       );
 
       console.log("📨 Statut de la réponse:", response.status);
 
       if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result: ProjectApiResponse<Project> = await response.json();
-      console.log("✅ Projet récupéré:", result);
+      const result = await response.json();
+      console.log("✅ Partenaires récupérés:", result);
 
       if (result.code === 200 && result.items) {
-        return Array.isArray(result.items) ? result.items[0] : result.items;
+        // Extraire les noms des partenaires
+        return result.items.map((partner: any) => partner.name || partner.company_name);
       } else {
-        throw new Error(result.message?.message || 'Erreur lors de la récupération du projet');
+        throw new Error(result.message?.message || 'Erreur lors de la récupération des partenaires');
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la récupération du projet:", error);
+      console.error("❌ Erreur lors de la récupération des partenaires:", error);
       throw error;
     }
   }

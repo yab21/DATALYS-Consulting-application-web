@@ -116,7 +116,7 @@ export function AdvancedNotificationProvider({
   const [notifications, setNotifications] = useState<AdvancedNotification[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
-    soundEnabled: true,
+    soundEnabled: false,
     desktopEnabled: true,
     emailEnabled: false,
     categories: {
@@ -179,11 +179,14 @@ export function AdvancedNotificationProvider({
     }
   }, [settings, persistToStorage]);
 
-  // Initialiser l'audio pour les notifications
+  // Initialiser l'audio pour les notifications (désactivé)
   useEffect(() => {
-    audioRef.current = new Audio('/sounds/notification.mp3');
-    audioRef.current.volume = 0.3;
-  }, []);
+    // Son désactivé par défaut - pas de chargement de fichier audio
+    if (settings.soundEnabled) {
+      audioRef.current = new Audio('/sounds/notification.mp3');
+      audioRef.current.volume = 0.3;
+    }
+  }, [settings.soundEnabled]);
 
   const playNotificationSound = useCallback(() => {
     if (settings.soundEnabled && audioRef.current) {

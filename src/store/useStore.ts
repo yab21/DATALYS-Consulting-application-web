@@ -127,7 +127,7 @@ export const useStore = create<AppState>()(
           theme: 'system',
           language: 'fr',
           notificationsEnabled: true,
-          soundEnabled: true,
+          soundEnabled: false,
           autoSave: true,
           compactMode: false,
         },

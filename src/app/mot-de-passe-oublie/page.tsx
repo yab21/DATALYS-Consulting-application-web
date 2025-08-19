@@ -5,20 +5,16 @@ import { Input } from "@nextui-org/react";
 import { Button } from "@nextui-org/button";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
   CheckCircle,
-  Clock,
   Shield,
-  Key,
   RefreshCw,
   Lock,
-  Eye,
-  EyeOff,
   Mail,
   Loader2,
+  Key,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AuthService } from "@/services/auth";
@@ -29,34 +25,19 @@ import {
 
 interface ForgotPasswordForm {
   email: string;
-  newPassword: string;
-  confirmPassword: string;
 }
 
 const MotDePasseOublie = () => {
-  const [step, setStep] = useState<"email" | "reset" | "success">("email");
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [isVisibleNewPassword, setIsVisibleNewPassword] = useState(false);
-  const [isVisibleConfirmPassword, setIsVisibleConfirmPassword] =
-    useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [resetToken, setResetToken] = useState("");
-  const router = useRouter();
+  const [emailSent, setEmailSent] = useState(false);
   const { showNotification } = useNotifications();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<ForgotPasswordForm>();
-  const newPassword = watch("newPassword");
-
-  const toggleVisibilityNewPassword = () =>
-    setIsVisibleNewPassword(!isVisibleNewPassword);
-  const toggleVisibilityConfirmPassword = () =>
-    setIsVisibleConfirmPassword(!isVisibleConfirmPassword);
 
   const onEmailSubmit = async (data: { email: string }) => {
     setIsLoading(true);
@@ -66,8 +47,8 @@ const MotDePasseOublie = () => {
       const result = await AuthService.resetPasswordRequest(data.email);
 
       if (result.status === "success") {
-        // L'utilisateur recevra un email avec un lien de réinitialisation
-        setErrorMessage(""); // Clear any previous error
+        setEmailSent(true);
+        setErrorMessage("");
         showNotification(
           notificationHelpers.success(
             "Email envoyé !",
@@ -88,67 +69,17 @@ const MotDePasseOublie = () => {
       }
     } catch (error) {
       setErrorMessage("Erreur de connexion. Veuillez réessayer.");
+      showNotification(
+        notificationHelpers.error(
+          "Erreur",
+          "Une erreur s'est produite. Veuillez réessayer.",
+        ),
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const onPasswordSubmit = async (data: ForgotPasswordForm) => {
-    setIsLoading(true);
-    setErrorMessage("");
-
-    try {
-      // En réalité, le token viendrait des paramètres URL du lien email
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get("token") || resetToken;
-
-      if (!token) {
-        setErrorMessage(
-          "Token de réinitialisation manquant. Veuillez utiliser le lien reçu par email.",
-        );
-        return;
-      }
-
-      const result = await AuthService.resetPassword(token, data.newPassword);
-
-      if (result.status === "success") {
-        setStep("success");
-        showNotification(
-          notificationHelpers.success(
-            "Mot de passe mis à jour !",
-            "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
-          ),
-        );
-
-        // Start countdown
-        let count = 5;
-        setCountdown(count);
-        const timer = setInterval(() => {
-          count--;
-          setCountdown(count);
-          if (count <= 0) {
-            clearInterval(timer);
-            router.push("/connexion");
-          }
-        }, 1000);
-      } else {
-        setErrorMessage(
-          result.message ||
-            "Erreur lors de la réinitialisation du mot de passe",
-        );
-        showNotification(
-          notificationHelpers.error(
-            "Erreur de réinitialisation",
-            result.message || "Impossible de mettre à jour le mot de passe.",
-          ),
-        );
-      }
-    } catch (error) {
-      setErrorMessage("Erreur de connexion. Veuillez réessayer.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -337,7 +268,7 @@ const MotDePasseOublie = () => {
           >
             {/* Form Card */}
             <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10">
-              {step === "email" && (
+              {!emailSent ? (
                 <motion.div
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0, x: -50 }}
@@ -459,197 +390,7 @@ const MotDePasseOublie = () => {
                     </motion.div>
                   </form>
                 </motion.div>
-              )}
-
-              {step === "reset" && (
-                <motion.div
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
-                >
-                  {/* Header */}
-                  <motion.div
-                    className="mb-8 text-center"
-                    variants={itemVariants}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
-                      Nouveau mot de passe
-                    </h2>
-                    <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
-                    <p className="mt-4 text-gray-600">
-                      Créez un nouveau mot de passe sécurisé
-                    </p>
-                  </motion.div>
-
-                  {/* Error Message */}
-                  {errorMessage && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
-                    >
-                      {errorMessage}
-                    </motion.div>
-                  )}
-
-                  {/* Password Form */}
-                  <form
-                    onSubmit={handleSubmit(onPasswordSubmit)}
-                    className="space-y-6"
-                  >
-                    <motion.div
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                      transition={{ delay: 0.5 }}
-                    >
-                      <div className="mb-2">
-                        <label className="mb-2 block text-base font-semibold text-gray-800">
-                          Nouveau mot de passe
-                        </label>
-                      </div>
-                      <Input
-                        {...register("newPassword", {
-                          required: "Nouveau mot de passe requis",
-                          minLength: {
-                            value: 8,
-                            message:
-                              "Le mot de passe doit contenir au moins 8 caractères",
-                          },
-                        })}
-                        type={isVisibleNewPassword ? "text" : "password"}
-                        variant="bordered"
-                        placeholder="••••••••"
-                        classNames={{
-                          input:
-                            "text-gray-900 placeholder:text-gray-500 pl-10 pr-10 text-base",
-                          inputWrapper:
-                            "border-gray-300 bg-white hover:border-blue-400 focus-within:border-blue-500 focus-within:bg-white transition-all duration-300 shadow-sm",
-                          base: "!text-gray-800",
-                        }}
-                        size="lg"
-                        radius="lg"
-                        isInvalid={!!errors.newPassword}
-                        errorMessage={errors.newPassword?.message}
-                        startContent={
-                          <Lock className="h-5 w-5 text-gray-500" />
-                        }
-                        endContent={
-                          <button
-                            className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
-                            type="button"
-                            onClick={toggleVisibilityNewPassword}
-                          >
-                            {isVisibleNewPassword ? (
-                              <EyeOff className="h-5 w-5" />
-                            ) : (
-                              <Eye className="h-5 w-5" />
-                            )}
-                          </button>
-                        }
-                      />
-                    </motion.div>
-
-                    <motion.div
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                      transition={{ delay: 0.6 }}
-                    >
-                      <div className="mb-2">
-                        <label className="mb-2 block text-base font-semibold text-gray-800">
-                          Confirmer le mot de passe
-                        </label>
-                      </div>
-                      <Input
-                        {...register("confirmPassword", {
-                          required: "Confirmation du mot de passe requise",
-                          validate: (value) =>
-                            value === newPassword ||
-                            "Les mots de passe ne correspondent pas",
-                        })}
-                        type={isVisibleConfirmPassword ? "text" : "password"}
-                        variant="bordered"
-                        placeholder="••••••••"
-                        classNames={{
-                          input:
-                            "text-gray-900 placeholder:text-gray-500 pl-10 pr-10 text-base",
-                          inputWrapper:
-                            "border-gray-300 bg-white hover:border-blue-400 focus-within:border-blue-500 focus-within:bg-white transition-all duration-300 shadow-sm",
-                          base: "!text-gray-800",
-                        }}
-                        size="lg"
-                        radius="lg"
-                        isInvalid={!!errors.confirmPassword}
-                        errorMessage={errors.confirmPassword?.message}
-                        startContent={
-                          <Lock className="h-5 w-5 text-gray-500" />
-                        }
-                        endContent={
-                          <button
-                            className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
-                            type="button"
-                            onClick={toggleVisibilityConfirmPassword}
-                          >
-                            {isVisibleConfirmPassword ? (
-                              <EyeOff className="h-5 w-5" />
-                            ) : (
-                              <Eye className="h-5 w-5" />
-                            )}
-                          </button>
-                        }
-                      />
-                    </motion.div>
-
-                    <motion.div
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                      transition={{ delay: 0.7 }}
-                    >
-                      <Button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:cursor-not-allowed disabled:opacity-70"
-                        size="lg"
-                      >
-                        <div className="flex items-center justify-center gap-2">
-                          {isLoading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : (
-                            <Key className="h-5 w-5" />
-                          )}
-                          <span>
-                            {isLoading
-                              ? "Mise à jour en cours..."
-                              : "Mettre à jour le mot de passe"}
-                          </span>
-                        </div>
-                      </Button>
-                    </motion.div>
-
-                    <motion.div
-                      className="text-center"
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                      transition={{ delay: 0.8 }}
-                    >
-                      <Link
-                        href="/connexion"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                        Retour à la connexion
-                      </Link>
-                    </motion.div>
-                  </form>
-                </motion.div>
-              )}
-
-              {step === "success" && (
+              ) : (
                 <motion.div
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -692,7 +433,7 @@ const MotDePasseOublie = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                   >
-                    Mot de passe mis à jour !
+                    Email envoyé !
                   </motion.h2>
 
                   <motion.p
@@ -701,51 +442,38 @@ const MotDePasseOublie = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
                   >
-                    Votre mot de passe a été mis à jour avec succès.
+                    Un lien de réinitialisation a été envoyé à votre adresse email.
                     <br />
                     <span className="font-semibold text-primary">
-                      Vous pouvez maintenant vous connecter avec votre nouveau
-                      mot de passe.
+                      Vérifiez votre boîte mail et cliquez sur le lien pour réinitialiser votre mot de passe.
                     </span>
                   </motion.p>
-
-                  {/* Countdown */}
-                  {countdown && (
-                    <motion.div
-                      className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.8 }}
-                    >
-                      <p className="mb-2 text-sm text-gray-600">
-                        Redirection automatique dans
-                      </p>
-                      <motion.div
-                        className="flex items-center justify-center gap-2 text-2xl font-bold text-primary"
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      >
-                        <Clock className="h-6 w-6" />
-                        {countdown}s
-                      </motion.div>
-                    </motion.div>
-                  )}
 
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="space-y-4"
                   >
+                    <Button
+                      onPress={() => setEmailSent(false)}
+                      variant="bordered"
+                      className="w-full"
+                    >
+                      Renvoyer l'email
+                    </Button>
                     <Link
                       href="/connexion"
                       className="inline-flex items-center gap-2 font-medium text-primary transition-colors hover:text-primary-800"
                     >
                       <ArrowLeft className="h-4 w-4" />
-                      Retourner maintenant
+                      Retour à la connexion
                     </Link>
                   </motion.div>
                 </motion.div>
               )}
+
+
 
               {/* Footer */}
               <motion.div

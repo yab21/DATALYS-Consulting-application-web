@@ -28,6 +28,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { projectsService, Project } from "@/services/projects";
+import { partnersService } from "@/services/partners";
 import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import Link from "next/link";
@@ -159,23 +160,39 @@ const MonEspacePartenaire: React.FC = () => {
         const token = localStorage.getItem("authToken");
         if (token) {
           projectsService.setToken(token);
+          partnersService.setToken(token);
           
-          // Charger les projets du partner
-          const projectsData = await projectsService.getProjectsByPartner(user.partner_id);
-          setProjects(projectsData);
-
-          // Calculer les statistiques
-          const activeProjects = projectsData.filter((p) => p.is_active).length;
-          const completedProjects = projectsData.filter((p) => !p.is_active).length;
-
-          setStats({
-            totalProjects: projectsData.length,
-            activeProjects,
-            completedProjects,
-            totalDocuments: projectsData.length * 3, // Estimation
-            recentActivity: 12, // Simulation
-            lastLogin: new Date().toISOString(),
+          // Récupérer d'abord les informations du partenaire
+          const partnersResponse = await partnersService.getPartners({
+            index: 0,
+            size: 1,
+            data: { is_active: true }
           });
+          
+          let partnerName = "";
+          if (partnersResponse.items && partnersResponse.items.length > 0) {
+            const partner = partnersResponse.items.find(p => p.id === user.partner_id);
+            partnerName = partner?.name || "";
+          }
+          
+          if (partnerName) {
+            // Charger les projets du partner par nom
+            const projectsData = await projectsService.getProjectsByPartner(partnerName);
+            setProjects(projectsData);
+
+            // Calculer les statistiques
+            const activeProjects = projectsData.filter((p) => p.is_active).length;
+            const completedProjects = projectsData.filter((p) => !p.is_active).length;
+
+            setStats({
+              totalProjects: projectsData.length,
+              activeProjects,
+              completedProjects,
+              totalDocuments: projectsData.length * 3, // Estimation
+              recentActivity: 12, // Simulation
+              lastLogin: new Date().toISOString(),
+            });
+          }
         }
       } catch (error) {
         console.error("Erreur lors du chargement des données partner:", error);

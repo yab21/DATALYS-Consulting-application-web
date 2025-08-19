@@ -9,12 +9,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-comp
 // Note: Les variables d'environnement ne sont pas disponibles dans le service worker
 // La configuration doit être fournie par le client ou codée en dur
 const firebaseConfig = {
-  apiKey: "your-api-key", // À remplacer par la vraie valeur
-  authDomain: "your-auth-domain", // À remplacer
-  projectId: "datalys-consulting", // À remplacer
-  storageBucket: "your-storage-bucket", // À remplacer
-  messagingSenderId: "your-sender-id", // À remplacer
-  appId: "your-app-id" // À remplacer
+  apiKey: "AIzaSyDmjct6e2ZuZhnhFeVRCFIoInuHSYMPoVg",
+  authDomain: "datalys-consulting-backend.firebaseapp.com",
+  projectId: "datalys-consulting-backend",
+  storageBucket: "datalys-consulting-backend.firebasestorage.app",
+  messagingSenderId: "838991252517",
+  appId: "1:838991252517:web:98558f13b6b88f60cc43cc"
 };
 
 // Vérifier si la configuration est définie

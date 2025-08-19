@@ -134,13 +134,14 @@ class PartnersService {
   }
 
   // Créer un nouveau partenaire
-  async createPartner(partnerData: CreatePartnerFormData, userId?: number): Promise<PartnerApiResponse<Partner[]>> {
+  async createPartner(partnerData: CreatePartnerFormData, userId?: number): Promise<PartnerApiResponse<Partner[]> & { logoUploadError?: string }> {
     try {
-      console.log('🔧 Debug createPartner - État du service:', {
+      console.log('🚀 Création du partenaire démarrée:', {
         baseUrl: this.baseUrl,
         hasToken: !!this.token,
         token: this.token ? `${this.token.substring(0, 20)}...` : null,
-        userId: userId
+        userId: userId,
+        hasLogo: !!partnerData.logo
       });
 
       if (!this.token) {
@@ -149,15 +150,69 @@ class PartnersService {
 
       const userIdToUse = userId || 1;
       
-      // Essayer d'abord avec FormData si un logo est présent
-      if (partnerData.logo && partnerData.logo instanceof File) {
-        return await this.createPartnerWithFormData(partnerData, userIdToUse);
-      } else {
-        // Sinon, utiliser JSON
-        return await this.createPartnerWithJSON(partnerData, userIdToUse);
+      // Étape 1: Créer le partenaire sans logo (toujours avec JSON selon les nouvelles APIs)
+      console.log('📝 Étape 1: Création du partenaire sans logo...');
+      const partnerResult = await this.createPartnerWithJSON(partnerData, userIdToUse);
+      
+      if (partnerResult.code !== 200) {
+        throw new Error(partnerResult.message?.message || 'Erreur lors de la création du partenaire');
       }
+      
+      let logoUploadError: string | undefined = undefined;
+      
+      // Étape 2: Upload du logo si présent (optionnel)
+      if (partnerData.logo && partnerData.logo instanceof File && partnerResult.items?.[0]) {
+        console.log('🖼️ Étape 2: Upload du logo...');
+        const partnerId = partnerResult.items[0].id;
+        
+        try {
+          await this.uploadPartnerLogo(partnerId, partnerData.logo);
+          console.log('✅ Logo uploadé avec succès');
+        } catch (logoError) {
+          console.warn('⚠️ Partenaire créé mais échec upload logo:', logoError);
+          logoUploadError = logoError instanceof Error ? logoError.message : 'Erreur inconnue lors de l\'upload du logo';
+          // Ne pas faire échouer toute l'opération si seulement le logo échoue
+          // Le partenaire est déjà créé, on continue
+        }
+      }
+      
+      return {
+        ...partnerResult,
+        logoUploadError
+      };
     } catch (error) {
       console.error('❌ Erreur lors de la création du partenaire:', error);
+      throw error;
+    }
+  }
+
+  // Nouvelle méthode pour uploader le logo séparément
+  async uploadPartnerLogo(partnerId: number, logo: File): Promise<void> {
+    try {
+      const formData = new FormData();
+      formData.append('logo', logo);
+      
+      console.log('📤 Upload logo pour partenaire ID:', partnerId);
+      
+      const response = await fetch(`${this.baseUrl}/partners/upload-logo/${partnerId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          // Ne pas définir Content-Type pour FormData
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erreur upload logo:', errorText);
+        throw new Error(`Erreur upload logo: ${response.status} - ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Logo uploadé:', result);
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'upload du logo:', error);
       throw error;
     }
   }
@@ -197,17 +252,17 @@ class PartnersService {
     return await this.handleResponse(response);
   }
 
-  // Création avec JSON (sans logo)
+  // Création avec JSON (sans logo) - format adapté selon l'exemple API
   private async createPartnerWithJSON(partnerData: CreatePartnerFormData, userId: number): Promise<PartnerApiResponse<Partner[]>> {
     const requestBody = {
-      data: {
+      user: { id: userId },
+      datas: [{
         name: partnerData.name,
         email: partnerData.email,
         phone: partnerData.phone,
         address: partnerData.address,
         is_active: partnerData.is_active,
-      },
-      user: { id: userId }
+      }]
     };
 
     console.log('📤 Envoi JSON:', requestBody);
@@ -226,9 +281,31 @@ class PartnersService {
     console.log('📨 Statut de la réponse:', response.status);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Erreur API:', errorText);
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      let errorMessage = `Erreur ${response.status}`;
+      
+      try {
+        const errorText = await response.text();
+        console.error('❌ Erreur API brute:', errorText);
+        
+        // Essayer de parser le JSON d'erreur
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else {
+            errorMessage = errorText;
+          }
+        } catch {
+          errorMessage = errorText;
+        }
+      } catch {
+        errorMessage = `Erreur HTTP ${response.status}`;
+      }
+      
+      console.error('❌ Message d\'erreur final:', errorMessage);
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();

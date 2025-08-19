@@ -44,15 +44,7 @@ import messagesService, {
   ReplyMessageRequest 
 } from "@/services/messages";
 
-// Types pour l'état local
-interface MessageStats {
-  total: number;
-  unread: number;
-  support_open: number;
-  support_resolved: number;
-  critical: number;
-  avg_response_time: number;
-}
+// Types pour l'état local - Stats supprimées
 
 const GestionMessages: React.FC = () => {
   const { user } = useAuth();
@@ -66,25 +58,26 @@ const GestionMessages: React.FC = () => {
   const [filterType, setFilterType] = useState<string>("tous");
   const [filterStatus, setFilterStatus] = useState<string>("tous");
   const [showConversationModal, setShowConversationModal] = useState(false);
-  const [stats, setStats] = useState<MessageStats>({
-    total: 0,
-    unread: 0,
-    support_open: 0,
-    support_resolved: 0,
-    critical: 0,
-    avg_response_time: 0
-  });
 
 
   // État pour réponse
   const [replyText, setReplyText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // États pour nouveau message
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [newMessage, setNewMessage] = useState({
+    title: "",
+    description: "",
+    priority: "moyenne" as "faible" | "moyenne" | "haute" | "critique",
+    project_id: ""
+  });
+  const [sendingNewMessage, setSendingNewMessage] = useState(false);
+
 
   // Charger les données initiales
   useEffect(() => {
     loadMessages();
-    loadStats();
   }, []);
 
   // Filtrage des messages
@@ -131,30 +124,6 @@ const GestionMessages: React.FC = () => {
       setMessages([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const response = await messagesService.getCommunicationStats();
-      setStats({
-        total: response.total_messages,
-        unread: response.unread_messages,
-        support_open: response.open_support_tickets,
-        support_resolved: response.resolved_tickets,
-        critical: response.critical_priority,
-        avg_response_time: response.avg_response_time
-      });
-    } catch (error) {
-      console.error('Erreur chargement stats:', error);
-      setStats({
-        total: 0,
-        unread: 0,
-        support_open: 0,
-        support_resolved: 0,
-        critical: 0,
-        avg_response_time: 0
-      });
     }
   };
 
@@ -209,9 +178,6 @@ const GestionMessages: React.FC = () => {
       
       // Recharger tous les messages pour avoir la liste à jour
       await loadMessages();
-      
-      // Actualiser les stats
-      await loadStats();
     } catch (error) {
       console.error('Erreur réponse inline:', error);
     } finally {
@@ -225,9 +191,45 @@ const GestionMessages: React.FC = () => {
       
       // Recharger les messages pour avoir l'état à jour
       await loadMessages();
-      await loadStats();
     } catch (error) {
       console.error('Erreur marquage lu:', error);
+    }
+  };
+
+  // Fonction pour envoyer un nouveau message
+  const handleSendNewMessage = async () => {
+    if (!newMessage.title.trim() || !newMessage.description.trim()) return;
+
+    try {
+      setSendingNewMessage(true);
+      
+      const messageData: CreateMessageRequest = {
+        title: newMessage.title.trim(),
+        description: newMessage.description.trim(),
+        priority: newMessage.priority,
+        project_id: newMessage.project_id ? parseInt(newMessage.project_id) : undefined
+      };
+      
+      await messagesService.sendMessage(messageData);
+      
+      // Réinitialiser le formulaire
+      setNewMessage({
+        title: "",
+        description: "",
+        priority: "moyenne",
+        project_id: ""
+      });
+      
+      // Fermer le modal
+      setShowNewMessageModal(false);
+      
+      // Recharger les messages
+      await loadMessages();
+      
+    } catch (error) {
+      console.error('Erreur envoi nouveau message:', error);
+    } finally {
+      setSendingNewMessage(false);
     }
   };
 
@@ -284,152 +286,6 @@ const GestionMessages: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Statistiques des messages */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total Messages
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {stats.total}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/30">
-                  <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Non lus
-                  </p>
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {stats.unread}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-orange-100 p-3 dark:bg-orange-900/30">
-                  <Eye className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Support Ouvert
-                  </p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {stats.support_open}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900/30">
-                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Support Résolu
-                  </p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {stats.support_resolved}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-green-100 p-3 dark:bg-green-900/30">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Critique
-                  </p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {stats.critical}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900/30">
-                  <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Temps Moyen
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {stats.avg_response_time}h
-                  </p>
-                </div>
-                <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/30">
-                  <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </motion.div>
-      </div>
 
       {/* Filtres et actions */}
       <motion.div
@@ -484,6 +340,14 @@ const GestionMessages: React.FC = () => {
                 </Button>
               </div>
 
+              <Button
+                color="primary"
+                startContent={<Plus className="h-4 w-4" />}
+                onPress={() => setShowNewMessageModal(true)}
+                className="bg-gradient-to-r from-blue-500 to-blue-600"
+              >
+                Nouveau Message
+              </Button>
             </div>
 
             <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
@@ -661,6 +525,139 @@ const GestionMessages: React.FC = () => {
               </div>
             </div>
           </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal Nouveau Message */}
+      <Modal
+        isOpen={showNewMessageModal}
+        onClose={() => setShowNewMessageModal(false)}
+        size="2xl"
+        placement="center"
+        classNames={{
+          base: "bg-white dark:bg-gray-800",
+          backdrop: "bg-black/60 backdrop-blur-sm",
+          header: "border-b border-gray-200 dark:border-gray-600",
+          footer: "border-t border-gray-200 dark:border-gray-600",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Nouveau Message
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Créer un nouveau message ou demande de support
+                  </p>
+                </div>
+              </ModalHeader>
+              
+              <ModalBody className="py-6">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Sujet <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="Entrez le sujet de votre message..."
+                      value={newMessage.title}
+                      onChange={(e) => setNewMessage({...newMessage, title: e.target.value})}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-gray-900 dark:text-white",
+                        inputWrapper: "border-2 hover:border-blue-400 focus-within:border-blue-500",
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Priorité
+                    </label>
+                    <Select
+                      placeholder="Sélectionner la priorité"
+                      selectedKeys={[newMessage.priority]}
+                      onSelectionChange={(keys) => {
+                        const priority = Array.from(keys)[0] as "faible" | "moyenne" | "haute" | "critique";
+                        setNewMessage({...newMessage, priority});
+                      }}
+                      variant="bordered"
+                      size="lg"
+                    >
+                      <SelectItem key="faible" value="faible">🟢 Faible</SelectItem>
+                      <SelectItem key="moyenne" value="moyenne">🟡 Moyenne</SelectItem>
+                      <SelectItem key="haute" value="haute">🟠 Haute</SelectItem>
+                      <SelectItem key="critique" value="critique">🔴 Critique</SelectItem>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      ID du Projet
+                    </label>
+                    <Input
+                      placeholder="ID du projet (optionnel)"
+                      value={newMessage.project_id}
+                      onChange={(e) => setNewMessage({...newMessage, project_id: e.target.value})}
+                      variant="bordered"
+                      size="lg"
+                      type="number"
+                      classNames={{
+                        input: "text-gray-900 dark:text-white",
+                        inputWrapper: "border-2 hover:border-blue-400 focus-within:border-blue-500",
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Message <span className="text-red-500">*</span>
+                    </label>
+                    <Textarea
+                      placeholder="Décrivez votre message ou votre demande..."
+                      value={newMessage.description}
+                      onChange={(e) => setNewMessage({...newMessage, description: e.target.value})}
+                      variant="bordered"
+                      size="lg"
+                      minRows={4}
+                      maxRows={8}
+                      classNames={{
+                        input: "text-gray-900 dark:text-white",
+                        inputWrapper: "border-2 hover:border-blue-400 focus-within:border-blue-500",
+                      }}
+                    />
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="light"
+                  onPress={onClose}
+                  isDisabled={sendingNewMessage}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={handleSendNewMessage}
+                  isLoading={sendingNewMessage}
+                  isDisabled={!newMessage.title.trim() || !newMessage.description.trim()}
+                  startContent={!sendingNewMessage && <Send className="h-4 w-4" />}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600"
+                >
+                  {sendingNewMessage ? "Envoi..." : "Envoyer le Message"}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
     </div>
