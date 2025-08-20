@@ -4,7 +4,7 @@ import { Bell, X, CheckCircle, AlertTriangle, Info, MessageSquare } from "lucide
 
 const SimpleDropdownNotification = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   
   // Charger les notifications depuis localStorage
   useEffect(() => {

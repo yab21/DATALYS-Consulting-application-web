@@ -302,10 +302,11 @@ class FilesService {
   }
 
   /**
-   * Obtenir l'URL de prévisualisation d'un fichier
+   * Obtenir l'URL de prévisualisation d'un fichier - Fonctionnalité retirée
    */
   getFilePreviewUrl(file: ProjectFile): string {
-    return `${this.baseUrl}/files/serve/${file.file_path}`;
+    // Fonctionnalité /files/serve retirée de l'application
+    throw new Error('Fonctionnalité de prévisualisation non disponible');
   }
 
   /**

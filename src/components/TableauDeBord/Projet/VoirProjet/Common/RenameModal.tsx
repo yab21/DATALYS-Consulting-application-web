@@ -44,7 +44,7 @@ const RenameModal: React.FC<RenameModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalContent>
-        <ModalHeader>Renommer {itemType === 'folder' ? 'le dossier' : 'le fichier'}</ModalHeader>
+        <ModalHeader className="!text-gray-900 dark:!text-gray-100">Renommer {itemType === 'folder' ? 'le dossier' : 'le fichier'}</ModalHeader>
         <ModalBody>
           {error && (
             <div className="text-red-500 mb-4">
@@ -56,6 +56,11 @@ const RenameModal: React.FC<RenameModalProps> = ({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             variant="bordered"
+            classNames={{
+              label: "!text-gray-900 dark:!text-gray-100 !font-medium",
+              input: "!text-gray-900 dark:!text-gray-100",
+              inputWrapper: "!border-gray-300 dark:!border-gray-600"
+            }}
           />
         </ModalBody>
         <ModalFooter>

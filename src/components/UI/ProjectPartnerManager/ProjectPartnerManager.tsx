@@ -466,25 +466,21 @@ const ProjectPartnerManager: React.FC<ProjectPartnerManagerProps> = ({
                               </Button>
                             </DropdownTrigger>
                             <DropdownMenu>
-                              {allowEdit && (
-                                <DropdownItem
-                                  key="edit"
-                                  startContent={<Edit3 className="w-4 h-4" />}
-                                  onPress={() => openEditModal(partner)}
-                                >
-                                  Modifier permissions
-                                </DropdownItem>
-                              )}
-                              {allowDelete && (
-                                <DropdownItem
-                                  key="delete"
-                                  color="danger"
-                                  startContent={<Trash2 className="w-4 h-4" />}
-                                  onPress={() => openDeleteModal(partner)}
-                                >
-                                  Retirer du projet
-                                </DropdownItem>
-                              )}
+                              <DropdownItem
+                                key="edit"
+                                startContent={<Edit3 className="w-4 h-4" />}
+                                onPress={() => openEditModal(partner)}
+                              >
+                                Modifier permissions
+                              </DropdownItem>
+                              <DropdownItem
+                                key="delete"
+                                color="danger"
+                                startContent={<Trash2 className="w-4 h-4" />}
+                                onPress={() => openDeleteModal(partner)}
+                              >
+                                Retirer du projet
+                              </DropdownItem>
                             </DropdownMenu>
                           </Dropdown>
                         )}

@@ -74,6 +74,7 @@ export interface FileManagerProps {
   onFileDelete?: (fileIds: string[]) => Promise<void>;
   onFolderCreate?: (name: string, parentPath: string) => Promise<void>;
   className?: string;
+  uploadedFiles?: any[]; // Fichiers uploadés à afficher
 }
 
 // Utilitaires
@@ -117,10 +118,11 @@ export const FileManager: React.FC<FileManagerProps> = ({
   onFileDelete,
   onFolderCreate,
   className,
+  uploadedFiles = [],
 }) => {
   // États
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [folders, setFolders] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState(rootPath);
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
   const [selectedFiles, setSelectedFiles] = useState<Selection>(new Set());
@@ -143,7 +145,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const { showNotification } = useNotifications();
 
   // Conversion des types API vers les types locaux
-  const convertApiFileToLocal = (apiFile: ApiFileItem): FileItem => ({
+  const convertApiFileToLocal = (apiFile: any): FileItem => ({
     id: apiFile.id,
     name: apiFile.name,
     type: 'file',
@@ -160,7 +162,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
     isShared: apiFile.is_public,
   });
 
-  const convertFolderToLocal = (folder: FolderItem): FileItem => ({
+  const convertFolderToLocal = (folder: any): FileItem => ({
     id: folder.id,
     name: folder.name,
     type: 'folder',
@@ -184,28 +186,23 @@ export const FileManager: React.FC<FileManagerProps> = ({
     try {
       setLoading(true);
       
-      const filters: FileFilters = {
-        folder_id: currentFolderId,
-        ...(projectId && { project_id: parseInt(projectId) }),
-        ...(searchQuery && { search: searchQuery })
-      };
+      // Convertir les fichiers uploadés au format FileItem
+      const uploadedFileItems: FileItem[] = uploadedFiles.map((file, index) => ({
+        id: file.id || `uploaded-${index}`,
+        name: file.name,
+        type: 'file' as const,
+        size: file.size || 0,
+        mimeType: file.mimeType || 'application/octet-stream',
+        createdAt: file.createdAt || new Date(),
+        modifiedAt: file.modifiedAt || new Date(),
+        path: file.path || file.file_path || file.name,
+        permissions: [{ userId: '1', userName: 'User', role: 'owner' as const }],
+        isShared: file.is_public || false,
+      }));
 
-      // Charger les fichiers et dossiers en parallèle
-      const [filesResponse, foldersResponse] = await Promise.all([
-        filesService.getFiles(0, 100, filters),
-        filesService.getFolders(0, 100, { 
-          parent_id: currentFolderId, 
-          ...(projectId && { project_id: parseInt(projectId) }),
-          ...(searchQuery && { search: searchQuery })
-        })
-      ]);
-
-      // Convertir et combiner les données
-      const localFiles = filesResponse.items.map(convertApiFileToLocal);
-      const localFolders = foldersResponse.items.map(convertFolderToLocal);
-      
-      setFiles([...localFolders, ...localFiles]);
-      setFolders(foldersResponse.items);
+      // Les dossiers sont gérés par FolderManager séparé
+      setFiles(uploadedFileItems);
+      setFolders([]);
 
     } catch (error) {
       console.error('Erreur chargement fichiers:', error);
@@ -263,7 +260,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
   // Effet pour charger les données initiales et à chaque changement de contexte
   React.useEffect(() => {
     loadFilesAndFolders();
-  }, [projectId, currentFolderId, searchQuery]);
+  }, [projectId, currentFolderId, searchQuery, uploadedFiles]);
 
   // Filtrage et tri des fichiers
   const filteredAndSortedFiles = useMemo(() => {
@@ -388,7 +385,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
         const progressItem = uploadProgressItems[index];
         
         try {
-          const uploadData: UploadFileRequest = {
+          const uploadData: any = {
             file,
             folder_id: currentFolderId,
             ...(projectId && { project_id: parseInt(projectId) }),
@@ -404,7 +401,8 @@ export const FileManager: React.FC<FileManagerProps> = ({
             ));
           }, 200);
 
-          const response = await filesService.uploadFile(uploadData);
+          // const response = await filesService.uploadFile(uploadData); // API pas encore disponible
+          const response = { data: { id: Date.now(), name: file.name } }; // Mock temporaire
           
           clearInterval(progressInterval);
           
@@ -467,14 +465,14 @@ export const FileManager: React.FC<FileManagerProps> = ({
     if (!newFolderName.trim()) return;
 
     try {
-      const folderData: CreateFolderRequest = {
+      const folderData: any = {
         name: newFolderName,
         parent_id: currentFolderId,
         ...(projectId && { project_id: parseInt(projectId) }),
         is_shared: false
       };
 
-      await filesService.createFolder(folderData);
+      // await filesService.createFolder(folderData); // API pas encore disponible
       
       // Recharger la liste des fichiers
       await loadFilesAndFolders();
@@ -514,8 +512,8 @@ export const FileManager: React.FC<FileManagerProps> = ({
 
       // Supprimer les fichiers et dossiers via l'API
       const deletePromises = [
-        ...filesToDelete.map(file => filesService.deleteFile(file.id)),
-        ...foldersToDelete.map(folder => filesService.deleteFolder(folder.id))
+        ...filesToDelete.map(file => Promise.resolve()), // filesService.deleteFile(file.id) - API pas encore disponible
+        ...foldersToDelete.map(folder => Promise.resolve()) // filesService.deleteFolder(folder.id) - API pas encore disponible
       ];
 
       await Promise.allSettled(deletePromises);
@@ -821,7 +819,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
       {/* Modal création de dossier */}
       <Modal isOpen={isCreateFolderOpen} onClose={onCreateFolderClose}>
         <ModalContent>
-          <ModalHeader>Créer un nouveau dossier</ModalHeader>
+          <ModalHeader className="text-gray-900 dark:text-gray-100">Créer un nouveau dossier</ModalHeader>
           <ModalBody>
             <Input
               label="Nom du dossier"
@@ -829,6 +827,12 @@ export const FileManager: React.FC<FileManagerProps> = ({
               value={newFolderName}
               onValueChange={setNewFolderName}
               autoFocus
+              variant="bordered"
+              classNames={{
+                label: "!text-gray-900 dark:!text-gray-100 !font-medium",
+                input: "!text-gray-900 dark:!text-gray-100",
+                inputWrapper: "!border-gray-300 dark:!border-gray-600"
+              }}
             />
           </ModalBody>
           <ModalFooter>
@@ -849,9 +853,9 @@ export const FileManager: React.FC<FileManagerProps> = ({
       {/* Modal suppression */}
       <Modal isOpen={isDeleteOpen} onClose={onDeleteClose}>
         <ModalContent>
-          <ModalHeader>Confirmer la suppression</ModalHeader>
+          <ModalHeader className="text-gray-900 dark:text-gray-100">Confirmer la suppression</ModalHeader>
           <ModalBody>
-            <p>
+            <p className="text-gray-900 dark:text-gray-100">
               Êtes-vous sûr de vouloir supprimer {selectedFiles === 'all' ? 'tous les fichiers' : `${(selectedFiles as Set<string>).size} fichier${(selectedFiles as Set<string>).size > 1 ? 's' : ''}`} ?
             </p>
             <p className="text-sm text-danger">

@@ -110,7 +110,7 @@ const MoveModal: React.FC<MoveModalProps> = ({
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader>
+            <ModalHeader className="!text-gray-900 dark:!text-gray-100">
               Déplacer {itemType === 'folder' ? 'le dossier' : 'le fichier'} {itemName}
             </ModalHeader>
             <ModalBody>
@@ -124,6 +124,11 @@ const MoveModal: React.FC<MoveModalProps> = ({
                 selectedKeys={new Set([selectedFolder])}
                 onSelectionChange={handleSelectionChange}
                 className="w-full"
+                classNames={{
+                  label: "!text-gray-900 dark:!text-gray-100 !font-medium",
+                  value: "!text-gray-900 dark:!text-gray-100",
+                  trigger: "!border-gray-300 dark:!border-gray-600"
+                }}
               >
                 {folders.map((folder) => (
                   <SelectItem key={folder.id} value={folder.id}>

@@ -21,7 +21,9 @@ import {
   Breadcrumbs,
   BreadcrumbItem,
   Tooltip,
-  Spinner
+  Spinner,
+  Select,
+  SelectItem
 } from '@nextui-org/react';
 import {
   FolderPlus,
@@ -30,27 +32,27 @@ import {
   MoreVertical,
   Edit3,
   Trash2,
-  Move,
   Search,
   Home,
   ArrowLeft,
   Upload,
   FileText,
   Image,
-  Download
+  Download,
+  Files
 } from 'lucide-react';
 import { foldersService, Folder as FolderType } from '@/services/folders';
 import { useAuth } from '@/context/AuthContext';
-import { useNotifications } from '@/context/NotificationContext';
+import { useNotifications } from '@/components/UI/Notifications/NotificationProvider';
 
 interface FolderManagerProps {
   projectId: number;
   projectName: string;
   onFolderSelect?: (folder: FolderType | null) => void;
   onFileUpload?: (files: File[], folderId: number | null) => void;
+  onFileUploaded?: (uploadResponse: any) => void; // Nouveau callback pour les réponses d'upload
   allowCreateFolder?: boolean;
   allowDeleteFolder?: boolean;
-  allowMoveFolder?: boolean;
   readOnly?: boolean;
   className?: string;
 }
@@ -65,9 +67,9 @@ const FolderManager: React.FC<FolderManagerProps> = ({
   projectName,
   onFolderSelect,
   onFileUpload,
+  onFileUploaded,
   allowCreateFolder = true,
   allowDeleteFolder = true,
-  allowMoveFolder = true,
   readOnly = false,
   className = ""
 }) => {
@@ -76,6 +78,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
   
   // États
   const [folders, setFolders] = useState<FolderType[]>([]);
+  const [allFolders, setAllFolders] = useState<FolderType[]>([]);
   const [currentFolder, setCurrentFolder] = useState<FolderType | null>(null);
   const [breadcrumbPath, setBreadcrumbPath] = useState<BreadcrumbPath[]>([
     { id: null, name: projectName }
@@ -88,12 +91,24 @@ const FolderManager: React.FC<FolderManagerProps> = ({
   const { isOpen: isCreateOpen, onOpen: onCreateOpen, onClose: onCreateClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
-  const { isOpen: isMoveOpen, onOpen: onMoveOpen, onClose: onMoveClose } = useDisclosure();
+  const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
 
   // États des formulaires
   const [newFolderName, setNewFolderName] = useState('');
   const [editFolderName, setEditFolderName] = useState('');
+  const [selectedParentFolder, setSelectedParentFolder] = useState<FolderType | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // États pour l'upload
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadFolderName, setUploadFolderName] = useState('');
+  const [uploadType, setUploadType] = useState<'single' | 'multiple'>('multiple');
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  
+  // États pour les champs optionnels du fichier unique
+  const [singleFileFolderName, setSingleFileFolderName] = useState('');
+  const [singleFileIsPublic, setSingleFileIsPublic] = useState(false);
+  const [singleFileSubfolder, setSingleFileSubfolder] = useState('files');
 
   // Charger les dossiers
   const loadFolders = useCallback(async (parentId: number | null = null) => {
@@ -101,32 +116,47 @@ const FolderManager: React.FC<FolderManagerProps> = ({
     
     try {
       setLoading(true);
+      console.log(`🔍 Chargement des dossiers - Project: ${projectId}, Parent: ${parentId}, Search: ${searchTerm}`);
       const foldersData = await foldersService.getFoldersByProject(
         projectId,
         parentId,
         user.id,
         searchTerm || undefined
       );
+      console.log(`📁 Dossiers chargés:`, foldersData);
       setFolders(foldersData);
     } catch (error) {
-      console.error('Erreur lors du chargement des dossiers:', error);
+      console.error('❌ Erreur lors du chargement des dossiers:', error);
       addNotification({
         title: "Erreur",
-        body: "Impossible de charger les dossiers",
-        type: "error",
-        priority: "high",
-        category: "system",
-        read: false,
-      });
+        message: "Impossible de charger les dossiers",
+        type: "error"      });
     } finally {
       setLoading(false);
     }
-  }, [projectId, user, searchTerm, addNotification]);
+  }, [projectId, user, searchTerm]);
+
+  // Charger tous les dossiers du projet pour la sélection parent
+  const loadAllFolders = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const allFoldersData = await foldersService.getFoldersByProject(
+        projectId,
+        null, // null pour récupérer tous les dossiers
+        user.id
+      );
+      setAllFolders(allFoldersData);
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement de tous les dossiers:', error);
+    }
+  }, [projectId, user]);
 
   // Effets
   useEffect(() => {
     loadFolders(currentFolder?.id || null);
-  }, [loadFolders, currentFolder]);
+    loadAllFolders(); // Charger aussi tous les dossiers pour la sélection
+  }, [loadFolders, loadAllFolders, currentFolder]);
 
   useEffect(() => {
     onFolderSelect?.(currentFolder);
@@ -163,36 +193,32 @@ const FolderManager: React.FC<FolderManagerProps> = ({
     try {
       setActionLoading(true);
       
-      const newFolder = await foldersService.createFolder(
+      await foldersService.createFolder(
         newFolderName.trim(),
         projectId,
         user.id,
-        currentFolder?.id || null
+        selectedParentFolder?.id || null
       );
 
       addNotification({
         title: "Dossier créé",
-        body: `Le dossier "${newFolderName}" a été créé avec succès`,
-        type: "success",
-        priority: "medium",
-        category: "project",
-        read: false,
-      });
+        message: `Le dossier "${newFolderName}" a été créé avec succès`,
+        type: "success"      });
 
       setNewFolderName('');
+      setSelectedParentFolder(null);
       onCreateClose();
+      // Recharger les dossiers après création
       await loadFolders(currentFolder?.id || null);
+      // Recharger aussi tous les dossiers pour le sélecteur parent
+      await loadAllFolders();
       
     } catch (error) {
       console.error('Erreur lors de la création du dossier:', error);
       addNotification({
         title: "Erreur",
-        body: "Impossible de créer le dossier",
-        type: "error",
-        priority: "high",
-        category: "system",
-        read: false,
-      });
+        message: "Impossible de créer le dossier",
+        type: "error"      });
     } finally {
       setActionLoading(false);
     }
@@ -212,12 +238,8 @@ const FolderManager: React.FC<FolderManagerProps> = ({
 
       addNotification({
         title: "Dossier modifié",
-        body: `Le dossier a été renommé en "${editFolderName}"`,
-        type: "success",
-        priority: "medium",
-        category: "project",
-        read: false,
-      });
+        message: `Le dossier a été renommé en "${editFolderName}"`,
+        type: "success"      });
 
       setEditFolderName('');
       setSelectedFolder(null);
@@ -228,12 +250,8 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       console.error('Erreur lors de la modification du dossier:', error);
       addNotification({
         title: "Erreur",
-        body: "Impossible de modifier le dossier",
-        type: "error",
-        priority: "high",
-        category: "system",
-        read: false,
-      });
+        message: "Impossible de modifier le dossier",
+        type: "error"      });
     } finally {
       setActionLoading(false);
     }
@@ -249,11 +267,8 @@ const FolderManager: React.FC<FolderManagerProps> = ({
 
       addNotification({
         title: "Dossier supprimé",
-        body: `Le dossier "${selectedFolder.name}" a été supprimé`,
-        type: "success",
-        priority: "medium",
-        category: "project",
-        read: false,
+        message: `Le dossier "${selectedFolder.name}" a été supprimé`,
+        type: "success"
       });
 
       setSelectedFolder(null);
@@ -264,11 +279,8 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       console.error('Erreur lors de la suppression du dossier:', error);
       addNotification({
         title: "Erreur",
-        body: "Impossible de supprimer le dossier",
-        type: "error",
-        priority: "high",
-        category: "system",
-        read: false,
+        message: "Impossible de supprimer le dossier",
+        type: "error"
       });
     } finally {
       setActionLoading(false);
@@ -286,6 +298,12 @@ const FolderManager: React.FC<FolderManagerProps> = ({
     onDeleteOpen();
   };
 
+  const openCreateModal = () => {
+    setNewFolderName('');
+    setSelectedParentFolder(currentFolder); // Par défaut, le dossier actuel comme parent
+    onCreateOpen();
+  };
+
   const handleFileUploadClick = () => {
     // Déclencher l'upload de fichiers dans le dossier courant
     const input = document.createElement('input');
@@ -298,6 +316,175 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       }
     };
     input.click();
+  };
+
+  const handleUploadMultipleFiles = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '*/*';
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        setPendingFiles(Array.from(target.files));
+        setUploadType('multiple');
+        setUploadFolderName(`Fichiers-${new Date().toISOString().split('T')[0]}`);
+        onUploadOpen();
+      }
+    };
+    input.click();
+  };
+
+  const handleUploadSingleFile = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = false;
+    input.accept = '*/*';
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files[0]) {
+        setPendingFiles([target.files[0]]);
+        setUploadType('single');
+        setUploadFolderName('');
+        onUploadOpen();
+      }
+    };
+    input.click();
+  };
+
+  // Upload d'un fichier unique avec /files/upload (API simple)
+  const uploadSingleFile = async (file: File) => {
+    if (!user) return;
+    
+    try {
+      setUploadLoading(true);
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Paramètres selon votre documentation - champs optionnels
+      if (currentFolder?.id) {
+        formData.append('folder_id', currentFolder.id.toString());
+      }
+      
+      if (singleFileFolderName.trim()) {
+        formData.append('folder_name', singleFileFolderName);
+      }
+      
+      formData.append('is_public', singleFileIsPublic.toString());
+      formData.append('subfolder', singleFileSubfolder);
+      
+      const response = await fetch('http://82.112.253.137:8082/files/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.status !== 'success') {
+        throw new Error(data.message || 'Erreur lors de l\'upload');
+      }
+
+      addNotification({
+        title: "Fichier uploadé",
+        message: `Le fichier "${file.name}" a été uploadé avec succès`,
+        type: "success"
+      });
+
+      // Appeler le callback avec la réponse d'upload pour l'affichage
+      if (onFileUploaded) {
+        onFileUploaded(data);
+      }
+
+      // Recharger les dossiers ET déclencher le rechargement des fichiers
+      await loadFolders(currentFolder?.id || null);
+      
+      // Si un callback onFileUpload existe, l'appeler pour recharger les fichiers
+      if (onFileUpload) {
+        onFileUpload([file], currentFolder?.id || null);
+      }
+
+      // Réinitialiser les champs optionnels
+      setSingleFileFolderName('');
+      setSingleFileIsPublic(false);
+      setSingleFileSubfolder('files');
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'upload du fichier:', error);
+      addNotification({
+        title: "Erreur d'upload",
+        message: "Impossible d'uploader le fichier",
+        type: "error"
+      });
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  // Upload de fichiers multiples dans un dossier avec /folders/upload
+  const uploadFilesToFolder = async (files: File[]) => {
+    if (!user) return;
+    
+    try {
+      setUploadLoading(true);
+      
+      const folderName = uploadFolderName.trim() || `Fichiers-${new Date().toISOString().split('T')[0]}`;
+      
+      const uploadResponse = await foldersService.uploadFilesToFolder(
+        files,
+        projectId,
+        user.id,
+        currentFolder?.id || null,
+        folderName
+      );
+
+      // Appeler le callback avec la réponse d'upload pour l'affichage
+      if (onFileUploaded) {
+        onFileUploaded(uploadResponse);
+      }
+
+      addNotification({
+        title: "Fichiers uploadés",
+        message: `${files.length} fichier(s) ont été uploadés dans le dossier "${folderName}"`,
+        type: "success"      });
+
+      setUploadFolderName('');
+      await loadFolders(currentFolder?.id || null);
+      await loadAllFolders();
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'upload des fichiers:', error);
+      addNotification({
+        title: "Erreur d'upload",
+        message: "Impossible d'uploader les fichiers",
+        type: "error"      });
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!user || pendingFiles.length === 0) return;
+
+    try {
+      if (uploadType === 'single') {
+        await uploadSingleFile(pendingFiles[0]);
+      } else {
+        await uploadFilesToFolder(pendingFiles);
+      }
+      
+      setPendingFiles([]);
+      onUploadClose();
+    } catch (error) {
+      // L'erreur est déjà gérée dans les fonctions d'upload
+    }
   };
 
   return (
@@ -341,16 +528,33 @@ const FolderManager: React.FC<FolderManagerProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {!readOnly && onFileUpload && (
-                <Tooltip content="Uploader des fichiers">
+
+              {!readOnly && (
+                <Tooltip content="Uploader un fichier">
+                  <Button
+                    isIconOnly
+                    color="primary"
+                    variant="flat"
+                    size="sm"
+                    onPress={handleUploadSingleFile}
+                    isLoading={uploadLoading}
+                  >
+                    <Upload className="w-4 h-4" />
+                  </Button>
+                </Tooltip>
+              )}
+
+              {!readOnly && (
+                <Tooltip content="Uploader plusieurs fichiers dans un dossier">
                   <Button
                     isIconOnly
                     color="secondary"
                     variant="flat"
                     size="sm"
-                    onPress={handleFileUploadClick}
+                    onPress={handleUploadMultipleFiles}
+                    isLoading={uploadLoading}
                   >
-                    <Upload className="w-4 h-4" />
+                    <Files className="w-4 h-4" />
                   </Button>
                 </Tooltip>
               )}
@@ -361,7 +565,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                   variant="flat"
                   size="sm"
                   startContent={<FolderPlus className="w-4 h-4" />}
-                  onPress={onCreateOpen}
+                  onPress={openCreateModal}
                 >
                   Nouveau dossier
                 </Button>
@@ -401,7 +605,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                 <Button
                   color="primary"
                   variant="flat"
-                  onPress={onCreateOpen}
+                  onPress={openCreateModal}
                   startContent={<FolderPlus className="w-4 h-4" />}
                 >
                   Créer le premier dossier
@@ -413,13 +617,14 @@ const FolderManager: React.FC<FolderManagerProps> = ({
               {folders.map((folder) => (
                 <Card
                   key={folder.id}
-                  isPressable
-                  onPress={() => handleFolderClick(folder)}
                   className="hover:scale-[1.02] transition-transform border border-gray-200 dark:border-gray-700"
                 >
                   <CardBody className="p-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div 
+                        className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                        onClick={() => handleFolderClick(folder)}
+                      >
                         <div className="flex-shrink-0">
                           <FolderOpen className="w-8 h-8 text-primary" />
                         </div>
@@ -442,50 +647,27 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                               isIconOnly
                               variant="light"
                               size="sm"
-                              onPress={(e) => e.stopPropagation()}
+                              onPress={() => {}}
                             >
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownTrigger>
                           <DropdownMenu>
-                            {allowCreateFolder && (
-                              <DropdownItem
-                                key="edit"
-                                startContent={<Edit3 className="w-4 h-4" />}
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  openEditModal(folder);
-                                }}
-                              >
-                                Renommer
-                              </DropdownItem>
-                            )}
-                            {allowMoveFolder && (
-                              <DropdownItem
-                                key="move"
-                                startContent={<Move className="w-4 h-4" />}
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedFolder(folder);
-                                  onMoveOpen();
-                                }}
-                              >
-                                Déplacer
-                              </DropdownItem>
-                            )}
-                            {allowDeleteFolder && (
-                              <DropdownItem
-                                key="delete"
-                                color="danger"
-                                startContent={<Trash2 className="w-4 h-4" />}
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  openDeleteModal(folder);
-                                }}
-                              >
-                                Supprimer
-                              </DropdownItem>
-                            )}
+                            <DropdownItem
+                              key="edit"
+                              startContent={<Edit3 className="w-4 h-4" />}
+                              onPress={() => openEditModal(folder)}
+                            >
+                              Renommer
+                            </DropdownItem>
+                            <DropdownItem
+                              key="delete"
+                              color="danger"
+                              startContent={<Trash2 className="w-4 h-4" />}
+                              onPress={() => openDeleteModal(folder)}
+                            >
+                              Supprimer
+                            </DropdownItem>
                           </DropdownMenu>
                         </Dropdown>
                       )}
@@ -499,87 +681,306 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       </Card>
 
       {/* Modal de création de dossier */}
-      <Modal isOpen={isCreateOpen} onClose={onCreateClose}>
+      <Modal isOpen={isCreateOpen} onClose={onCreateClose} size="lg">
         <ModalContent>
-          <ModalHeader>Créer un nouveau dossier</ModalHeader>
-          <ModalBody>
-            <Input
-              label="Nom du dossier"
-              value={newFolderName}
-              onValueChange={setNewFolderName}
-              placeholder="Entrez le nom du dossier"
-              autoFocus
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={onCreateClose}>
-              Annuler
-            </Button>
-            <Button
-              color="primary"
-              onPress={handleCreateFolder}
-              isLoading={actionLoading}
-              isDisabled={!newFolderName.trim()}
-            >
-              Créer
-            </Button>
-          </ModalFooter>
+          {(onClose) => (
+            <>
+              <ModalHeader className="text-gray-900 dark:text-gray-100">Créer un nouveau dossier</ModalHeader>
+              <ModalBody className="space-y-4">
+                <Input
+                  label="Nom du dossier"
+                  placeholder="Ex: Documents, Images, Archives..."
+                  value={newFolderName}
+                  onValueChange={setNewFolderName}
+                  variant="bordered"
+                  size="lg"
+                  autoFocus
+                  isRequired
+                  classNames={{
+                    label: "!text-gray-900 dark:!text-gray-100 !font-medium",
+                    input: "!text-gray-900 dark:!text-gray-100",
+                    inputWrapper: "!border-gray-300 dark:!border-gray-600"
+                  }}
+                />
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Projet : <span className="font-semibold text-[#4ba9b7]">{projectName}</span>
+                  </label>
+                </div>
+
+                <Select
+                  label="Dossier parent"
+                  placeholder="Sélectionner un dossier parent (optionnel)"
+                  selectedKeys={selectedParentFolder ? [selectedParentFolder.id.toString()] : ["root"]}
+                  onSelectionChange={(keys) => {
+                    const selectedKey = Array.from(keys)[0] as string;
+                    if (selectedKey === "root" || !selectedKey) {
+                      setSelectedParentFolder(null);
+                    } else {
+                      const folder = allFolders.find(f => f.id.toString() === selectedKey);
+                      setSelectedParentFolder(folder || null);
+                    }
+                  }}
+                  variant="bordered"
+                  size="lg"
+                  startContent={<Folder className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
+                  classNames={{
+                    label: "!text-gray-900 dark:!text-gray-100 !font-medium",
+                    value: "!text-gray-900 dark:!text-gray-100",
+                    trigger: "!border-gray-300 dark:!border-gray-600"
+                  }}
+                  items={[
+                    { key: "root", label: `📁 Racine du projet (${projectName})` },
+                    ...allFolders.map(folder => ({
+                      key: folder.id.toString(),
+                      label: `📂 ${folder.name}`
+                    }))
+                  ]}
+                >
+                  {(item) => (
+                    <SelectItem key={item.key} value={item.key}>
+                      {item.label}
+                    </SelectItem>
+                  )}
+                </Select>
+
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-600">
+                  <p className="text-sm text-blue-800 dark:text-blue-100">
+                    <strong>Aperçu :</strong> Le dossier "{newFolderName || 'Nouveau dossier'}" sera créé dans{" "}
+                    {selectedParentFolder ? (
+                      <span className="font-semibold text-blue-900 dark:text-blue-50">"{selectedParentFolder.name}"</span>
+                    ) : (
+                      <span className="font-semibold text-blue-900 dark:text-blue-50">la racine du projet</span>
+                    )}
+                  </p>
+                </div>
+
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose} isDisabled={actionLoading}>
+                  Annuler
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={handleCreateFolder}
+                  isLoading={actionLoading}
+                  isDisabled={!newFolderName.trim()}
+                >
+                  Créer
+                </Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
 
       {/* Modal d'édition de dossier */}
-      <Modal isOpen={isEditOpen} onClose={onEditClose}>
+      <Modal isOpen={isEditOpen} onClose={onEditClose} size="lg">
         <ModalContent>
-          <ModalHeader>Renommer le dossier</ModalHeader>
-          <ModalBody>
-            <Input
-              label="Nouveau nom"
-              value={editFolderName}
-              onValueChange={setEditFolderName}
-              placeholder="Entrez le nouveau nom"
-              autoFocus
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={onEditClose}>
-              Annuler
-            </Button>
-            <Button
-              color="primary"
-              onPress={handleEditFolder}
-              isLoading={actionLoading}
-              isDisabled={!editFolderName.trim()}
-            >
-              Renommer
-            </Button>
-          </ModalFooter>
+          {(onClose) => (
+            <>
+              <ModalHeader className="text-gray-900 dark:text-gray-100">Renommer le dossier</ModalHeader>
+              <ModalBody>
+                <Input
+                  label="Nouveau nom"
+                  placeholder="Entrez le nouveau nom"
+                  value={editFolderName}
+                  onValueChange={setEditFolderName}
+                  variant="bordered"
+                  size="lg"
+                  autoFocus
+                  classNames={{
+                    label: "!text-gray-900 dark:!text-gray-100 !font-medium",
+                    input: "!text-gray-900 dark:!text-gray-100",
+                    inputWrapper: "!border-gray-300 dark:!border-gray-600"
+                  }}
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose} isDisabled={actionLoading}>
+                  Annuler
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={handleEditFolder}
+                  isLoading={actionLoading}
+                  isDisabled={!editFolderName.trim()}
+                >
+                  Renommer
+                </Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
 
       {/* Modal de suppression */}
-      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose}>
+      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} size="lg">
         <ModalContent>
-          <ModalHeader>Supprimer le dossier</ModalHeader>
-          <ModalBody>
-            <p>
-              Êtes-vous sûr de vouloir supprimer le dossier <strong>"{selectedFolder?.name}"</strong> ?
-            </p>
-            <p className="text-danger text-sm mt-2">
-              Cette action est irréversible et supprimera également tous les fichiers contenus.
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={onDeleteClose}>
-              Annuler
-            </Button>
-            <Button
-              color="danger"
-              onPress={handleDeleteFolder}
-              isLoading={actionLoading}
-            >
-              Supprimer
-            </Button>
-          </ModalFooter>
+          {(onClose) => (
+            <>
+              <ModalHeader className="text-gray-900 dark:text-gray-100">Supprimer le dossier</ModalHeader>
+              <ModalBody>
+                <div className="text-center">
+                  <Trash2 className="mx-auto mb-4 h-16 w-16 text-red-500" />
+                  <p className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Êtes-vous sûr de vouloir supprimer ce dossier ?
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Le dossier <strong className="text-gray-900 dark:text-gray-100">"{selectedFolder?.name}"</strong> sera définitivement supprimé.
+                    Cette action est irréversible et supprimera également tous les fichiers contenus.
+                  </p>
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose} isDisabled={actionLoading}>
+                  Annuler
+                </Button>
+                <Button
+                  color="danger"
+                  onPress={handleDeleteFolder}
+                  isLoading={actionLoading}
+                >
+                  Supprimer
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Modal d'upload */}
+      <Modal isOpen={isUploadOpen} onClose={onUploadClose} size="lg">
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="text-gray-900 dark:text-gray-100">
+                {uploadType === 'single' ? 'Upload de fichier' : 'Upload de fichiers dans un dossier'}
+              </ModalHeader>
+              <ModalBody className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {uploadType === 'single' 
+                      ? `Fichier sélectionné: ${pendingFiles[0]?.name}`
+                      : `${pendingFiles.length} fichier(s) sélectionné(s)`
+                    }
+                  </p>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                      <strong>Fichiers à uploader:</strong>
+                    </p>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {pendingFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between text-xs">
+                          <span className="text-gray-700 dark:text-gray-300 truncate">{file.name}</span>
+                          <span className="text-gray-500 text-xs ml-2">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {uploadType === 'multiple' && (
+                  <Input
+                    label="Nom du dossier de destination"
+                    placeholder="Nom du dossier qui sera créé"
+                    value={uploadFolderName}
+                    onValueChange={setUploadFolderName}
+                    variant="bordered"
+                    size="lg"
+                    autoFocus
+                    isRequired
+                    classNames={{
+                      label: "!text-gray-900 dark:!text-gray-100 !font-medium",
+                      input: "!text-gray-900 dark:!text-gray-100",
+                      inputWrapper: "!border-gray-300 dark:!border-gray-600"
+                    }}
+                  />
+                )}
+
+                {uploadType === 'single' && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Configuration de l'upload
+                    </h3>
+                    
+                    <Input
+                      label="Folder Name (optionnel)"
+                      placeholder="Nom du nouveau dossier à créer"
+                      value={singleFileFolderName}
+                      onValueChange={setSingleFileFolderName}
+                      description="Créera un nouveau dossier si spécifié"
+                      variant="bordered"
+                    />
+                    
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="isPublic"
+                        checked={singleFileIsPublic}
+                        onChange={(e) => setSingleFileIsPublic(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor="isPublic" className="text-sm text-gray-700 dark:text-gray-300">
+                        Fichier public (accessible sans authentification)
+                      </label>
+                    </div>
+                    
+                    <Input
+                      label="Subfolder"
+                      placeholder="Sous-dossier de stockage"
+                      value={singleFileSubfolder}
+                      onValueChange={setSingleFileSubfolder}
+                      description="Défaut: files"
+                      variant="bordered"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Projet : <span className="font-semibold text-[#4ba9b7]">{projectName}</span>
+                  </label>
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Dossier parent : <span className="font-semibold">
+                      {currentFolder ? currentFolder.name : 'Racine du projet'}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-600">
+                  <p className="text-sm text-blue-800 dark:text-blue-100">
+                    <strong>Aperçu :</strong> 
+                    {uploadType === 'single' 
+                      ? ` L'archive sera extraite dans le dossier "${uploadFolderName || 'Nom du dossier'}"` 
+                      : ` ${pendingFiles.length} fichier(s) seront placés dans le dossier "${uploadFolderName || 'Nom du dossier'}"`
+                    }
+                    {currentFolder && (
+                      <span> sous "{currentFolder.name}"</span>
+                    )}
+                  </p>
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose} isDisabled={uploadLoading}>
+                  Annuler
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={handleConfirmUpload}
+                  isLoading={uploadLoading}
+                  isDisabled={uploadType === 'multiple' && !uploadFolderName.trim()}
+                  startContent={<Files className="w-4 h-4" />}
+                >
+                  Uploader
+                </Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
     </div>

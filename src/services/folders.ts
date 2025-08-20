@@ -7,7 +7,7 @@
 export interface Folder {
   id: number;
   name: string;
-  parent_id: number | null;
+  parent_folder_id: number | null;  // L'API utilise parent_folder_id, pas parent_id
   project_id: number;
   path: string;
   created_at: string;
@@ -41,7 +41,7 @@ export interface UpdateFolderRequest {
   datas: Array<{
     id: number;
     name?: string;
-    parent_id?: number | null;
+    parent_folder_id?: number | null;
     description?: string;
     is_active?: boolean;
   }>;
@@ -52,18 +52,20 @@ export interface FolderListRequest {
   size: number;
   data: {
     project_id?: number;
-    parent_id?: number | null;
+    parent_folder_id?: number | null;
     is_active?: boolean;
     name?: string;
   };
 }
 
 export interface FolderResponse {
-  status: string;
-  message: string;
-  data?: Folder[];
-  items?: Folder[];
-  count?: number;
+  code: number;
+  count: number;
+  items: Folder[];
+  message: {
+    code: number;
+    message: string;
+  };
 }
 
 class FoldersService {
@@ -104,14 +106,20 @@ class FoldersService {
 
       const data = await response.json();
       
-      if (data.status !== 'success') {
-        throw new Error(data.message || 'Erreur lors de la requête');
+      // L'API retourne {code: 200, items: [...], message: {...}}
+      if (data.code !== 200) {
+        const errorMessage = data.message?.message || data.message || 'Erreur lors de la requête';
+        throw new Error(errorMessage);
       }
 
       return data;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-      console.error(`Erreur dans makeRequest (${endpoint}):`, errorMessage);
+      // Améliorer le logging d'erreur pour debug
+      console.error(`Erreur dans makeRequest (${endpoint}):`, error);
+      console.error('Type d\'erreur:', typeof error);
+      console.error('Error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      
+      const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(errorMessage);
     }
   }
@@ -125,23 +133,47 @@ class FoldersService {
     userId: number,
     searchTerm?: string
   ): Promise<Folder[]> {
+    // Retour à la requête Postman qui fonctionnait - sans project_id côté serveur
     const requestData: FolderListRequest = {
       index: 0,
-      size: 100,
+      size: 10,
       data: {
-        project_id: projectId,
-        parent_id: parentId,
-        is_active: true,
-        ...(searchTerm && { name: searchTerm })
+        is_active: true
+        // Pas de project_id côté serveur - on filtre côté client
       }
     };
+
 
     const response = await this.makeRequest<FolderResponse>('/folders/getByCriteria', {
       method: 'POST',
       body: JSON.stringify(requestData)
     });
 
-    return response.items || response.data || [];
+    
+    let folders = response.items || [];
+    
+    // Filtrage côté client pour plus de flexibilité
+    if (projectId && projectId > 0) {
+      folders = folders.filter(folder => folder.project_id === projectId);
+    }
+    
+    if (parentId !== undefined) {
+      folders = folders.filter(folder => {
+        // Gestion correcte de undefined vs null pour parent_folder_id
+        const folderParentId = folder.parent_folder_id === undefined ? null : folder.parent_folder_id;
+        const searchParentId = parentId === undefined ? null : parentId;
+        return folderParentId === searchParentId;
+      });
+    }
+    
+    if (searchTerm) {
+      folders = folders.filter(folder => 
+        folder.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    
+    return folders;
   }
 
   /**
@@ -164,10 +196,10 @@ class FoldersService {
       const folderWithChildren = folderMap.get(folder.id);
       if (!folderWithChildren) return;
 
-      if (folder.parent_id === null) {
+      if (folder.parent_folder_id === null) {
         rootFolders.push(folderWithChildren);
       } else {
-        const parent = folderMap.get(folder.parent_id);
+        const parent = folderMap.get(folder.parent_folder_id);
         if (parent) {
           parent.children.push(folderWithChildren);
         }
@@ -254,7 +286,6 @@ class FoldersService {
       datas: [folderData]
     };
 
-    console.log('📁 Création dossier avec payload:', requestData);
     
     const response = await this.makeRequest<any>('/folders/create', {
       method: 'POST',
@@ -272,7 +303,7 @@ class FoldersService {
    */
   async updateFolder(
     folderId: number,
-    updates: Partial<Pick<Folder, 'name' | 'parent_id'>>,
+    updates: Partial<Pick<Folder, 'name' | 'parent_folder_id'>>,
     userId: number,
     description?: string
   ): Promise<Folder> {
@@ -290,11 +321,11 @@ class FoldersService {
       body: JSON.stringify(requestData)
     });
 
-    if (!response.data || response.data.length === 0) {
+    if (!response.items || response.items.length === 0) {
       throw new Error('Aucune donnée retournée lors de la mise à jour');
     }
 
-    return response.data[0];
+    return response.items[0];
   }
 
   /**
@@ -305,7 +336,6 @@ class FoldersService {
       datas: [{ id: folderId }]
     };
 
-    console.log('🗑️ Suppression dossier avec payload:', requestData);
 
     await this.makeRequest('/folders/delete', {
       method: 'POST',
@@ -317,13 +347,14 @@ class FoldersService {
 
   /**
    * Déplacer un dossier vers un autre parent
+   * Note: Cette fonctionnalité n'est pas disponible dans l'API actuelle
    */
   async moveFolder(
     folderId: number,
     newParentId: number | null,
     userId: number
   ): Promise<Folder> {
-    return this.updateFolder(folderId, { parent_id: newParentId }, userId);
+    throw new Error('La fonctionnalité de déplacement de dossiers n\'est pas disponible dans l\'API actuelle');
   }
 
   /**
@@ -368,6 +399,138 @@ class FoldersService {
   }
 
   /**
+   * Upload de fichiers multiples dans un dossier
+   */
+  async uploadFilesToFolder(
+    files: File[],
+    projectId: number,
+    userId: number,
+    parentFolderId: number | null = null,
+    folderName: string = "Uploaded Folder"
+  ): Promise<any> {
+    try {
+      // Convertir les IDs en noms comme attendu par l'API
+      const projectName = await this.getProjectName(projectId);
+      
+      const formData = new FormData();
+      
+      // Ajouter tous les fichiers
+      files.forEach(file => {
+        formData.append('files[]', file);
+      });
+      
+      // Ajouter les métadonnées
+      formData.append('user', JSON.stringify({ id: userId }));
+      formData.append('project_name', projectName);
+      formData.append('folder_name', folderName);
+      
+      // Ajouter parent_folder_name si un dossier parent est spécifié
+      if (parentFolderId !== null) {
+        const parentFolderName = await this.getParentFolderName(parentFolderId);
+        formData.append('parent_folder_name', parentFolderName);
+      }
+      
+      const response = await fetch(`${this.baseUrl}/folders/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          // Pas de Content-Type pour multipart/form-data, le navigateur l'ajoute
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // Si on ne peut pas parser la réponse, on garde le message HTTP
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      // Vérifier le statut de la réponse
+      if (data.status !== 'success') {
+        const errorMessage = data.message?.message || data.message || 'Erreur lors de l\'upload';
+        throw new Error(errorMessage);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de l\'upload de fichiers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload d'un fichier ZIP avec extraction dans un dossier
+   */
+  async uploadZipToFolder(
+    zipFile: File,
+    projectId: number,
+    userId: number,
+    parentFolderId: number | null = null,
+    folderName: string = "Uploaded Folder"
+  ): Promise<any> {
+    try {
+      // Convertir les IDs en noms comme attendu par l'API
+      const projectName = await this.getProjectName(projectId);
+      
+      const formData = new FormData();
+      
+      // Ajouter le fichier ZIP avec le nom 'zip_file' pour extraction
+      formData.append('zip_file', zipFile);
+      
+      // Ajouter les métadonnées selon la documentation /folders/upload
+      formData.append('user', JSON.stringify({ id: userId }));
+      formData.append('project_name', projectName);
+      formData.append('folder_name', folderName);
+      
+      // Ajouter parent_folder_name si un dossier parent est spécifié
+      if (parentFolderId !== null) {
+        const parentFolderName = await this.getParentFolderName(parentFolderId);
+        formData.append('parent_folder_name', parentFolderName);
+      }
+      
+      const response = await fetch(`${this.baseUrl}/folders/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          // Pas de Content-Type pour multipart/form-data, le navigateur l'ajoute
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // Si on ne peut pas parser la réponse, on garde le message HTTP
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      // Vérifier le statut de la réponse
+      if (data.status !== 'success') {
+        const errorMessage = data.message?.message || data.message || 'Erreur lors de l\'upload';
+        throw new Error(errorMessage);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de l\'upload du fichier ZIP:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtenir le chemin complet d'un dossier
    */
   async getFolderPath(folderId: number, projectId: number, userId: number): Promise<string> {
@@ -378,11 +541,11 @@ class FoldersService {
       const folder = folderMap.get(id);
       if (!folder) return '';
       
-      if (folder.parent_id === null) {
+      if (folder.parent_folder_id === null) {
         return folder.name;
       }
       
-      const parentPath = buildPath(folder.parent_id);
+      const parentPath = buildPath(folder.parent_folder_id);
       return parentPath ? `${parentPath}/${folder.name}` : folder.name;
     };
 

@@ -130,17 +130,9 @@ export const BREADCRUMB_ROUTES: RouteConfig[] = [
     parentRoute: '/tableaudebord/projet/gerer',
     getDynamicLabel: async (params) => {
       try {
-        // Récupérer le nom du projet depuis l'API
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082'}/projects/${params.id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          return `Modifier: ${data.data?.name || data.name || params.id}`;
-        }
+        // Utiliser projectsService au lieu d'appel fetch direct
+        // Temporairement désactivé pour éviter l'erreur 404
+        console.log('Breadcrumb dynamique désactivé temporairement pour le projet:', params.id);
       } catch (error) {
         console.warn('Erreur lors de la récupération du nom du projet:', error);
       }
@@ -153,17 +145,9 @@ export const BREADCRUMB_ROUTES: RouteConfig[] = [
     parentRoute: '/tableaudebord/projet/gerer',
     getDynamicLabel: async (params) => {
       try {
-        // Récupérer le nom du projet depuis l'API
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082'}/projects/${params.id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          return `Projet: ${data.data?.name || data.name || params.id}`;
-        }
+        // Utiliser projectsService au lieu d'appel fetch direct
+        // Temporairement désactivé pour éviter l'erreur 404
+        console.log('Breadcrumb dynamique désactivé temporairement pour le projet:', params.id);
       } catch (error) {
         console.warn('Erreur lors de la récupération du nom du projet:', error);
       }

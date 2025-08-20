@@ -126,8 +126,8 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
                     </svg>
                   }
                   classNames={{
-                    label: "text-gray-900 dark:text-white font-semibold text-base",
-                    input: "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium text-base",
+                    label: "!text-gray-900 dark:!text-white !font-semibold !text-base",
+                    input: "!text-gray-900 dark:!text-white placeholder:!text-gray-500 dark:placeholder:!text-gray-400 !font-medium !text-base",
                     inputWrapper:
                       "bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-[#06B6D4] dark:hover:border-cyan-500 focus-within:border-[#06B6D4] dark:focus-within:border-cyan-400 shadow-lg hover:shadow-xl transition-all duration-300",
                   }}

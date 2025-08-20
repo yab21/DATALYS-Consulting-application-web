@@ -372,24 +372,20 @@ const FileViewer: React.FC<FileViewerProps> = ({
                               </Button>
                             </DropdownTrigger>
                             <DropdownMenu>
-                              {allowEdit && (
-                                <DropdownItem
-                                  key="edit"
-                                  startContent={<Edit3 className="w-4 h-4" />}
-                                >
-                                  Modifier
-                                </DropdownItem>
-                              )}
-                              {allowDelete && (
-                                <DropdownItem
-                                  key="delete"
-                                  color="danger"
-                                  startContent={<Trash2 className="w-4 h-4" />}
-                                  onPress={() => handleDelete(file)}
-                                >
-                                  Supprimer
-                                </DropdownItem>
-                              )}
+                              <DropdownItem
+                                key="edit"
+                                startContent={<Edit3 className="w-4 h-4" />}
+                              >
+                                Modifier
+                              </DropdownItem>
+                              <DropdownItem
+                                key="delete"
+                                color="danger"
+                                startContent={<Trash2 className="w-4 h-4" />}
+                                onPress={() => handleDelete(file)}
+                              >
+                                Supprimer
+                              </DropdownItem>
                             </DropdownMenu>
                           </Dropdown>
                         )}

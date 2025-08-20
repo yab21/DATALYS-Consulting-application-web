@@ -1,0 +1,104 @@
+/* Fixes pour la visibilité des modals NextUI */
+
+/* Labels des Input - couvre toutes les variantes NextUI */
+.nextui-input label,
+[data-slot="label"],
+label[data-slot="label"],
+.nextui-input-wrapper label,
+[class*="nextui-input"] label {
+  color: #111827 !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="dark"] .nextui-input label,
+[data-theme="dark"] [data-slot="label"],
+[data-theme="dark"] label[data-slot="label"],
+[data-theme="dark"] .nextui-input-wrapper label,
+[data-theme="dark"] [class*="nextui-input"] label {
+  color: #f9fafb !important;
+}
+
+/* Input text */
+.nextui-input input,
+[data-slot="input"] {
+  color: #111827 !important;
+}
+
+[data-theme="dark"] .nextui-input input,
+[data-theme="dark"] [data-slot="input"] {
+  color: #f9fafb !important;
+}
+
+/* Select labels - couvre toutes les variantes NextUI */
+.nextui-select label,
+[data-slot="label"],
+.nextui-select-wrapper label,
+[class*="nextui-select"] label {
+  color: #111827 !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="dark"] .nextui-select label,
+[data-theme="dark"] [data-slot="label"],
+[data-theme="dark"] .nextui-select-wrapper label,
+[data-theme="dark"] [class*="nextui-select"] label {
+  color: #f9fafb !important;
+}
+
+/* Placeholder text */
+.nextui-input input::placeholder,
+[data-slot="input"]::placeholder {
+  color: #6b7280 !important;
+}
+
+[data-theme="dark"] .nextui-input input::placeholder,
+[data-theme="dark"] [data-slot="input"]::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Select trigger text */
+.nextui-select [data-slot="trigger"] {
+  color: #111827 !important;
+}
+
+[data-theme="dark"] .nextui-select [data-slot="trigger"] {
+  color: #f9fafb !important;
+}
+
+/* Modal content */
+.nextui-modal .nextui-modal-content {
+  color: #111827 !important;
+}
+
+[data-theme="dark"] .nextui-modal .nextui-modal-content {
+  color: #f9fafb !important;
+}
+
+/* Règles globales pour tous les modals NextUI */
+.modal-content label,
+[role="dialog"] label,
+[data-testid*="modal"] label {
+  color: #111827 !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="dark"] .modal-content label,
+[data-theme="dark"] [role="dialog"] label,
+[data-theme="dark"] [data-testid*="modal"] label {
+  color: #f9fafb !important;
+}
+
+/* Headers de modals */
+[role="dialog"] h3,
+[role="dialog"] h2,
+.modal-header,
+[data-testid*="modal"] header {
+  color: #111827 !important;
+}
+
+[data-theme="dark"] [role="dialog"] h3,
+[data-theme="dark"] [role="dialog"] h2,
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] [data-testid*="modal"] header {
+  color: #f9fafb !important;
+}

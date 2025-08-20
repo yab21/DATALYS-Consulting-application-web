@@ -1,32 +1,28 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Chip, Button, Card, CardBody, CardHeader, Tabs, Tab } from "@nextui-org/react";
+import { Chip, Card, CardBody, CardHeader, Tabs, Tab, Button, Avatar, Progress } from "@nextui-org/react";
+import { 
+  FolderOpen, 
+  Users, 
+  Calendar, 
+  Activity, 
+  Settings, 
+  Download,
+  Share2,
+  BarChart3,
+  Clock
+} from "lucide-react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import FolderManager from "@/components/UI/FolderManager/FolderManager";
-import FileViewer from "@/components/UI/FileViewer/FileViewer";
-import { foldersService, Folder as FolderType } from "@/services/folders";
-import { filesService } from "@/services/files";
-import { ProjectPartner } from "@/services/projectPartners";
-import AnalyticsDashboard from "@/components/UI/Analytics/Dashboard";
-import ProjectPartnerManager from "@/components/UI/ProjectPartnerManager/ProjectPartnerManager";
-import { useNotifications } from "@/context/NotificationContext";
+import FileManager from "@/components/UI/FileManager/FileManager";
+import { Folder as FolderType } from "@/services/folders";
+import { projectsService } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import { useParams, useSearchParams } from "next/navigation";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 
 // Interfaces
-interface Partner {
-  id: string;
-  nom: string;
-  logo: string;
-  secteur: string;
-  description: string;
-  email: string;
-  telephone: string;
-  responsable: string;
-  statut: "actif" | "inactif" | "suspendu";
-}
 
 interface Project {
   id: string;
@@ -51,15 +47,14 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
   const searchParams = useSearchParams();
   const projectId = id || (params.id as string);
   const [project, setProject] = useState<Project | null>(null);
-  const [projectPartners, setProjectPartners] = useState<ProjectPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "files");
   const [selectedFolder, setSelectedFolder] = useState<FolderType | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const { addNotification } = useNotifications();
+  const [fileRefreshKey, setFileRefreshKey] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const { user } = useAuth();
 
-  // TEMPORAIRE: Désactiver l'API project pour tester uniquement les folders
+  // Charger les données réelles du projet
   useEffect(() => {
     const loadProject = async () => {
       if (!user) return;
@@ -67,22 +62,35 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
       setLoading(true);
       
       try {
-        console.log('🚧 Mode test folders - API project désactivée');
+        console.log('🔄 Chargement du projet réel:', projectId);
         
-        // Projet par défaut pour les tests de folders
-        setProject({
-          id: projectId,
-          intitule: `Test Projet ${projectId}`,
-          societe: "Test Partner",
-          chefDeProjet: "Test Manager",
-          domaine: ["Test"],
-          createdAt: new Date(),
-          statut: "en_cours",
-          progression: 75,
-          budget: 50000,
-          description: "Projet de test pour les APIs folders",
-          visibilite: "public",
-        });
+        // Utiliser projectsService pour récupérer les vraies données
+        const projectsData = await projectsService.getActiveProjects();
+        const currentProject = projectsData.find(p => p.id.toString() === projectId);
+        
+        // Debug: afficher la structure exacte de l'API
+        console.log('🔍 Données complètes du projet depuis l\'API:', currentProject);
+        console.log('🔍 Partner name spécifique:', currentProject?.partner_name);
+        console.log('🔍 Toutes les clés disponibles:', Object.keys(currentProject || {}));
+        
+        if (currentProject) {
+          // UNIQUEMENT les vraies données de l'API - pas d'invention
+          setProject({
+            id: projectId,
+            intitule: currentProject.title,
+            societe: currentProject.partner_name || "Aucun partenaire assigné",
+            chefDeProjet: "Non défini", // Pas dans l'API
+            domaine: [], // Pas dans l'API 
+            createdAt: new Date(currentProject.created_at),
+            statut: currentProject.is_active ? "en_cours" : "suspendu",
+            progression: 0, // Pas dans l'API
+            budget: 0, // Pas dans l'API
+            description: "", // Pas dans l'API
+            visibilite: "public", // Valeur par défaut minimale
+          });
+        } else {
+          throw new Error('Projet non trouvé');
+        }
         
       } catch (error) {
         console.error('Erreur lors du chargement du projet:', error);
@@ -108,125 +116,65 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
     };
 
     loadProject();
-  }, [projectId, user, addNotification]);
+  }, [projectId, user]);
 
-  // Gestionnaires pour FolderManager et FileManager
+  // Gestionnaire pour FolderManager uniquement
   const handleFolderSelect = (folder: FolderType | null) => {
+    console.log('Dossier sélectionné:', folder);
     setSelectedFolder(folder);
   };
 
-  const handleFileUpload = async (files: File[], folderId: number | null = null) => {
-    if (!project || !files.length || !user) return;
+  // Gestionnaire pour l'upload de fichiers (FileManager)
+  const handleFileManagerUpload = async (files: File[], path: string): Promise<void> => {
+    console.log('Fichiers uploadés via FileManager:', files, 'dans le chemin:', path);
+    // Rafraîchir les fichiers après upload
+    setFileRefreshKey(prev => prev + 1);
+  };
 
-    try {
-      const projectIdNum = parseInt(projectId);
+  // Gestionnaire pour l'upload de fichiers (FolderManager)
+  const handleFolderManagerUpload = (files: File[], folderId: number | null): void => {
+    console.log('Fichiers uploadés via FolderManager:', files, 'dans le dossier:', folderId);
+    // Rafraîchir les fichiers après upload
+    setFileRefreshKey(prev => prev + 1);
+  };
 
-      // Gestionnaire de progression
-      const onProgress = (progress: number, fileName: string) => {
-        setUploadProgress(prev => ({
-          ...prev,
-          [fileName]: progress
-        }));
+  // Gestionnaire pour capturer les fichiers uploadés et les ajouter à la liste
+  const handleFileUploaded = (uploadResponse: any) => {
+    console.log('Réponse upload reçue:', uploadResponse);
+    
+    // Gérer les différents formats de réponse
+    if (uploadResponse.files && Array.isArray(uploadResponse.files)) {
+      // Upload multiple : {files: [...], folder_id: 24, ...}
+      const newFiles = uploadResponse.files.map((file: any) => ({
+        id: `temp-${Date.now()}-${Math.random()}`,
+        name: file.name,
+        type: 'file',
+        path: file.path,
+        folder_id: file.folder_id,
+        createdAt: new Date(),
+        modifiedAt: new Date()
+      }));
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    } else if (uploadResponse.data?.db_record) {
+      // Upload simple : {data: {db_record: {...}, file_id: 21, ...}}
+      const dbRecord = uploadResponse.data.db_record;
+      const newFile = {
+        id: dbRecord.id,
+        name: dbRecord.name,
+        type: 'file',
+        file_url: uploadResponse.data.file_url,
+        file_path: uploadResponse.data.file_path,
+        is_public: dbRecord.is_public,
+        created_at: dbRecord.created_at,
+        createdAt: new Date(dbRecord.created_at),
+        modifiedAt: new Date(dbRecord.updated_at)
       };
-
-      // Upload des fichiers via le service
-      const uploadedFiles = await filesService.uploadFiles(
-        files,
-        projectIdNum,
-        user.id,
-        folderId,
-        `Fichiers uploadés dans le projet ${project.intitule}`,
-        onProgress
-      );
-
-      // Nettoyer le state de progression
-      setUploadProgress({});
-      
-      addNotification({
-        title: "Upload réussi",
-        body: `${uploadedFiles.length} fichier${uploadedFiles.length > 1 ? 's' : ''} uploadé${uploadedFiles.length > 1 ? 's' : ''} avec succès`,
-        type: "success",
-        priority: "medium",
-        category: "project",
-        read: false,
-      });
-
-      console.log("Fichiers uploadés:", uploadedFiles);
-      
-    } catch (error) {
-      console.error("Erreur upload:", error);
-      setUploadProgress({});
-      
-      addNotification({
-        title: "Erreur d'upload",
-        body: "Une erreur est survenue lors de l'upload",
-        type: "error",
-        priority: "high",
-        category: "system",
-        read: false,
-      });
+      setUploadedFiles(prev => [...prev, newFile]);
     }
+    
+    setFileRefreshKey(prev => prev + 1);
   };
 
-  const handleFileDelete = async (fileIds: string[]) => {
-    try {
-      console.log("Suppression de fichiers:", fileIds);
-      
-      addNotification({
-        title: "Fichiers supprimés",
-        body: `${fileIds.length} fichier${fileIds.length > 1 ? 's' : ''} supprimé${fileIds.length > 1 ? 's' : ''}`,
-        type: "success",
-        priority: "medium",
-        category: "project",
-        read: false,
-      });
-    } catch (error) {
-      console.error("Erreur suppression:", error);
-    }
-  };
-
-  const handleFolderCreate = async (name: string, parentPath: string) => {
-    try {
-      console.log("Création de dossier:", name, "dans:", parentPath);
-      
-      addNotification({
-        title: "Dossier créé",
-        body: `Le dossier "${name}" a été créé avec succès`,
-        type: "success",
-        priority: "low",
-        category: "project",
-        read: false,
-      });
-    } catch (error) {
-      console.error("Erreur création dossier:", error);
-    }
-  };
-
-  // TEMPORAIRE: Gestionnaire désactivé pour les tests folders
-  const handlePartnersUpdate = (updatedPartners: ProjectPartner[]) => {
-    console.log('🚧 Mode test folders - Gestion partenaires désactivée');
-  };
-
-  // Fonction pour obtenir la couleur du statut
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "en_cours": return "primary";
-      case "termine": return "success";
-      case "en_attente": return "warning";
-      case "suspendu": return "danger";
-      default: return "default";
-    }
-  };
-
-  // Fonction pour obtenir la couleur de la visibilité
-  const getVisibilityColor = (visibility: string) => {
-    switch (visibility) {
-      case "public": return "success";
-      case "prive": return "warning";
-      case "restreint": return "danger";
-      default: return "default";
-    }
-  };
 
   if (loading) {
     return (
@@ -254,74 +202,128 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
       <Breadcrumb pageName={`Projet: ${project.intitule}`} />
       
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* En-tête du projet */}
-        <Card className="bg-white dark:bg-gray-800 shadow-xl dark:shadow-gray-900/20 border-0 dark:border dark:border-gray-700">
-          <CardHeader className="pb-6 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-gray-800 dark:to-gray-700 rounded-t-large">
-            <div className="flex flex-col gap-6 w-full">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    {project.intitule}
-                  </h1>
-                  <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">{project.societe}</p>
+        {/* En-tête du projet amélioré */}
+        <Card className="bg-white dark:bg-gray-800 shadow-2xl dark:shadow-gray-900/30 border-0 dark:border dark:border-gray-700 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#4ba9b7]/5 via-transparent to-blue-500/5 dark:from-[#4ba9b7]/10 dark:to-blue-500/10"></div>
+          <CardHeader className="relative pb-8 pt-8 bg-gradient-to-r from-[#4ba9b7]/10 via-transparent to-blue-500/10 dark:from-gray-800 dark:to-gray-700">
+            <div className="flex flex-col gap-8 w-full">
+              {/* Header principal */}
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#4ba9b7] to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-[#4ba9b7]/25">
+                      <FolderOpen className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-3 leading-tight">
+                      {project.intitule}
+                    </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Users className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold">{project.societe}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
+                        Créé le {project.createdAt.toLocaleDateString('fr-FR', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 lg:flex-col lg:items-end">
                   <Chip
-                    color={getStatusColor(project.statut)}
+                    color={project.statut === "en_cours" ? "success" : "default"}
                     variant="shadow"
                     size="lg"
-                    className="font-semibold"
+                    className="font-bold text-base px-4 py-2"
+                    startContent={<Activity className="w-4 h-4" />}
                   >
-                    {project.statut.replace("_", " ")}
+                    {project.statut === "en_cours" ? "🟢 Projet Actif" : "⚪ Projet Inactif"}
                   </Chip>
-                  <Chip
-                    color={getVisibilityColor(project.visibilite)}
-                    variant="shadow"
-                    size="lg"
-                    className="font-semibold"
-                  >
-                    {project.visibilite}
-                  </Chip>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="flat"
+                      color="secondary"
+                      size="sm"
+                      startContent={<Share2 className="w-4 h-4" />}
+                      className="font-medium"
+                    >
+                      Partager
+                    </Button>
+                    <Button
+                      variant="flat"
+                      color="primary"
+                      size="sm"
+                      startContent={<Settings className="w-4 h-4" />}
+                      className="font-medium"
+                    >
+                      Gérer
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              {/* Informations du projet */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-gray-700 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
-                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Chef de projet</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{project.chefDeProjet}</p>
-                </div>
-                
-                <div className="bg-white dark:bg-gray-700 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
-                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Domaines</p>
-                  <div className="flex flex-wrap gap-1">
-                    {project.domaine.map((domain, index) => (
-                      <Chip key={index} size="sm" variant="flat" color="secondary" className="text-xs">
-                        {domain}
-                      </Chip>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="bg-white dark:bg-gray-700 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
-                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Progression</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-3">
-                      <div
-                        className="bg-gradient-to-r from-primary-500 to-primary-600 h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${project.progression || 0}%` }}
-                      />
+              {/* Statistiques du projet */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-700 dark:to-gray-600 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-600 hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{project.progression || 0}%</span>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">ID Projet</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">#{project.id}</p>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="bg-white dark:bg-gray-700 p-4 rounded-xl border border-gray-100 dark:border-gray-600">
-                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Budget</p>
-                  <p className="text-gray-900 dark:text-white font-bold text-lg">
-                    {project.budget ? `${project.budget.toLocaleString('fr-FR')} €` : "Non défini"}
-                  </p>
+                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-700 dark:to-gray-600 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-600 hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Durée</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {Math.floor((new Date().getTime() - project.createdAt.getTime()) / (1000 * 60 * 60 * 24))} jours
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-700 dark:to-gray-600 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-600 hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Statut</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">
+                        {project.statut === "en_cours" ? "🟢 Actif" : "⚪ Inactif"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-700 dark:to-gray-600 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-600 hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                      <Users className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Partenaire</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                        {project.societe}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -335,8 +337,8 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
           </CardHeader>
         </Card>
 
-        {/* Contenu principal avec onglets */}
-        <Card className="bg-white dark:bg-gray-800 shadow-xl dark:shadow-gray-900/20 border-0 dark:border dark:border-gray-700">
+        {/* Contenu principal avec onglets améliorés */}
+        <Card className="bg-white dark:bg-gray-800 shadow-2xl dark:shadow-gray-900/30 border-0 dark:border dark:border-gray-700 overflow-hidden">
           <CardBody className="p-0">
             <Tabs
               selectedKey={activeTab}
@@ -344,143 +346,155 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
               className="w-full"
               size="lg"
               classNames={{
-                tabList: "bg-gray-50 dark:bg-gray-700 p-2 rounded-t-large",
-                tab: "data-[selected=true]:bg-white dark:data-[selected=true]:bg-gray-600 data-[selected=true]:shadow-lg",
-                tabContent: "text-gray-600 dark:text-gray-300 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-semibold"
+                tabList: "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-3 gap-3",
+                tab: "data-[selected=true]:bg-white dark:data-[selected=true]:bg-gray-600 data-[selected=true]:shadow-xl data-[selected=true]:scale-105 transition-all duration-300 rounded-xl px-4 py-3",
+                tabContent: "text-gray-600 dark:text-gray-300 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-bold text-base"
               }}
             >
-              <Tab key="files" title="📁 Fichiers & Dossiers">
-                <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px] space-y-6">
-                  {/* Gestionnaire de dossiers */}
-                  <FolderManager
-                    projectId={parseInt(projectId)}
-                    projectName={project.intitule}
-                    onFolderSelect={handleFolderSelect}
-                    onFileUpload={handleFileUpload}
-                    allowCreateFolder={true}
-                    allowDeleteFolder={true}
-                    allowMoveFolder={true}
-                    className="mb-6"
-                  />
+              <Tab 
+                key="files" 
+                title={
+                  <div className="flex items-center gap-3">
+                    <FolderOpen className="w-5 h-5" />
+                    <span>Gestion des Dossiers</span>
+                  </div>
+                }
+              >
+                <div className="p-8 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 min-h-[600px] space-y-8">
+                  {/* En-tête de section */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                        Arborescence du projet
+                      </h2>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Organisez vos fichiers et dossiers pour ce projet
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="flat"
+                        color="secondary"
+                        startContent={<Download className="w-4 h-4" />}
+                        className="font-medium"
+                      >
+                        Exporter
+                      </Button>
+                    </div>
+                  </div>
 
-                  {/* Affichage du dossier sélectionné */}
-                  {selectedFolder && (
-                    <FileViewer
+                  {/* Gestionnaire de dossiers avec design amélioré */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
+                    <FolderManager
                       projectId={parseInt(projectId)}
-                      folderId={selectedFolder.id}
-                      folderName={selectedFolder.name}
-                      onFileUpload={(files) => handleFileUpload(files, selectedFolder.id)}
-                      allowUpload={true}
-                      allowDelete={true}
-                      allowEdit={true}
+                      projectName={project.intitule}
+                      onFolderSelect={handleFolderSelect}
+                      onFileUpload={handleFolderManagerUpload}
+                      onFileUploaded={handleFileUploaded}
+                      allowCreateFolder={true}
+                      allowDeleteFolder={true}
+                      className="p-6"
                     />
-                  )}
+                  </div>
 
-                  {/* Affichage des fichiers racine si aucun dossier sélectionné */}
+                  {/* Gestionnaire de fichiers du projet (niveau racine) */}
                   {!selectedFolder && (
-                    <FileViewer
-                      projectId={parseInt(projectId)}
-                      folderId={null}
-                      folderName="Racine du projet"
-                      onFileUpload={(files) => handleFileUpload(files, null)}
-                      allowUpload={true}
-                      allowDelete={true}
-                      allowEdit={true}
-                    />
-                  )}
-
-                  {/* Informations sur l'upload en cours */}
-                  {Object.keys(uploadProgress).length > 0 && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">
-                        Upload en cours...
-                      </h4>
-                      {Object.entries(uploadProgress).map(([fileName, progress]) => (
-                        <div key={fileName} className="mb-2">
-                          <div className="flex justify-between text-sm text-blue-700 dark:text-blue-300 mb-1">
-                            <span>{fileName}</span>
-                            <span>{Math.round(progress)}%</span>
-                          </div>
-                          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                            <div
-                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
+                      <div className="p-6 border-b border-gray-200 dark:border-gray-600">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Fichiers du projet
+                        </h3>
+                      </div>
+                      <div className="p-6">
+                        <FileManager
+                          key={`root-${fileRefreshKey}`}
+                          projectId={projectId}
+                          rootPath="/"
+                          allowUpload={true}
+                          allowDelete={true}
+                          allowCreateFolder={true}
+                          onFileUpload={handleFileManagerUpload}
+                          uploadedFiles={uploadedFiles}
+                        />
+                      </div>
                     </div>
                   )}
-                </div>
-              </Tab>
 
-              {/* TEMPORAIRE: Onglets désactivés pour tester les folders */}
-              {/*
-              <Tab key="analytics" title="📊 Analytics">
-                <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
-                  <p className="text-center text-gray-500">Onglet Analytics désactivé pour les tests folders</p>
-                </div>
-              </Tab>
+                  {/* Gestionnaire de fichiers pour le dossier sélectionné */}
+                  {selectedFolder && (
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
+                      <div className="p-6 border-b border-gray-200 dark:border-gray-600">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Fichiers dans "{selectedFolder.name}"
+                        </h3>
+                      </div>
+                      <div className="p-6">
+                        <FileManager
+                          key={`${selectedFolder.id}-${fileRefreshKey}`}
+                          projectId={projectId}
+                          rootPath={`/${selectedFolder.name}`}
+                          allowUpload={true}
+                          allowDelete={true}
+                          allowCreateFolder={true}
+                          onFileUpload={handleFileManagerUpload}
+                          uploadedFiles={uploadedFiles.filter(file => file.folder_id === selectedFolder.id)}
+                        />
+                      </div>
+                    </div>
+                  )}
 
-              <Tab key="partners" title="🤝 Partenaires">
-                <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
-                  <p className="text-center text-gray-500">Onglet Partenaires désactivé pour les tests folders</p>
-                </div>
-              </Tab>
-              */}
+                  {/* Conseils d'utilisation améliorés */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-gradient-to-br from-[#4ba9b7]/10 to-blue-500/10 dark:from-[#4ba9b7]/20 dark:to-blue-500/20 p-6 rounded-2xl border border-[#4ba9b7]/20 dark:border-[#4ba9b7]/30">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-[#4ba9b7] rounded-xl flex items-center justify-center flex-shrink-0">
+                          <FolderOpen className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white mb-3 text-lg">
+                            Organisation des dossiers
+                          </h4>
+                          <ul className="text-gray-700 dark:text-gray-300 space-y-2 text-sm">
+                            <li className="flex items-start gap-2">
+                              <span className="text-[#4ba9b7] font-bold">•</span>
+                              <span>Créez des dossiers pour organiser vos fichiers</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-[#4ba9b7] font-bold">•</span>
+                              <span>Utilisez des sous-dossiers pour une meilleure hiérarchie</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-[#4ba9b7] font-bold">•</span>
+                              <span>Renommez et réorganisez facilement</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
 
-              <Tab key="settings" title="⚙️ Paramètres">
-                <div className="p-6 bg-gray-50 dark:bg-gray-800 min-h-[500px]">
-                  <div className="space-y-6 max-w-4xl">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Paramètres du projet</h3>
-                      <div className="grid gap-6">
-                        <div className="flex justify-between items-center p-6 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">Notifications</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              Recevoir des notifications pour ce projet
-                            </p>
-                          </div>
-                          <Button size="md" variant="flat" color="primary" className="font-semibold">
-                            Activer
-                          </Button>
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-2xl border border-green-200 dark:border-green-700">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Activity className="w-6 h-6 text-white" />
                         </div>
-                        
-                        <div className="flex justify-between items-center p-6 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">Sauvegarde automatique</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              Sauvegarder automatiquement les modifications
-                            </p>
-                          </div>
-                          <Button size="md" variant="flat" color="success" className="font-semibold">
-                            Activé
-                          </Button>
-                        </div>
-                        
-                        <div className="flex justify-between items-center p-6 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">Collaboration</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              Permettre la collaboration en temps réel
-                            </p>
-                          </div>
-                          <Button size="md" variant="flat" color="secondary" className="font-semibold">
-                            Configurer
-                          </Button>
-                        </div>
-                        
-                        <div className="flex justify-between items-center p-6 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">Archiver le projet</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              Archiver ce projet (action réversible)
-                            </p>
-                          </div>
-                          <Button size="md" variant="flat" color="warning" className="font-semibold">
-                            Archiver
-                          </Button>
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white mb-3 text-lg">
+                            Actions rapides
+                          </h4>
+                          <ul className="text-gray-700 dark:text-gray-300 space-y-2 text-sm">
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 font-bold">•</span>
+                              <span>Upload de fichiers multiples en un clic</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 font-bold">•</span>
+                              <span>Extraction automatique d'archives ZIP</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 font-bold">•</span>
+                              <span>Navigation par breadcrumbs intuitive</span>
+                            </li>
+                          </ul>
                         </div>
                       </div>
                     </div>
