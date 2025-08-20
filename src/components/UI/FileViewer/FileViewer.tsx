@@ -435,13 +435,13 @@ const FileViewer: React.FC<FileViewerProps> = ({
               <div className="flex items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-800 rounded-lg">
                 {selectedFile.mime_type.startsWith('image/') ? (
                   <img
-                    src={filesService.getFilePreviewUrl(selectedFile)}
+                    src={filesService.getFileServeUrl(selectedFile.file_path || selectedFile.name)}
                     alt={selectedFile.name}
                     className="max-w-full max-h-[400px] object-contain"
                   />
                 ) : selectedFile.mime_type === 'application/pdf' ? (
                   <iframe
-                    src={filesService.getFilePreviewUrl(selectedFile)}
+                    src={filesService.getFileServeUrl(selectedFile.file_path || selectedFile.name)}
                     className="w-full h-[400px] border-0"
                     title={selectedFile.name}
                   />

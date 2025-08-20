@@ -25,8 +25,32 @@ import {
   cn,
 } from '@nextui-org/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Folder, 
+  FileText, 
+  Image, 
+  Video, 
+  Music, 
+  Archive, 
+  Code, 
+  FileSpreadsheet, 
+  Presentation,
+  Settings,
+  Download,
+  Eye,
+  Search,
+  Upload,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  Grid,
+  List,
+  Share2,
+  Trash2
+} from 'lucide-react';
 import { useNotifications } from '@/components/UI/Notifications/NotificationSystem';
 import { filesService } from '@/services/files';
+import { useAuth } from '@/context/AuthContext';
 
 // Types
 export interface FileItem {
@@ -61,6 +85,7 @@ export interface UploadProgress {
 
 export interface FileManagerProps {
   projectId?: string;
+  currentFolderId?: string | null;
   rootPath?: string;
   allowUpload?: boolean;
   allowDelete?: boolean;
@@ -86,25 +111,116 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const getFileIcon = (type: string, mimeType?: string): string => {
-  if (type === 'folder') return '📁';
+const getFileIconComponent = (type: string, mimeType?: string, fileName?: string): React.ReactElement => {
+  const iconProps = { className: "w-6 h-6" };
   
-  if (mimeType) {
-    if (mimeType.startsWith('image/')) return '🖼️';
-    if (mimeType.startsWith('video/')) return '🎥';
-    if (mimeType.startsWith('audio/')) return '🎵';
-    if (mimeType.includes('pdf')) return '📄';
-    if (mimeType.includes('word')) return '📝';
-    if (mimeType.includes('excel') || mimeType.includes('sheet')) return '📊';
-    if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📈';
-    if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar')) return '🗜️';
+  if (type === 'folder') {
+    return <Folder {...iconProps} className="w-6 h-6 text-blue-500" />;
   }
   
-  return '📄';
+  if (mimeType) {
+    // Images
+    if (mimeType.startsWith('image/')) {
+      return <Image {...iconProps} className="w-6 h-6 text-green-500" />;
+    }
+    
+    // Vidéos
+    if (mimeType.startsWith('video/')) {
+      return <Video {...iconProps} className="w-6 h-6 text-purple-500" />;
+    }
+    
+    // Audio
+    if (mimeType.startsWith('audio/')) {
+      return <Music {...iconProps} className="w-6 h-6 text-pink-500" />;
+    }
+    
+    // Documents PDF
+    if (mimeType.includes('pdf')) {
+      return <FileText {...iconProps} className="w-6 h-6 text-red-500" />;
+    }
+    
+    // Documents Word
+    if (mimeType.includes('word') || mimeType.includes('document')) {
+      return <FileText {...iconProps} className="w-6 h-6 text-blue-600" />;
+    }
+    
+    // Excel/Spreadsheets
+    if (mimeType.includes('excel') || mimeType.includes('sheet')) {
+      return <FileSpreadsheet {...iconProps} className="w-6 h-6 text-green-600" />;
+    }
+    
+    // PowerPoint/Presentations
+    if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) {
+      return <Presentation {...iconProps} className="w-6 h-6 text-orange-500" />;
+    }
+    
+    // Archives
+    if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar') || mimeType.includes('gz')) {
+      return <Archive {...iconProps} className="w-6 h-6 text-yellow-600" />;
+    }
+    
+    // Code/Text
+    if (mimeType.startsWith('text/') || mimeType.includes('json') || mimeType.includes('xml')) {
+      return <Code {...iconProps} className="w-6 h-6 text-gray-600" />;
+    }
+    
+    // Executables
+    if (mimeType.includes('executable') || mimeType.includes('application/x-')) {
+      return <Settings {...iconProps} className="w-6 h-6 text-gray-700" />;
+    }
+  }
+  
+  // Extensions en fallback si pas de mimeType
+  const extension = fileName?.split('.').pop()?.toLowerCase();
+  
+  if (extension) {
+    // Images par extension
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension)) {
+      return <Image {...iconProps} className="w-6 h-6 text-green-500" />;
+    }
+    
+    // Documents par extension
+    if (['pdf'].includes(extension)) {
+      return <FileText {...iconProps} className="w-6 h-6 text-red-500" />;
+    }
+    if (['doc', 'docx'].includes(extension)) {
+      return <FileText {...iconProps} className="w-6 h-6 text-blue-600" />;
+    }
+    if (['xls', 'xlsx', 'csv'].includes(extension)) {
+      return <FileSpreadsheet {...iconProps} className="w-6 h-6 text-green-600" />;
+    }
+    if (['ppt', 'pptx'].includes(extension)) {
+      return <Presentation {...iconProps} className="w-6 h-6 text-orange-500" />;
+    }
+    
+    // Code par extension
+    if (['js', 'ts', 'html', 'css', 'json', 'xml', 'py', 'java', 'cpp', 'c', 'php', 'rb'].includes(extension)) {
+      return <Code {...iconProps} className="w-6 h-6 text-gray-600" />;
+    }
+    
+    // Archives par extension
+    if (['zip', 'rar', 'tar', 'gz', '7z'].includes(extension)) {
+      return <Archive {...iconProps} className="w-6 h-6 text-yellow-600" />;
+    }
+    
+    // Vidéo par extension
+    if (['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv'].includes(extension)) {
+      return <Video {...iconProps} className="w-6 h-6 text-purple-500" />;
+    }
+    
+    // Audio par extension
+    if (['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg'].includes(extension)) {
+      return <Music {...iconProps} className="w-6 h-6 text-pink-500" />;
+    }
+  }
+  
+  // Document générique par défaut
+  return <FileText {...iconProps} className="w-6 h-6 text-gray-500" />;
 };
 
 export const FileManager: React.FC<FileManagerProps> = ({
   projectId,
+  currentFolderId: initialFolderId = null,
   rootPath = '/',
   allowUpload = true,
   allowDelete = true,
@@ -124,7 +240,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const [files, setFiles] = useState<FileItem[]>([]);
   const [folders, setFolders] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState(rootPath);
-  const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId);
   const [selectedFiles, setSelectedFiles] = useState<Selection>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode);
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'size' | 'type'>('name');
@@ -143,24 +259,43 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const [shareSettings, setShareSettings] = useState<FileItem | null>(null);
 
   const { showNotification } = useNotifications();
+  const { user } = useAuth();
 
   // Conversion des types API vers les types locaux
-  const convertApiFileToLocal = (apiFile: any): FileItem => ({
-    id: apiFile.id,
-    name: apiFile.name,
-    type: 'file',
-    size: apiFile.file_size,
-    mimeType: apiFile.mime_type,
-    createdAt: new Date(apiFile.created_at),
-    modifiedAt: new Date(apiFile.updated_at),
-    path: apiFile.file_path,
-    permissions: [{ 
-      userId: apiFile.uploaded_by, 
-      userName: apiFile.uploaded_by_name, 
-      role: 'owner' as const 
-    }],
-    isShared: apiFile.is_public,
-  });
+  const convertApiFileToLocal = (apiFile: any): FileItem => {
+    // Déterminer le type MIME à partir de l'extension du fichier
+    const fileExtension = apiFile.name.split('.').pop()?.toLowerCase() || '';
+    let mimeType = 'application/octet-stream';
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+      mimeType = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
+    } else if (fileExtension === 'pdf') {
+      mimeType = 'application/pdf';
+    } else if (['zip', 'rar'].includes(fileExtension)) {
+      mimeType = `application/${fileExtension}`;
+    } else if (['doc', 'docx'].includes(fileExtension)) {
+      mimeType = 'application/msword';
+    } else if (['xls', 'xlsx'].includes(fileExtension)) {
+      mimeType = 'application/vnd.ms-excel';
+    }
+
+    return {
+      id: apiFile.id.toString(),
+      name: apiFile.name,
+      type: 'file',
+      size: 0, // L'API ne retourne pas la taille
+      mimeType: mimeType,
+      createdAt: new Date(apiFile.created_at),
+      modifiedAt: new Date(apiFile.updated_at),
+      path: apiFile.file_url, // Utiliser file_url comme path
+      permissions: [{ 
+        userId: apiFile.created_by?.toString() || '1', 
+        userName: 'User', 
+        role: 'owner' as const 
+      }],
+      isShared: apiFile.is_public,
+    };
+  };
 
   const convertFolderToLocal = (folder: any): FileItem => ({
     id: folder.id,
@@ -186,7 +321,33 @@ export const FileManager: React.FC<FileManagerProps> = ({
     try {
       setLoading(true);
       
-      // Convertir les fichiers uploadés au format FileItem
+      // Charger les fichiers réels depuis l'API
+      let apiFiles: any[] = [];
+      if (projectId && user) {
+        try {
+          const folderIdToUse = currentFolderId ? parseInt(currentFolderId) : null;
+          console.log('🔍 Critères de recherche FileManager:', {
+            project_id: parseInt(projectId),
+            folder_id: folderIdToUse,
+            searchQuery
+          });
+          
+          apiFiles = await filesService.getFilesByLocation(
+            parseInt(projectId),
+            folderIdToUse,
+            user.id,
+            searchQuery
+          );
+          console.log('🔍 Fichiers chargés depuis l\'API:', apiFiles);
+        } catch (error) {
+          console.error('❌ Erreur chargement fichiers API:', error);
+        }
+      }
+
+      // Convertir les fichiers API au format FileItem
+      const apiFileItems: FileItem[] = apiFiles.map(convertApiFileToLocal);
+
+      // Convertir les fichiers uploadés localement au format FileItem
       const uploadedFileItems: FileItem[] = uploadedFiles.map((file, index) => ({
         id: file.id || `uploaded-${index}`,
         name: file.name,
@@ -200,8 +361,21 @@ export const FileManager: React.FC<FileManagerProps> = ({
         isShared: file.is_public || false,
       }));
 
+      // Combiner les fichiers API et locaux (en évitant les doublons)
+      const allFileItems = [...apiFileItems];
+      
+      // Ajouter les fichiers uploadés localement qui ne sont pas déjà dans l'API
+      uploadedFileItems.forEach(uploadedFile => {
+        const existsInApi = apiFileItems.some(apiFile => 
+          apiFile.id === uploadedFile.id || apiFile.name === uploadedFile.name
+        );
+        if (!existsInApi) {
+          allFileItems.push(uploadedFile);
+        }
+      });
+
       // Les dossiers sont gérés par FolderManager séparé
-      setFiles(uploadedFileItems);
+      setFiles(allFileItems);
       setFolders([]);
 
     } catch (error) {
@@ -257,10 +431,15 @@ export const FileManager: React.FC<FileManagerProps> = ({
     }
   };
 
+  // Effet pour mettre à jour le currentFolderId quand la prop change
+  React.useEffect(() => {
+    setCurrentFolderId(initialFolderId);
+  }, [initialFolderId]);
+
   // Effet pour charger les données initiales et à chaque changement de contexte
   React.useEffect(() => {
     loadFilesAndFolders();
-  }, [projectId, currentFolderId, searchQuery, uploadedFiles]);
+  }, [projectId, currentFolderId, searchQuery, uploadedFiles, user]);
 
   // Filtrage et tri des fichiers
   const filteredAndSortedFiles = useMemo(() => {
@@ -319,6 +498,50 @@ export const FileManager: React.FC<FileManagerProps> = ({
       onFileSelect?.(file);
     }
   }, [onFileSelect]);
+
+  const handleFileDownload = useCallback(async (file: FileItem) => {
+    try {
+      const fileId = parseInt(file.id);
+      if (isNaN(fileId)) {
+        throw new Error('ID de fichier invalide');
+      }
+      
+      await filesService.downloadFile(fileId);
+      
+      showNotification({
+        type: 'success',
+        title: 'Téléchargement',
+        message: `Téléchargement de "${file.name}" démarré`,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Erreur téléchargement:', error);
+      showNotification({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Impossible de télécharger le fichier',
+        duration: 5000,
+      });
+    }
+  }, [showNotification]);
+
+  const handleFilePreview = useCallback((file: FileItem) => {
+    // Prévisualisation basique - ouvrir dans un nouvel onglet
+    if (file.mimeType?.startsWith('image/') || file.mimeType?.includes('pdf') || file.mimeType?.startsWith('text/')) {
+      const fileId = parseInt(file.id);
+      if (!isNaN(fileId)) {
+        const previewUrl = filesService.getFileServeUrl(file.path);
+        window.open(previewUrl, '_blank');
+      }
+    } else {
+      showNotification({
+        type: 'warning',
+        title: 'Prévisualisation',
+        message: 'Type de fichier non prévisualisable',
+        duration: 3000,
+      });
+    }
+  }, [showNotification]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -510,13 +733,21 @@ export const FileManager: React.FC<FileManagerProps> = ({
       const filesToDelete = selectedItems.filter(item => item.type === 'file');
       const foldersToDelete = selectedItems.filter(item => item.type === 'folder');
 
-      // Supprimer les fichiers et dossiers via l'API
-      const deletePromises = [
-        ...filesToDelete.map(file => Promise.resolve()), // filesService.deleteFile(file.id) - API pas encore disponible
-        ...foldersToDelete.map(folder => Promise.resolve()) // filesService.deleteFolder(folder.id) - API pas encore disponible
-      ];
+      // Supprimer les fichiers via l'API
+      if (filesToDelete.length > 0) {
+        const fileIdsToDelete = filesToDelete
+          .map(file => parseInt(file.id))
+          .filter(id => !isNaN(id)); // Filtrer les IDs valides
+        
+        if (fileIdsToDelete.length > 0) {
+          await filesService.deleteFiles(fileIdsToDelete);
+        }
+      }
 
-      await Promise.allSettled(deletePromises);
+      // Les dossiers sont gérés par FolderManager - pour l'instant on ignore
+      if (foldersToDelete.length > 0) {
+        console.warn('Suppression de dossiers non implémentée dans FileManager');
+      }
 
       // Recharger la liste des fichiers
       await loadFilesAndFolders();
@@ -528,7 +759,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
       showNotification({
         type: 'success',
         title: 'Fichiers supprimés',
-        message: `${fileIds.length} élément${fileIds.length > 1 ? 's' : ''} supprimé${fileIds.length > 1 ? 's' : ''}`,
+        message: `${filesToDelete.length} fichier${filesToDelete.length > 1 ? 's' : ''} supprimé${filesToDelete.length > 1 ? 's' : ''}`,
         duration: 3000,
       });
 
@@ -559,7 +790,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                 </BreadcrumbItem>
                 {pathSegments.map((segment, index) => (
                   <BreadcrumbItem
-                    key={index}
+                    key={`segment-${index}-${segment}`}
                     onPress={() => {
                       const newPath = '/' + pathSegments.slice(0, index + 1).join('/');
                       setCurrentPath(newPath);
@@ -575,7 +806,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                   <Button
                     size="sm"
                     variant="flat"
-                    startContent={<span>📁</span>}
+                    startContent={<Plus className="w-4 h-4" />}
                     onPress={onCreateFolderOpen}
                   >
                     Nouveau dossier
@@ -586,7 +817,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                   <Button
                     size="sm"
                     color="primary"
-                    startContent={<span>📤</span>}
+                    startContent={<Upload className="w-4 h-4" />}
                     onPress={() => {
                       const input = document.createElement('input');
                       input.type = 'file';
@@ -615,11 +846,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                 value={searchQuery}
                 onValueChange={setSearchQuery}
                 className="max-w-xs"
-                startContent={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                  </svg>
-                }
+                startContent={<Search className="w-4 h-4 text-gray-400" />}
               />
 
               <div className="flex gap-2">
@@ -646,7 +873,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                   isIconOnly
                   onPress={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                 >
-                  {sortOrder === 'asc' ? '↑' : '↓'}
+                  {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
                 </Button>
 
                 <Button
@@ -655,7 +882,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                   isIconOnly
                   onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                 >
-                  {viewMode === 'grid' ? '📋' : '⊞'}
+                  {viewMode === 'grid' ? <List className="w-4 h-4" /> : <Grid className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
@@ -668,7 +895,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                 </span>
                 <div className="flex gap-2">
                   {allowShare && (
-                    <Button size="sm" variant="flat" startContent={<span>🔗</span>}>
+                    <Button size="sm" variant="flat" startContent={<Share2 className="w-4 h-4" />}>
                       Partager
                     </Button>
                   )}
@@ -677,7 +904,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                       size="sm"
                       color="danger"
                       variant="flat"
-                      startContent={<span>🗑️</span>}
+                      startContent={<Trash2 className="w-4 h-4" />}
                       onPress={onDeleteOpen}
                     >
                       Supprimer
@@ -741,6 +968,8 @@ export const FileManager: React.FC<FileManagerProps> = ({
                     setSelectedFiles(newSelection);
                   }}
                   onDoubleClick={() => handleFileSelect(file)}
+                  onDownload={() => handleFileDownload(file)}
+                  onPreview={() => handleFilePreview(file)}
                 />
                 </motion.div>
               ))}
@@ -751,7 +980,9 @@ export const FileManager: React.FC<FileManagerProps> = ({
             {filteredAndSortedFiles.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-6xl mb-4">📁</div>
+                  <div className="mb-4 flex justify-center">
+                    <Folder className="w-16 h-16 text-gray-300" />
+                  </div>
                   <h3 className="text-lg font-medium text-default-400 mb-2">
                     {searchQuery ? 'Aucun fichier trouvé' : 'Dossier vide'}
                   </h3>
@@ -770,7 +1001,9 @@ export const FileManager: React.FC<FileManagerProps> = ({
         {dragOver && (
           <div className="absolute inset-0 bg-primary/10 border-2 border-primary rounded-lg flex items-center justify-center">
             <div className="text-center">
-              <div className="text-4xl mb-2">📤</div>
+              <div className="mb-4 flex justify-center">
+                <Upload className="w-12 h-12 text-primary" />
+              </div>
               <p className="text-lg font-medium text-primary">
                 Déposez vos fichiers ici
               </p>
@@ -883,6 +1116,8 @@ interface FileItemComponentProps {
   isSelected: boolean;
   onSelect: () => void;
   onDoubleClick: () => void;
+  onDownload?: () => void;
+  onPreview?: () => void;
 }
 
 const FileItemComponent: React.FC<FileItemComponentProps> = ({
@@ -891,6 +1126,8 @@ const FileItemComponent: React.FC<FileItemComponentProps> = ({
   isSelected,
   onSelect,
   onDoubleClick,
+  onDownload,
+  onPreview,
 }) => {
   if (viewMode === 'grid') {
     return (
@@ -899,22 +1136,57 @@ const FileItemComponent: React.FC<FileItemComponentProps> = ({
           "cursor-pointer transition-all hover:scale-105",
           isSelected && "ring-2 ring-primary"
         )}
-        isPressable
-        onPress={onSelect}
-        onDoubleClick={onDoubleClick}
       >
         <CardBody className="p-3 text-center">
-          <div className="text-3xl mb-2">{getFileIcon(file.type, file.mimeType)}</div>
-          <Tooltip content={file.name}>
-            <p className="text-sm font-medium truncate">{file.name}</p>
-          </Tooltip>
-          {file.type === 'file' && file.size && (
-            <p className="text-xs text-default-400">{formatFileSize(file.size)}</p>
-          )}
-          {file.isShared && (
-            <Chip size="sm" color="primary" variant="flat" className="mt-1">
-              Partagé
-            </Chip>
+          <div 
+            className="cursor-pointer"
+            onClick={onSelect}
+            onDoubleClick={onDoubleClick}
+          >
+            <div className="mb-2 flex justify-center">{getFileIconComponent(file.type, file.mimeType, file.name)}</div>
+            <Tooltip content={file.name}>
+              <p className="text-sm font-medium truncate">{file.name}</p>
+            </Tooltip>
+            {file.type === 'file' && file.size && (
+              <p className="text-xs text-default-400">{formatFileSize(file.size)}</p>
+            )}
+            {file.isShared && (
+              <Chip size="sm" color="primary" variant="flat" className="mt-1">
+                Partagé
+              </Chip>
+            )}
+          </div>
+          
+          {/* Actions pour les fichiers */}
+          {file.type === 'file' && (
+            <div className="flex gap-1 mt-2 justify-center" onClick={(e) => e.stopPropagation()}>
+              {onPreview && (
+                <Button
+                  size="sm"
+                  variant="flat"
+                  isIconOnly
+                  onPress={() => {
+                    onPreview();
+                  }}
+                  title="Prévisualiser"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              )}
+              {onDownload && (
+                <Button
+                  size="sm"
+                  variant="flat"
+                  isIconOnly
+                  onPress={() => {
+                    onDownload();
+                  }}
+                  title="Télécharger"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           )}
         </CardBody>
       </Card>
@@ -927,27 +1199,62 @@ const FileItemComponent: React.FC<FileItemComponentProps> = ({
         "cursor-pointer transition-colors hover:bg-default-50",
         isSelected && "bg-primary-50 dark:bg-primary-950/20"
       )}
-      isPressable
-      onPress={onSelect}
-      onDoubleClick={onDoubleClick}
     >
       <CardBody className="p-3">
         <div className="flex items-center gap-3">
-          <div className="text-2xl">{getFileIcon(file.type, file.mimeType)}</div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{file.name}</p>
-            <div className="flex items-center gap-4 text-xs text-default-400">
-              <span>{file.modifiedAt.toLocaleDateString()}</span>
-              {file.type === 'file' && file.size && (
-                <span>{formatFileSize(file.size)}</span>
-              )}
-              {file.isShared && (
-                <Chip size="sm" color="primary" variant="flat">
-                  Partagé
-                </Chip>
-              )}
+          <div 
+            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+            onClick={onSelect}
+            onDoubleClick={onDoubleClick}
+          >
+            <div className="flex items-center">{getFileIconComponent(file.type, file.mimeType, file.name)}</div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate">{file.name}</p>
+              <div className="flex items-center gap-4 text-xs text-default-400">
+                <span>{file.modifiedAt.toLocaleDateString()}</span>
+                {file.type === 'file' && file.size && (
+                  <span>{formatFileSize(file.size)}</span>
+                )}
+                {file.isShared && (
+                  <Chip size="sm" color="primary" variant="flat">
+                    Partagé
+                  </Chip>
+                )}
+              </div>
             </div>
           </div>
+          
+          {/* Actions pour les fichiers */}
+          {file.type === 'file' && (
+            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+              {onPreview && (
+                <Button
+                  size="sm"
+                  variant="flat"
+                  isIconOnly
+                  onPress={() => {
+                    onPreview();
+                  }}
+                  title="Prévisualiser"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              )}
+              {onDownload && (
+                <Button
+                  size="sm"
+                  variant="flat"
+                  isIconOnly
+                  onPress={() => {
+                    onDownload();
+                  }}
+                  title="Télécharger"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </CardBody>
     </Card>

@@ -89,38 +89,44 @@ class FilesService {
 
       const data = await response.json();
       
-      if (data.status !== 'success') {
-        throw new Error(data.message || 'Erreur lors de la requête');
+      // L'API files utilise le format {code: 200, items: [...]} 
+      if (data.code !== 200) {
+        const errorMessage = data.message?.message || data.message || 'Erreur lors de la requête';
+        throw new Error(errorMessage);
       }
 
       return data;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-      console.error(`Erreur dans makeRequest (${endpoint}):`, errorMessage);
+      // Améliorer le logging d'erreur pour debug
+      console.error(`Erreur dans makeRequest (${endpoint}):`, error);
+      console.error('Type d\'erreur:', typeof error);
+      console.error('Error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      
+      const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(errorMessage);
     }
   }
 
   /**
-   * Récupérer les fichiers d'un projet ou d'un dossier
+   * Récupérer les fichiers selon des critères
    */
-  async getFilesByLocation(
-    projectId: number,
-    folderId: number | null,
-    userId: number,
-    searchTerm?: string,
-    mimeTypeFilter?: string
+  async getFilesByCriteria(
+    index: number = 0,
+    size: number = 100,
+    criteria: {
+      project_id?: number;
+      folder_id?: number | null;
+      is_active?: boolean;
+      name?: string;
+      mime_type?: string;
+    } = {}
   ): Promise<ProjectFile[]> {
-    const requestData: FileListRequest = {
-      user: { id: userId },
-      index: 0,
-      size: 100,
+    const requestData = {
+      index,
+      size,
       data: {
-        project_id: projectId,
-        folder_id: folderId,
         is_active: true,
-        ...(searchTerm && { name: searchTerm }),
-        ...(mimeTypeFilter && { mime_type: mimeTypeFilter })
+        ...criteria
       }
     };
 
@@ -133,6 +139,28 @@ class FilesService {
     });
 
     return response.items || response.data || [];
+  }
+
+  /**
+   * Récupérer les fichiers d'un projet ou d'un dossier
+   */
+  async getFilesByLocation(
+    projectId: number,
+    folderId: number | null,
+    userId: number,
+    searchTerm?: string,
+    mimeTypeFilter?: string
+  ): Promise<ProjectFile[]> {
+    const criteria: any = {
+      ...(projectId && { project_id: projectId }),
+      ...(folderId !== null && { folder_id: folderId }),
+      ...(searchTerm && { name: searchTerm }),
+      ...(mimeTypeFilter && { mime_type: mimeTypeFilter })
+    };
+
+    console.log('🔍 Critères de recherche fichiers:', criteria);
+    
+    return this.getFilesByCriteria(0, 100, criteria);
   }
 
   /**
@@ -302,11 +330,64 @@ class FilesService {
   }
 
   /**
-   * Obtenir l'URL de prévisualisation d'un fichier - Fonctionnalité retirée
+   * Supprimer des fichiers (nouvelle API)
    */
-  getFilePreviewUrl(file: ProjectFile): string {
-    // Fonctionnalité /files/serve retirée de l'application
-    throw new Error('Fonctionnalité de prévisualisation non disponible');
+  async deleteFiles(fileIds: number[]): Promise<boolean> {
+    const requestData = {
+      datas: fileIds.map(id => ({ id }))
+    };
+
+    await this.makeRequest('/files/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    return true;
+  }
+
+  /**
+   * Mettre à jour des fichiers (nouvelle API)
+   */
+  async updateFiles(
+    updates: Array<{
+      id: number;
+      name?: string;
+      is_public?: boolean;
+      is_active?: boolean;
+    }>,
+    userId: number
+  ): Promise<ProjectFile[]> {
+    const requestData = {
+      user: { id: userId },
+      datas: updates
+    };
+
+    const response = await this.makeRequest<any>('/files/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    return response.items || response.data || [];
+  }
+
+  /**
+   * Obtenir l'URL de prévisualisation d'un fichier pour le serveur de fichiers
+   */
+  getFileServeUrl(filePath: string): string {
+    return `${this.baseUrl}/files/serve/${filePath}`;
+  }
+
+  /**
+   * Obtenir l'URL de base de l'API
+   */
+  getBaseUrl(): string {
+    return this.baseUrl;
   }
 
   /**

@@ -140,11 +140,18 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
 
   // Gestionnaire pour capturer les fichiers uploadés et les ajouter à la liste
   const handleFileUploaded = (uploadResponse: any) => {
-    console.log('Réponse upload reçue:', uploadResponse);
+    console.log('🔍 Réponse upload reçue - Structure complète:', {
+      response: uploadResponse,
+      keys: Object.keys(uploadResponse || {}),
+      status: uploadResponse?.status,
+      data: uploadResponse?.data,
+      files: uploadResponse?.files
+    });
     
     // Gérer les différents formats de réponse
     if (uploadResponse.files && Array.isArray(uploadResponse.files)) {
       // Upload multiple : {files: [...], folder_id: 24, ...}
+      console.log('📤 Traitement upload multiple - Files:', uploadResponse.files);
       const newFiles = uploadResponse.files.map((file: any) => ({
         id: `temp-${Date.now()}-${Math.random()}`,
         name: file.name,
@@ -155,8 +162,10 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
         modifiedAt: new Date()
       }));
       setUploadedFiles(prev => [...prev, ...newFiles]);
+      console.log('✅ Fichiers ajoutés à uploadedFiles:', newFiles);
     } else if (uploadResponse.data?.db_record) {
       // Upload simple : {data: {db_record: {...}, file_id: 21, ...}}
+      console.log('📤 Traitement upload simple - DB Record:', uploadResponse.data.db_record);
       const dbRecord = uploadResponse.data.db_record;
       const newFile = {
         id: dbRecord.id,
@@ -167,12 +176,44 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
         is_public: dbRecord.is_public,
         created_at: dbRecord.created_at,
         createdAt: new Date(dbRecord.created_at),
-        modifiedAt: new Date(dbRecord.updated_at)
+        modifiedAt: new Date(dbRecord.updated_at),
+        folder_id: dbRecord.folder_id || null
       };
       setUploadedFiles(prev => [...prev, newFile]);
+      console.log('✅ Fichier ajouté à uploadedFiles:', newFile);
+    } else {
+      console.warn('⚠️ Format de réponse upload non reconnu:', uploadResponse);
+      // Essayer de traiter d'autres formats possibles
+      if (uploadResponse.status === 'success' && uploadResponse.data) {
+        console.log('🔄 Tentative de traitement format alternatif...');
+        // Peut-être que l'API renvoie directement le fichier dans .data
+        const fileData = uploadResponse.data;
+        if (fileData.name) {
+          const newFile = {
+            id: fileData.id || `temp-${Date.now()}-${Math.random()}`,
+            name: fileData.name,
+            type: 'file',
+            file_url: fileData.file_url,
+            file_path: fileData.file_path,
+            is_public: fileData.is_public,
+            created_at: fileData.created_at,
+            createdAt: new Date(fileData.created_at || Date.now()),
+            modifiedAt: new Date(fileData.updated_at || Date.now()),
+            folder_id: fileData.folder_id || null
+          };
+          setUploadedFiles(prev => [...prev, newFile]);
+          console.log('✅ Fichier ajouté avec format alternatif:', newFile);
+        }
+      }
     }
     
+    // Force le rechargement des fichiers depuis l'API
     setFileRefreshKey(prev => prev + 1);
+    
+    // Vider les fichiers uploadés localement après 2 secondes car ils seront rechargés via l'API
+    setTimeout(() => {
+      setUploadedFiles([]);
+    }, 2000);
   };
 
 
@@ -409,6 +450,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                         <FileManager
                           key={`root-${fileRefreshKey}`}
                           projectId={projectId}
+                          currentFolderId={null}
                           rootPath="/"
                           allowUpload={true}
                           allowDelete={true}
@@ -432,6 +474,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                         <FileManager
                           key={`${selectedFolder.id}-${fileRefreshKey}`}
                           projectId={projectId}
+                          currentFolderId={selectedFolder.id.toString()}
                           rootPath={`/${selectedFolder.name}`}
                           allowUpload={true}
                           allowDelete={true}

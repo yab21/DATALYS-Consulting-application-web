@@ -365,6 +365,9 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       // Paramètres selon votre documentation - champs optionnels
       if (currentFolder?.id) {
         formData.append('folder_id', currentFolder.id.toString());
+        console.log('📁 Upload dans le dossier:', currentFolder.name, 'ID:', currentFolder.id);
+      } else {
+        console.log('📁 Upload à la racine du projet');
       }
       
       if (singleFileFolderName.trim()) {
@@ -731,10 +734,10 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                     trigger: "!border-gray-300 dark:!border-gray-600"
                   }}
                   items={[
-                    { key: "root", label: `📁 Racine du projet (${projectName})` },
+                    { key: "root", label: `Racine du projet (${projectName})` },
                     ...allFolders.map(folder => ({
                       key: folder.id.toString(),
-                      label: `📂 ${folder.name}`
+                      label: folder.name
                     }))
                   ]}
                 >
