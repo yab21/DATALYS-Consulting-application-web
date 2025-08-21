@@ -59,6 +59,12 @@ export const API_CONFIG = {
       CREATE: '/user_project_permissions/create',
       UPDATE: '/user_project_permissions/update',
       DELETE: '/user_project_permissions/delete',
+    },
+    INCIDENTS: {
+      GET_BY_CRITERIA: '/incidents/getByCriteria',
+      CREATE: '/incidents/create',
+      UPDATE: '/incidents/update',
+      DELETE: '/incidents/delete',
     }
   }
 } as const;

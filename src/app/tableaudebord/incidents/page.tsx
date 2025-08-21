@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLayout";
 import GestionIncidents from "@/components/TableauDeBord/Incidents/GestionIncidents";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 
@@ -10,9 +9,9 @@ export const metadata: Metadata = {
 
 export default function IncidentsPage() {
   return (
-    <DefaultLayout>
+    <>
       <Breadcrumb pageName="Gestion des Incidents" />
       <GestionIncidents />
-    </DefaultLayout>
+    </>
   );
 }

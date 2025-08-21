@@ -3,7 +3,6 @@
 import React from "react";
 import { Breadcrumbs, BreadcrumbItem, Skeleton } from "@nextui-org/react";
 import { ChevronRight, Home } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import { useBreadcrumb } from "@/hooks/useBreadcrumb";
 
 interface BreadcrumbProps {
@@ -12,21 +11,10 @@ interface BreadcrumbProps {
 }
 
 const Breadcrumb = ({ className = "" }: BreadcrumbProps) => {
-  const { user } = useAuth();
   const { breadcrumbs, isLoading } = useBreadcrumb();
 
   return (
-    <div className={`mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${className}`}>
-      {/* Informations utilisateur */}
-      <div className="flex items-center gap-3">
-        <h2 className="text-[22px] font-thin leading-[30px] text-dark dark:text-white">
-          {user ? (
-            `Bonjour, ${user.name}`
-          ) : (
-            <Skeleton className="h-6 w-40 rounded-md" />
-          )}
-        </h2>
-      </div>
+    <div className={`mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end ${className}`}>
 
       {/* Navigation Breadcrumb */}
       <nav className="flex items-center">

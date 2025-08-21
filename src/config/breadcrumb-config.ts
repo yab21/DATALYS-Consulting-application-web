@@ -184,6 +184,23 @@ export const BREADCRUMB_ROUTES: RouteConfig[] = [
     pattern: '/tableaudebord/support',
     label: 'Support Technique',
     parentRoute: '/tableaudebord'
+  },
+
+  // Paramètres
+  {
+    pattern: '/tableaudebord/parametres',
+    label: 'Paramètres',
+    parentRoute: '/tableaudebord'
+  },
+  {
+    pattern: '/tableaudebord/parametres/roles',
+    label: 'Gestion des Rôles',
+    parentRoute: '/tableaudebord/parametres'
+  },
+  {
+    pattern: '/tableaudebord/parametres/permissions',
+    label: 'Gestion des Permissions',
+    parentRoute: '/tableaudebord/parametres'
   }
 ];
 

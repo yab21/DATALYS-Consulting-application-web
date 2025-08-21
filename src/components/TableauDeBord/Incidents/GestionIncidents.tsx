@@ -44,13 +44,16 @@ import {
   XCircle,
   ArrowUpRight,
   Calendar,
-  User
+  User as UserIcon
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
-import { dashboardService } from "@/services/dashboard";
+import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { IncidentsService, type Incident as ApiIncident, type IncidentCriteria, type CreateIncidentData, type UpdateIncidentData } from "@/services/incidents";
+import { projectsService, type Project } from "@/services/projects";
+import { UsersService, type User as UserType } from "@/services/users";
 
-// Types
+// Types locaux pour l'interface
 interface Incident {
   id: string;
   titre: string;
@@ -68,6 +71,25 @@ interface Incident {
   commentaires: number;
   tempsMoyenResolution?: number;
 }
+
+// Fonction de conversion API vers interface locale
+const convertApiIncidentToLocal = (apiIncident: ApiIncident): Incident => ({
+  id: apiIncident.id.toString(),
+  titre: apiIncident.title,
+  description: apiIncident.description,
+  priorite: (apiIncident.priority as any) || "moyenne",
+  statut: (apiIncident.status as any) || "ouvert",
+  projectId: "proj-" + apiIncident.id,
+  projectNom: apiIncident.project_name || `Projet ${apiIncident.id}`,
+  partnerId: "partner-" + apiIncident.id,
+  partnerNom: apiIncident.user_name || "Utilisateur",
+  partnerLogo: undefined,
+  dateCreation: new Date(apiIncident.created_at),
+  dateResolution: apiIncident.status === "resolved" ? new Date(apiIncident.updated_at) : undefined,
+  assigneA: "Support Technique",
+  commentaires: Math.floor(Math.random() * 10) + 1,
+  tempsMoyenResolution: apiIncident.status === "resolved" ? Math.random() * 48 : undefined,
+});
 
 interface IncidentStats {
   total: number;
@@ -173,7 +195,8 @@ const MOCK_INCIDENTS: Incident[] = [
 ];
 
 const GestionIncidents: React.FC = () => {
-  const { user, isAdmin, isPartner, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
+  const { showNotification } = useNotifications();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [filteredIncidents, setFilteredIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,6 +206,104 @@ const GestionIncidents: React.FC = () => {
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  // États de loading pour les boutons
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // États pour les formulaires
+  const [createForm, setCreateForm] = useState<CreateIncidentData>({
+    title: "",
+    description: "",
+    user_name: "",
+    project_name: "",
+    is_active: true,
+    priority: "moyenne",
+    status: "ouvert"
+  });
+  
+  const [editForm, setEditForm] = useState<UpdateIncidentData>({
+    id: 0,
+    title: "",
+    description: "",
+    user_name: "",
+    project_name: "",
+    is_active: true,
+    priority: "moyenne",
+    status: "ouvert"
+  });
+  
+  // Charger les projets et utilisateurs au montage du composant
+  useEffect(() => {
+    const loadProjectsAndUsers = async () => {
+      // Charger les projets
+      setLoadingProjects(true);
+      try {
+        console.log("🔄 Chargement des projets...");
+        const projectsList = await projectsService.getActiveProjects();
+        
+        // Filtrer les projets pour éviter les doublons de titres
+        const uniqueProjectsMap = new Map();
+        projectsList.forEach(project => {
+          if (!uniqueProjectsMap.has(project.title)) {
+            uniqueProjectsMap.set(project.title, project);
+          }
+        });
+        const uniqueProjects = Array.from(uniqueProjectsMap.values());
+        
+        setProjects(uniqueProjects);
+        console.log("✅ Projets chargés:", uniqueProjects);
+        console.log("📊 Projets originaux:", projectsList.length, "Projets uniques:", uniqueProjects.length);
+      } catch (error) {
+        console.error("❌ Erreur lors du chargement des projets:", error);
+        setProjects([]);
+      } finally {
+        setLoadingProjects(false);
+      }
+      
+      // Charger les utilisateurs
+      setLoadingUsers(true);
+      try {
+        console.log("🔄 Chargement des utilisateurs...");
+        const response = await UsersService.getUsersByCriteria({
+          index: 0,
+          size: 100,
+          data: { is_active: true }
+        });
+        
+        let usersList: UserType[] = [];
+        if (response.code === 200 && response.items) {
+          usersList = response.items;
+        } else if (Array.isArray(response)) {
+          usersList = response;
+        }
+        
+        // Filtrer les utilisateurs pour éviter les doublons de noms
+        // Utiliser une Map pour garder le premier utilisateur de chaque nom
+        const uniqueUsersMap = new Map();
+        usersList.forEach(user => {
+          if (!uniqueUsersMap.has(user.name)) {
+            uniqueUsersMap.set(user.name, user);
+          }
+        });
+        const uniqueUsers = Array.from(uniqueUsersMap.values());
+        
+        setUsers(uniqueUsers);
+        console.log("✅ Utilisateurs chargés:", uniqueUsers);
+        console.log("📊 Utilisateurs originaux:", usersList.length, "Utilisateurs uniques:", uniqueUsers.length);
+      } catch (error) {
+        console.error("❌ Erreur lors du chargement des utilisateurs:", error);
+        setUsers([]);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    
+    loadProjectsAndUsers();
+  }, []);
   const [stats, setStats] = useState<IncidentStats>({
     total: 0,
     ouverts: 0,
@@ -197,99 +318,74 @@ const GestionIncidents: React.FC = () => {
   const [pageSize, setPageSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState<string>("tous");
   const [priorityFilter, setPriorityFilter] = useState<string>("tous");
-  const [typeFilter, setTypeFilter] = useState<string>("tous");
+  // const [typeFilter, setTypeFilter] = useState<string>("tous"); // Pas utilisé pour l'instant
+  
+  // État pour les projets et utilisateurs
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
-  // Chargement des données selon le rôle utilisateur
+  // Chargement des données via l'API incidents
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       
       try {
-        if (isPartner() && user?.partner_id) {
-          // Partenaire : utiliser l'API dashboard incidents
-          console.log("🔄 Chargement incidents via API dashboard pour partenaire:", user.partner_id);
-          
-          // Créer les filtres pour l'API
-          const filters: any = {};
-          if (statusFilter !== "tous") filters.status = statusFilter;
-          if (priorityFilter !== "tous") filters.priority = priorityFilter;
-          if (typeFilter !== "tous") filters.type = typeFilter;
-          
-          const params = dashboardService.createPaginationParams(
-            currentPage,
-            pageSize,
-            filters
-          );
-          
-          const response = await dashboardService.getPartnerIncidents(user.partner_id, params);
-          
-          if (response.success) {
-            // Convertir les données de l'API vers le format Incident local
-            const convertedIncidents: Incident[] = response.data.incidents.map(incident => ({
-              id: incident.id.toString(),
-              titre: incident.title,
-              description: incident.description,
-              priorite: incident.priority as any,
-              statut: incident.status as any,
-              projectId: "proj-" + incident.id, // Mock project ID
-              projectNom: `Projet ${incident.id}`, // Mock project name
-              partnerId: incident.partner_id.toString(),
-              partnerNom: user.name || "Partenaire",
-              dateCreation: new Date(incident.created_at),
-              dateResolution: incident.status === "resolu" ? new Date(incident.updated_at) : undefined,
-              assigneA: "Support Technique",
-              commentaires: Math.floor(Math.random() * 10) + 1, // Mock comments
-              tempsMoyenResolution: incident.status === "resolu" ? Math.random() * 48 : undefined,
-            }));
-            
-            setIncidents(convertedIncidents);
-            setFilteredIncidents(convertedIncidents);
-            
-            // Calcul des statistiques
-            const newStats: IncidentStats = {
-              total: convertedIncidents.length,
-              ouverts: convertedIncidents.filter(i => i.statut === "ouvert").length,
-              enCours: convertedIncidents.filter(i => i.statut === "en_cours").length,
-              resolus: convertedIncidents.filter(i => i.statut === "resolu").length,
-              critiques: convertedIncidents.filter(i => i.priorite === "critique").length,
-              tempsMoyenResolution: convertedIncidents
-                .filter(i => i.tempsMoyenResolution)
-                .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) / 
-                convertedIncidents.filter(i => i.tempsMoyenResolution).length || 0
-            };
-            
-            setStats(newStats);
-            console.log("✅ Incidents chargés via API dashboard:", convertedIncidents);
-          } else {
-            throw new Error(response.message || "Erreur API incidents");
+        console.log("🔄 Chargement incidents via API incidents");
+        
+        // Préparer les critères de recherche
+        const criteria: IncidentCriteria = {
+          index: currentPage,
+          size: pageSize,
+          data: {
+            is_active: true,
+            ...(statusFilter !== "tous" && { status: statusFilter }),
+            ...(priorityFilter !== "tous" && { priority: priorityFilter }),
           }
-        } else {
-          // Admin ou fallback : utiliser les données mockées
-          console.log("🔄 Chargement incidents via données mockées");
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          setIncidents(MOCK_INCIDENTS);
-          setFilteredIncidents(MOCK_INCIDENTS);
-          
-          // Calcul des statistiques
-          const newStats: IncidentStats = {
-            total: MOCK_INCIDENTS.length,
-            ouverts: MOCK_INCIDENTS.filter(i => i.statut === "ouvert").length,
-            enCours: MOCK_INCIDENTS.filter(i => i.statut === "en_cours").length,
-            resolus: MOCK_INCIDENTS.filter(i => i.statut === "resolu").length,
-            critiques: MOCK_INCIDENTS.filter(i => i.priorite === "critique").length,
-            tempsMoyenResolution: MOCK_INCIDENTS
-              .filter(i => i.tempsMoyenResolution)
-              .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) / 
-              MOCK_INCIDENTS.filter(i => i.tempsMoyenResolution).length || 0
-          };
-          
-          setStats(newStats);
+        };
+        
+        // Appel à l'API incidents
+        const response = await IncidentsService.getIncidentsByCriteria(criteria);
+        
+        let apiIncidents: ApiIncident[] = [];
+        
+        // Traitement de la réponse selon le format
+        if (response.code === 200 && response.items && Array.isArray(response.items)) {
+          apiIncidents = response.items;
+        } else if (Array.isArray(response)) {
+          apiIncidents = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          apiIncidents = response.data;
         }
+        
+        // Conversion vers le format local
+        const convertedIncidents: Incident[] = apiIncidents.map(convertApiIncidentToLocal);
+        
+        setIncidents(convertedIncidents);
+        setFilteredIncidents(convertedIncidents);
+        
+        // Calcul des statistiques
+        const newStats: IncidentStats = {
+          total: convertedIncidents.length,
+          ouverts: convertedIncidents.filter(i => i.statut === "ouvert").length,
+          enCours: convertedIncidents.filter(i => i.statut === "en_cours").length,
+          resolus: convertedIncidents.filter(i => i.statut === "resolu").length,
+          critiques: convertedIncidents.filter(i => i.priorite === "critique").length,
+          tempsMoyenResolution: convertedIncidents
+            .filter(i => i.tempsMoyenResolution)
+            .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) / 
+            (convertedIncidents.filter(i => i.tempsMoyenResolution).length || 1)
+        };
+        
+        setStats(newStats);
+        console.log("✅ Incidents chargés via API incidents:", convertedIncidents);
+        
       } catch (error) {
         console.error("❌ Erreur lors du chargement des incidents:", error);
         
         // Fallback vers les données mockées en cas d'erreur
+        console.log("🔄 Fallback vers les données mockées");
         setIncidents(MOCK_INCIDENTS);
         setFilteredIncidents(MOCK_INCIDENTS);
         
@@ -302,7 +398,7 @@ const GestionIncidents: React.FC = () => {
           tempsMoyenResolution: MOCK_INCIDENTS
             .filter(i => i.tempsMoyenResolution)
             .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) / 
-            MOCK_INCIDENTS.filter(i => i.tempsMoyenResolution).length || 0
+            (MOCK_INCIDENTS.filter(i => i.tempsMoyenResolution).length || 1)
         };
         
         setStats(newStats);
@@ -313,14 +409,10 @@ const GestionIncidents: React.FC = () => {
 
     loadData();
   }, [
-    isPartner, 
-    user?.partner_id, 
-    user?.name,
     currentPage,
     pageSize,
     statusFilter,
-    priorityFilter,
-    typeFilter
+    priorityFilter
   ]);
 
   // Filtrage des incidents
@@ -390,7 +482,7 @@ const GestionIncidents: React.FC = () => {
     }
   };
 
-  const handleIncidentAction = (incident: Incident, action: string) => {
+  const handleIncidentAction = async (incident: Incident, action: string) => {
     setSelectedIncident(incident);
     
     switch (action) {
@@ -398,20 +490,200 @@ const GestionIncidents: React.FC = () => {
         setShowDetailModal(true);
         break;
       case "edit":
+        // Pré-remplir le formulaire d'édition
+        console.log("🔧 Pré-remplissage du formulaire d'édition:", incident);
+        
+        // Les vrais noms d'utilisateur et projet à utiliser
+        // (ils viennent de la fonction de conversion qui utilise les données de l'API)
+        const originalUserName = incident.partnerNom; // "Utilisateur" (générique)
+        const originalProjectName = incident.projectNom; // "Projet 92" (générique)
+        
+        // Vérifier si ces noms existent dans nos listes
+        const userExists = users.find(u => u.name === originalUserName);
+        const projectExists = projects.find(p => p.title === originalProjectName);
+        
+        // Si pas trouvés, utiliser le premier disponible ou garder une valeur par défaut
+        const validUserName = userExists ? userExists.name : (users.length > 0 ? users[0].name : "");
+        const validProjectName = projectExists ? projectExists.title : (projects.length > 0 ? projects[0].title : "");
+        
+        const editData = {
+          id: parseInt(incident.id),
+          title: incident.titre,
+          description: incident.description,
+          user_name: validUserName,
+          project_name: validProjectName,
+          is_active: true,
+          priority: incident.priorite,
+          status: incident.statut === "en_cours" ? "en_cours" : incident.statut
+        };
+        
+        console.log("📝 Données du formulaire d'édition:", editData);
+        console.log("👤 Utilisateur original:", incident.partnerNom, "-> Utilisateur valide:", validUserName, "(existe:", !!userExists, ")");
+        console.log("📋 Projet original:", incident.projectNom, "-> Projet valide:", validProjectName, "(existe:", !!projectExists, ")");
+        console.log("📊 Utilisateurs disponibles:", users.map(u => u.name));
+        console.log("📊 Projets disponibles:", projects.map(p => p.title));
+        
+        setEditForm(editData);
         setShowEditModal(true);
+        break;
+      case "delete":
+        setShowDeleteModal(true);
         break;
       case "assign":
         // Logique d'assignation
         console.log("Assigner incident:", incident.id);
         break;
       case "resolve":
-        // Logique de résolution
-        setIncidents(prev => prev.map(i => 
-          i.id === incident.id 
-            ? { ...i, statut: "resolu", dateResolution: new Date() }
-            : i
-        ));
+        try {
+          // Appeler l'API pour marquer comme résolu
+          await IncidentsService.updateIncident({
+            id: parseInt(incident.id),
+            status: "resolved",
+            is_active: true
+          });
+          
+          // Mettre à jour l'état local
+          setIncidents(prev => prev.map(i => 
+            i.id === incident.id 
+              ? { ...i, statut: "resolu", dateResolution: new Date() }
+              : i
+          ));
+          
+          console.log("✅ Incident marqué comme résolu:", incident.id);
+        } catch (error) {
+          console.error("❌ Erreur lors de la résolution de l'incident:", error);
+        }
         break;
+    }
+  };
+
+  // Fonction pour créer un incident
+  const handleCreateIncident = async () => {
+    if (isCreating) return; // Prévenir les double-clics
+    
+    setIsCreating(true);
+    try {
+      console.log("🔄 Création d'un nouvel incident:", createForm);
+      console.log("👤 Utilisateur sélectionné:", createForm.user_name);
+      console.log("📋 Projet sélectionné:", createForm.project_name);
+      
+      await IncidentsService.createIncident(createForm);
+      
+      // Recharger les données
+      const criteria: IncidentCriteria = {
+        index: currentPage,
+        size: pageSize,
+        data: { is_active: true }
+      };
+      
+      const refreshResponse = await IncidentsService.getIncidentsByCriteria(criteria);
+      let apiIncidents: ApiIncident[] = [];
+      
+      if (refreshResponse.code === 200 && refreshResponse.items) {
+        apiIncidents = refreshResponse.items;
+      } else if (Array.isArray(refreshResponse)) {
+        apiIncidents = refreshResponse;
+      }
+      
+      const convertedIncidents = apiIncidents.map(convertApiIncidentToLocal);
+      setIncidents(convertedIncidents);
+      setFilteredIncidents(convertedIncidents);
+      
+      // Réinitialiser le formulaire
+      setCreateForm({
+        title: "",
+        description: "",
+        user_name: "",
+        project_name: "",
+        is_active: true,
+        priority: "moyenne",
+        status: "ouvert"
+      });
+      
+      setShowCreateModal(false);
+      showNotification(notificationHelpers.success("Succès", "Incident créé avec succès"));
+      console.log("✅ Incident créé avec succès");
+      
+    } catch (error: any) {
+      console.error("❌ Erreur lors de la création de l'incident:", error);
+      
+      // Le service incidents va maintenant bien capturer les erreurs API
+      let errorMessage = error.message || "Une erreur inattendue s'est produite";
+      
+      showNotification(notificationHelpers.error("Erreur", errorMessage));
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Fonction pour modifier un incident
+  const handleUpdateIncident = async () => {
+    if (isUpdating) return; // Prévenir les double-clics
+    
+    setIsUpdating(true);
+    try {
+      console.log("🔄 Modification de l'incident:", editForm);
+      
+      await IncidentsService.updateIncident(editForm);
+      
+      // Mettre à jour l'état local
+      setIncidents(prev => prev.map(i => 
+        i.id === selectedIncident?.id 
+          ? {
+              ...i,
+              titre: editForm.title || i.titre,
+              description: editForm.description || i.description,
+              priorite: (editForm.priority as any) || i.priorite,
+              statut: (editForm.status as any) || i.statut,
+            }
+          : i
+      ));
+      
+      setShowEditModal(false);
+      setSelectedIncident(null);
+      showNotification(notificationHelpers.success("Succès", "Incident modifié avec succès"));
+      console.log("✅ Incident modifié avec succès");
+      
+    } catch (error: any) {
+      console.error("❌ Erreur lors de la modification de l'incident:", error);
+      
+      // Le service incidents va maintenant bien capturer les erreurs API
+      let errorMessage = error.message || "Une erreur inattendue s'est produite";
+      
+      showNotification(notificationHelpers.error("Erreur", errorMessage));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Fonction pour supprimer un incident
+  const handleDeleteIncident = async () => {
+    if (!selectedIncident || isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+      console.log("🔄 Suppression de l'incident:", selectedIncident.id);
+      
+      await IncidentsService.deleteIncident(parseInt(selectedIncident.id));
+      
+      // Retirer de l'état local
+      setIncidents(prev => prev.filter(i => i.id !== selectedIncident.id));
+      setFilteredIncidents(prev => prev.filter(i => i.id !== selectedIncident.id));
+      
+      setShowDeleteModal(false);
+      setSelectedIncident(null);
+      showNotification(notificationHelpers.success("Succès", "Incident supprimé avec succès"));
+      console.log("✅ Incident supprimé avec succès");
+      
+    } catch (error: any) {
+      console.error("❌ Erreur lors de la suppression de l'incident:", error);
+      
+      // Le service incidents va maintenant bien capturer les erreurs API
+      let errorMessage = error.message || "Une erreur inattendue s'est produite";
+      
+      showNotification(notificationHelpers.error("Erreur", errorMessage));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -637,8 +909,17 @@ const GestionIncidents: React.FC = () => {
                 </Select>
               </div>
 
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {filteredIncidents.length} incident(s) trouvé(s)
+              <div className="flex items-center gap-4">
+                <Button
+                  color="primary"
+                  onPress={() => setShowCreateModal(true)}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Créer un incident
+                </Button>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {filteredIncidents.length} incident(s) trouvé(s)
+                </div>
               </div>
             </div>
           </CardBody>
@@ -713,7 +994,7 @@ const GestionIncidents: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-400" />
+                        <UserIcon className="h-4 w-4 text-gray-400" />
                         <span className="text-sm">{incident.assigneA}</span>
                       </div>
                     </TableCell>
@@ -771,7 +1052,15 @@ const GestionIncidents: React.FC = () => {
                                 >
                                   Marquer comme résolu
                                 </DropdownItem>
-                              ] : [])
+                              ] : []),
+                              <DropdownItem
+                                key="delete"
+                                startContent={<XCircle className="h-4 w-4" />}
+                                onPress={() => handleIncidentAction(incident, "delete")}
+                                className="text-danger"
+                              >
+                                Supprimer
+                              </DropdownItem>
                             ] : [])
                           ]}
                         </DropdownMenu>
@@ -891,6 +1180,278 @@ const GestionIncidents: React.FC = () => {
                   Modifier
                 </Button>
               ) : null}
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {/* Modal création incident */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setCreateForm({
+            title: "",
+            description: "",
+            user_name: "",
+            project_name: "",
+            is_active: true,
+            priority: "moyenne",
+            status: "ouvert"
+          });
+        }}
+        size="2xl"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <AlertTriangle className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold">Créer un nouvel incident</h3>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <Input
+                label="Titre de l'incident"
+                placeholder="Ex: Problème de connectivité..."
+                value={createForm.title}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
+                isRequired
+              />
+              
+              <Textarea
+                label="Description"
+                placeholder="Décrivez le problème en détail..."
+                value={createForm.description}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
+                minRows={3}
+                isRequired
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Select
+                  label="Utilisateur"
+                  placeholder="Sélectionnez un utilisateur"
+                  selectedKeys={createForm.user_name ? [createForm.user_name] : []}
+                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, user_name: Array.from(keys)[0] as string }))}
+                  isLoading={loadingUsers}
+                  isRequired
+                >
+                  {users.map((user) => (
+                    <SelectItem key={user.name} value={user.name} textValue={`${user.name} (${user.email})`}>
+                      {user.name} ({user.email})
+                    </SelectItem>
+                  ))}
+                </Select>
+                
+                <Select
+                  label="Projet"
+                  placeholder="Sélectionnez un projet"
+                  selectedKeys={createForm.project_name ? [createForm.project_name] : []}
+                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, project_name: Array.from(keys)[0] as string }))}
+                  isLoading={loadingProjects}
+                  isRequired
+                >
+                  {projects.map((project) => (
+                    <SelectItem key={project.title} value={project.title} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
+                      {project.title} {project.partner_name ? `(${project.partner_name})` : ''}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Select
+                  label="Priorité"
+                  selectedKeys={createForm.priority ? [createForm.priority] : []}
+                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, priority: Array.from(keys)[0] as string }))}
+                >
+                  <SelectItem key="faible" value="faible">Faible</SelectItem>
+                  <SelectItem key="moyenne" value="moyenne">Moyenne</SelectItem>
+                  <SelectItem key="haute" value="haute">Haute</SelectItem>
+                  <SelectItem key="critique" value="critique">Critique</SelectItem>
+                </Select>
+                
+                <Select
+                  label="Statut"
+                  selectedKeys={createForm.status ? [createForm.status] : []}
+                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as string }))}
+                >
+                  <SelectItem key="ouvert" value="ouvert">Ouvert</SelectItem>
+                  <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
+                  <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
+                  <SelectItem key="ferme" value="ferme">Fermé</SelectItem>
+                </Select>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={() => setShowCreateModal(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="primary"
+              onPress={handleCreateIncident}
+              isDisabled={!createForm.title || !createForm.description || !createForm.user_name || !createForm.project_name}
+            >
+              Créer l'incident
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal édition incident */}
+      {selectedIncident && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          size="2xl"
+          scrollBehavior="inside"
+        >
+          <ModalContent>
+            <ModalHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-warning/10 p-2">
+                  <Edit className="h-5 w-5 text-warning" />
+                </div>
+                <h3 className="text-xl font-bold">Modifier l'incident</h3>
+              </div>
+            </ModalHeader>
+            <ModalBody>
+              <div className="space-y-4">
+                <Input
+                  label="Titre de l'incident"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  isRequired
+                />
+                
+                <Textarea
+                  label="Description"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  minRows={3}
+                  isRequired
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Select
+                    label="Utilisateur"
+                    selectedKeys={editForm.user_name ? [editForm.user_name] : []}
+                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, user_name: Array.from(keys)[0] as string }))}
+                    isLoading={loadingUsers}
+                    isRequired
+                  >
+                    {users.map((user) => (
+                      <SelectItem key={user.name} value={user.name} textValue={`${user.name} (${user.email})`}>
+                        {user.name} ({user.email})
+                      </SelectItem>
+                    ))}
+                  </Select>
+                  
+                  <Select
+                    label="Projet"
+                    selectedKeys={editForm.project_name ? [editForm.project_name] : []}
+                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, project_name: Array.from(keys)[0] as string }))}
+                    isLoading={loadingProjects}
+                    isRequired
+                  >
+                    {projects.map((project) => (
+                      <SelectItem key={project.title} value={project.title} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
+                        {project.title} {project.partner_name ? `(${project.partner_name})` : ''}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Select
+                    label="Priorité"
+                    selectedKeys={editForm.priority ? [editForm.priority] : []}
+                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, priority: Array.from(keys)[0] as string }))}
+                  >
+                    <SelectItem key="faible" value="faible">Faible</SelectItem>
+                    <SelectItem key="moyenne" value="moyenne">Moyenne</SelectItem>
+                    <SelectItem key="haute" value="haute">Haute</SelectItem>
+                    <SelectItem key="critique" value="critique">Critique</SelectItem>
+                  </Select>
+                  
+                  <Select
+                    label="Statut"
+                    selectedKeys={editForm.status ? [editForm.status] : []}
+                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, status: Array.from(keys)[0] as string }))}
+                  >
+                    <SelectItem key="ouvert" value="ouvert">Ouvert</SelectItem>
+                    <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
+                    <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
+                    <SelectItem key="ferme" value="ferme">Fermé</SelectItem>
+                  </Select>
+                </div>
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="light"
+                onPress={() => setShowEditModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                color="primary"
+                onPress={handleUpdateIncident}
+                isLoading={isUpdating}
+              >
+                {isUpdating ? "Sauvegarde..." : "Sauvegarder"}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {/* Modal suppression incident */}
+      {selectedIncident && (
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          size="md"
+        >
+          <ModalContent>
+            <ModalHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-danger/10 p-2">
+                  <XCircle className="h-5 w-5 text-danger" />
+                </div>
+                <h3 className="text-xl font-bold">Supprimer l'incident</h3>
+              </div>
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-gray-600 dark:text-gray-300">
+                Êtes-vous sûr de vouloir supprimer l'incident <strong>"{selectedIncident.titre}"</strong> ?
+              </p>
+              <p className="text-sm text-danger">
+                Cette action est irréversible.
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="light"
+                onPress={() => setShowDeleteModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                color="danger"
+                onPress={handleDeleteIncident}
+                isLoading={isDeleting}
+              >
+                {isDeleting ? "Suppression..." : "Supprimer"}
+              </Button>
             </ModalFooter>
           </ModalContent>
         </Modal>

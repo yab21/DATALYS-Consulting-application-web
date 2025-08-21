@@ -11,7 +11,7 @@ const Header = (props: {
   setSidebarOpen: (arg0: boolean) => void;
 }) => {
   // Données utilisateur statiques pour la démo
-  const [userName] = useState({ firstName: "DATALYS", lastName: "User" });
+  const [userName] = useState({ firstName: "DATALYS", lastName: "Utilisateur" });
 
   return (
     <header className="sticky top-0 z-999 flex w-full border-b border-gray-200 bg-white/80 backdrop-blur-xl dark:border-gray-700 dark:bg-gray-900/80">
