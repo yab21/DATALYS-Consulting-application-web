@@ -155,6 +155,61 @@ export class ProjectsService {
   }
 
   /**
+   * Récupérer les projets d'un partenaire spécifique (pour les utilisateurs partenaires)
+   */
+  async getPartnerProjects(partnerId: number): Promise<Project[]> {
+    try {
+      console.log(`📡 Appel API getPartnerProjects pour partenaire ${partnerId}...`);
+      
+      const response = await fetch(
+        buildApiUrl(`/dashboard/partner/${partnerId}/projects`),
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify({
+            index: 0,
+            size: 100
+          }),
+        }
+      );
+
+      console.log("📨 Statut de la réponse:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("✅ Réponse dashboard partner projects:", result);
+
+      if (result.success && result.data?.projects) {
+        // Transformer les données du dashboard vers le format Project
+        const transformedProjects: Project[] = result.data.projects.map((project: any) => ({
+          id: project.id,
+          title: project.name || project.title,
+          partner_name: project.partner_name || null,
+          partner_id: partnerId,
+          is_active: project.is_active !== false, // Par défaut true si non spécifié
+          is_deleted: project.is_deleted || false,
+          created_at: project.created_at || new Date().toISOString(),
+          updated_at: project.updated_at || new Date().toISOString(),
+          created_by: project.created_by || 0,
+          updated_by: project.updated_by || 0,
+        }));
+        
+        console.log("📝 Projets du partenaire transformés:", transformedProjects);
+        return transformedProjects;
+      } else {
+        console.log("📄 Aucun projet trouvé pour le partenaire");
+        return [];
+      }
+    } catch (error) {
+      console.error("❌ Erreur lors de la récupération des projets du partenaire:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Récupérer les projets par partenaire (par nom)
    */
   async getProjectsByPartner(partnerName: string): Promise<Project[]> {

@@ -37,30 +37,46 @@ class ApiInterceptor {
   private isTokenExpired(
     response: ApiErrorResponse,
     statusCode?: number,
+    url?: string,
   ): boolean {
     const expiredMessages = [
       "token expiré",
       "token expired",
-      "unauthorized",
-      "access denied",
-      "forbidden",
     ];
 
-    // Vérifier le message d'erreur
+    // Messages spécifiques qui indiquent un vrai token expiré
+    const tokenExpiredMessages = [
+      "token has expired",
+      "jwt expired",
+      "session expired",
+    ];
+
+    // Vérifier d'abord les messages explicites de token expiré
     if (response?.message) {
       const message = response.message.toLowerCase();
+      if (tokenExpiredMessages.some((msg) => message.includes(msg))) {
+        return true;
+      }
       if (expiredMessages.some((msg) => message.includes(msg))) {
         return true;
       }
     }
 
-    // Vérifier le statut
+    // Vérifier le statut avec message de token
     if (response?.status === "error" && response?.message?.includes("Token")) {
       return true;
     }
 
-    // Vérifier les codes de statut HTTP
+    // Pour les erreurs 401/403, être plus sélectif
     if (statusCode === 401 || statusCode === 403) {
+      // Si l'URL contient "projects" et qu'il n'y a pas de message explicite de token expiré,
+      // cela pourrait être un problème de permissions plutôt qu'un token expiré
+      if (url && url.includes('/projects/') && !response?.message?.toLowerCase().includes('token')) {
+        console.warn('Erreur 401/403 sur l\'API projects - possibleité de problème de permissions plutôt que token expiré');
+        return false;
+      }
+      
+      // Pour les autres endpoints, considérer comme token expiré
       return true;
     }
 
@@ -110,12 +126,12 @@ class ApiInterceptor {
           await errorHandler.handleError(errorDetails);
         }
 
-        if (this.isTokenExpired(errorData, response.status)) {
+        if (this.isTokenExpired(errorData, response.status, response.url)) {
           this.handleTokenExpiration();
         }
       } catch (error) {
         // Si ce n'est pas du JSON valide, vérifier le statut HTTP
-        if (this.isTokenExpired({}, response.status)) {
+        if (this.isTokenExpired({}, response.status, response.url)) {
           this.handleTokenExpiration();
         }
 
