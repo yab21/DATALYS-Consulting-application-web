@@ -1,25 +1,51 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Bell, X, CheckCircle, AlertTriangle, Info, MessageSquare } from "lucide-react";
+import messagesService from "@/services/messages";
 
 const SimpleDropdownNotification = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   
-  // Charger les notifications depuis localStorage
+  // Charger les notifications depuis localStorage ET l'API
   useEffect(() => {
-    const loadNotifications = () => {
+    const loadNotifications = async () => {
       try {
+        // 1. Charger depuis localStorage (notifications FCM)
         const stored = localStorage.getItem('datalys-notifications');
+        let localNotifications: any[] = [];
         if (stored) {
           const parsed = JSON.parse(stored);
-          setNotifications(parsed.map((n: any) => ({
+          localNotifications = parsed.map((n: any) => ({
             ...n,
-            timestamp: new Date(n.timestamp)
-          })));
+            timestamp: new Date(n.timestamp),
+            source: 'fcm'
+          }));
+        }
+
+        // 2. Charger depuis l'API (notifications backend)
+        try {
+          const apiResponse = await messagesService.getUnreadNotifications(0, 10);
+          const apiNotifications = (apiResponse.items || []).map((n: any) => ({
+            id: `api-${n.id}`,
+            type: n.type === 'notification' ? 'message' : n.type,
+            title: n.title,
+            message: n.description,
+            timestamp: new Date(n.created_at),
+            priority: n.priority,
+            read: n.is_read,
+            source: 'api'
+          }));
+
+          // 3. Combiner les deux sources (éviter les doublons)
+          const allNotifications = [...apiNotifications, ...localNotifications];
+          setNotifications(allNotifications);
+        } catch (apiError) {
+          console.warn('Erreur API notifications, utilisation localStorage uniquement:', apiError);
+          setNotifications(localNotifications);
         }
       } catch (error) {
-        // Ignore silently
+        console.error('Erreur chargement notifications:', error);
       }
     };
 
@@ -34,8 +60,8 @@ const SimpleDropdownNotification = () => {
 
     window.addEventListener('storage', handleStorageChange);
     
-    // Polling pour les changements internes
-    const interval = setInterval(loadNotifications, 2000);
+    // Polling pour recharger depuis l'API toutes les 10 secondes
+    const interval = setInterval(loadNotifications, 10000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -55,10 +81,24 @@ const SimpleDropdownNotification = () => {
   };
 
   // Supprimer une notification
-  const removeNotification = (id: string) => {
-    const updated = notifications.filter((n: any) => n.id !== id);
-    setNotifications(updated);
-    localStorage.setItem('datalys-notifications', JSON.stringify(updated));
+  const removeNotification = async (id: string) => {
+    try {
+      // Si c'est une notification API, la marquer comme lue sur le backend
+      if (id.startsWith('api-')) {
+        const actualId = id.replace('api-', '');
+        await messagesService.markNotificationAsRead(actualId);
+      }
+      
+      // Supprimer localement
+      const updated = notifications.filter((n: any) => n.id !== id);
+      setNotifications(updated);
+      
+      // Mettre à jour localStorage pour les notifications FCM uniquement
+      const localNotifications = updated.filter((n: any) => n.source === 'fcm');
+      localStorage.setItem('datalys-notifications', JSON.stringify(localNotifications));
+    } catch (error) {
+      console.error('Erreur suppression notification:', error);
+    }
   };
 
   // Marquer toutes comme lues

@@ -61,6 +61,13 @@ export interface CreateMessageRequest {
   recipient_id?: number;
 }
 
+export interface CreateNotificationRequest {
+  title: string;
+  description: string;
+  assigned_to?: number;
+  priority?: "faible" | "moyenne" | "haute" | "critique";
+}
+
 export interface ReplyMessageRequest {
   parent_id: string;
   description: string;
@@ -126,6 +133,88 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur envoi message:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Envoyer une notification (pour admin → partenaires)
+   */
+  async sendNotification(data: CreateNotificationRequest): Promise<{ message: Message; code: number }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/notifications/send`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de l\'envoi de la notification');
+      }
+
+      const result = await response.json();
+      return {
+        message: result.items[0],
+        code: result.code
+      };
+    } catch (error) {
+      console.error('Erreur envoi notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Récupérer les notifications non lues
+   */
+  async getUnreadNotifications(index: number = 0, size: number = 20): Promise<MessagesResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/notifications/unread`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          index,
+          size
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la récupération des notifications');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur récupération notifications:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Marquer une notification comme lue
+   */
+  async markNotificationAsRead(notificationId: string): Promise<{ success: boolean; code: number }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/notifications/mark-read`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          id: notificationId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors du marquage');
+      }
+
+      const result = await response.json();
+      return {
+        success: true,
+        code: result.code
+      };
+    } catch (error) {
+      console.error('Erreur marquage notification:', error);
       throw error;
     }
   }

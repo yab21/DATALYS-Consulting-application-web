@@ -35,8 +35,10 @@ import { useAuth } from "@/context/AuthContext";
 import messagesService, { 
   Message, 
   CreateMessageRequest,
+  CreateNotificationRequest,
   ReplyMessageRequest 
 } from "@/services/messages";
+import { UsersService, User } from "@/services/users";
 
 // Types pour les conversations groupées
 interface Conversation {
@@ -68,9 +70,15 @@ const ModernMessagesInterface: React.FC = () => {
     title: "",
     description: "",
     priority: "moyenne" as "faible" | "moyenne" | "haute" | "critique",
-    project_id: ""
+    project_id: "",
+    recipient_type: "normal" as "normal" | "specific_partner" | "all_partners",
+    recipient_id: ""
   });
   const [sendingNewMessage, setSendingNewMessage] = useState(false);
+  
+  // États pour les utilisateurs (admins seulement)
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   
   // État pour réponse
   const [replyText, setReplyText] = useState("");
@@ -92,6 +100,30 @@ const ModernMessagesInterface: React.FC = () => {
   useEffect(() => {
     loadMessages();
   }, []);
+
+  // Charger les utilisateurs quand un admin ouvre le modal
+  const loadUsers = async () => {
+    if (user?.role_id !== 1 && String(user?.role_id) !== "1") return; // Seulement pour les admins
+    
+    try {
+      setLoadingUsers(true);
+      
+      // Récupérer tous les utilisateurs actifs
+      const result = await UsersService.getUsersByCriteria({
+        index: 0,
+        size: 100,
+        data: { is_active: true }
+      });
+      
+      if (result && result.items && result.items.length > 0) {
+        setUsers(result.items);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des utilisateurs:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   // Scroll vers le bas automatiquement
   useEffect(() => {
@@ -210,21 +242,42 @@ const ModernMessagesInterface: React.FC = () => {
     try {
       setSendingNewMessage(true);
       
-      const messageData: CreateMessageRequest = {
-        title: newMessage.title.trim(),
-        description: newMessage.description.trim(),
-        priority: newMessage.priority,
-        project_id: newMessage.project_id ? parseInt(newMessage.project_id) : undefined
-      };
+      const isAdmin = user?.role_id === 1 || String(user?.role_id) === "1";
+      const isTargetingPartners = isAdmin && newMessage.recipient_type !== "normal";
       
-      await messagesService.sendMessage(messageData);
+      if (isTargetingPartners) {
+        // Admin envoie vers utilisateurs → utiliser l'API notifications
+        const notificationData: CreateNotificationRequest = {
+          title: newMessage.title.trim(),
+          description: newMessage.description.trim(),
+          priority: newMessage.priority,
+          // Si utilisateur spécifique, utiliser assigned_to avec l'ID utilisateur
+          ...(newMessage.recipient_type === "specific_partner" && newMessage.recipient_id && {
+            assigned_to: parseInt(newMessage.recipient_id)
+          })
+        };
+        
+        await messagesService.sendNotification(notificationData);
+      } else {
+        // Message normal → utiliser l'API messages classique
+        const messageData: CreateMessageRequest = {
+          title: newMessage.title.trim(),
+          description: newMessage.description.trim(),
+          priority: newMessage.priority,
+          project_id: newMessage.project_id ? parseInt(newMessage.project_id) : undefined
+        };
+        
+        await messagesService.sendMessage(messageData);
+      }
       
       // Réinitialiser le formulaire
       setNewMessage({
         title: "",
         description: "",
         priority: "moyenne",
-        project_id: ""
+        project_id: "",
+        recipient_type: "normal",
+        recipient_id: ""
       });
       
       setShowNewMessageModal(false);
@@ -307,7 +360,13 @@ const ModernMessagesInterface: React.FC = () => {
           <Button
             color="primary"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => setShowNewMessageModal(true)}
+            onPress={() => {
+              setShowNewMessageModal(true);
+              // Charger les utilisateurs immédiatement pour les admins
+              if (user?.role_id === 1 || String(user?.role_id) === "1") {
+                loadUsers();
+              }
+            }}
             className="bg-gradient-to-r from-blue-500 to-blue-600"
           >
             Nouveau Message
@@ -575,6 +634,66 @@ const ModernMessagesInterface: React.FC = () => {
                       <SelectItem key="critique" value="critique">🔴 Critique</SelectItem>
                     </Select>
                   </div>
+
+                  {/* Section Destinataires - seulement pour les admins */}
+                  {(user?.role_id === 1 || String(user?.role_id) === "1") && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Destinataires
+                      </label>
+                      <Select
+                        placeholder="Sélectionner le type de destinataire"
+                        selectedKeys={[newMessage.recipient_type]}
+                        onSelectionChange={(keys) => {
+                          const recipientType = Array.from(keys)[0] as "normal" | "specific_partner" | "all_partners";
+                          setNewMessage({...newMessage, recipient_type: recipientType, recipient_id: ""});
+                        }}
+                        variant="bordered"
+                        size="lg"
+                      >
+                        <SelectItem key="normal" value="normal">Message normal</SelectItem>
+                        <SelectItem key="specific_partner" value="specific_partner">Utilisateur spécifique</SelectItem>
+                        <SelectItem key="all_partners" value="all_partners">Tous les utilisateurs</SelectItem>
+                      </Select>
+                      
+                      {/* Sélection de l'utilisateur spécifique */}
+                      {newMessage.recipient_type === "specific_partner" && (
+                        <div className="mt-3">
+                          <Select
+                            placeholder="Sélectionner un utilisateur"
+                            selectionMode="single"
+                            selectedKeys={newMessage.recipient_id ? new Set([newMessage.recipient_id]) : new Set()}
+                            onSelectionChange={(keys) => {
+                              const keysArray = Array.from(keys);
+                              const recipientId = keysArray[0] as string;
+                              if (recipientId && recipientId !== 'undefined') {
+                                setNewMessage({...newMessage, recipient_id: recipientId});
+                              }
+                            }}
+                            variant="bordered"
+                            size="lg"
+                            isLoading={loadingUsers}
+                            aria-label="Sélectionner un utilisateur"
+                            onOpenChange={(isOpen) => {
+                              if (isOpen && users.length === 0) {
+                                loadUsers();
+                              }
+                            }}
+                          >
+                            {users.map((user) => (
+                              <SelectItem 
+                                key={user.id.toString()} 
+                                value={user.id.toString()}
+                                textValue={`${user.name} (${user.email})`}
+                              >
+                                {user.name} ({user.email})
+                              </SelectItem>
+                            ))}
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">ID du Projet</label>

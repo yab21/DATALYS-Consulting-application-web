@@ -80,6 +80,7 @@ const GestionMessages: React.FC = () => {
     loadMessages();
   }, []);
 
+
   // Filtrage des messages
   useEffect(() => {
     let filtered = messages;
@@ -597,6 +598,7 @@ const GestionMessages: React.FC = () => {
                       <SelectItem key="critique" value="critique">🔴 Critique</SelectItem>
                     </Select>
                   </div>
+
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">

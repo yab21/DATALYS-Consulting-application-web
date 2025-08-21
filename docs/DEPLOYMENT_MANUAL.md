@@ -87,6 +87,7 @@ pm2 stop datalys-app
 ### 3.2 Récupérer les Nouvelles Modifications
 
 ```bash
+
 # Récupérer les dernières modifications
 git fetch origin
 
