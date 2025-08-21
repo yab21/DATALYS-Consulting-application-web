@@ -1,15 +1,20 @@
 import Link from "next/link";
 import SidebarDropdown from "@/components/TableauDeBord/Sidebar/SidebarDropdown";
 import { motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 const SidebarItem = ({ item, pageName, setPageName }: any) => {
+  const pathname = usePathname();
   const handleClick = () => {
     const updatedPageName =
       pageName !== item.label.toLowerCase() ? item.label.toLowerCase() : "";
     return setPageName(updatedPageName);
   };
 
-  const isActive = pageName === item.label.toLowerCase();
+  // Vérifier si c'est un menu parent actif (pour les dropdowns)
+  const isActive = item.children ? 
+    (pageName === item.label.toLowerCase() || item.children.some((child: any) => pathname === child.route)) :
+    pathname === item.route;
 
   return (
     <>
