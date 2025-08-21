@@ -217,7 +217,7 @@ server {
     server_name applicationweb.datalysconsulting.com www.applicationweb.datalysconsulting.com;
 
     # SSL sera configuré par Certbot
-    
+
     # Gzip Compression
     gzip on;
     gzip_vary on;
@@ -411,6 +411,7 @@ chmod +x server-setup.sh
 ## 14. Troubleshooting
 
 ### Application ne démarre pas
+
 ```bash
 # Vérifier les logs d'erreur
 pm2 logs datalys-app --err
@@ -420,6 +421,7 @@ pm2 describe datalys-app
 ```
 
 ### Port déjà utilisé
+
 ```bash
 # Voir quel processus utilise le port
 netstat -tulpn | grep :3000
@@ -431,6 +433,7 @@ kill -9 [PID]
 ```
 
 ### Problèmes de mémoire
+
 ```bash
 # Augmenter la limite mémoire dans ecosystem.config.js
 # max_memory_restart: "2G"
@@ -442,6 +445,7 @@ pm2 restart ecosystem.config.js --env production
 ## 9. Sauvegarde et Rollback
 
 ### Création d'une sauvegarde avant déploiement
+
 ```bash
 # Créer une branche de sauvegarde
 git branch backup-$(date +%Y%m%d-%H%M%S)
@@ -451,6 +455,7 @@ git tag backup-$(date +%Y%m%d-%H%M%S)
 ```
 
 ### Rollback en cas de problème
+
 ```bash
 # Revenir au commit précédent
 git reset --hard HEAD~1

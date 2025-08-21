@@ -5,6 +5,7 @@ import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { Button } from "@nextui-org/button";
 import { Input, Checkbox } from "@nextui-org/react";
 import { useRouter } from "next/navigation";
+import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
 
 const ChangerMotDePasse = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -17,6 +18,7 @@ const ChangerMotDePasse = () => {
   const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const router = useRouter();
+  const { showNotification } = useNotifications();
 
   // Validation du mot de passe
   const validatePassword = (password: string): boolean => {
@@ -79,7 +81,10 @@ const ChangerMotDePasse = () => {
 
     // Simulate password change
     setTimeout(() => {
-      alert("Mot de passe changé avec succès ! (Simulation)");
+      showNotification(notificationHelpers.success(
+        "Succès",
+        "Mot de passe changé avec succès ! (Simulation)"
+      ));
       setLoading(false);
       // Reset form
       setCurrentPassword("");

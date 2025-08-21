@@ -28,7 +28,6 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { projectsService, Project } from "@/services/projects";
-import { partnersService } from "@/services/partners";
 import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import Link from "next/link";
@@ -153,46 +152,61 @@ const MonEspacePartenaire: React.FC = () => {
   // Chargement des données du partner
   useEffect(() => {
     const loadPartnerData = async () => {
-      if (!isAuthenticated || !user?.partner_id) return;
+      if (!isAuthenticated || !user) {
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       try {
         const token = localStorage.getItem("authToken");
         if (token) {
           projectsService.setToken(token);
-          partnersService.setToken(token);
           
-          // Récupérer d'abord les informations du partenaire
-          const partnersResponse = await partnersService.getPartners({
-            index: 0,
-            size: 1,
-            data: { is_active: true }
+          // Solution similaire à celle utilisée dans OptimizedProjectList
+          // Récupérer tous les projets puis filtrer selon l'utilisateur
+          const allProjects = await projectsService.getActiveProjects();
+          
+          let userProjects: Project[] = [];
+          
+          // Si l'utilisateur a un partner_id, filtrer par celui-ci
+          if (user.partner_id) {
+            userProjects = allProjects.filter(project => 
+              project.partner_id === user.partner_id
+            );
+          } else {
+            // Utiliser la même logique de correspondance manuelle que dans OptimizedProjectList
+            const manualUserPartnerMapping: Record<string, number> = {
+              'beyem': 24,  // beyem correspond au partenaire Orange (ID 24)
+            };
+            
+            const userPartnerMapping = manualUserPartnerMapping[user.name?.toLowerCase() || ''];
+            if (userPartnerMapping) {
+              userProjects = allProjects.filter(project => 
+                project.partner_id === userPartnerMapping
+              );
+            } else {
+              // Fallback: projets créés/modifiés par l'utilisateur
+              userProjects = allProjects.filter(project => 
+                project.created_by === user.id || project.updated_by === user.id
+              );
+            }
+          }
+          
+          setProjects(userProjects);
+
+          // Calculer les statistiques
+          const activeProjects = userProjects.filter((p) => p.is_active).length;
+          const completedProjects = userProjects.filter((p) => !p.is_active).length;
+
+          setStats({
+            totalProjects: userProjects.length,
+            activeProjects,
+            completedProjects,
+            totalDocuments: userProjects.length * 3, // Estimation
+            recentActivity: 12, // Simulation
+            lastLogin: new Date().toISOString(),
           });
-          
-          let partnerName = "";
-          if (partnersResponse.items && partnersResponse.items.length > 0) {
-            const partner = partnersResponse.items.find(p => p.id === user.partner_id);
-            partnerName = partner?.name || "";
-          }
-          
-          if (partnerName) {
-            // Charger les projets du partner par nom
-            const projectsData = await projectsService.getProjectsByPartner(partnerName);
-            setProjects(projectsData);
-
-            // Calculer les statistiques
-            const activeProjects = projectsData.filter((p) => p.is_active).length;
-            const completedProjects = projectsData.filter((p) => !p.is_active).length;
-
-            setStats({
-              totalProjects: projectsData.length,
-              activeProjects,
-              completedProjects,
-              totalDocuments: projectsData.length * 3, // Estimation
-              recentActivity: 12, // Simulation
-              lastLogin: new Date().toISOString(),
-            });
-          }
         }
       } catch (error) {
         console.error("Erreur lors du chargement des données partner:", error);
@@ -208,7 +222,7 @@ const MonEspacePartenaire: React.FC = () => {
     };
 
     loadPartnerData();
-  }, [isAuthenticated, user?.partner_id, showNotification]);
+  }, [isAuthenticated, user, showNotification]);
 
   const getFileIcon = (type: string) => {
     switch (type.toLowerCase()) {

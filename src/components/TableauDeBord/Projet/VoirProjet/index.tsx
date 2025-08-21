@@ -52,7 +52,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
   const [selectedFolder, setSelectedFolder] = useState<FolderType | null>(null);
   const [fileRefreshKey, setFileRefreshKey] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   // Charger les données réelles du projet
   useEffect(() => {
@@ -432,8 +432,8 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                       onFolderSelect={handleFolderSelect}
                       onFileUpload={handleFolderManagerUpload}
                       onFileUploaded={handleFileUploaded}
-                      allowCreateFolder={true}
-                      allowDeleteFolder={true}
+                      allowCreateFolder={isAdmin()}
+                      allowDeleteFolder={isAdmin()}
                       className="p-6"
                     />
                   </div>
@@ -452,9 +452,9 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                           projectId={projectId}
                           currentFolderId={null}
                           rootPath="/"
-                          allowUpload={true}
-                          allowDelete={true}
-                          allowCreateFolder={true}
+                          allowUpload={isAdmin()}
+                          allowDelete={isAdmin()}
+                          allowCreateFolder={isAdmin()}
                           onFileUpload={handleFileManagerUpload}
                           uploadedFiles={uploadedFiles}
                         />
@@ -476,9 +476,9 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                           projectId={projectId}
                           currentFolderId={selectedFolder.id.toString()}
                           rootPath={`/${selectedFolder.name}`}
-                          allowUpload={true}
-                          allowDelete={true}
-                          allowCreateFolder={true}
+                          allowUpload={isAdmin()}
+                          allowDelete={isAdmin()}
+                          allowCreateFolder={isAdmin()}
                           onFileUpload={handleFileManagerUpload}
                           uploadedFiles={uploadedFiles.filter(file => file.folder_id === selectedFolder.id)}
                         />

@@ -60,10 +60,12 @@ const OptimizedProjectList: React.FC = () => {
 
   // Charger les données initiales
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       loadInitialData();
     }
-  }, [isAuthenticated]);
+    // Suppression de la redirection automatique car elle peut interférer
+    // avec le système d'authentification existant (ProtectedRoute)
+  }, [isAuthenticated, user]);
 
   // Filtrer les projets
   useEffect(() => {
@@ -74,21 +76,163 @@ const OptimizedProjectList: React.FC = () => {
     try {
       setLoading(true);
       
-      // Charger les partenaires et les projets en parallèle
-      const [partnersResponse, projectsResponse] = await Promise.all([
-        projectsService.getPartnerNames(),
-        projectsService.getActiveProjects()
-      ]);
+      // Vérifier les permissions avant de charger les données
+      if (!user) {
+        showNotification(notificationHelpers.error(
+          "Erreur d'authentification",
+          "Utilisateur non connecté"
+        ));
+        return;
+      }
+
+      // Vérifier si l'utilisateur peut accéder aux projets
+      const projectPermissions = user.role_id === 1 ? // ADMIN
+        { canRead: true, canModify: true } :
+        user.role_id === 2 ? // PARTNER  
+        { canRead: true, canModify: false } :
+        { canRead: false, canModify: false };
+
+      if (!projectPermissions.canRead) {
+        showNotification(notificationHelpers.error(
+          "Accès refusé",
+          "Vous n'avez pas les permissions pour accéder aux projets"
+        ));
+        return;
+      }
       
-      setPartnerNames(partnersResponse);
-      setProjects(projectsResponse);
+      // Charger les données selon le rôle
+      if (user.role_id === 1) { // ADMIN - peut voir tous les projets
+        const [partnersResponse, projectsResponse] = await Promise.all([
+          projectsService.getPartnerNames(),
+          projectsService.getActiveProjects()
+        ]);
+        
+        setPartnerNames(partnersResponse);
+        setProjects(projectsResponse);
+      } else if (user.role_id === 2) { // PARTNER - ne peut voir que ses projets
+        // Pour les partenaires, charger tous les projets puis filtrer
+        const userProjects = await projectsService.getActiveProjects();
+        
+        console.log("📊 Projets chargés:", userProjects.length);
+        console.log("🔍 Premier projet (pour debug):", userProjects[0]);
+        
+        // Filtrer les projets par partner_id si il existe
+        let filteredProjects = userProjects;
+        if (user.partner_id) {
+          filteredProjects = userProjects.filter(project => 
+            project.partner_id === user.partner_id
+          );
+          console.log(`🔍 Projets filtrés par partner_id ${user.partner_id}:`, filteredProjects.length);
+        } else {
+          // Solution temporaire : Pour les utilisateurs partenaires sans partner_id,
+          // on va d'abord essayer de trouver une correspondance dans les projets
+          console.log("⚠️ Aucun partner_id trouvé dans les données utilisateur");
+          console.log("🔍 Tentative de correspondance par nom d'utilisateur...");
+          
+          // Chercher si le nom d'utilisateur correspond à un nom de partenaire
+          filteredProjects = userProjects.filter(project => {
+            // Vérifier si l'utilisateur est le créateur/éditeur du projet
+            if (project.created_by === user.id || project.updated_by === user.id) {
+              console.log(`✅ Projet assigné par création/modification: ${project.title}`);
+              return true;
+            }
+            
+            // Vérifier si le nom du partenaire contient le nom de l'utilisateur
+            if (project.partner_name && user.name) {
+              const partnerNameLower = project.partner_name.toLowerCase();
+              const userNameLower = user.name.toLowerCase();
+              if (partnerNameLower.includes(userNameLower) || userNameLower.includes(partnerNameLower)) {
+                console.log(`✅ Projet trouvé par nom correspondant: ${project.title} (partenaire: ${project.partner_name})`);
+                return true;
+              }
+            }
+            
+            // Vérifier dans les données du partenaire si disponible dans la réponse API brute
+            const projectWithPartner = project as any;
+            if (projectWithPartner.partner && user.name) {
+              const partnerData = projectWithPartner.partner;
+              if ((partnerData.name && partnerData.name.toLowerCase().includes(user.name.toLowerCase())) ||
+                  (partnerData.email === user.email)) {
+                console.log(`✅ Projet trouvé via données partenaire: ${project.title}`);
+                return true;
+              }
+            }
+            
+            return false;
+          });
+          
+          console.log(`📋 Projets trouvés par correspondance:`, filteredProjects.length);
+          
+          // Solution de fallback : si aucun projet trouvé par correspondance,
+          if (filteredProjects.length === 0) {
+            console.log("📢 Aucune correspondance automatique trouvée");
+            
+            // Solution temporaire : Table de correspondance manuelle pour les utilisateurs connus
+            // Cette table devrait être remplacée par une vraie base de données ou une API
+            const manualUserPartnerMapping: Record<string, number> = {
+              'beyem': 24,  // beyem correspond au partenaire Orange (ID 24)
+              // Ajouter d'autres correspondances si nécessaire
+            };
+            
+            const userPartnerMapping = manualUserPartnerMapping[user.name.toLowerCase()];
+            if (userPartnerMapping) {
+              console.log(`🔧 Correspondance manuelle trouvée: ${user.name} → partner_id ${userPartnerMapping}`);
+              
+              // Filtrer les projets par le partner_id trouvé
+              filteredProjects = userProjects.filter(project => 
+                project.partner_id === userPartnerMapping
+              );
+              
+              console.log(`✅ Projets trouvés via correspondance manuelle: ${filteredProjects.length}`);
+              
+              if (filteredProjects.length > 0) {
+                showNotification(notificationHelpers.info(
+                  "Projets chargés",
+                  `${filteredProjects.length} projet(s) trouvé(s) pour votre compte`
+                ));
+              }
+            }
+            
+            // Si toujours aucun projet trouvé après la correspondance manuelle
+            if (filteredProjects.length === 0) {
+              console.log("💡 L'utilisateur partenaire devra contacter l'administrateur pour associer ses projets");
+              showNotification(notificationHelpers.warning(
+                "Aucun projet assigné", 
+                "Aucun projet n'est actuellement assigné à votre compte. Contactez l'administrateur si vous devriez avoir accès à des projets."
+              ));
+            }
+          }
+        }
+        
+        setProjects(filteredProjects);
+        
+        // Pas besoin de charger tous les partenaires
+        setPartnerNames([]); 
+      } else {
+        showNotification(notificationHelpers.error(
+          "Accès refusé", 
+          `Rôle non reconnu: ${user.role_id}`
+        ));
+        return;
+      }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur lors du chargement:", error);
-      showNotification(notificationHelpers.error(
-        "Erreur",
-        "Impossible de charger les données"
-      ));
+      
+      // Gestion spécifique de l'erreur 401 (token expiré)
+      if (error.message && error.message.includes('401')) {
+        showNotification(notificationHelpers.error(
+          "Session expirée",
+          "Votre session a expiré. Vous allez être redirigé vers la connexion."
+        ));
+        // Ne pas rediriger manuellement, laisser TokenExpirationHandler s'en charger
+        // car il gère mieux la logique d'expiration de token
+      } else {
+        showNotification(notificationHelpers.error(
+          "Erreur",
+          "Impossible de charger les données"
+        ));
+      }
     } finally {
       setLoading(false);
     }
@@ -218,21 +362,24 @@ const OptimizedProjectList: React.FC = () => {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Gestion des Projets
+            {user?.role_id === 1 ? "Gestion des Projets" : "Mes Projets"}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             {filteredProjects.length} projet(s) trouvé(s)
           </p>
         </div>
         
-        <Button
-          color="primary"
-          startContent={<Plus className="w-4 h-4" />}
-          onPress={() => router.push("/tableaudebord/projet/ajouter")}
-          className="bg-gradient-to-r from-blue-500 to-blue-600"
-        >
-          Nouveau Projet
-        </Button>
+        {/* Bouton nouveau projet uniquement pour les admins */}
+        {user?.role_id === 1 && (
+          <Button
+            color="primary"
+            startContent={<Plus className="w-4 h-4" />}
+            onPress={() => router.push("/tableaudebord/projet/ajouter")}
+            className="bg-gradient-to-r from-blue-500 to-blue-600"
+          >
+            Nouveau Projet
+          </Button>
+        )}
       </div>
 
       {/* Filtres */}
@@ -249,27 +396,30 @@ const OptimizedProjectList: React.FC = () => {
               />
             </div>
             
-            <div className="w-full md:w-64">
-              <Select
-                label="Filtrer par partenaire"
-                selectedKeys={[selectedPartner]}
-                onSelectionChange={handlePartnerChange}
-                variant="bordered"
-                startContent={<Filter className="w-4 h-4" />}
-                classNames={{
-                  trigger: "min-h-12",
-                  value: "text-left",
-                  selectorIcon: "right-3"
-                }}
-                items={[{ key: "tous", label: "Tous les partenaires" }, ...partnerNames.map(name => ({ key: name, label: name }))]}
-              >
-                {(item) => (
-                  <SelectItem key={item.key} value={item.key}>
-                    {item.label}
-                  </SelectItem>
-                )}
-              </Select>
-            </div>
+            {/* Filtrage par partenaire uniquement pour les admins */}
+            {user?.role_id === 1 && (
+              <div className="w-full md:w-64">
+                <Select
+                  label="Filtrer par partenaire"
+                  selectedKeys={[selectedPartner]}
+                  onSelectionChange={handlePartnerChange}
+                  variant="bordered"
+                  startContent={<Filter className="w-4 h-4" />}
+                  classNames={{
+                    trigger: "min-h-12",
+                    value: "text-left",
+                    selectorIcon: "right-3"
+                  }}
+                  items={[{ key: "tous", label: "Tous les partenaires" }, ...partnerNames.map(name => ({ key: name, label: name }))]}
+                >
+                  {(item) => (
+                    <SelectItem key={item.key} value={item.key}>
+                      {item.label}
+                    </SelectItem>
+                  )}
+                </Select>
+              </div>
+            )}
             
             <Button
               variant="flat"
@@ -339,23 +489,29 @@ const OptimizedProjectList: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        size="sm"
-                        onPress={() => handleEdit(project)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        size="sm"
-                        color="danger"
-                        onPress={() => handleDelete(project)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      
+                      {/* Actions de modification uniquement pour les admins */}
+                      {user?.role_id === 1 && (
+                        <>
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            onPress={() => handleEdit(project)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            color="danger"
+                            onPress={() => handleDelete(project)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

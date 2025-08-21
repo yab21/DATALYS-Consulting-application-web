@@ -51,6 +51,7 @@ import {
 import { useNotifications } from '@/components/UI/Notifications/NotificationSystem';
 import { filesService } from '@/services/files';
 import { useAuth } from '@/context/AuthContext';
+import FilePreview from '@/components/UI/FilePreview/FilePreview';
 
 // Types
 export interface FileItem {
@@ -247,6 +248,8 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [searchQuery, setSearchQuery] = useState('');
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
+  const [previewFile, setPreviewFile] = useState<any>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -526,22 +529,21 @@ export const FileManager: React.FC<FileManagerProps> = ({
   }, [showNotification]);
 
   const handleFilePreview = useCallback((file: FileItem) => {
-    // Prévisualisation basique - ouvrir dans un nouvel onglet
-    if (file.mimeType?.startsWith('image/') || file.mimeType?.includes('pdf') || file.mimeType?.startsWith('text/')) {
-      const fileId = parseInt(file.id);
-      if (!isNaN(fileId)) {
-        const previewUrl = filesService.getFileServeUrl(file.path);
-        window.open(previewUrl, '_blank');
-      }
-    } else {
-      showNotification({
-        type: 'warning',
-        title: 'Prévisualisation',
-        message: 'Type de fichier non prévisualisable',
-        duration: 3000,
-      });
-    }
-  }, [showNotification]);
+    // Convertir le FileItem en format attendu par FilePreview
+    const previewData = {
+      id: parseInt(file.id),
+      name: file.name,
+      original_name: file.name,
+      file_path: file.path,
+      file_url: filesService.getFileServeUrl(file.path),
+      size: file.size || 0,
+      mime_type: file.mimeType || '',
+      extension: file.name.split('.').pop() || ''
+    };
+    
+    setPreviewFile(previewData);
+    setIsPreviewOpen(true);
+  }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -1105,6 +1107,14 @@ export const FileManager: React.FC<FileManagerProps> = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Composant de prévisualisation de fichiers */}
+      <FilePreview
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        file={previewFile}
+        baseUrl={filesService.getBaseUrl()}
+      />
     </div>
   );
 };

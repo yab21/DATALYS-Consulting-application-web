@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLayout";
 import MonEspacePartenaire from "@/components/TableauDeBord/MonEspace";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 
@@ -10,9 +9,9 @@ export const metadata: Metadata = {
 
 export default function MonEspacePage() {
   return (
-    <DefaultLayout>
+    <>
       <Breadcrumb pageName="Mon Espace Partenaire" />
       <MonEspacePartenaire />
-    </DefaultLayout>
+    </>
   );
 }

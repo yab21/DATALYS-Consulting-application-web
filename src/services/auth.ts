@@ -18,6 +18,7 @@ export interface User {
   name: string;
   email: string;
   role_id: number;
+  partner_id?: number; // Ajouter partner_id optionnel
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -165,6 +166,7 @@ export class AuthService {
         name: data.name,
         email: data.email,
         role_id: data.role_id,
+        partner_id: data.partner_id, // Ajouter partner_id
         is_active: data.is_active,
         created_at: data.created_at,
         updated_at: data.updated_at,
@@ -178,6 +180,7 @@ export class AuthService {
       name: data.name,
       email: data.email,
       role_id: data.role_id,
+      partner_id: data.partner_id, // Ajouter partner_id
       is_active: data.is_active,
       created_at: data.created_at,
       updated_at: data.updated_at,

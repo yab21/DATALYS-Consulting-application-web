@@ -380,7 +380,26 @@ class FilesService {
    * Obtenir l'URL de prévisualisation d'un fichier pour le serveur de fichiers
    */
   getFileServeUrl(filePath: string): string {
-    return `${this.baseUrl}/files/serve/${filePath}`;
+    // Nettoyer le chemin en supprimant les slashes de début
+    const cleanPath = filePath.replace(/^\/+/, '');
+    return `${this.baseUrl}/files/serve/${cleanPath}`;
+  }
+
+  /**
+   * Obtenir l'URL de prévisualisation d'un fichier avec authentification
+   */
+  getAuthenticatedFileUrl(filePath: string): string {
+    const token = localStorage.getItem('authToken');
+    const cleanPath = filePath.replace(/^\/+/, '');
+    const baseUrl = `${this.baseUrl}/files/serve/${cleanPath}`;
+    
+    // Ajouter le token en tant que paramètre de requête si disponible
+    if (token) {
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      return `${baseUrl}${separator}token=${token}`;
+    }
+    
+    return baseUrl;
   }
 
   /**

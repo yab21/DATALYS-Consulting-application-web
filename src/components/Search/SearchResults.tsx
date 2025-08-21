@@ -199,14 +199,15 @@ function SearchResultItem({
 
   return (
     <Card 
-      className="w-full hover:shadow-md transition-shadow cursor-pointer"
-      isPressable
-      onPress={handleClick}
+      className="w-full hover:shadow-md transition-shadow"
     >
       <CardBody className="p-4">
         <div className="flex items-start justify-between gap-4">
           {/* Contenu principal */}
-          <div className="flex-1 min-w-0">
+          <div 
+            className="flex-1 min-w-0 cursor-pointer" 
+            onClick={handleClick}
+          >
             {/* En-tête avec icône et titre */}
             <div className="flex items-center gap-3 mb-2">
               <Avatar
@@ -216,7 +217,7 @@ function SearchResultItem({
               />
               
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground truncate">
+                <h3 className="font-semibold text-foreground truncate hover:text-primary transition-colors">
                   {result.title}
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
