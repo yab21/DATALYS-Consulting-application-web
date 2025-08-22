@@ -1,6 +1,5 @@
 import React from "react";
 import VoirProfil from "@/components/TableauDeBord/Profil/Voir";
-import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,11 +9,7 @@ export const metadata: Metadata = {
 };
 
 const Page = () => {
-  return (
-    <DefaultLayout>
-      <VoirProfil />
-    </DefaultLayout>
-  );
+  return <VoirProfil />;
 };
 
 export default Page;

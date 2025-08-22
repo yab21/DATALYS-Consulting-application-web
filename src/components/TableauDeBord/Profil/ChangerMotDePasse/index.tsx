@@ -2,10 +2,14 @@
 
 import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
-import { Button } from "@nextui-org/button";
 import { Input, Checkbox } from "@nextui-org/react";
 import { useRouter } from "next/navigation";
 import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { Lock, Eye, EyeOff, ArrowLeft, Save, Shield } from "lucide-react";
+import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
+import Link from "next/link";
+import { UsersService, ChangePasswordData } from "@/services/users";
+import { useAuth } from "@/context/AuthContext";
 
 const ChangerMotDePasse = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -19,6 +23,7 @@ const ChangerMotDePasse = () => {
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const router = useRouter();
   const { showNotification } = useNotifications();
+  const { user } = useAuth();
 
   // Validation du mot de passe
   const validatePassword = (password: string): boolean => {
@@ -51,7 +56,7 @@ const ChangerMotDePasse = () => {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError(null);
 
     // Validation des champs
@@ -77,22 +82,79 @@ const ChangerMotDePasse = () => {
       return;
     }
 
+    // Vérifier que l'utilisateur est connecté
+    if (!user || !user.id) {
+      setError("Erreur : utilisateur non connecté");
+      return;
+    }
+
     setLoading(true);
 
-    // Simulate password change
-    setTimeout(() => {
-      showNotification(notificationHelpers.success(
-        "Succès",
-        "Mot de passe changé avec succès ! (Simulation)"
+    try {
+      const passwordData: ChangePasswordData = {
+        id: user.id,
+        current_password: currentPassword,
+        new_password: newPassword
+      };
+
+      console.log("🔐 Tentative de changement de mot de passe pour l'utilisateur:", user.id);
+      
+      const response = await UsersService.changePassword(passwordData);
+      
+      console.log("📡 Réponse API changement mot de passe:", response);
+      
+      // Vérifier le succès de la réponse
+      if (response && (response.code === 200 || response.status === 'success')) {
+        showNotification(notificationHelpers.success(
+          "Mot de passe modifié !",
+          "Votre mot de passe a été changé avec succès"
+        ));
+        
+        // Reset form
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        
+        // Si l'option est cochée, maintenir les autres sessions
+        if (!keepOtherSessionsActive) {
+          // Dans ce cas, on pourrait implémenter une déconnexion de toutes les autres sessions
+          console.log("💡 Option: Déconnexion des autres sessions (non implémentée)");
+        }
+        
+        // Navigate back to profile
+        setTimeout(() => {
+          router.push("/tableaudebord/profil/voir");
+        }, 1500);
+        
+      } else {
+        throw new Error(response?.message || "Erreur lors du changement de mot de passe");
+      }
+      
+    } catch (error) {
+      console.error("❌ Erreur lors du changement de mot de passe:", error);
+      
+      let errorMessage = "Une erreur s'est produite lors du changement de mot de passe";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("mot de passe actuel")) {
+          errorMessage = "Le mot de passe actuel est incorrect";
+        } else if (error.message.includes("non connecté")) {
+          errorMessage = "Vous devez être connecté pour changer votre mot de passe";
+        } else if (error.message.includes("propre mot de passe")) {
+          errorMessage = "Vous ne pouvez changer que votre propre mot de passe";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
+      showNotification(notificationHelpers.error(
+        "Erreur",
+        errorMessage
       ));
+    } finally {
       setLoading(false);
-      // Reset form
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      // Navigate back to profile
-      router.push("/tableaudebord/profil/voir");
-    }, 1500);
+    }
   };
 
   const toggleCurrentPasswordVisibility = () => 
@@ -105,25 +167,31 @@ const ChangerMotDePasse = () => {
   return (
     <>
       <Breadcrumb pageName="Changer mot de passe" />
-      <div className="mx-auto mt-5 w-full max-w-2xl rounded-[10px]">
-        <div className="mt-8 rounded-[20px] bg-white p-8 shadow-1 dark:bg-gray-dark dark:shadow-card">
-          <div className="mb-8 text-center">
-            <h3 className="mb-2 text-[28px] font-bold text-dark dark:text-white">
-              Changer le mot de passe
-            </h3>
-            <p className="text-base text-gray-600 dark:text-gray-400">
-              Entrez votre mot de passe actuel et choisissez un nouveau mot de passe sécurisé
-            </p>
-          </div>
+      <div className="mx-auto mt-5 w-full max-w-4xl">
+        <div className="space-y-6">
+          <SectionHeader
+            title="Changer le Mot de Passe"
+            subtitle="Mettez à jour votre mot de passe pour renforcer la sécurité de votre compte"
+            icon={<Lock />}
+            actions={
+              <Link href="/tableaudebord/profil/voir">
+                <ProfessionalButton
+                  variant="outline"
+                  startContent={<ArrowLeft className="h-4 w-4" />}
+                >
+                  Retour au profil
+                </ProfessionalButton>
+              </Link>
+            }
+          />
 
-          <div className="mt-8">
-            {error && (
-              <div className="mb-6 rounded-lg bg-red-100 p-4 text-red-700">
-                {error}
-              </div>
-            )}
-
+          <ProfessionalCard>
             <div className="space-y-8">
+              {error && (
+                <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+                  {error}
+                </div>
+              )}
               <Input
                 type={isCurrentPasswordVisible ? "text" : "password"}
                 label="Mot de passe actuel"
@@ -143,39 +211,9 @@ const ChangerMotDePasse = () => {
                     onClick={toggleCurrentPasswordVisibility}
                   >
                     {isCurrentPasswordVisible ? (
-                      <svg
-                        className="text-2xl text-default-400"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                          fill="currentColor"
-                        />
-                      </svg>
+                      <Eye className="h-5 w-5 text-gray-400" />
                     ) : (
-                      <svg
-                        className="text-2xl text-default-400"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12 19.5c-4.73 0-8.76-2.93-10.5-7 1.74-4.07 5.77-7 10.5-7s8.76 2.93 10.5 7c-1.74 4.07-5.77 7-10.5 7zm0-14c-3.86 0-7.21 2.08-9 5 1.79 2.92 5.14 5 9 5s7.21-2.08 9-5c-1.79-2.92-5.14-5-9-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-                          fill="currentColor"
-                        />
-                        <path
-                          d="M2 4L22 20"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                      <EyeOff className="h-5 w-5 text-gray-400" />
                     )}
                   </button>
                 }
@@ -200,39 +238,9 @@ const ChangerMotDePasse = () => {
                     onClick={toggleNewPasswordVisibility}
                   >
                     {isNewPasswordVisible ? (
-                      <svg
-                        className="text-2xl text-default-400"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                          fill="currentColor"
-                        />
-                      </svg>
+                      <Eye className="h-5 w-5 text-gray-400" />
                     ) : (
-                      <svg
-                        className="text-2xl text-default-400"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12 19.5c-4.73 0-8.76-2.93-10.5-7 1.74-4.07 5.77-7 10.5-7s8.76 2.93 10.5 7c-1.74 4.07-5.77 7-10.5 7zm0-14c-3.86 0-7.21 2.08-9 5 1.79 2.92 5.14 5 9 5s7.21-2.08 9-5c-1.79-2.92-5.14-5-9-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-                          fill="currentColor"
-                        />
-                        <path
-                          d="M2 4L22 20"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                      <EyeOff className="h-5 w-5 text-gray-400" />
                     )}
                   </button>
                 }
@@ -257,39 +265,9 @@ const ChangerMotDePasse = () => {
                     onClick={toggleConfirmPasswordVisibility}
                   >
                     {isConfirmPasswordVisible ? (
-                      <svg
-                        className="text-2xl text-default-400"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                          fill="currentColor"
-                        />
-                      </svg>
+                      <Eye className="h-5 w-5 text-gray-400" />
                     ) : (
-                      <svg
-                        className="text-2xl text-default-400"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12 19.5c-4.73 0-8.76-2.93-10.5-7 1.74-4.07 5.77-7 10.5-7s8.76 2.93 10.5 7c-1.74 4.07-5.77 7-10.5 7zm0-14c-3.86 0-7.21 2.08-9 5 1.79 2.92 5.14 5 9 5s7.21-2.08 9-5c-1.79-2.92-5.14-5-9-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-                          fill="currentColor"
-                        />
-                        <path
-                          d="M2 4L22 20"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                      <EyeOff className="h-5 w-5 text-gray-400" />
                     )}
                   </button>
                 }
@@ -310,43 +288,68 @@ const ChangerMotDePasse = () => {
                 </p>
               </div>
 
-              <div className="mt-8 flex gap-4">
-                <Button
-                  color="primary"
-                  className="h-12 flex-1 text-base font-medium"
-                  variant="solid"
-                  size="lg"
-                  onClick={handleSubmit}
-                  isDisabled={loading}
-                >
-                  {loading ? "Changement en cours..." : "Changer le mot de passe"}
-                </Button>
-                <Button
-                  color="default"
-                  className="h-12 flex-1 text-base font-medium"
-                  variant="bordered"
-                  size="lg"
-                  onClick={() => router.push("/tableaudebord/profil/voir")}
-                  isDisabled={loading}
-                >
-                  Annuler
-                </Button>
+              <div className="border-t border-gray-200 pt-6 dark:border-gray-600">
+                <div className="flex flex-col gap-4 sm:flex-row sm:justify-end">
+                  <Link href="/tableaudebord/profil/voir">
+                    <ProfessionalButton
+                      variant="outline"
+                      size="lg"
+                      startContent={<ArrowLeft className="h-4 w-4" />}
+                      isDisabled={loading}
+                    >
+                      Annuler
+                    </ProfessionalButton>
+                  </Link>
+                  
+                  <ProfessionalButton
+                    variant="primary"
+                    size="lg"
+                    onClick={handleSubmit}
+                    isLoading={loading}
+                    startContent={!loading && <Save className="h-4 w-4" />}
+                    isDisabled={!currentPassword || !newPassword || !confirmPassword}
+                  >
+                    {loading ? "Changement en cours..." : "Changer le Mot de Passe"}
+                  </ProfessionalButton>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="mt-6">
-            <h4 className="mb-3 text-sm font-semibold text-dark dark:text-white">
-              Exigences du mot de passe :
-            </h4>
-            <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <li>• Au moins 8 caractères</li>
-              <li>• Une majuscule (A-Z)</li>
-              <li>• Une minuscule (a-z)</li>
-              <li>• Un chiffre (0-9)</li>
-              <li>• Un caractère spécial (!@#$%^&*)</li>
-            </ul>
-          </div>
+          </ProfessionalCard>
+          
+          <ProfessionalCard>
+            <SectionHeader
+              title="Exigences de Sécurité"
+              icon={<Shield />}
+              variant="compact"
+              color="primary"
+              divider
+            />
+            
+            <div className="mt-6">
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-[#4ba9b7]"></div>
+                  Au moins 8 caractères
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-[#4ba9b7]"></div>
+                  Une majuscule (A-Z)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-[#4ba9b7]"></div>
+                  Une minuscule (a-z)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-[#4ba9b7]"></div>
+                  Un chiffre (0-9)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-[#4ba9b7]"></div>
+                  Un caractère spécial (!@#$%^&*)
+                </li>
+              </ul>
+            </div>
+          </ProfessionalCard>
         </div>
       </div>
     </>

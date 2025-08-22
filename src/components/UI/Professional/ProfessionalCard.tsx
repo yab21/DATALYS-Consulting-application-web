@@ -67,9 +67,10 @@ const ProfessionalCard: React.FC<ProfessionalCardProps> = ({
     ${getVariantClasses()}
     ${getPaddingClasses()}
     ${fullWidth ? "w-full" : ""}
-    ${isHoverable ? "hover:shadow-card-2 transition-all duration-200" : ""}
-    ${isPressable ? "cursor-pointer active:scale-[0.98]" : ""}
+    ${isHoverable ? "hover:shadow-lg transition-all duration-300 hover:border-[#4ba9b7]/20" : ""}
+    ${isPressable ? "cursor-pointer active:scale-[0.98] hover:border-[#4ba9b7]/30" : ""}
     rounded-${radius}
+    font-satoshi
     ${className}
   `.trim();
 

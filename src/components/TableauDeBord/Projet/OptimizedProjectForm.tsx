@@ -2,20 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
   Input,
   Select,
   SelectItem,
   Switch,
+  Divider,
 } from "@nextui-org/react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
 import { projectsService, CreateProjectFormData } from "@/services/projects";
+import { FolderPlus, Users, Shield, Save, ArrowLeft, FileText } from "lucide-react";
+import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
+import Link from "next/link";
 
 // Interface pour le formulaire
 interface ProjectFormData {
@@ -178,125 +178,142 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
   };
 
   const cardContent = (
-    <Card className="w-full max-w-3xl mx-auto shadow-lg">
-      <CardHeader className="flex gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
-        <div className="flex flex-col w-full">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {projectId ? "Modifier le projet" : "Créer un nouveau projet"}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {projectId ? "Modifiez les informations du projet" : "Remplissez les informations du nouveau projet"}
-          </p>
-        </div>
-      </CardHeader>
-      
-      <CardBody className="p-8">
+    <div className="mx-auto max-w-4xl space-y-6">
+      <SectionHeader
+        title={projectId ? "Modifier le Projet" : "Nouveau Projet"}
+        subtitle={projectId ? "Modifiez les informations du projet" : "Créez un nouveau projet pour organiser et gérer vos dossiers"}
+        icon={<FolderPlus />}
+        actions={
+          !isModal && (
+            <Link href="/tableaudebord/projet/gerer">
+              <ProfessionalButton
+                variant="outline"
+                startContent={<ArrowLeft className="h-4 w-4" />}
+              >
+                Retour à la liste
+              </ProfessionalButton>
+            </Link>
+          )
+        }
+      />
+
+      <ProfessionalCard>
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Titre du projet */}
-          <div className="space-y-3">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Titre du projet <span className="text-red-500">*</span>
-            </label>
-            <Input
-              placeholder="Entrez le titre du projet"
-              value={formData.title}
-              onValueChange={(value) => handleInputChange("title", value)}
-              isInvalid={!!errors.title}
-              errorMessage={errors.title}
-              isRequired
-              size="lg"
-              variant="bordered"
-              classNames={{
-                input: "text-base",
-                inputWrapper: "border-2 hover:border-blue-400 focus-within:border-blue-500"
-              }}
+          {/* Informations de base */}
+          <div>
+            <SectionHeader
+              title="Informations de Base"
+              icon={<FileText />}
+              variant="compact"
+              divider
             />
-          </div>
-
-          {/* Sélection du partenaire */}
-          <div className="space-y-3">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Partenaire <span className="text-red-500">*</span>
-            </label>
-            <Select
-              placeholder="Sélectionnez un partenaire"
-              selectedKeys={formData.partner_name ? [formData.partner_name] : []}
-              onSelectionChange={(keys) => {
-                const selectedKey = Array.from(keys)[0] as string;
-                handleInputChange("partner_name", selectedKey);
-              }}
-              isInvalid={!!errors.partner_name}
-              errorMessage={errors.partner_name}
-              isLoading={loadingPartners}
-              isRequired
-              size="lg"
-              variant="bordered"
-              classNames={{
-                trigger: "border-2 hover:border-blue-400 data-[focus=true]:border-blue-500",
-                value: "text-base"
-              }}
-            >
-              {partnerNames.map((name) => (
-                <SelectItem key={name} value={name}>
-                  {name}
-                </SelectItem>
-              ))}
-            </Select>
-          </div>
-
-          {/* Statut actif */}
-          <div className="space-y-3">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Statut du projet
-            </label>
-            <div className="flex items-center justify-between p-6 border-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <div className="flex flex-col">
-                <p className="font-medium text-gray-900 dark:text-white">
-                  Projet {formData.is_active ? "actif" : "inactif"}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {formData.is_active 
-                    ? "Le projet sera visible et accessible aux utilisateurs" 
-                    : "Le projet sera masqué et inaccessible"
-                  }
-                </p>
+            
+            <div className="grid gap-6 md:grid-cols-2 mt-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Titre du projet <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="Ex: Refonte site web client"
+                  value={formData.title}
+                  onValueChange={(value) => handleInputChange("title", value)}
+                  isInvalid={!!errors.title}
+                  errorMessage={errors.title}
+                  startContent={<FileText className="h-4 w-4 text-gray-400" />}
+                  size="lg"
+                  variant="bordered"
+                />
               </div>
-              <Switch
-                isSelected={formData.is_active}
-                onValueChange={(checked) => handleInputChange("is_active", checked)}
-                color="success"
-                size="lg"
-              />
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Partenaire <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  placeholder="Sélectionnez un partenaire"
+                  selectedKeys={formData.partner_name ? [formData.partner_name] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedKey = Array.from(keys)[0] as string;
+                    handleInputChange("partner_name", selectedKey);
+                  }}
+                  isInvalid={!!errors.partner_name}
+                  errorMessage={errors.partner_name}
+                  isLoading={loadingPartners}
+                  size="lg"
+                  variant="bordered"
+                  startContent={<Users className="h-4 w-4 text-gray-400" />}
+                >
+                  {partnerNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2 mt-6">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Statut du projet
+              </label>
+              <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-[#4ba9b7]" />
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      Projet {formData.is_active ? "actif" : "inactif"}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {formData.is_active 
+                        ? "Le projet sera visible et accessible aux utilisateurs" 
+                        : "Le projet sera masqué et inaccessible"
+                      }
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  isSelected={formData.is_active}
+                  onValueChange={(checked) => handleInputChange("is_active", checked)}
+                  color="success"
+                  size="lg"
+                />
+              </div>
             </div>
           </div>
-
-          {/* Boutons d'action */}
-          <div className="flex gap-4 justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              variant="bordered"
-              onPress={handleCancel}
-              isDisabled={loading}
-              size="lg"
-              className="px-8"
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              color="primary"
-              isLoading={loading}
-              size="lg"
-              className="px-8 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-            >
-              {loading 
-                ? (projectId ? "Modification..." : "Création...") 
-                : (projectId ? "Modifier le projet" : "Créer le projet")
-              }
-            </Button>
+          
+          <Divider />
+          
+          {/* Actions */}
+          <div className="border-t border-gray-200 pt-6 dark:border-gray-600">
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-end">
+              <ProfessionalButton
+                variant="outline"
+                size="lg"
+                onClick={handleCancel}
+                isDisabled={loading}
+                startContent={<ArrowLeft className="h-4 w-4" />}
+              >
+                Annuler
+              </ProfessionalButton>
+              
+              <ProfessionalButton
+                variant="primary"
+                size="lg"
+                type="submit"
+                isLoading={loading}
+                startContent={!loading && <Save className="h-4 w-4" />}
+                isDisabled={!formData.title || !formData.partner_name}
+              >
+                {loading 
+                  ? (projectId ? "Modification..." : "Création...") 
+                  : (projectId ? "Modifier le Projet" : "Créer le Projet")
+                }
+              </ProfessionalButton>
+            </div>
           </div>
         </form>
-      </CardBody>
-    </Card>
+      </ProfessionalCard>
+    </div>
   );
 
   if (isModal) {

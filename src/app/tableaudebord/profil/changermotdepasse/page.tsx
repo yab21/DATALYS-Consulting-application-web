@@ -1,6 +1,5 @@
 import React from "react";
 import ChangerMotDePasse from "@/components/TableauDeBord/Profil/ChangerMotDePasse";
-import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,11 +9,7 @@ export const metadata: Metadata = {
 };
 
 const Page = () => {
-  return (
-    <DefaultLayout>
-      <ChangerMotDePasse />
-    </DefaultLayout>
-  );
+  return <ChangerMotDePasse />;
 };
 
 export default Page;

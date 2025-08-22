@@ -67,9 +67,9 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
     switch (color) {
       case "primary":
         return {
-          title: "text-primary-800 dark:text-primary-200",
-          subtitle: "text-primary-600 dark:text-primary-400",
-          icon: "text-primary-600 dark:text-primary-400",
+          title: "text-[#3a8a95] dark:text-[#4ba9b7]",
+          subtitle: "text-[#4ba9b7] dark:text-[#7bc5cd]",
+          icon: "text-[#4ba9b7] dark:text-[#7bc5cd]",
         };
       case "secondary":
         return {
@@ -105,6 +105,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
     ${variantClasses.container}
     ${variant === "centered" ? "text-center" : ""}
     ${divider ? "border-b border-gray-200 dark:border-gray-700" : ""}
+    font-satoshi
     ${className}
   `.trim();
 

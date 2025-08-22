@@ -111,12 +111,35 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
           ]);
         } else {
           console.error("❌ Partenaire non trouvé avec l'ID:", partnerId);
-          showNotification({
-            type: "error",
-            title: "Erreur",
-            message: "Partenaire non trouvé",
-            duration: 5000,
-          });
+          
+          // Trouver un partenaire alternatif (le premier disponible)
+          const alternativePartner = partnersData.length > 0 ? partnersData[0] : null;
+          
+          if (alternativePartner) {
+            showNotification({
+              type: "warning",
+              title: "Partenaire non trouvé",
+              message: `Le partenaire ID ${partnerId} n'existe pas. Redirection vers ${alternativePartner.name}`,
+              duration: 5000,
+            });
+            
+            // Rediriger vers le partenaire alternatif après 2 secondes
+            setTimeout(() => {
+              window.location.href = `/tableaudebord/partenaire/${alternativePartner.id}`;
+            }, 2000);
+          } else {
+            showNotification({
+              type: "error",
+              title: "Aucun partenaire disponible",
+              message: "Aucun partenaire n'est disponible dans le système.",
+              duration: 5000,
+            });
+            
+            // Rediriger vers le dashboard après 2 secondes
+            setTimeout(() => {
+              window.location.href = "/tableaudebord";
+            }, 2000);
+          }
         }
         
       } catch (error) {
@@ -127,6 +150,11 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
           message: "Impossible de charger les données du partenaire",
           duration: 5000,
         });
+        
+        // Rediriger vers le dashboard en cas d'erreur
+        setTimeout(() => {
+          window.location.href = "/tableaudebord";
+        }, 2000);
       } finally {
         setLoading(false);
       }
@@ -324,22 +352,14 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
     return (
       <div className="space-y-6">
         <Breadcrumb pageName="Détail Partenaire" />
-        <ProfessionalCard variant="outlined" className="text-center">
-          <div className="py-8">
-            <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
-            <h3 className="mb-2 text-lg font-semibold text-red-600 dark:text-red-400">
-              Partenaire Non Trouvé
-            </h3>
-            <p className="text-sm text-red-600 dark:text-red-400 mb-4">
-              Le partenaire demandé n'existe pas ou a été supprimé.
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4ba9b7] mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Redirection en cours...
             </p>
-            <Link href="/tableaudebord/partenaire/liste">
-              <ProfessionalButton variant="primary">
-                Retour à la liste
-              </ProfessionalButton>
-            </Link>
           </div>
-        </ProfessionalCard>
+        </div>
       </div>
     );
   }

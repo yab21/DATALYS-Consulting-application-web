@@ -51,7 +51,7 @@ const ProfessionalButton: React.FC<ProfessionalButtonProps> = ({
       case "primary":
         return {
           color: "primary" as const,
-          className: "bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-sm hover:shadow-md",
+          className: "bg-[#4ba9b7] hover:bg-[#3a8a95] text-white font-medium shadow-sm hover:shadow-md",
         };
       case "secondary":
         return {
@@ -88,7 +88,7 @@ const ProfessionalButton: React.FC<ProfessionalButtonProps> = ({
       default:
         return {
           color: "primary" as const,
-          className: "bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-sm hover:shadow-md",
+          className: "bg-[#4ba9b7] hover:bg-[#3a8a95] text-white font-medium shadow-sm hover:shadow-md",
         };
     }
   };
@@ -121,6 +121,7 @@ const ProfessionalButton: React.FC<ProfessionalButtonProps> = ({
     ${sizeConfig.className}
     ${fullWidth ? "w-full" : ""}
     transition-all duration-200 ease-in-out
+    font-satoshi font-medium
     ${isLoading || isDisabled ? "cursor-not-allowed opacity-60" : ""}
     ${className}
   `.trim();

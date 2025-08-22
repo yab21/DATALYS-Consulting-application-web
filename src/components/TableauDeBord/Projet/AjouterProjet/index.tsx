@@ -3,7 +3,7 @@
 import React, { Suspense } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import OptimizedProjectForm from "../OptimizedProjectForm";
-import { Skeleton } from "@/components/Optimizations";
+import { ProfessionalCard } from "@/components/UI/Professional";
 
 const AjouterProjet: React.FC = () => {
   return (
@@ -12,10 +12,12 @@ const AjouterProjet: React.FC = () => {
       <div className="mt-5 w-full max-w-full">
         <Suspense 
           fallback={
-            <div className="space-y-6">
-              <Skeleton variant="rectangle" width="100%" height="200px" />
-              <Skeleton variant="rectangle" width="100%" height="300px" />
-              <Skeleton variant="rectangle" width="100%" height="150px" />
+            <div className="mx-auto max-w-4xl space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <ProfessionalCard key={i} className="animate-pulse">
+                  <div className="h-20 bg-gray-200 rounded dark:bg-gray-700"></div>
+                </ProfessionalCard>
+              ))}
             </div>
           }
         >

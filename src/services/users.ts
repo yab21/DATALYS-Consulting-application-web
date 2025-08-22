@@ -30,6 +30,13 @@ export interface UpdateUserData {
   role_name?: string;
   partner_id?: number;
   is_active?: boolean;
+  password?: string; // Pour changer le mot de passe
+}
+
+export interface ChangePasswordData {
+  id: number;
+  current_password: string;
+  new_password: string;
 }
 
 export interface UserCriteria {
@@ -120,21 +127,6 @@ export class UsersService {
     );
   }
 
-  // Méthode helper pour récupérer l'ID de l'utilisateur connecté
-  private static getCurrentUserId(): number | null {
-    if (typeof window !== 'undefined') {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          return user.id;
-        } catch (error) {
-          console.error('Erreur lors de la lecture des données utilisateur:', error);
-        }
-      }
-    }
-    return null;
-  }
 
   static async deleteUser(userId: number): Promise<any> {
     // Format API avec datas array
@@ -159,5 +151,56 @@ export class UsersService {
     };
     
     return this.updateUser(updateData);
+  }
+
+  // Méthode pour changer le mot de passe via users/update
+  static async changePassword(passwordData: ChangePasswordData): Promise<any> {
+    // Récupérer l'ID de l'utilisateur connecté
+    const currentUserId = this.getCurrentUserId();
+    
+    if (!currentUserId) {
+      throw new Error('Utilisateur non connecté');
+    }
+
+    // Vérifier que l'utilisateur change son propre mot de passe
+    if (passwordData.id !== currentUserId) {
+      throw new Error('Vous ne pouvez changer que votre propre mot de passe');
+    }
+
+    const updateData: UpdateUserData = {
+      id: passwordData.id,
+      password: passwordData.new_password
+    };
+
+    const requestBody = {
+      user: {
+        id: currentUserId
+      },
+      datas: [updateData],
+      // Inclure le mot de passe actuel pour validation
+      current_password: passwordData.current_password
+    };
+    
+    return this.makeRequest(
+      API_CONFIG.ENDPOINTS.USERS.UPDATE,
+      'POST',
+      requestBody
+    );
+  }
+
+  // Méthode helper pour récupérer l'ID de l'utilisateur connecté (rendre publique)
+  static getCurrentUserId(): number | null {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          return user.id;
+        } catch (error) {
+          console.error('Erreur lors de la lecture des données utilisateur:', error);
+        }
+      }
+    }
+    return null;
   }
 }

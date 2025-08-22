@@ -35,11 +35,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
     switch (variant) {
       case "primary":
         return {
-          bg: "bg-primary-50 dark:bg-primary-900/20",
-          border: "border-primary-200 dark:border-primary-700",
-          iconColor: "text-primary-600 dark:text-primary-400",
-          titleColor: "text-primary-700 dark:text-primary-300",
-          valueColor: "text-primary-800 dark:text-primary-200",
+          bg: "bg-[#e0f4f6] dark:bg-[#4ba9b7]/20",
+          border: "border-[#4ba9b7]/30 dark:border-[#4ba9b7]/50",
+          iconColor: "text-[#4ba9b7] dark:text-[#7bc5cd]",
+          titleColor: "text-[#3a8a95] dark:text-[#7bc5cd]",
+          valueColor: "text-[#2f7177] dark:text-[#4ba9b7]",
         };
       case "secondary":
         return {
@@ -165,7 +165,8 @@ const MetricCard: React.FC<MetricCardProps> = ({
         ${variantClasses.border}
         ${sizeClasses.padding}
         border rounded-lg
-        ${onClick ? "cursor-pointer hover:shadow-md transition-all duration-200" : ""}
+        font-satoshi
+        ${onClick ? "cursor-pointer hover:shadow-md transition-all duration-200 hover:border-[#4ba9b7]/40" : ""}
         ${className}
       `}
       onClick={onClick}
