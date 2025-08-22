@@ -1,6 +1,4 @@
 import { Metadata } from "next";
-import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
-import { NextUIProvider } from "@nextui-org/react";
 import React from "react";
 import VoirPartenaire from "@/components/TableauDeBord/Partenaire/Voir/index";
 
@@ -18,11 +16,5 @@ interface PageProps {
 export default async function VoirPartenairePage({ params }: PageProps) {
   const { id } = await params;
   
-  return (
-    <NextUIProvider>
-      <DefaultLayout>
-        <VoirPartenaire partnerId={id} />
-      </DefaultLayout>
-    </NextUIProvider>
-  );
+  return <VoirPartenaire partnerId={id} />;
 }

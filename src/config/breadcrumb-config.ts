@@ -78,16 +78,39 @@ export const BREADCRUMB_ROUTES: RouteConfig[] = [
     parentRoute: '/tableaudebord/partenaire/liste',
     getDynamicLabel: async (params) => {
       try {
-        // Récupérer le nom du partenaire depuis l'API
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082'}/partners/${params.id}`, {
+        // Vérifier si on est côté client
+        if (typeof window === 'undefined') {
+          return `Partenaire: ${params.id}`;
+        }
+        
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          return `Partenaire: ${params.id}`;
+        }
+        
+        // Récupérer le nom du partenaire depuis l'API via getByCriteria
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082'}/partners/getByCriteria`, {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          body: JSON.stringify({
+            index: 0,
+            size: 100,
+            data: {
+              is_active: true
+            }
+          })
         });
         if (response.ok) {
-          const data = await response.json();
-          return `Partenaire: ${data.data?.name || data.name || params.id}`;
+          const result = await response.json();
+          if (result.code === 200 && result.items) {
+            const partner = result.items.find((p: any) => p.id.toString() === params.id);
+            if (partner) {
+              return `Partenaire: ${partner.name}`;
+            }
+          }
         }
       } catch (error) {
         console.warn('Erreur lors de la récupération du nom du partenaire:', error);

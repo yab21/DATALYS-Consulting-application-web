@@ -202,3 +202,6 @@ export class IncidentsService {
     }
   }
 }
+
+// Instance exportée du service
+export const incidentsService = new IncidentsService();
