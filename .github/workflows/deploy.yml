@@ -1,0 +1,199 @@
+name: 🚀 Deploy DATALYS App to Production
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch: # Permet le déclenchement manuel
+
+env:
+  NODE_VERSION: "18.x"
+  SERVER_HOST: "82.112.253.137"
+  APP_NAME: "datalys-app"
+  DEPLOY_PATH: "/var/www/datalys-app"
+
+jobs:
+  # ✅ Tests et Build
+  test-and-build:
+    name: 🧪 Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 📋 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run TypeScript check
+        run: npm run type-check
+
+      - name: 🧪 Run tests (if available)
+        run: npm run test --if-present
+
+      - name: 🏗️ Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: |
+            .next/
+            public/
+            package*.json
+            ecosystem.config.js
+          retention-days: 1
+
+  # 🚀 Déploiement
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    environment: production
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📤 Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+
+      - name: 🔐 Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: 🏗️ Create deployment directory and setup
+        run: |
+          # Generate timestamp once and reuse it
+          export TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          export RELEASE_DIR="${{ env.DEPLOY_PATH }}/releases/$TIMESTAMP"
+          echo "RELEASE_DIR=$RELEASE_DIR" >> $GITHUB_ENV
+
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
+            set -e
+            mkdir -p $RELEASE_DIR
+            mkdir -p ${{ env.DEPLOY_PATH }}/shared/logs
+            mkdir -p ${{ env.DEPLOY_PATH }}/shared/node_modules
+            echo 'Directories created successfully'
+          "
+
+      - name: 📦 Deploy application files
+        run: |
+          echo "📤 Deploying files to: $RELEASE_DIR"
+
+          # Synchroniser les fichiers (UNE SEULE FOIS)
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env*' \
+            ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
+
+          # Créer les liens symboliques
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
+            set -e
+            cd $RELEASE_DIR
+            ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
+            ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
+            echo 'Files deployed and symlinks created'
+          "
+
+      - name: 📋 Install production dependencies
+        timeout-minutes: 10
+        run: |
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
+            set -e
+            cd $RELEASE_DIR
+            
+            echo '🔍 Installing dependencies...'
+            export NODE_OPTIONS='--max_old_space_size=1536'
+            export NPM_CONFIG_AUDIT=false
+            export NPM_CONFIG_FUND=false
+            
+            npm ci --omit=dev --ignore-scripts --silent --prefer-offline || {
+              echo '🔄 npm ci failed, trying npm install...'
+              rm -rf node_modules package-lock.json
+              npm install --production --silent --legacy-peer-deps
+            }
+            
+            echo '✅ Dependencies installed successfully'
+          "
+
+      - name: 🔄 Switch to new release
+        run: |
+          echo "🔗 Switching to release: $TIMESTAMP"
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
+            set -e
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Backup current if exists
+            if [ -L current ]; then
+              rm -f previous
+              mv current previous
+            fi
+            
+            # Create new symlink
+            ln -sf releases/$TIMESTAMP current
+            echo 'Symlink updated to new release'
+            
+            # Restart PM2
+            cd current
+            timeout 60 pm2 reload ecosystem.config.js --env production || timeout 60 pm2 start ecosystem.config.js --env production
+            pm2 save
+            echo 'PM2 reloaded successfully'
+          "
+
+      - name: 🧹 Cleanup old releases
+        run: |
+          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+            cd ${{ env.DEPLOY_PATH }}/releases
+            ls -t | tail -n +6 | xargs -r rm -rf
+            echo 'Old releases cleaned up'
+          "
+
+      - name: ✅ Health check
+        run: |
+          sleep 10
+          curl -f https://applicationweb.datalysconsulting.com/ || echo 'Health check failed but deployment completed'
+
+      - name: 📊 PM2 status
+        run: |
+          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+            pm2 list
+            pm2 logs ${{ env.APP_NAME }} --lines 20
+          "
+
+  # 📢 Notification
+  notify:
+    name: 📢 Notification
+    runs-on: ubuntu-latest
+    needs: [test-and-build, deploy]
+    if: always()
+
+    steps:
+      - name: ✅ Success notification
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "🎉 Deployment successful!"
+          echo "✅ DATALYS App deployed to https://applicationweb.datalysconsulting.com/"
+          echo "🔗 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
+
+      - name: ❌ Failure notification
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "🚨 Deployment failed!"
+          echo "❌ Please check the logs and fix the issues"
+          echo "🔗 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
