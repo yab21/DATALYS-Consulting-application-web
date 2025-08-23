@@ -18,10 +18,9 @@ import {
   Users,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-import { AuthService } from "@/services/auth";
 import { useAuth } from "@/context/AuthContext";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useFastNotification, fastNotificationHelpers } from "@/components/UI/Notifications/FastNotification";
+import { useNavigationLoader } from "@/hooks/useNavigationLoader";
 
 interface LoginForm {
   email: string;
@@ -31,11 +30,10 @@ interface LoginForm {
 
 const Connexion: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
   const { login } = useAuth();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useFastNotification();
+  const { navigateWithLoader } = useNavigationLoader();
   
   const {
     register,
@@ -46,63 +44,37 @@ const Connexion: React.FC = () => {
   const toggleVisibility = () => setIsVisible(!isVisible);
 
   const onSubmit = async (data: LoginForm) => {
-    setIsLoading(true);
     setError("");
 
     try {
-      // D'abord, utiliser AuthService pour vérifier la première connexion
-      const result = await AuthService.login({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (result.status === "success") {
-        // Vérifier si l'utilisateur doit changer son mot de passe
-        if (result.data?.requires_password_change) {
-          showNotification(notificationHelpers.warning(
-            "Changement de mot de passe requis",
-            "Vous devez changer votre mot de passe temporaire"
-          ));
-          
-          // Rediriger vers la page de changement de mot de passe
-          setTimeout(() => {
-            router.push(`/changer-mot-de-passe-temporaire?email=${encodeURIComponent(data.email)}`);
-          }, 1500);
-          return;
-        }
-
-        // Si pas de changement de mot de passe requis, utiliser le contexte AuthContext
-        await login(data.email, data.password);
-        
-        if (data.rememberMe) {
-          localStorage.setItem("rememberMe", "true");
-        }
-        
-        showNotification(notificationHelpers.success(
-          "Connexion réussie !",
-          `Bienvenue ${result.data?.name || "sur DATALYS"} 🎉`
-        ));
-        
-        // Rediriger vers le tableau de bord
-        setTimeout(() => {
-          router.push("/tableaudebord");
-        }, 1000);
-      } else {
-        setError(result.message || "Erreur lors de la connexion");
-        showNotification(notificationHelpers.error(
-          "Échec de la connexion",
-          result.message || "Vérifiez vos identifiants et réessayez."
-        ));
+      // Utiliser uniquement le contexte AuthContext pour éviter les doubles appels
+      await login(data.email, data.password);
+      
+      if (data.rememberMe) {
+        localStorage.setItem("rememberMe", "true");
       }
-    } catch (error) {
-      console.error("Erreur de connexion:", error);
-      setError("Erreur de connexion. Veuillez réessayer.");
-      showNotification(notificationHelpers.error(
-        "Erreur de connexion",
-        "Problème de réseau. Vérifiez votre connexion internet."
+      
+      showNotification(fastNotificationHelpers.success(
+        "Connexion réussie !",
+        "Bienvenue sur DATALYS 🎉"
       ));
-    } finally {
-      setIsLoading(false);
+      
+      // Rediriger vers le tableau de bord avec le loader global
+      setTimeout(() => {
+        navigateWithLoader("/tableaudebord", {
+          loadingMessage: "Accès à votre espace de travail...",
+          delay: 300
+        });
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error("Erreur de connexion:", error);
+      const errorMessage = error?.message || "Erreur de connexion. Veuillez réessayer.";
+      setError(errorMessage);
+      showNotification(fastNotificationHelpers.error(
+        "Échec de la connexion",
+        errorMessage
+      ));
     }
   };
 
@@ -452,17 +424,13 @@ const Connexion: React.FC = () => {
                 >
                   <Button
                     type="submit"
-                    isLoading={isLoading}
-                    isDisabled={isLoading}
-                    className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40"
                     size="lg"
                   >
-                    {!isLoading && (
-                      <div className="flex items-center justify-center gap-2">
-                        <span>Se connecter</span>
-                        <ArrowRight className="h-5 w-5" />
-                      </div>
-                    )}
+                    <div className="flex items-center justify-center gap-2">
+                      <span>Se connecter</span>
+                      <ArrowRight className="h-5 w-5" />
+                    </div>
                   </Button>
                 </motion.div>
               </form>

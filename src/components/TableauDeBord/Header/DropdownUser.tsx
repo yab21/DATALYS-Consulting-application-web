@@ -6,12 +6,12 @@ import ClickOutside from "@/components/ClickOutside";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, Settings, Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import LoadingSpinner from "@/components/UI/Loading/LoadingSpinner";
+import { useGlobalLoading } from "@/context/GlobalLoadingContext";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { showLogoutLoading } = useGlobalLoading();
 
   // Image par défaut si pas d'avatar
   const defaultAvatar = "/images/user.png";
@@ -26,22 +26,30 @@ const DropdownUser = () => {
   };
 
   const handleSignOut = async () => {
-    setIsLoggingOut(true);
     try {
+      // Fermer le dropdown immédiatement
+      setDropdownOpen(false);
+      
+      // Utiliser le GlobalLoader pour la déconnexion
+      showLogoutLoading();
+      
+      // Effectuer la déconnexion (le contexte d'auth s'occupe déjà du GlobalLoader)
       await logout();
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
-    } finally {
-      setIsLoggingOut(false);
-      setDropdownOpen(false);
     }
   };
 
-  // Afficher un loader si les données utilisateur sont en cours de chargement
+  // Afficher un placeholder simple si les données utilisateur sont en cours de chargement
+  // Le GlobalLoader s'occupe maintenant du loading visuel
   if (isLoading || !isAuthenticated || !user) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white/50 px-3 py-2 shadow-lg dark:border-gray-600 dark:bg-gray-800/50">
-        <LoadingSpinner size="sm" text="Chargement..." />
+        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+        <div className="hidden lg:block space-y-1">
+          <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        </div>
       </div>
     );
   }
@@ -207,18 +215,13 @@ const DropdownUser = () => {
             <div className="border-t border-gray-100 p-2 dark:border-gray-700">
               <motion.button
                 onClick={handleSignOut}
-                disabled={isLoggingOut}
-                className="flex w-full items-center gap-3 rounded-xl p-3 text-sm font-medium text-red-600 transition-all duration-300 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={!isLoggingOut ? { x: 4 } : {}}
-                whileTap={!isLoggingOut ? { scale: 0.98 } : {}}
+                className="flex w-full items-center gap-3 rounded-xl p-3 text-sm font-medium text-red-600 transition-all duration-300 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                whileHover={{ x: 4 }}
+                whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-{isLoggingOut ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <LogOut className="h-4 w-4" />
-                )}
-                {isLoggingOut ? "Déconnexion..." : "Déconnexion"}
+                <LogOut className="h-4 w-4" />
+                Déconnexion
               </motion.button>
             </div>
           </motion.div>

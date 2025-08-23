@@ -41,7 +41,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
 import { RolesService, Role } from "@/services/roles";
-import LoadingState from "@/components/UI/Loading/LoadingState";
+import { SkeletonCard } from "@/components/UI/LazyLoading/SkeletonLoader";
 
 interface RoleStats {
   totalRoles: number;
@@ -324,7 +324,11 @@ const GestionRoles: React.FC = () => {
             Gestion des Rôles
           </h1>
         </div>
-        <LoadingState type="skeleton" skeletonVariant="card" skeletonCount={4} />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <SkeletonCard key={index} className="h-40" />
+          ))}
+        </div>
       </div>
     );
   }

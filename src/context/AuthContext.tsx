@@ -10,6 +10,7 @@ import {
   getCRUDPermissions,
   CRUDPermissions 
 } from '@/lib/permissions';
+import { useGlobalLoading } from './GlobalLoadingContext';
 
 // Types étendus avec permissions
 interface User {
@@ -53,6 +54,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [userWithPermissions, setUserWithPermissions] = useState<UserWithPermissions | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Hook global loading
+  const { showAuthLoading, showLogoutLoading, hideLoading } = useGlobalLoading();
 
   // Charger les données d'authentification au démarrage
   useEffect(() => {
@@ -109,6 +113,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
+      showAuthLoading('Vérification des identifiants...');
 
       const response = await AuthService.login({ email, password });
 
@@ -143,7 +148,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserWithPermissions(userWithPerms);
 
         // Les données sont automatiquement sauvegardées par AuthService.login
+        hideLoading();
       } else {
+        hideLoading();
         throw new Error(response.message || 'Erreur de connexion');
       }
     } catch (error) {
@@ -152,6 +159,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserWithPermissions(null);
       setToken(null);
       AuthService.clearAuthData();
+      hideLoading();
       
       throw error;
     } finally {
@@ -205,12 +213,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Fonction de déconnexion
   const logout = (): void => {
+    showLogoutLoading();
+    
     setUser(null);
     setUserWithPermissions(null);
     setToken(null);
     
     // Nettoyer les données d'authentification
     AuthService.clearAuthData();
+    
+    // Masquer le loading après un délai pour l'effet visuel
+    setTimeout(() => {
+      hideLoading();
+    }, 1500);
   };
 
   // Helpers pour les permissions

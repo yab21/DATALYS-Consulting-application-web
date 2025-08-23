@@ -17,7 +17,7 @@ import {
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import LoadingState from "@/components/UI/Loading/LoadingState";
+import { SkeletonCard } from "@/components/UI/LazyLoading/SkeletonLoader";
 import { partnersService, Partner } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
@@ -204,11 +204,13 @@ const ListePartenaires: React.FC = () => {
     return (
       <>
         <Breadcrumb pageName="Liste des Partenaires" />
-        <LoadingState
-          type="skeleton"
-          skeletonVariant="card"
-          skeletonCount={6}
-        />
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <SkeletonCard key={index} className="h-48" />
+            ))}
+          </div>
+        </div>
       </>
     );
   }

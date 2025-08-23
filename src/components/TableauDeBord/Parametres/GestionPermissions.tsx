@@ -46,7 +46,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
 import { PermissionsService, UserProjectPermission } from "@/services/permissions";
-import LoadingState from "@/components/UI/Loading/LoadingState";
+import { SkeletonCard } from "@/components/UI/LazyLoading/SkeletonLoader";
 
 interface PermissionStats {
   totalPermissions: number;
@@ -389,7 +389,11 @@ const GestionPermissions: React.FC = () => {
             Gestion des Permissions
           </h1>
         </div>
-        <LoadingState type="skeleton" skeletonVariant="card" skeletonCount={6} />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <SkeletonCard key={index} className="h-32" />
+          ))}
+        </div>
       </div>
     );
   }

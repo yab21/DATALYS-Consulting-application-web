@@ -35,7 +35,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
-import LoadingState from "@/components/UI/Loading/LoadingState";
+import { SkeletonDashboard } from "@/components/UI/LazyLoading/SkeletonLoader";
 
 // Types pour les analytics
 interface GlobalStats {
@@ -298,7 +298,7 @@ const DashboardAdmin: React.FC = () => {
             Dashboard Analytics Admin
           </h1>
         </div>
-        <LoadingState type="skeleton" skeletonVariant="card" skeletonCount={8} />
+        <SkeletonDashboard />
       </div>
     );
   }

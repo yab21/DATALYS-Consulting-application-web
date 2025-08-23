@@ -100,99 +100,6 @@ interface IncidentStats {
   tempsMoyenResolution: number;
 }
 
-// Données mockées étendues
-const MOCK_INCIDENTS: Incident[] = [
-  {
-    id: "inc-1",
-    titre: "Problème de connectivité VPN",
-    description: "Les utilisateurs n'arrivent pas à se connecter au VPN depuis ce matin. Erreur de timeout lors de l'authentification.",
-    priorite: "haute",
-    statut: "en_cours",
-    projectId: "proj-1",
-    projectNom: "Migration Cloud AWS",
-    partnerId: "partner-1",
-    partnerNom: "TechCorp Solutions",
-    partnerLogo: "/images/partners/techcorp.svg",
-    dateCreation: new Date("2024-01-20T08:30:00"),
-    assigneA: "Support Technique",
-    commentaires: 5,
-    tempsMoyenResolution: 4.5,
-  },
-  {
-    id: "inc-2",
-    titre: "Lenteur application web",
-    description: "L'application web présente des lenteurs importantes, particulièrement lors du chargement des données",
-    priorite: "moyenne",
-    statut: "ouvert",
-    projectId: "proj-3",
-    projectNom: "Application Mobile",
-    partnerId: "partner-2",
-    partnerNom: "InnovTech Corp",
-    dateCreation: new Date("2024-01-18T14:20:00"),
-    assigneA: "Équipe DevOps",
-    commentaires: 2,
-  },
-  {
-    id: "inc-3",
-    titre: "Erreur de synchronisation",
-    description: "Problème de synchronisation des données entre les serveurs de production et de backup",
-    priorite: "critique",
-    statut: "resolu",
-    projectId: "proj-1",
-    projectNom: "Migration Cloud AWS",
-    partnerId: "partner-1",
-    partnerNom: "TechCorp Solutions",
-    dateCreation: new Date("2024-01-15T09:15:00"),
-    dateResolution: new Date("2024-01-16T11:30:00"),
-    assigneA: "Admin Système",
-    commentaires: 8,
-    tempsMoyenResolution: 26.25,
-  },
-  {
-    id: "inc-4",
-    titre: "Problème d'authentification SSO",
-    description: "Les utilisateurs ne peuvent pas se connecter via SSO, redirection en boucle",
-    priorite: "critique",
-    statut: "ouvert",
-    projectId: "proj-4",
-    projectNom: "Sécurisation Réseau",
-    partnerId: "partner-3",
-    partnerNom: "SecureNet Ltd",
-    dateCreation: new Date("2024-01-19T16:45:00"),
-    assigneA: "Équipe Sécurité",
-    commentaires: 1,
-  },
-  {
-    id: "inc-5",
-    titre: "Backup automatique en échec",
-    description: "Les sauvegardes automatiques nocturnes échouent depuis 3 jours",
-    priorite: "haute",
-    statut: "en_cours",
-    projectId: "proj-2",
-    projectNom: "Infrastructure Cloud",
-    partnerId: "partner-2",
-    partnerNom: "InnovTech Corp",
-    dateCreation: new Date("2024-01-17T07:00:00"),
-    assigneA: "Admin Système",
-    commentaires: 4,
-  },
-  {
-    id: "inc-6",
-    titre: "Certificat SSL expiré",
-    description: "Le certificat SSL du domaine principal a expiré, site inaccessible",
-    priorite: "critique",
-    statut: "resolu",
-    projectId: "proj-5",
-    projectNom: "Site Web Corporate",
-    partnerId: "partner-4",
-    partnerNom: "WebCorp Agency",
-    dateCreation: new Date("2024-01-16T10:20:00"),
-    dateResolution: new Date("2024-01-16T12:45:00"),
-    assigneA: "Équipe DevOps",
-    commentaires: 3,
-    tempsMoyenResolution: 2.42,
-  },
-];
 
 const GestionIncidents: React.FC = () => {
   const { hasPermission } = useAuth();
@@ -384,24 +291,24 @@ const GestionIncidents: React.FC = () => {
       } catch (error) {
         console.error("❌ Erreur lors du chargement des incidents:", error);
         
-        // Fallback vers les données mockées en cas d'erreur
-        console.log("🔄 Fallback vers les données mockées");
-        setIncidents(MOCK_INCIDENTS);
-        setFilteredIncidents(MOCK_INCIDENTS);
+        // Gestion d'erreur propre sans fallback
+        console.error("Impossible de charger les incidents depuis l'API");
+        setIncidents([]);
+        setFilteredIncidents([]);
         
-        const newStats: IncidentStats = {
-          total: MOCK_INCIDENTS.length,
-          ouverts: MOCK_INCIDENTS.filter(i => i.statut === "ouvert").length,
-          enCours: MOCK_INCIDENTS.filter(i => i.statut === "en_cours").length,
-          resolus: MOCK_INCIDENTS.filter(i => i.statut === "resolu").length,
-          critiques: MOCK_INCIDENTS.filter(i => i.priorite === "critique").length,
-          tempsMoyenResolution: MOCK_INCIDENTS
-            .filter(i => i.tempsMoyenResolution)
-            .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) / 
-            (MOCK_INCIDENTS.filter(i => i.tempsMoyenResolution).length || 1)
-        };
+        setStats({
+          total: 0,
+          ouverts: 0,
+          enCours: 0,
+          resolus: 0,
+          critiques: 0,
+          tempsMoyenResolution: 0
+        });
         
-        setStats(newStats);
+        showNotification(notificationHelpers.error(
+          "Erreur",
+          "Impossible de charger les incidents. Veuillez réessayer."
+        ));
       } finally {
         setLoading(false);
       }

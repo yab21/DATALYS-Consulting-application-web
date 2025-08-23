@@ -7,15 +7,17 @@
 ## **🔐 1. AUTHENTIFICATION (Priorité 1)**
 
 ### **APIs Disponibles :**
+
 ```http
 ✅ POST /auth/login
-✅ POST /auth/logout  
+✅ POST /auth/logout
 ✅ POST /auth/reset-password-request
 ```
 
 **Usage :** Login/logout, gestion des sessions
 
 ### **Exemple de requête Login :**
+
 ```javascript
 POST /auth/login
 Content-Type: application/json
@@ -44,14 +46,16 @@ Response:
 ## **👑 2. APIs ADMIN (Interface d'administration)**
 
 ### **👥 Gestion Utilisateurs :**
+
 ```http
 ✅ POST /users/getByCriteria    # Lister/rechercher utilisateurs
-✅ POST /users/create           # Créer nouveaux admins/partenaires  
+✅ POST /users/create           # Créer nouveaux admins/partenaires
 ✅ POST /users/update           # Modifier profils utilisateurs
 ✅ POST /users/delete           # Supprimer/désactiver utilisateurs
 ```
 
 ### **🤝 Gestion Partenaires :**
+
 ```http
 ✅ POST /partners/getByCriteria # Lister/rechercher partenaires
 ✅ POST /partners/create        # Créer nouveaux partenaires + logo
@@ -60,14 +64,16 @@ Response:
 ```
 
 ### **📋 Gestion Projets :**
+
 ```http
 ✅ POST /projects/getByCriteria # Lister/rechercher projets
 ✅ POST /projects/create        # Créer projets pour partenaires
-✅ POST /projects/update        # Modifier projets  
+✅ POST /projects/update        # Modifier projets
 ✅ POST /projects/delete        # Supprimer projets
 ```
 
 ### **📁 Gestion Dossiers :**
+
 ```http
 ✅ POST /folders/getByCriteria  # Lister/rechercher dossiers
 ✅ POST /folders/create         # Créer structure dossiers
@@ -77,6 +83,7 @@ Response:
 ```
 
 ### **📄 Gestion Fichiers :**
+
 ```http
 ✅ POST /files/getByCriteria    # Lister/rechercher fichiers
 ✅ POST /files/update           # Modifier métadonnées fichiers
@@ -88,6 +95,7 @@ Response:
 ```
 
 ### **🚨 Gestion Incidents :**
+
 ```http
 ✅ POST /incidents/getByCriteria # Lister/rechercher incidents
 ✅ POST /incidents/create        # Créer rapports incident
@@ -96,6 +104,7 @@ Response:
 ```
 
 ### **🎭 Gestion Rôles :**
+
 ```http
 ✅ POST /roles/getByCriteria    # Lister rôles
 ✅ POST /roles/create           # Créer nouveaux rôles
@@ -104,6 +113,7 @@ Response:
 ```
 
 ### **🎯 Gestion Permissions :**
+
 ```http
 ✅ POST /user_project_permissions/getByCriteria # Lister permissions
 ✅ POST /user_project_permissions/create        # Assigner utilisateurs
@@ -116,9 +126,10 @@ Response:
 ## **🤝 3. APIs PARTENAIRE (Interface partenaire - avec filtrage)**
 
 ### **📊 Consultation Données :**
+
 ```http
 ✅ POST /projects/getByCriteria    # MES projets uniquement
-✅ POST /folders/getByCriteria     # MES dossiers uniquement  
+✅ POST /folders/getByCriteria     # MES dossiers uniquement
 ✅ POST /files/getByCriteria       # MES fichiers uniquement
 ✅ POST /incidents/getByCriteria   # MES incidents uniquement
 ✅ GET  /files/serve/<filename>    # MES fichiers autorisés
@@ -126,6 +137,7 @@ Response:
 ```
 
 ### **💬 Communication :**
+
 ```http
 ✅ POST /incidents/create          # Signaler incidents sur MES projets
 ```
@@ -133,8 +145,10 @@ Response:
 ---
 
 ## **📊 4. APIs MONITORING (Status système)**
+
 ```http
-✅ GET /health                     # Santé application
+✅ GET /
+th                     # Santé application
 ✅ GET /api/sessions/health        # Santé Redis
 ✅ GET /api/sessions/stats         # Stats sessions
 ```
@@ -142,6 +156,7 @@ Response:
 ---
 
 ## **📈 5. APIs HISTORIQUE**
+
 ```http
 ✅ POST /action_history/getByCriteria # Historique actions
 ✅ POST /action_history/log           # Enregistrer actions
@@ -154,29 +169,35 @@ Response:
 ## **🖥️ Interface ADMIN - Pages à créer :**
 
 ### **🔐 Authentification :**
+
 - **Page Login** (`POST /auth/login`)
 - **Gestion mot de passe** (`POST /auth/reset-password-request`)
 
 ### **📊 Dashboard Admin :**
+
 - **Vue d'ensemble** avec métriques
 - **Utiliser** `POST /*/getByCriteria` pour les stats
 
 ### **👥 Gestion Utilisateurs :**
+
 - **Liste utilisateurs** (`POST /users/getByCriteria`)
 - **Création/édition** (`POST /users/create|update`)
 - **Suppression** (`POST /users/delete`)
 
 ### **🤝 Gestion Partenaires :**
+
 - **Liste partenaires** (`POST /partners/getByCriteria`)
 - **Création avec logo** (`POST /partners/create`)
 - **Édition** (`POST /partners/update`)
 
 ### **📋 Gestion Projets :**
+
 - **Liste projets** (`POST /projects/getByCriteria`)
 - **Création/édition** (`POST /projects/create|update`)
 - **Association partenaires**
 
 ### **📁 Gestion Documents :**
+
 - **Arborescence dossiers** (`POST /folders/getByCriteria`)
 - **Upload fichiers** (`POST /files/upload`)
 - **Gestion métadonnées** (`POST /files/update`)
@@ -186,22 +207,27 @@ Response:
 ## **👤 Interface PARTENAIRE - Pages à créer :**
 
 ### **🔐 Authentification :**
+
 - **Page Login** (même API que admin)
 
 ### **📊 Mon Dashboard :**
+
 - **MES projets** (`POST /projects/getByCriteria` avec filtrage)
 - **MES statistiques**
 
 ### **📋 Mes Projets :**
+
 - **Liste MES projets** (filtrés automatiquement)
 - **Détails projets** (lecture seule)
 
 ### **📁 Mes Documents :**
+
 - **MES dossiers** (`POST /folders/getByCriteria` filtré)
 - **MES fichiers** (`POST /files/getByCriteria` filtré)
 - **Téléchargement** (`GET /files/download/<id>`)
 
 ### **🚨 Support :**
+
 - **Signaler incidents** (`POST /incidents/create`)
 - **Voir MES incidents** (`POST /incidents/getByCriteria` filtré)
 
@@ -213,12 +239,12 @@ Response:
 
 ```javascript
 // Exemple de logique frontend
-if (user.role === 'admin') {
-    // Afficher toutes les APIs admin
-    showAdminInterface();
-} else if (user.role === 'partenaire') {
-    // Afficher seulement APIs lecture partenaire
-    showPartnerInterface();
+if (user.role === "admin") {
+  // Afficher toutes les APIs admin
+  showAdminInterface();
+} else if (user.role === "partenaire") {
+  // Afficher seulement APIs lecture partenaire
+  showPartnerInterface();
 }
 ```
 
@@ -229,7 +255,7 @@ Les APIs existantes doivent être **modifiées côté backend** pour filtrer aut
 ```javascript
 // Les partenaires ne verront que LEURS données
 // Le filtrage se fait automatiquement côté API
-POST /projects/getByCriteria 
+POST / projects / getByCriteria;
 // → Admin : tous les projets
 // → Partenaire : seulement ses projets
 ```
@@ -241,6 +267,7 @@ POST /projects/getByCriteria
 ## **Exemple : Lister les projets**
 
 ### **Pour Admin :**
+
 ```javascript
 POST /projects/getByCriteria
 Headers: {
@@ -263,6 +290,7 @@ Response: {
 ```
 
 ### **Pour Partenaire :**
+
 ```javascript
 POST /projects/getByCriteria
 Headers: {
@@ -315,15 +343,18 @@ Response: {
 ## **🎉 Vous avez 95% des APIs nécessaires !**
 
 ### **Prêt pour intégration immédiate :**
+
 - **Interface Admin complète** ✅
 - **Interface Partenaire** (avec quelques adaptations) ✅
 - **Authentification et sécurité** ✅
 
 ### **Seules modifications nécessaires :**
+
 1. **Ajouter filtrage par rôle** dans les APIs existantes
 2. **Créer `POST /files/create`** (optionnel)
 
 ### **APIs prêtes à utiliser MAINTENANT :**
+
 - ✅ Authentification complète
 - ✅ CRUD complet pour toutes les entités
 - ✅ Upload/download de fichiers
@@ -340,6 +371,6 @@ Response: {
 
 ---
 
-*Document généré pour l'équipe Frontend*  
-*Version : 1.0*  
-*Date : $(date)*
+_Document généré pour l'équipe Frontend_  
+_Version : 1.0_  
+_Date : $(date)_

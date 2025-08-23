@@ -29,7 +29,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { projectsService, Project } from "@/services/projects";
 import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
-import LoadingState from "@/components/UI/Loading/LoadingState";
+import { SkeletonCard } from "@/components/UI/LazyLoading/SkeletonLoader";
 import Link from "next/link";
 
 // Types pour les statistiques du partner
@@ -260,11 +260,11 @@ const MonEspacePartenaire: React.FC = () => {
             Mon Espace Partenaire
           </h1>
         </div>
-        <LoadingState
-          type="skeleton"
-          skeletonVariant="card"
-          skeletonCount={6}
-        />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <SkeletonCard key={index} className="h-40" />
+          ))}
+        </div>
       </div>
     );
   }

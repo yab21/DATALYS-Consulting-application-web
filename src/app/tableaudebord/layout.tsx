@@ -4,7 +4,6 @@ import "flatpickr/dist/flatpickr.min.css";
 import "@/css/satoshi.css";
 import "@/css/style.css";
 import React, { useEffect, useState } from "react";
-import Loader from "@/components/common/Loader";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
 import { NextUIProvider } from "@nextui-org/react";
@@ -12,6 +11,7 @@ import { usePathname } from "next/navigation";
 import TokenExpirationHandler from "@/components/Security/TokenExpirationHandler";
 import { NotificationProvider } from "@/components/UI/Notifications/NotificationProvider";
 import ErrorBoundary from "@/components/UI/ErrorBoundary/ErrorBoundary";
+import { useGlobalLoading } from "@/context/GlobalLoadingContext";
 
 export default function TableauDeBordLayout({
   children,
@@ -20,10 +20,19 @@ export default function TableauDeBordLayout({
 }>) {
   const [loading, setLoading] = useState<boolean>(true);
   const pathname = usePathname();
+  const { showNavigationLoading, hideLoading } = useGlobalLoading();
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
-  }, []);
+    // Utiliser le GlobalLoader au lieu de l'ancien loader
+    showNavigationLoading("Chargement du tableau de bord...");
+    
+    const timer = setTimeout(() => {
+      setLoading(false);
+      hideLoading();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [showNavigationLoading, hideLoading]);
 
   // Pages qui utilisent déjà leur propre layout (page principale)
   const pagesWithOwnLayout = ['/tableaudebord'];
@@ -34,7 +43,8 @@ export default function TableauDeBordLayout({
   if (loading) {
     return (
       <ProtectedRoute>
-        <Loader />
+        {/* Le GlobalLoader s'occupe de l'affichage */}
+        <div />
       </ProtectedRoute>
     );
   }

@@ -56,7 +56,6 @@ import messagesService, {
   CreateMessageRequest 
 } from "@/services/messages";
 import { projectsService } from "@/services/projects";
-import LoadingState from "@/components/UI/Loading/LoadingState";
 
 interface SupportStats {
   open_tickets: number;
