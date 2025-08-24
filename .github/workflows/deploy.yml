@@ -12,9 +12,9 @@ env:
   DEPLOY_PATH: "/var/www/datalys-app"
 
 jobs:
-  # ✅ Tests et Build
-  test-and-build:
-    name: 🧪 Test & Build
+  # ✅ Tests 
+  test:
+    name: 🧪 Test & Validate
     runs-on: ubuntu-latest
 
     steps:
@@ -36,59 +36,16 @@ jobs:
       - name: 🧪 Run tests (if available)
         run: npm run test --if-present
 
-      - name: 🏗️ Build application
-        run: npm run build
-        env:
-          NODE_ENV: production
-
-      - name: 📋 Verify build was created
-        run: |
-          echo "🔍 Verifying .next directory was created:"
-          ls -la .next/ || echo "❌ Build failed - .next directory not found!"
-
-      - name: 📤 Upload build artifacts  
-        uses: actions/upload-artifact@v4
-        with:
-          name: nextjs-build
-          path: |
-            .next/
-            public/
-            package*.json
-            ecosystem.config.js
-          retention-days: 1
-
   # 🚀 Déploiement
   deploy:
     name: 🚀 Deploy to Production
     runs-on: ubuntu-latest
-    needs: test-and-build
+    needs: test
     environment: production
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-
-      - name: 📤 Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: nextjs-build
-
-      - name: 🔍 Verify build artifacts
-        run: |
-          echo "📋 Listing current directory:"
-          pwd
-          ls -la
-          echo "📦 Checking for .next directory:"
-          if [ -d ".next" ]; then
-            echo "✅ .next directory found"
-            ls -la .next/ | head -10
-          else
-            echo "❌ .next directory not found!"
-            echo "🔍 Searching for .next in all subdirectories:"
-            find . -name ".next" -type d 2>/dev/null || echo "No .next directory found anywhere"
-            echo "📋 Available files and directories:"
-            find . -maxdepth 2 -type f -o -type d | sort
-          fi
 
       - name: 🔐 Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
@@ -123,78 +80,51 @@ jobs:
             --exclude='.next' \
             ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
 
-      - name: 📦 Deploy build artifacts
-        run: |
-          echo "📤 Deploying build artifacts (.next, public, etc.)"
-          
-          # Vérifier que les artifacts sont présents localement
-          if [ -d ".next" ]; then
-            echo "✅ Local .next directory found, copying to server"
-            rsync -avz .next/ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/.next/
-          else
-            echo "❌ No .next directory found locally, cannot deploy build!"
-            echo "🔍 Current directory contents:"
-            ls -la
-            exit 1
-          fi
-          
-          if [ -d "public" ]; then
-            echo "✅ Local public directory found, copying to server"
-            rsync -avz public/ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/public/
-          else
-            echo "⚠️ No public directory found, skipping"
-          fi
-
           # Créer les liens symboliques
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
             ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
-            echo 'Files deployed and symlinks created'
-            
-            # Verify .next directory was deployed
-            if [ -d '.next' ]; then
-              echo '✅ .next build directory found on server'
-              ls -la .next/ | head -5
-            else
-              echo '❌ .next build directory missing on server!'
-              exit 1
-            fi
+            echo 'Source files deployed and symlinks created'
           "
 
-      - name: 📋 Install production dependencies
-        timeout-minutes: 20
+      - name: 📋 Install dependencies and build on server
+        timeout-minutes: 25
         run: |
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             
-            echo '🔍 Installing dependencies...'
+            echo '🔍 Installing ALL dependencies for build...'
             export NODE_OPTIONS='--max_old_space_size=1024'
             export NPM_CONFIG_AUDIT=false
             export NPM_CONFIG_FUND=false
             export NPM_CONFIG_PROGRESS=false
             
-            # Try to copy from previous working release first
-            if [ -d '../20250823_211117/node_modules' ]; then
-              echo '📦 Copying node_modules from previous release...'
-              cp -r ../20250823_211117/node_modules ./
-              npm ci --omit=dev --ignore-scripts --silent --prefer-offline --no-audit --no-fund || {
-                echo '🔄 Full install needed...'
-                rm -rf node_modules package-lock.json
-                npm install --production --silent --legacy-peer-deps --no-audit --no-fund
-              }
-            else
-              echo '🔄 Fresh install...'
-              npm ci --omit=dev --ignore-scripts --silent --prefer-offline --no-audit --no-fund || {
-                echo '🔄 npm ci failed, trying npm install...'
-                rm -rf node_modules package-lock.json
-                npm install --production --silent --legacy-peer-deps --no-audit --no-fund
-              }
-            fi
+            # Install all dependencies (including dev) for build
+            npm ci --silent --prefer-offline --no-audit --no-fund || {
+              echo '🔄 npm ci failed, trying npm install...'
+              rm -rf node_modules package-lock.json
+              npm install --silent --legacy-peer-deps --no-audit --no-fund
+            }
             
-            echo '✅ Dependencies installed successfully'
+            echo '🏗️ Building Next.js application...'
+            npm run build
+            
+            echo '🧹 Removing dev dependencies after build...'
+            npm prune --omit=dev --silent
+            
+            echo '✅ Build completed successfully'
+            
+            # Verify build was created
+            if [ -d '.next' ]; then
+              echo '✅ .next directory found after build'
+              ls -la .next/ | head -5
+            else
+              echo '❌ .next directory missing after build!'
+              exit 1
+            fi
           "
 
       - name: 🔄 Switch to new release
@@ -245,7 +175,7 @@ jobs:
   notify:
     name: 📢 Notification
     runs-on: ubuntu-latest
-    needs: [test-and-build, deploy]
+    needs: [test, deploy]
     if: always()
 
     steps:
