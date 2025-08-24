@@ -68,6 +68,13 @@ jobs:
         with:
           name: nextjs-build
 
+      - name: 🔍 Verify build artifacts
+        run: |
+          echo "📋 Listing downloaded artifacts:"
+          ls -la
+          echo "📦 Checking .next directory:"
+          ls -la .next/ || echo "❌ .next directory not found!"
+
       - name: 🔐 Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
@@ -93,7 +100,7 @@ jobs:
         run: |
           echo "📤 Deploying files to: $RELEASE_DIR"
 
-          # Synchroniser les fichiers (UNE SEULE FOIS)
+          # Synchroniser les fichiers avec le build inclus
           rsync -avz --delete \
             --exclude='.git' \
             --exclude='node_modules' \
@@ -107,6 +114,14 @@ jobs:
             ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
             ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
             echo 'Files deployed and symlinks created'
+            
+            # Verify .next directory was deployed
+            if [ -d '.next' ]; then
+              echo '✅ .next build directory found'
+            else
+              echo '❌ .next build directory missing!'
+              exit 1
+            fi
           "
 
       - name: 📋 Install production dependencies
