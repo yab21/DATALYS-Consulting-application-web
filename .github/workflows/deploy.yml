@@ -90,30 +90,44 @@ jobs:
           "
 
       - name: 📋 Install dependencies and build on server
-        timeout-minutes: 25
+        timeout-minutes: 35
         run: |
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=120 -o ServerAliveCountMax=5 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             
-            echo '🔍 Installing ALL dependencies for build...'
-            export NODE_OPTIONS='--max_old_space_size=1024'
+            echo '🔍 Optimized installation and build process...'
+            export NODE_OPTIONS='--max_old_space_size=512'
             export NPM_CONFIG_AUDIT=false
             export NPM_CONFIG_FUND=false
             export NPM_CONFIG_PROGRESS=false
+            export NPM_CONFIG_LOGLEVEL=error
             
-            # Install all dependencies (including dev) for build
-            npm ci --silent --prefer-offline --no-audit --no-fund || {
-              echo '🔄 npm ci failed, trying npm install...'
-              rm -rf node_modules package-lock.json
-              npm install --silent --legacy-peer-deps --no-audit --no-fund
-            }
+            # Try to copy node_modules from a working previous release
+            LATEST_WORKING=\$(ls -t ../*/node_modules 2>/dev/null | head -1 | cut -d'/' -f2 || echo '')
+            if [ -n \"\$LATEST_WORKING\" ] && [ -d \"../\$LATEST_WORKING/node_modules\" ]; then
+              echo '📦 Copying node_modules from previous release...'
+              cp -r \"../\$LATEST_WORKING/node_modules\" ./
+              echo '🔄 Updating dependencies...'
+              npm ci --silent --prefer-offline --no-audit --no-fund || {
+                echo '🔄 Update failed, full reinstall needed...'
+                rm -rf node_modules package-lock.json
+                npm install --silent --legacy-peer-deps --no-audit --no-fund
+              }
+            else
+              echo '🔄 Fresh installation (no previous release found)...'
+              npm ci --silent --prefer-offline --no-audit --no-fund || {
+                echo '🔄 npm ci failed, trying npm install...'
+                rm -rf node_modules package-lock.json
+                npm install --silent --legacy-peer-deps --no-audit --no-fund
+              }
+            fi
             
             echo '🏗️ Building Next.js application...'
-            npm run build
+            NODE_OPTIONS='--max_old_space_size=512' npm run build
             
             echo '🧹 Removing dev dependencies after build...'
-            npm prune --omit=dev --silent
+            npm prune --omit=dev --silent --no-audit
             
             echo '✅ Build completed successfully'
             
