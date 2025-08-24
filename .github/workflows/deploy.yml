@@ -75,10 +75,20 @@ jobs:
 
       - name: 🔍 Verify build artifacts
         run: |
-          echo "📋 Listing downloaded artifacts:"
+          echo "📋 Listing current directory:"
+          pwd
           ls -la
-          echo "📦 Checking .next directory:"
-          ls -la .next/ || echo "❌ .next directory not found!"
+          echo "📦 Checking for .next directory:"
+          if [ -d ".next" ]; then
+            echo "✅ .next directory found"
+            ls -la .next/ | head -10
+          else
+            echo "❌ .next directory not found!"
+            echo "🔍 Searching for .next in all subdirectories:"
+            find . -name ".next" -type d 2>/dev/null || echo "No .next directory found anywhere"
+            echo "📋 Available files and directories:"
+            find . -maxdepth 2 -type f -o -type d | sort
+          fi
 
       - name: 🔐 Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
@@ -117,11 +127,23 @@ jobs:
         run: |
           echo "📤 Deploying build artifacts (.next, public, etc.)"
           
-          # Copier les artifacts téléchargés
-          rsync -avz \
-            .next/ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/.next/
-          rsync -avz \
-            public/ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/public/
+          # Vérifier que les artifacts sont présents localement
+          if [ -d ".next" ]; then
+            echo "✅ Local .next directory found, copying to server"
+            rsync -avz .next/ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/.next/
+          else
+            echo "❌ No .next directory found locally, cannot deploy build!"
+            echo "🔍 Current directory contents:"
+            ls -la
+            exit 1
+          fi
+          
+          if [ -d "public" ]; then
+            echo "✅ Local public directory found, copying to server"
+            rsync -avz public/ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/public/
+          else
+            echo "⚠️ No public directory found, skipping"
+          fi
 
           # Créer les liens symboliques
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
@@ -133,10 +155,10 @@ jobs:
             
             # Verify .next directory was deployed
             if [ -d '.next' ]; then
-              echo '✅ .next build directory found'
+              echo '✅ .next build directory found on server'
               ls -la .next/ | head -5
             else
-              echo '❌ .next build directory missing!'
+              echo '❌ .next build directory missing on server!'
               exit 1
             fi
           "
