@@ -128,9 +128,10 @@ jobs:
           "
 
       - name: 🔄 Switch to new release
+        timeout-minutes: 5
         run: |
           echo "🔗 Switching to release: $TIMESTAMP"
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o ConnectTimeout=30 root@${{ env.SERVER_HOST }} "
             set -e
             cd ${{ env.DEPLOY_PATH }}
             
@@ -144,11 +145,14 @@ jobs:
             ln -sf releases/$TIMESTAMP current
             echo 'Symlink updated to new release'
             
-            # Restart PM2
+            # Restart PM2 with better error handling
             cd current
-            timeout 60 pm2 reload ecosystem.config.js --env production || timeout 60 pm2 start ecosystem.config.js --env production
+            echo 'Restarting PM2...'
+            pm2 stop datalys-app 2>/dev/null || echo 'App was not running'
+            sleep 2
+            pm2 start ecosystem.config.js --env production
             pm2 save
-            echo 'PM2 reloaded successfully'
+            echo 'PM2 restarted successfully'
           "
 
       - name: 🧹 Cleanup old releases
@@ -160,15 +164,40 @@ jobs:
           "
 
       - name: ✅ Health check
+        timeout-minutes: 3
         run: |
-          sleep 10
-          curl -f https://applicationweb.datalysconsulting.com/ || echo 'Health check failed but deployment completed'
+          echo "🏥 Waiting for application to start..."
+          sleep 15
+          
+          # Retry health check up to 5 times
+          for i in {1..5}; do
+            echo "Health check attempt $i/5..."
+            if curl -f -s --connect-timeout 10 --max-time 15 https://applicationweb.datalysconsulting.com/ >/dev/null 2>&1; then
+              echo "✅ Application is healthy and responding!"
+              exit 0
+            fi
+            if [ $i -lt 5 ]; then
+              echo "⚠️ Health check failed, retrying in 10s..."
+              sleep 10
+            fi
+          done
+          
+          echo "❌ Health check failed after 5 attempts"
+          echo "🔍 Checking PM2 status for debugging..."
+          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "pm2 list && pm2 logs datalys-app --lines 10" || true
+          exit 1
 
-      - name: 📊 PM2 status
+      - name: 📊 Final verification
         run: |
+          echo "🔍 Final deployment verification..."
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+            echo '📊 PM2 Status:'
             pm2 list
-            pm2 logs ${{ env.APP_NAME }} --lines 20
+            echo '📋 Application logs (last 10 lines):'
+            pm2 logs ${{ env.APP_NAME }} --lines 10 2>/dev/null || echo 'No recent logs'
+            echo '📂 Current release:'
+            ls -la ${{ env.DEPLOY_PATH }}/current
+            echo '✅ Deployment verification completed'
           "
 
   # 📢 Notification
