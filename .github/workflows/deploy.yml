@@ -41,7 +41,12 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: 📤 Upload build artifacts
+      - name: 📋 Verify build was created
+        run: |
+          echo "🔍 Verifying .next directory was created:"
+          ls -la .next/ || echo "❌ Build failed - .next directory not found!"
+
+      - name: 📤 Upload build artifacts  
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
@@ -96,16 +101,27 @@ jobs:
             echo 'Directories created successfully'
           "
 
-      - name: 📦 Deploy application files
+      - name: 📦 Deploy source code
         run: |
-          echo "📤 Deploying files to: $RELEASE_DIR"
+          echo "📤 Deploying source code to: $RELEASE_DIR"
 
-          # Synchroniser les fichiers avec le build inclus
+          # Synchroniser le code source
           rsync -avz --delete \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.env*' \
+            --exclude='.next' \
             ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
+
+      - name: 📦 Deploy build artifacts
+        run: |
+          echo "📤 Deploying build artifacts (.next, public, etc.)"
+          
+          # Copier les artifacts téléchargés
+          rsync -avz \
+            .next/ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/.next/
+          rsync -avz \
+            public/ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/public/
 
           # Créer les liens symboliques
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
@@ -118,6 +134,7 @@ jobs:
             # Verify .next directory was deployed
             if [ -d '.next' ]; then
               echo '✅ .next build directory found'
+              ls -la .next/ | head -5
             else
               echo '❌ .next build directory missing!'
               exit 1
