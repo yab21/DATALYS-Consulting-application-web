@@ -141,12 +141,11 @@ jobs:
             fi
           "
 
-      - name: 🔄 Switch to new release
-        timeout-minutes: 10
+      - name: 🔄 Switch to new release  
+        timeout-minutes: 5
         run: |
           echo "🔗 Switching to release: $TIMESTAMP"
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o ConnectTimeout=60 root@${{ env.SERVER_HOST }} "
-            set -e
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}
             
             # Backup current if exists
@@ -158,33 +157,42 @@ jobs:
             # Create new symlink
             ln -sf releases/$TIMESTAMP current
             echo 'Symlink updated to new release'
+          "
+
+      - name: 🛑 Stop PM2 processes
+        timeout-minutes: 5
+        run: |
+          echo "🛑 Stopping existing PM2 processes..."
+          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+            pm2 delete datalys-app 2>/dev/null || echo 'No processes to delete'
+            sleep 3
+            echo 'PM2 processes stopped'
+          "
+
+      - name: 🚀 Start PM2 processes
+        timeout-minutes: 8
+        run: |
+          echo "🚀 Starting fresh PM2 processes..."
+          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+            cd ${{ env.DEPLOY_PATH }}/current
             
-            # Restart PM2 with extended timeouts for slow VPS
-            cd current
-            echo 'Stopping current PM2 processes...'
-            pm2 delete datalys-app 2>/dev/null || echo 'No existing processes to delete'
+            # Start PM2 processes
+            pm2 start ecosystem.config.js --env production
             
-            echo 'Starting fresh PM2 processes...'
-            pm2 start ecosystem.config.js --env production --no-daemon &
-            PM2_PID=\$!
-            
-            # Wait for PM2 to start with timeout
-            echo 'Waiting for PM2 to initialize...'
-            for i in {1..60}; do
-              if pm2 list 2>/dev/null | grep -q 'online'; then
-                echo 'PM2 processes are online'
-                break
+            # Wait for processes to be online
+            echo 'Waiting for processes to start...'
+            for i in {1..30}; do
+              if pm2 list | grep -q 'online'; then
+                echo 'PM2 processes are online!'
+                pm2 save
+                exit 0
               fi
-              if [ \$i -eq 60 ]; then
-                echo 'PM2 startup timeout, but continuing...'
-                break
-              fi
-              sleep 5
-              echo \"Waiting for PM2... (\$i/60)\"
+              echo \"Waiting for PM2... (\$i/30)\"
+              sleep 10
             done
             
-            pm2 save 2>/dev/null || echo 'PM2 save completed'
-            echo 'PM2 restart completed'
+            echo 'PM2 processes may be slow but started'
+            pm2 save
           "
 
       - name: 🧹 Cleanup old releases
