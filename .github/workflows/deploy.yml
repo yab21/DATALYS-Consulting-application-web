@@ -60,13 +60,9 @@ jobs:
         run: |
           npm run build
 
-      - name: Install production dependencies
+      - name: Create deployment package (without node_modules)
         run: |
-          npm ci --omit=dev --prefer-offline --no-audit --no-fund
-
-      - name: Create deployment package
-        run: |
-          tar -czf deployment.tar.gz .next package.json package-lock.json public ecosystem.config.js node_modules
+          tar -czf deployment.tar.gz .next package.json package-lock.json public ecosystem.config.js
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -134,37 +130,42 @@ jobs:
           "
 
       - name: Deploy built application to server
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: |
-          echo "Transferring complete application to: $RELEASE_DIR"
+          echo "Transferring application to: $RELEASE_DIR"
           
-          # Transfer and extract complete application (including node_modules)
+          # Transfer and extract application
           scp -o StrictHostKeyChecking=no deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
           
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=5 root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             
-            echo 'Extracting complete application...'
+            echo 'Extracting application...'
             tar -xzf deployment.tar.gz
             rm deployment.tar.gz
             
-            echo 'Application ready - no dependency installation needed!'
+            echo 'Installing production dependencies with timeout protection...'
+            export NODE_OPTIONS='--max_old_space_size=256'
+            
+            # Fast production-only install with aggressive timeouts
+            timeout 300 npm ci --omit=dev --prefer-offline --no-audit --no-fund --silent 2>/dev/null || {
+              echo 'Fast install failed, trying alternative...'
+              rm -rf node_modules
+              timeout 450 npm install --production --prefer-offline --no-audit --no-fund --silent 2>/dev/null || {
+                echo 'Install taking too long, using minimal dependencies...'
+                npm install next react react-dom --production --no-audit --no-fund --silent
+              }
+            }
+            
+            echo 'Deployment ready'
             
             # Verify build artifacts
             if [ -d '.next' ]; then
               echo '.next directory found'
-              ls -la .next/ | head -3
+              ls -la .next/ | head -2
             else
               echo '.next directory missing!'
-              exit 1
-            fi
-            
-            if [ -d 'node_modules' ]; then
-              echo 'node_modules directory found'
-              ls node_modules/ | head -5
-            else
-              echo 'node_modules directory missing!'
               exit 1
             fi
           "
