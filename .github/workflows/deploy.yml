@@ -222,14 +222,18 @@ jobs:
             sleep 10
           }
 
-      - name: Cleanup old releases
+      - name: Schedule cleanup (non-blocking)
         run: |
+          echo "Scheduling cleanup for later (non-blocking deployment)"
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            cd ${{ env.DEPLOY_PATH }}/releases
-            # Keep only 3 most recent releases for faster cleanup
-            ls -t | tail -n +4 | head -5 | xargs -r rm -rf &
-            echo 'Old releases cleanup started in background'
-          " || echo "Cleanup attempted"
+            nohup bash -c '
+              sleep 300
+              cd ${{ env.DEPLOY_PATH }}/releases 2>/dev/null || exit 0
+              ls -t | tail -n +6 | head -3 | xargs -r rm -rf 2>/dev/null
+              echo \"Cleanup completed at \$(date)\" >> /var/log/datalys-cleanup.log
+            ' >/dev/null 2>&1 &
+            echo 'Cleanup scheduled for 5 minutes after deployment'
+          " || echo "Cleanup scheduling attempted"
 
       - name: Health check
         timeout-minutes: 8
