@@ -60,9 +60,15 @@ jobs:
         run: |
           npm run build
 
-      - name: Create deployment package (without node_modules)
+      - name: Install production dependencies for deployment
         run: |
-          tar -czf deployment.tar.gz .next package.json package-lock.json public ecosystem.config.js
+          rm -rf node_modules
+          npm ci --omit=dev --prefer-offline --no-audit --no-fund
+
+      - name: Create complete deployment package
+        run: |
+          # Create compressed package with all needed files
+          tar --exclude='*.log' --exclude='.git' -czf deployment.tar.gz .next package.json package-lock.json public ecosystem.config.js node_modules
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -129,45 +135,45 @@ jobs:
             echo 'Source files deployed and symlinks created'
           "
 
-      - name: Deploy built application to server
-        timeout-minutes: 8
+      - name: Deploy complete application to server
+        timeout-minutes: 12
         run: |
-          echo "Transferring application to: $RELEASE_DIR"
+          echo "Transferring complete application to: $RELEASE_DIR"
           
-          # Transfer and extract application
-          scp -o StrictHostKeyChecking=no deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
+          # Transfer complete application with progress
+          rsync -avz --progress --compress-level=1 deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/ || {
+            echo "rsync failed, trying scp..."
+            scp -o StrictHostKeyChecking=no deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
+          }
           
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             
-            echo 'Extracting application...'
-            tar -xzf deployment.tar.gz
+            echo 'Extracting complete application (this may take a few minutes)...'
+            # Extract with progress indication
+            pv deployment.tar.gz | tar -xzf - 2>/dev/null || tar -xzf deployment.tar.gz
             rm deployment.tar.gz
             
-            echo 'Installing production dependencies with timeout protection...'
-            export NODE_OPTIONS='--max_old_space_size=256'
+            echo 'Application extracted - no npm install needed!'
             
-            # Fast production-only install with aggressive timeouts
-            timeout 300 npm ci --omit=dev --prefer-offline --no-audit --no-fund --silent 2>/dev/null || {
-              echo 'Fast install failed, trying alternative...'
-              rm -rf node_modules
-              timeout 450 npm install --production --prefer-offline --no-audit --no-fund --silent 2>/dev/null || {
-                echo 'Install taking too long, using minimal dependencies...'
-                npm install next react react-dom --production --no-audit --no-fund --silent
-              }
-            }
-            
-            echo 'Deployment ready'
-            
-            # Verify build artifacts
+            # Verify all components
             if [ -d '.next' ]; then
               echo '.next directory found'
-              ls -la .next/ | head -2
             else
               echo '.next directory missing!'
               exit 1
             fi
+            
+            if [ -d 'node_modules' ]; then
+              echo 'node_modules directory found'
+              echo \"Dependencies: \$(ls node_modules | wc -l) packages\"
+            else
+              echo 'node_modules directory missing!'
+              exit 1
+            fi
+            
+            echo 'Deployment ready - zero installation time!'
           "
 
       - name: Switch to new release  
