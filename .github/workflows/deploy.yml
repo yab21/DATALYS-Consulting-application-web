@@ -60,9 +60,13 @@ jobs:
         run: |
           npm run build
 
+      - name: Install production dependencies
+        run: |
+          npm ci --omit=dev --prefer-offline --no-audit --no-fund
+
       - name: Create deployment package
         run: |
-          tar -czf deployment.tar.gz .next package.json package-lock.json public ecosystem.config.js
+          tar -czf deployment.tar.gz .next package.json package-lock.json public ecosystem.config.js node_modules
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -130,47 +134,22 @@ jobs:
           "
 
       - name: Deploy built application to server
-        timeout-minutes: 10
+        timeout-minutes: 5
         run: |
-          echo "Transferring build artifacts to: $RELEASE_DIR"
+          echo "Transferring complete application to: $RELEASE_DIR"
           
-          # Transfer and extract build artifacts
+          # Transfer and extract complete application (including node_modules)
           scp -o StrictHostKeyChecking=no deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
           
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=5 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             
-            echo 'Extracting build artifacts...'
+            echo 'Extracting complete application...'
             tar -xzf deployment.tar.gz
             rm deployment.tar.gz
             
-            echo 'Installing production dependencies only...'
-            export NODE_OPTIONS='--max_old_space_size=256'
-            export NPM_CONFIG_AUDIT=false
-            export NPM_CONFIG_FUND=false
-            export NPM_CONFIG_PROGRESS=false
-            export NPM_CONFIG_LOGLEVEL=error
-            
-            # Use shared node_modules efficiently
-            if [ -s '${{ env.DEPLOY_PATH }}/shared/node_modules/package.json' ]; then
-              echo 'Using existing shared node_modules...'
-              rm -rf node_modules
-              cp -r ${{ env.DEPLOY_PATH }}/shared/node_modules ./
-            fi
-            
-            timeout 600 npm ci --omit=dev --prefer-offline --no-audit --no-fund || {
-              echo 'npm ci failed or timed out, cleaning up...'
-              rm -rf node_modules ${{ env.DEPLOY_PATH }}/shared/node_modules/*
-              timeout 900 npm install --omit=dev --prefer-offline --no-audit --no-fund
-            }
-            
-            # Update shared node_modules for next deployment
-            echo 'Updating shared node_modules...'
-            rm -rf ${{ env.DEPLOY_PATH }}/shared/node_modules/*
-            cp -r ./node_modules/* ${{ env.DEPLOY_PATH }}/shared/node_modules/ || echo 'Could not update shared cache'
-            
-            echo 'Production deployment ready'
+            echo 'Application ready - no dependency installation needed!'
             
             # Verify build artifacts
             if [ -d '.next' ]; then
@@ -178,6 +157,14 @@ jobs:
               ls -la .next/ | head -3
             else
               echo '.next directory missing!'
+              exit 1
+            fi
+            
+            if [ -d 'node_modules' ]; then
+              echo 'node_modules directory found'
+              ls node_modules/ | head -5
+            else
+              echo 'node_modules directory missing!'
               exit 1
             fi
           "
