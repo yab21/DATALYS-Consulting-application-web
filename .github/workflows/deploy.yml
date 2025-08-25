@@ -1,4 +1,4 @@
-name: 🚀 Deploy DATALYS App to Production
+name: Deploy DATALYS App to Production
 
 on:
   push:
@@ -12,47 +12,87 @@ env:
   DEPLOY_PATH: "/var/www/datalys-app"
 
 jobs:
-  # ✅ Tests 
+  # Tests 
   test:
-    name: 🧪 Test & Validate
+    name: Test & Validate
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 📦 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: 📋 Install dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: 🔍 Run TypeScript check
+      - name: Run TypeScript check
         run: npm run type-check
 
-      - name: 🧪 Run tests (if available)
+      - name: Run tests (if available)
         run: npm run test --if-present
 
-  # 🚀 Déploiement
-  deploy:
-    name: 🚀 Deploy to Production
+  # Build sur GitHub Actions (serveurs rapides)
+  build:
+    name: Build Application
     runs-on: ubuntu-latest
     needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies with cache
+        run: |
+          npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Build Next.js application
+        run: |
+          npm run build
+
+      - name: Create deployment package
+        run: |
+          tar -czf deployment.tar.gz .next package.json package-lock.json public server.js ecosystem.config.js
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files
+          path: deployment.tar.gz
+          retention-days: 1
+
+  # Déploiement optimisé
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
     environment: production
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔐 Setup SSH
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+
+      - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: 🏗️ Create deployment directory and setup
+      - name: Create deployment directory and setup
         run: |
           # Generate timestamp once and reuse it
           export TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -68,7 +108,7 @@ jobs:
             echo 'Directories created successfully'
           "
 
-      - name: 📦 Deploy source code
+      - name: Deploy source code
         run: |
           echo "📤 Deploying source code to: $RELEASE_DIR"
 
@@ -89,62 +129,47 @@ jobs:
             echo 'Source files deployed and symlinks created'
           "
 
-      - name: 📋 Install dependencies and build on server
-        timeout-minutes: 35
+      - name: Deploy built application to server
+        timeout-minutes: 10
         run: |
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=120 -o ServerAliveCountMax=5 root@${{ env.SERVER_HOST }} "
+          echo "Transferring build artifacts to: $RELEASE_DIR"
+          
+          # Transfer and extract build artifacts
+          scp -o StrictHostKeyChecking=no deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
+          
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=5 root@${{ env.SERVER_HOST }} "
             set -e
             cd $RELEASE_DIR
             
-            echo '🔍 Optimized installation and build process...'
-            export NODE_OPTIONS='--max_old_space_size=512'
+            echo 'Extracting build artifacts...'
+            tar -xzf deployment.tar.gz
+            rm deployment.tar.gz
+            
+            echo 'Installing production dependencies only...'
+            export NODE_OPTIONS='--max_old_space_size=256'
             export NPM_CONFIG_AUDIT=false
             export NPM_CONFIG_FUND=false
             export NPM_CONFIG_PROGRESS=false
             export NPM_CONFIG_LOGLEVEL=error
             
-            # Try to copy node_modules from a working previous release
-            LATEST_WORKING=\$(ls -t ../*/node_modules 2>/dev/null | head -1 | cut -d'/' -f2 || echo '')
-            if [ -n \"\$LATEST_WORKING\" ] && [ -d \"../\$LATEST_WORKING/node_modules\" ]; then
-              echo '📦 Copying node_modules from previous release...'
-              cp -r \"../\$LATEST_WORKING/node_modules\" ./
-              echo '🔄 Updating dependencies...'
-              npm ci --silent --prefer-offline --no-audit --no-fund || {
-                echo '🔄 Update failed, full reinstall needed...'
-                rm -rf node_modules package-lock.json
-                npm install --silent --legacy-peer-deps --no-audit --no-fund
-              }
-            else
-              echo '🔄 Fresh installation (no previous release found)...'
-              npm ci --silent --prefer-offline --no-audit --no-fund || {
-                echo '🔄 npm ci failed, trying npm install...'
-                rm -rf node_modules package-lock.json
-                npm install --silent --legacy-peer-deps --no-audit --no-fund
-              }
-            fi
+            npm ci --omit=dev --prefer-offline --no-audit --no-fund
             
-            echo '🏗️ Building Next.js application...'
-            NODE_OPTIONS='--max_old_space_size=512' npm run build
+            echo 'Production deployment ready'
             
-            echo '🧹 Removing dev dependencies after build...'
-            npm prune --omit=dev --silent --no-audit
-            
-            echo '✅ Build completed successfully'
-            
-            # Verify build was created
+            # Verify build artifacts
             if [ -d '.next' ]; then
-              echo '✅ .next directory found after build'
-              ls -la .next/ | head -5
+              echo '.next directory found'
+              ls -la .next/ | head -3
             else
-              echo '❌ .next directory missing after build!'
+              echo '.next directory missing!'
               exit 1
             fi
           "
 
-      - name: 🔄 Switch to new release  
+      - name: Switch to new release  
         timeout-minutes: 5
         run: |
-          echo "🔗 Switching to release: $TIMESTAMP"
+          echo "Switching to release: $TIMESTAMP"
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}
             
@@ -159,20 +184,20 @@ jobs:
             echo 'Symlink updated to new release'
           "
 
-      - name: 🛑 Stop PM2 processes
+      - name: Stop PM2 processes
         timeout-minutes: 5
         run: |
-          echo "🛑 Stopping existing PM2 processes..."
+          echo "Stopping existing PM2 processes..."
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
             pm2 delete datalys-app 2>/dev/null || echo 'No processes to delete'
             sleep 3
             echo 'PM2 processes stopped'
           "
 
-      - name: 🚀 Start PM2 processes
+      - name: Start PM2 processes
         timeout-minutes: 8
         run: |
-          echo "🚀 Starting fresh PM2 processes..."
+          echo "Starting fresh PM2 processes..."
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}/current
             
@@ -195,7 +220,7 @@ jobs:
             pm2 save
           "
 
-      - name: 🧹 Cleanup old releases
+      - name: Cleanup old releases
         run: |
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}/releases
@@ -203,64 +228,64 @@ jobs:
             echo 'Old releases cleaned up'
           "
 
-      - name: ✅ Health check
+      - name: Health check
         timeout-minutes: 8
         run: |
-          echo "🏥 Waiting for slow VPS application to start..."
+          echo "Waiting for slow VPS application to start..."
           sleep 30
           
           # Retry health check up to 10 times for slow VPS
           for i in {1..10}; do
             echo "Health check attempt $i/10..."
             if curl -f -s --connect-timeout 20 --max-time 30 https://applicationweb.datalysconsulting.com/ >/dev/null 2>&1; then
-              echo "✅ Application is healthy and responding!"
+              echo "Application is healthy and responding!"
               exit 0
             fi
             if [ $i -lt 10 ]; then
-              echo "⚠️ Health check failed, retrying in 20s... (VPS needs time)"
+              echo "Health check failed, retrying in 20s... (VPS needs time)"
               sleep 20
             fi
           done
           
-          echo "❌ Health check failed after 10 attempts"
-          echo "🔍 Checking PM2 status for debugging..."
+          echo "Health check failed after 10 attempts"
+          echo "Checking PM2 status for debugging..."
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "pm2 list && pm2 logs datalys-app --lines 15" || true
-          echo "⚠️ Deployment may still be successful but application is slow to respond"
+          echo "Deployment may still be successful but application is slow to respond"
           exit 0
 
-      - name: 📊 Final verification
+      - name: Final verification
         run: |
-          echo "🔍 Final deployment verification..."
+          echo "Final deployment verification..."
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            echo '📊 PM2 Status:'
+            echo 'PM2 Status:'
             pm2 list
-            echo '📋 Application logs (last 10 lines):'
+            echo 'Application logs (last 10 lines):'
             pm2 logs ${{ env.APP_NAME }} --lines 10 2>/dev/null || echo 'No recent logs'
-            echo '📂 Current release:'
+            echo 'Current release:'
             ls -la ${{ env.DEPLOY_PATH }}/current
-            echo '✅ Deployment verification completed'
+            echo 'Deployment verification completed'
           "
 
-  # 📢 Notification
+  # Notification
   notify:
-    name: 📢 Notification
+    name: Notification
     runs-on: ubuntu-latest
-    needs: [test, deploy]
+    needs: [test, build, deploy]
     if: always()
 
     steps:
-      - name: ✅ Success notification
+      - name: Success notification
         if: needs.deploy.result == 'success'
         run: |
-          echo "🎉 Deployment successful!"
-          echo "✅ DATALYS App deployed to https://applicationweb.datalysconsulting.com/"
-          echo "🔗 Commit: ${{ github.sha }}"
-          echo "👤 Author: ${{ github.actor }}"
+          echo "Deployment successful!"
+          echo "DATALYS App deployed to https://applicationweb.datalysconsulting.com/"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
 
-      - name: ❌ Failure notification
+      - name: Failure notification
         if: needs.deploy.result == 'failure'
         run: |
-          echo "🚨 Deployment failed!"
-          echo "❌ Please check the logs and fix the issues"
-          echo "🔗 Commit: ${{ github.sha }}"
-          echo "👤 Author: ${{ github.actor }}"
+          echo "Deployment failed!"
+          echo "Please check the logs and fix the issues"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
