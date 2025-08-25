@@ -152,7 +152,23 @@ jobs:
             export NPM_CONFIG_PROGRESS=false
             export NPM_CONFIG_LOGLEVEL=error
             
-            npm ci --omit=dev --prefer-offline --no-audit --no-fund
+            # Use shared node_modules efficiently
+            if [ -s '${{ env.DEPLOY_PATH }}/shared/node_modules/package.json' ]; then
+              echo 'Using existing shared node_modules...'
+              rm -rf node_modules
+              cp -r ${{ env.DEPLOY_PATH }}/shared/node_modules ./
+            fi
+            
+            timeout 600 npm ci --omit=dev --prefer-offline --no-audit --no-fund || {
+              echo 'npm ci failed or timed out, cleaning up...'
+              rm -rf node_modules ${{ env.DEPLOY_PATH }}/shared/node_modules/*
+              timeout 900 npm install --omit=dev --prefer-offline --no-audit --no-fund
+            }
+            
+            # Update shared node_modules for next deployment
+            echo 'Updating shared node_modules...'
+            rm -rf ${{ env.DEPLOY_PATH }}/shared/node_modules/*
+            cp -r ./node_modules/* ${{ env.DEPLOY_PATH }}/shared/node_modules/ || echo 'Could not update shared cache'
             
             echo 'Production deployment ready'
             
