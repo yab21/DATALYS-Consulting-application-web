@@ -108,6 +108,12 @@ jobs:
 
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
             set -e
+            # Auto-cleanup old releases before creating new one to prevent disk full
+            cd ${{ env.DEPLOY_PATH }}/releases 2>/dev/null || mkdir -p ${{ env.DEPLOY_PATH }}/releases
+            if [ \$(ls -1 | wc -l) -gt 5 ]; then
+              echo 'Cleaning old releases to prevent disk full...'
+              ls -t | tail -n +6 | head -5 | xargs -r rm -rf 2>/dev/null &
+            fi
             mkdir -p $RELEASE_DIR
             mkdir -p ${{ env.DEPLOY_PATH }}/shared/logs
             mkdir -p ${{ env.DEPLOY_PATH }}/shared/node_modules
@@ -116,7 +122,7 @@ jobs:
 
       - name: Deploy source code
         run: |
-          echo "📤 Deploying source code to: $RELEASE_DIR"
+          echo "Deploying source code to: $RELEASE_DIR"
 
           # Synchroniser le code source
           rsync -avz --delete \
