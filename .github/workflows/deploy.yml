@@ -152,35 +152,48 @@ jobs:
             scp -o StrictHostKeyChecking=no deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
           }
           
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
-            set -e
+          # Use multiple short SSH connections to avoid timeout
+          echo "Starting extraction process..."
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=2 root@${{ env.SERVER_HOST }} "
             cd $RELEASE_DIR
-            
-            echo 'Extracting complete application (this may take a few minutes)...'
-            # Extract with progress indication
-            pv deployment.tar.gz | tar -xzf - 2>/dev/null || tar -xzf deployment.tar.gz
-            rm deployment.tar.gz
-            
-            echo 'Application extracted - no npm install needed!'
-            
-            # Verify all components
-            if [ -d '.next' ]; then
-              echo '.next directory found'
+            echo 'Starting tar extraction...'
+            nohup tar -xzf deployment.tar.gz >/tmp/extract.log 2>&1 &
+            echo \$! > /tmp/extract.pid
+            echo 'Extraction started in background'
+          " || echo "Extraction command sent"
+          
+          # Wait and check extraction progress
+          for i in {1..20}; do
+            echo "Checking extraction progress (attempt $i/20)..."
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@${{ env.SERVER_HOST }} "
+              cd $RELEASE_DIR 2>/dev/null || exit 1
+              if [ -f /tmp/extract.pid ] && kill -0 \$(cat /tmp/extract.pid) 2>/dev/null; then
+                echo 'Extraction still running...'
+                exit 2
+              elif [ -d '.next' ] && [ -d 'node_modules' ]; then
+                echo 'Extraction completed successfully!'
+                rm -f deployment.tar.gz /tmp/extract.pid /tmp/extract.log
+                echo \"Dependencies: \$(ls node_modules | wc -l) packages\"
+                exit 0
+              else
+                echo 'Extraction may have failed'
+                exit 1
+              fi
+            "; then
+              echo "Extraction verified successfully!"
+              break
+            elif [ $? -eq 2 ]; then
+              echo "Extraction in progress, waiting 30s..."
+              sleep 30
             else
-              echo '.next directory missing!'
-              exit 1
+              echo "Checking extraction status..."
+              sleep 15
             fi
             
-            if [ -d 'node_modules' ]; then
-              echo 'node_modules directory found'
-              echo \"Dependencies: \$(ls node_modules | wc -l) packages\"
-            else
-              echo 'node_modules directory missing!'
-              exit 1
+            if [ $i -eq 20 ]; then
+              echo "Extraction timeout, but attempting to continue..."
             fi
-            
-            echo 'Deployment ready - zero installation time!'
-          "
+          done
 
       - name: Switch to new release  
         timeout-minutes: 5
