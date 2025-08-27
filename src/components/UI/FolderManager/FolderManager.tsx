@@ -377,7 +377,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       formData.append('is_public', singleFileIsPublic.toString());
       formData.append('subfolder', singleFileSubfolder);
       
-      const response = await fetch('http://82.112.253.137:8082/files/upload', {
+      const response = await fetch('/api/proxy/files/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`

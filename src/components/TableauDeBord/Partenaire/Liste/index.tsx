@@ -71,9 +71,9 @@ const ListePartenaires: React.FC = () => {
   const fixImageUrl = (url: string | undefined): string | undefined => {
     if (!url) return url;
     
-    // Les nouvelles URLs du backend sont déjà correctes (http://82.112.253.137:8082/files/serve/logos/...)
+    // Les URLs passent par le proxy pour éviter les mixed content
     if (url.includes('82.112.253.137:8082/files/serve/')) {
-      return url;
+      return url.replace('http://82.112.253.137:8082', '/api/proxy');
     }
     
     // Pour les URLs avec localhost:8081 (comme dans la réponse API)
@@ -82,11 +82,11 @@ const ListePartenaires: React.FC = () => {
       const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
       if (pathMatch) {
         const filename = pathMatch[1];
-        return `http://82.112.253.137:8082/files/serve/logos/${filename}`;
+        return `/api/proxy/files/serve/logos/${filename}`;
       } else {
         // Si pas de match avec le pattern attendu, essayer de remplacer directement
-        return url.replace('localhost:8081', '82.112.253.137:8082')
-                  .replace('/uploads/', '/files/serve/');
+        return url.replace('localhost:8081', '')
+                  .replace('/uploads/', '/api/proxy/files/serve/');
       }
     }
     
@@ -95,14 +95,14 @@ const ListePartenaires: React.FC = () => {
       const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
       if (pathMatch) {
         const filename = pathMatch[1];
-        return `http://82.112.253.137:8082/files/serve/logos/${filename}`;
+        return `/api/proxy/files/serve/logos/${filename}`;
       }
     }
     
     // Si l'URL est relative avec /uploads/, la convertir vers le nouveau format
     if (url.startsWith('/uploads/logos/')) {
       const filename = url.replace('/uploads/logos/', '');
-      return `http://82.112.253.137:8082/files/serve/logos/${filename}`;
+      return `/api/proxy/files/serve/logos/${filename}`;
     }
     
     return url;
@@ -155,7 +155,7 @@ const ListePartenaires: React.FC = () => {
         // S'assurer que le token est bien défini dans le service
         partnersService.setToken(token);
         console.log("🔐 Token défini dans le service pour la liste");
-        console.log("🌐 URL de base API:", process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082');
+        console.log("🌐 URL de base API:", process.env.NEXT_PUBLIC_API_BASE_URL || '/api/proxy');
         
         console.log("📡 Appel API getActivePartners en cours...");
         const result = await partnersService.getActivePartners();

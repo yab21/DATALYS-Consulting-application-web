@@ -30,4 +30,4 @@ export const isFirebaseConfigured = (): boolean => {
 export const isDevelopment = process.env.NODE_ENV === 'development';
 
 // URL de l'API pour envoyer les tokens FCM (selon la documentation)
-export const FCM_TOKEN_ENDPOINT = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082') + '/fcm/register-token';
+export const FCM_TOKEN_ENDPOINT = (process.env.NEXT_PUBLIC_API_BASE_URL || '/api/proxy') + '/fcm/register-token';

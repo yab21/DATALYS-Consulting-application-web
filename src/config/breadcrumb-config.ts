@@ -89,7 +89,7 @@ export const BREADCRUMB_ROUTES: RouteConfig[] = [
         }
         
         // Récupérer le nom du partenaire depuis l'API via getByCriteria
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082'}/partners/getByCriteria`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api/proxy'}/partners/getByCriteria`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

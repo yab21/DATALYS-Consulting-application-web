@@ -61,7 +61,7 @@ export interface PartnerLoginResponse {
 }
 
 class PartnersService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://82.112.253.137:8082';
+  private baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '/api/proxy';
   private token: string | null = null;
 
   constructor() {
