@@ -1,8 +1,8 @@
-name: Deploy DATALYS App to Production
+name: Deploy DATALYS App to Production (Legacy - Disabled)
 
 on:
-  push:
-    branches: [develop]
+  # push:
+  #   branches: [develop]
   workflow_dispatch: # Permet le déclenchement manuel
 
 env:
