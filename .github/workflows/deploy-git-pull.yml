@@ -1,8 +1,8 @@
-name: Deploy DATALYS App via Git Pull
+name: Deploy DATALYS App via Git Pull (Disabled - Too Complex)
 
 on:
-  push:
-    branches: [develop]
+  # push:
+  #   branches: [develop]
   workflow_dispatch:
 
 env:
