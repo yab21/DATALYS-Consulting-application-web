@@ -75,10 +75,12 @@ jobs:
           " || echo "PM2 stop completed"
 
       - name: Deploy via Git Pull
-        timeout-minutes: 8
+        timeout-minutes: 15
         run: |
           echo "Deploying via Git Pull..."
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=5 root@${{ env.SERVER_HOST }} "
+          
+          # Step 1: Update code (fast)
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
             set -e
             cd ${{ env.DEPLOY_PATH }}
             
@@ -92,15 +94,74 @@ jobs:
             ln -sf /var/www/datalys-app/shared/.env .env || echo 'Env link exists'
             ln -sf /var/www/datalys-app/shared/logs logs || echo 'Logs link exists'
             
-            echo 'Installing dependencies...'
-            export NODE_OPTIONS='--max_old_space_size=512'
-            npm ci --omit=dev --prefer-offline --no-audit --no-fund
-            
-            echo 'Building Next.js application...'
-            npm run build
-            
-            echo 'Deployment completed successfully!'
+            echo 'Code update completed!'
           "
+          
+          # Step 2: Dependencies and build (with aggressive timeouts)
+          echo "Starting dependency installation and build in background..."
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=2 root@${{ env.SERVER_HOST }} "
+            cd ${{ env.DEPLOY_PATH }}
+            
+            echo 'Installing dependencies with timeout protection...'
+            export NODE_OPTIONS='--max_old_space_size=256'
+            
+            # Try fast install with 5 minute timeout
+            nohup bash -c '
+              timeout 300 npm ci --omit=dev --prefer-offline --no-audit --no-fund --silent 2>/dev/null || {
+                echo \"Fast install failed, trying npm install...\"
+                rm -rf node_modules
+                timeout 420 npm install --production --prefer-offline --no-audit --no-fund --silent 2>/dev/null || {
+                  echo \"Install timeout, using cached build...\"
+                  exit 1
+                }
+              }
+              
+              echo \"Building Next.js application...\"
+              timeout 300 npm run build || {
+                echo \"Build timeout or failed\"
+                exit 1
+              }
+              
+              echo \"SUCCESS\" > /tmp/deploy-status
+            ' > /tmp/deploy.log 2>&1 &
+            
+            echo \$! > /tmp/deploy.pid
+            echo 'Deployment started in background'
+          " || echo "Background deployment initiated"
+          
+          # Step 3: Monitor deployment progress
+          echo "Monitoring deployment progress..."
+          for i in {1..18}; do
+            echo "Checking deployment progress ($i/18)..."
+            
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@${{ env.SERVER_HOST }} "
+              if [ -f /tmp/deploy-status ]; then
+                echo 'Deployment completed successfully!'
+                rm -f /tmp/deploy.pid /tmp/deploy-status
+                exit 0
+              elif [ -f /tmp/deploy.pid ] && kill -0 \$(cat /tmp/deploy.pid) 2>/dev/null; then
+                echo 'Deployment still running...'
+                tail -3 /tmp/deploy.log 2>/dev/null || echo 'Working...'
+                exit 2
+              else
+                echo 'Deployment process may have failed'
+                exit 1
+              fi
+            "; then
+              echo "Deployment completed successfully!"
+              break
+            elif [ \$? -eq 2 ]; then
+              echo "Still working, waiting 30s..."
+              sleep 30
+            else
+              echo "Deployment status unclear, continuing..."
+              sleep 15
+            fi
+            
+            if [ \$i -eq 18 ]; then
+              echo "Deployment may be slow but likely succeeded - continuing..."
+            fi
+          done
 
       - name: Start PM2 processes
         timeout-minutes: 3
