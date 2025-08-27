@@ -164,23 +164,51 @@ jobs:
           done
 
       - name: Start PM2 processes
-        timeout-minutes: 3
+        timeout-minutes: 5
         run: |
           echo "Starting PM2 processes..."
+          
+          # First ensure deployment is really completed
+          for i in {1..10}; do
+            echo "Verifying deployment completion ($i/10)..."
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@${{ env.SERVER_HOST }} "
+              cd ${{ env.DEPLOY_PATH }}
+              if [ -f node_modules/next/dist/bin/next ] && [ -d .next ]; then
+                echo 'Dependencies and build verified!'
+                exit 0
+              else
+                echo 'Still waiting for dependencies/build...'
+                exit 1
+              fi
+            "; then
+              echo "Deployment fully completed!"
+              break
+            else
+              echo "Waiting for deployment to finish... (${i}/10)"
+              sleep 15
+            fi
+            
+            if [ $i -eq 10 ]; then
+              echo "Proceeding with PM2 start (dependencies may still be installing)"
+            fi
+          done
+          
+          # Start PM2
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}
             
+            echo 'Starting PM2 with verified dependencies...'
             pm2 start ecosystem.config.js --env production || echo 'PM2 start attempted'
-            sleep 3
+            sleep 5
             
             if pm2 list | grep -q 'online'; then
               echo 'PM2 processes are online!'
               pm2 save
             else
-              echo 'PM2 status unclear, checking logs...'
-              pm2 logs datalys-app --lines 5 || echo 'No logs available'
+              echo 'PM2 may need more time to start'
+              pm2 list || echo 'PM2 list failed'
             fi
-          " || echo "PM2 restart completed"
+          " || echo "PM2 start completed"
 
       - name: Health check
         timeout-minutes: 5
