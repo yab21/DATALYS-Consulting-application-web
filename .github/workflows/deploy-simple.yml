@@ -1,8 +1,8 @@
-name: Deploy DATALYS App - Simple & Fast
+name: Deploy DATALYS App - Simple & Fast (Disabled)
 
 on:
-  push:
-    branches: [develop]
+  # push:
+  #   branches: [develop]
   workflow_dispatch:
 
 env:
@@ -57,10 +57,10 @@ jobs:
             set -e
             cd ${{ env.DEPLOY_PATH }}
             
-            echo 'Cleaning up any stuck processes...'
-            pkill -f 'npm' 2>/dev/null || echo 'No npm processes to kill'
+            echo 'Cleaning up any stuck processes gently...'
+            killall npm 2>/dev/null || echo 'No npm processes found'
+            sleep 5
             rm -f /tmp/deploy* 2>/dev/null || echo 'No temp files to clean'
-            sleep 2
             
             echo 'Stopping PM2...'
             pm2 delete datalys-app 2>/dev/null || echo 'PM2 already stopped'
