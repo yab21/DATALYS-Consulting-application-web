@@ -81,36 +81,39 @@ jobs:
           name: complete-app
 
       - name: Deploy to server (NO npm operations)
-        timeout-minutes: 8
+        timeout-minutes: 10
         run: |
           echo "Deploying pre-built application..."
           
-          # Create backup timestamp
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            echo 'Stopping services...'
+          # Step 1: Server cleanup (short connection)
+          echo "Cleaning up server..."
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=2 root@${{ env.SERVER_HOST }} "
+            echo 'Emergency cleanup...'
+            ps aux | grep npm | grep -v grep | awk '{print \$2}' | head -5 | xargs -r kill -TERM 2>/dev/null || echo 'No npm to clean'
+            sleep 3
+            echo 'Stopping PM2...'
             pm2 delete datalys-app 2>/dev/null || echo 'PM2 not running'
-            
-            echo 'Creating backup and new directory...'
-            if [ -d ${{ env.DEPLOY_PATH }}_backup ]; then
-              rm -rf ${{ env.DEPLOY_PATH }}_backup_old
-              mv ${{ env.DEPLOY_PATH }}_backup ${{ env.DEPLOY_PATH }}_backup_old
-            fi
-            
-            if [ -d ${{ env.DEPLOY_PATH }} ]; then
-              cp -r ${{ env.DEPLOY_PATH }} ${{ env.DEPLOY_PATH }}_backup
-            fi
-            
-            mkdir -p ${{ env.DEPLOY_PATH }}
-            cd ${{ env.DEPLOY_PATH }}
-          "
+            echo 'Cleanup completed'
+          " || echo "Initial cleanup attempted"
           
+          sleep 5
+          
+          # Step 2: Directory preparation (short connection) 
+          echo "Preparing directories..."
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=2 root@${{ env.SERVER_HOST }} "
+            echo 'Setting up deployment directory...'
+            mkdir -p ${{ env.DEPLOY_PATH }}_new
+            cd ${{ env.DEPLOY_PATH }}_new
+            echo 'Directory ready'
+          " || echo "Directory preparation attempted"
+          
+          # Step 3: Transfer and extract (one connection)
           echo "Transferring pre-built application..."
-          scp -o StrictHostKeyChecking=no complete-app.tar.gz root@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
+          scp -o StrictHostKeyChecking=no complete-app.tar.gz root@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}_new/
           
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            cd ${{ env.DEPLOY_PATH }}
+          # Step 4: Extraction and setup (short connection)
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
+            cd ${{ env.DEPLOY_PATH }}_new
             
             echo 'Extracting pre-built application...'
             tar -xzf complete-app.tar.gz
@@ -128,12 +131,19 @@ jobs:
               exit 1
             fi
             
+            echo 'Atomic deployment switch...'
+            if [ -d ${{ env.DEPLOY_PATH }} ]; then
+              mv ${{ env.DEPLOY_PATH }} ${{ env.DEPLOY_PATH }}_backup_\$(date +%H%M%S) 2>/dev/null || echo 'No old version'
+            fi
+            mv ${{ env.DEPLOY_PATH }}_new ${{ env.DEPLOY_PATH }}
+            
             echo 'Starting PM2...'
+            cd ${{ env.DEPLOY_PATH }}
             pm2 start ecosystem.config.js --env production
             sleep 3
             pm2 save
             
-            echo 'Deployment completed - no npm operations on server!'
+            echo 'Deployment completed - zero npm operations!'
           "
 
       - name: Health check
