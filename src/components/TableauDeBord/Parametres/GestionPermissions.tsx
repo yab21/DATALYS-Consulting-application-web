@@ -107,8 +107,8 @@ const GestionPermissions: React.FC = () => {
     if (isAuthenticated && (!isAdmin() || !hasPermission(Permission.MANAGE_ROLES_PERMISSIONS))) {
       showNotification({
         type: "error",
-        title: "Accès refusé",
-        message: "Seuls les administrateurs avec permissions peuvent gérer les permissions",
+        title: "Erreur",
+        message: "Accès refusé",
         duration: 5000,
       });
       return;

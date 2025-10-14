@@ -65,8 +65,8 @@ const AjouterPartenaire: React.FC = () => {
     if (isAuthenticated && !isAdmin()) {
       console.log("❌ Accès refusé - Utilisateur non administrateur");
       showNotification(simpleNotificationHelpers.error(
-        "Accès refusé",
-        "Seuls les administrateurs peuvent créer des partenaires"
+        "Erreur",
+        "Accès refusé"
       ));
       router.push("/tableaudebord");
       return;
@@ -75,8 +75,8 @@ const AjouterPartenaire: React.FC = () => {
     if (isAuthenticated && !hasPermission(Permission.CREATE_PARTNERS)) {
       console.log("❌ Accès refusé - Permission CREATE_PARTNERS manquante");
       showNotification(simpleNotificationHelpers.error(
-        "Permissions insuffisantes",
-        "Vous n'avez pas la permission de créer des partenaires"
+        "Erreur",
+        "Permissions insuffisantes"
       ));
       router.push("/tableaudebord");
       return;
@@ -215,7 +215,7 @@ const AjouterPartenaire: React.FC = () => {
     } catch (error) {
       console.error("❌ Erreur lors de la création:", error);
       
-      let errorTitle = "Erreur de création";
+      let errorTitle = "Erreur";
       let errorMessage = "Erreur inconnue";
       
       if (error instanceof Error) {

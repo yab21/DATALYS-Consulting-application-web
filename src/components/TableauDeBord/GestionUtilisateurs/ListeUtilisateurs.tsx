@@ -111,8 +111,8 @@ const ListeUtilisateurs: React.FC = () => {
     if (isAuthenticated && !isAdmin()) {
       showNotification({
         type: "error",
-        title: "Accès refusé",
-        message: "Seuls les administrateurs peuvent gérer les utilisateurs",
+        title: "Erreur",
+        message: "Accès refusé",
         duration: 5000,
       });
       return;

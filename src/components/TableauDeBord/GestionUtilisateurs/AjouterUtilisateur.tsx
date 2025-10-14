@@ -74,8 +74,8 @@ const AjouterUtilisateur: React.FC = () => {
     if (isAuthenticated && !isAdmin()) {
       showNotification({
         type: "error",
-        title: "Accès refusé",
-        message: "Seuls les administrateurs peuvent créer des utilisateurs",
+        title: "Erreur",
+        message: "Accès refusé",
         duration: 5000,
       });
       router.push("/tableaudebord");
@@ -85,8 +85,8 @@ const AjouterUtilisateur: React.FC = () => {
     if (isAuthenticated && !hasPermission(Permission.CREATE_USERS)) {
       showNotification({
         type: "error",
-        title: "Permissions insuffisantes",
-        message: "Vous n'avez pas la permission de créer des utilisateurs",
+        title: "Erreur",
+        message: "Permissions insuffisantes",
         duration: 5000,
       });
       router.push("/tableaudebord");
@@ -219,8 +219,8 @@ const AjouterUtilisateur: React.FC = () => {
       if (response.code === 200 || response.status === 'success') {
         showNotification({
           type: "success",
-          title: "Utilisateur créé",
-          message: `${formData.name} a été créé avec succès`,
+          title: "Succès",
+          message: response.message || `Utilisateur ${formData.name} créé avec succès`,
           duration: 3000,
         });
 
@@ -233,7 +233,7 @@ const AjouterUtilisateur: React.FC = () => {
       console.error("Erreur lors de la création:", error);
       showNotification({
         type: "error",
-        title: "Erreur de création",
+        title: "Erreur",
         message: error instanceof Error ? error.message : "Impossible de créer l'utilisateur",
         duration: 5000,
       });
