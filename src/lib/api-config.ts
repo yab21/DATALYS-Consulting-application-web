@@ -1,4 +1,5 @@
 // Configuration API pour DATALYS Consulting
+import { SecureStorage } from '@/lib/secure-storage';
 
 export const API_CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api/proxy',
@@ -11,6 +12,7 @@ export const API_CONFIG = {
       FORGOT_PASSWORD: '/auth/forgot-password',
       RESET_PASSWORD: '/auth/reset-password',
       CHANGE_TEMP_PASSWORD: '/auth/change-temp-password',
+      VERIFY_MFA: '/auth/verify-mfa',
     },
     USER: {
       PROFILE: '/user/profile',
@@ -82,7 +84,7 @@ export const getDefaultHeaders = (): Record<string, string> => {
 
   // Ajouter le token d'authentification s'il existe
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('authToken');
+    const token = SecureStorage.getItem('authToken');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -109,4 +111,19 @@ export interface LoginResponse {
   created_at: string;
   updated_at: string;
   requires_password_change?: boolean; // Indique si l'utilisateur doit changer son mot de passe
+  requires_mfa?: boolean; // Indique si MFA est requis
+  user_id?: number; // ID utilisateur pour étape MFA
+  message?: string; // Message d'information (ex: "Code envoyé")
+}
+
+export interface MFAVerificationRequest {
+  identifier: string;
+  mfa_code: string;
+}
+
+export interface MFAVerificationResponse {
+  status: 'success' | 'error';
+  message: string;
+  remaining_attempts?: number;
+  data?: LoginResponse; // Données complètes après vérification réussie
 }

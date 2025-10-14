@@ -11,7 +11,7 @@ import {
   Input,
   Avatar,
 } from "@nextui-org/react";
-import { useNotifications } from "@/context/NotificationContext";
+import { useSimpleNotifications } from "@/context/NotificationContext";
 import { User, Mail, Building, Users, Upload, X } from "lucide-react";
 
 interface UserData {
@@ -52,7 +52,7 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
   const [newProfileImage, setNewProfileImage] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   useEffect(() => {
     // Simulation d'utilisateur connecté (remplace Firebase Auth)

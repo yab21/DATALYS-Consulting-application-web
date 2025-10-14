@@ -1,108 +1,83 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Input, Checkbox } from "@nextui-org/react";
-import { Button } from "@nextui-org/button";
-import { motion } from "framer-motion";
-import {
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-  ArrowRight,
-  Shield,
-  Zap,
-  TrendingUp,
-  Users,
-} from "lucide-react";
-import { useForm } from "react-hook-form";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import {
+  Card,
+  CardBody,
+  Input,
+  Button,
+  Link,
+} from "@nextui-org/react";
+import { 
+  Shield,
+  ArrowRight,
+  ArrowLeft,
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  AlertTriangle
+} from "lucide-react";
 import { AuthService } from "@/services/auth";
+import { MFAVerificationRequest } from "@/lib/api-config";
 import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { useTopBarProgress } from "@/hooks/useTopBarProgress";
-import VerificationMFA from "@/components/Auth/VerificationMFA";
 
-interface LoginForm {
+interface VerificationMFAProps {
   identifier: string;
-  password: string;
-  rememberMe: boolean;
+  onBack: () => void;
 }
 
-const Connexion: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showMFA, setShowMFA] = useState(false);
-  const [pendingIdentifier, setPendingIdentifier] = useState("");
+const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack }) => {
   const router = useRouter();
-  const { login } = useAuth();
+  const { loginWithUserData } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const { start, finish } = useTopBarProgress();
-  
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>();
 
-  const toggleVisibility = () => setIsVisible(!isVisible);
+  const [mfaCode, setMfaCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState(0);
 
-  const onSubmit = async (data: LoginForm) => {
+  // Décompte pour le renvoi de code (optionnel)
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!mfaCode || mfaCode.length !== 6) {
+      setError("Veuillez entrer un code à 6 chiffres");
+      return;
+    }
+
     start();
     setIsLoading(true);
     setError("");
 
     try {
-      // D'abord, utiliser AuthService pour vérifier la première connexion
-      const result = await AuthService.login({
-        identifier: data.identifier,
-        password: data.password,
-      });
+      const request: MFAVerificationRequest = {
+        identifier,
+        mfa_code: mfaCode,
+      };
 
-      if (result.status === "success") {
-        // Vérifier si MFA est requis
-        if (result.data?.requires_mfa) {
-          finish();
-          setIsLoading(false);
-          setPendingIdentifier(data.identifier);
-          setShowMFA(true);
-          
-          showNotification(simpleNotificationHelpers.info(
-            "Authentification",
-            result.data.message
-          ));
-          return;
-        }
-        
-        // Vérifier si l'utilisateur doit changer son mot de passe
-        if (result.data?.requires_password_change) {
-          showNotification(simpleNotificationHelpers.warning(
-            "Mot de passe",
-            result.message || "Changement de mot de passe requis"
-          ));
-          
-          // Rediriger vers la page de changement de mot de passe
-          setTimeout(() => {
-            setIsLoading(false);
-            router.push(`/changer-mot-de-passe-temporaire?email=${encodeURIComponent(data.identifier)}`);
-            // finish() sera appelé à l'arrivée sur la nouvelle page
-          }, 1500);
-          return;
-        }
+      const result = await AuthService.verifyMFA(request);
 
-        // Connexion normale : utiliser le contexte AuthContext
-        await login(data.identifier, data.password);
-        
-        if (data.rememberMe) {
-          localStorage.setItem("rememberMe", "true");
-        }
+      if (result.status === "success" && result.data) {
+        // Utiliser loginWithUserData pour finaliser la connexion
+        await loginWithUserData(result.data);
         
         showNotification(simpleNotificationHelpers.success(
-          "Succès",
-          result.message || "Connexion réussie"
+          "Authentification réussie !",
+          `Bienvenue ${result.data.name || "sur DATALYS"} 🎉`
         ));
         
         // Rediriger vers le tableau de bord
@@ -114,28 +89,35 @@ const Connexion: React.FC = () => {
       } else {
         finish();
         setIsLoading(false);
-        setError(result.message || "Erreur lors de la connexion");
+        setError(result.message || "Code MFA incorrect");
+        setRemainingAttempts(result.remaining_attempts || null);
+        
         showNotification(simpleNotificationHelpers.error(
-          "Erreur",
-          result.message || "Vérifiez vos identifiants et réessayez"
+          "Code incorrect",
+          result.message || "Vérifiez votre code et réessayez."
         ));
       }
     } catch (error) {
       finish();
       setIsLoading(false);
-      console.error("Erreur de connexion:", error);
+      console.error("Erreur vérification MFA:", error);
       setError("Erreur de connexion. Veuillez réessayer.");
       showNotification(simpleNotificationHelpers.error(
-        "Erreur",
-        "Problème de réseau. Vérifiez votre connexion internet"
+        "Erreur de connexion",
+        "Problème de réseau. Vérifiez votre connexion internet."
       ));
     }
   };
 
-  const handleBackFromMFA = () => {
-    setShowMFA(false);
-    setPendingIdentifier("");
-    setError("");
+  const handleCodeChange = (value: string) => {
+    // Nettoyer l'entrée (garder seulement les chiffres)
+    const cleanValue = value.replace(/[^0-9]/g, "").slice(0, 6);
+    setMfaCode(cleanValue);
+    
+    // Effacer l'erreur si l'utilisateur tape
+    if (error) {
+      setError("");
+    }
   };
 
   const containerVariants = {
@@ -161,16 +143,6 @@ const Connexion: React.FC = () => {
       },
     },
   };
-
-  // Si MFA est requis, afficher le composant MFA
-  if (showMFA) {
-    return (
-      <VerificationMFA
-        identifier={pendingIdentifier}
-        onBack={handleBackFromMFA}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -210,7 +182,7 @@ const Connexion: React.FC = () => {
               className="mb-6 text-4xl font-bold leading-tight text-white lg:text-5xl"
               variants={itemVariants}
             >
-              Espace <span className="text-blue-200">Entreprise</span>
+              Authentification <span className="text-blue-200">Sécurisée</span>
             </motion.h1>
 
             {/* Subtitle */}
@@ -218,8 +190,7 @@ const Connexion: React.FC = () => {
               className="mb-12 max-w-md text-lg leading-relaxed text-blue-100 lg:text-xl"
               variants={itemVariants}
             >
-              Transformez votre espace de travail numérique avec nos solutions
-              innovantes et sécurisées
+              Entrez le code de vérification envoyé à votre adresse email
             </motion.p>
 
             {/* Feature Cards */}
@@ -238,10 +209,10 @@ const Connexion: React.FC = () => {
                   </div>
                 </div>
                 <h3 className="mb-2 text-sm font-semibold text-white">
-                  Sécurité Avancée
+                  Double Authentification
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Protection des données et accès sécurisé
+                  Protection maximale de votre compte
                 </p>
               </motion.div>
 
@@ -252,14 +223,14 @@ const Connexion: React.FC = () => {
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
-                    <TrendingUp className="h-5 w-5 text-blue-200" />
+                    <CheckCircle className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
                 <h3 className="mb-2 text-sm font-semibold text-white">
-                  Performance
+                  Vérification Rapide
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Optimisation et efficacité maximale
+                  Code valide quelques minutes
                 </p>
               </motion.div>
 
@@ -270,14 +241,14 @@ const Connexion: React.FC = () => {
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
-                    <Users className="h-5 w-5 text-blue-200" />
+                    <Clock className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
                 <h3 className="mb-2 text-sm font-semibold text-white">
-                  Collaboration
+                  Accès Immédiat
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Travail d'équipe simplifié
+                  Connexion après vérification
                 </p>
               </motion.div>
 
@@ -288,21 +259,21 @@ const Connexion: React.FC = () => {
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
-                    <Zap className="h-5 w-5 text-blue-200" />
+                    <AlertTriangle className="h-5 w-5 text-blue-200" />
                   </div>
                 </div>
                 <h3 className="mb-2 text-sm font-semibold text-white">
-                  Support 24/7
+                  Tentatives Limitées
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Assistance technique permanente
+                  Sécurité contre les intrusions
                 </p>
               </motion.div>
             </motion.div>
           </div>
         </motion.div>
 
-        {/* Right Panel - Login Form */}
+        {/* Right Panel - MFA Form */}
         <motion.div
           className="flex w-full flex-col items-center justify-center p-6 lg:w-1/2"
           initial={{ opacity: 0, x: 30 }}
@@ -325,7 +296,7 @@ const Connexion: React.FC = () => {
             />
           </motion.div>
 
-          {/* Login Form Container */}
+          {/* Form Container */}
           <motion.div
             className="w-full max-w-md"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -342,18 +313,19 @@ const Connexion: React.FC = () => {
                 animate="visible"
               >
                 <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
-                  Connexion
+                  Code de vérification
                 </h2>
                 <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
                 <p className="mt-4 text-gray-600">
-                  Accédez à votre espace entreprise
+                  Entrez le code à 6 chiffres envoyé à <br />
+                  <span className="font-semibold text-primary">{identifier}</span>
                 </p>
               </motion.div>
 
               {/* Error Message */}
               {error && (
                 <motion.div
-                  className="rounded-lg bg-red-50 p-4 border border-red-200"
+                  className="mb-6 rounded-lg bg-red-50 p-4 border border-red-200"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
@@ -361,14 +333,21 @@ const Connexion: React.FC = () => {
                     <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-red-700 font-medium">{error}</span>
+                    <div>
+                      <span className="text-red-700 font-medium">{error}</span>
+                      {remainingAttempts !== null && (
+                        <p className="text-red-600 text-sm mt-1">
+                          {remainingAttempts} tentative(s) restante(s)
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               )}
 
               {/* Form */}
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Email Input */}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* MFA Code Input */}
                 <motion.div
                   variants={itemVariants}
                   initial="hidden"
@@ -377,136 +356,74 @@ const Connexion: React.FC = () => {
                 >
                   <div className="mb-2">
                     <label className="mb-2 block text-base font-semibold text-gray-800">
-                      Identifiant
+                      Code de vérification
                     </label>
                   </div>
                   <Input
-                    {...register("identifier", {
-                      required: "L'identifiant est requis",
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Format d'identifiant invalide"
-                      }
-                    })}
-                    type="email"
+                    type="text"
                     variant="bordered"
-                    placeholder="votre@email.com"
-                    isInvalid={!!errors.identifier}
-                    errorMessage={errors.identifier?.message}
+                    placeholder="123456"
+                    value={mfaCode}
+                    onChange={(e) => handleCodeChange(e.target.value)}
+                    maxLength={6}
                     classNames={{
                       input:
-                        "text-gray-900 placeholder:text-gray-500 pl-10 text-base dark:text-white dark:placeholder:text-gray-400",
+                        "text-gray-900 placeholder:text-gray-500 text-center text-2xl font-mono tracking-widest dark:text-white dark:placeholder:text-gray-400",
                       inputWrapper:
                         "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
                       base: "!text-gray-800 dark:!text-gray-200",
                     }}
                     size="lg"
                     radius="lg"
-                    startContent={<Mail className="h-5 w-5 text-gray-500" />}
+                    startContent={<Shield className="h-5 w-5 text-gray-500" />}
                   />
+                  <p className="mt-2 text-xs text-gray-500 text-center">
+                    Entrez les 6 chiffres reçus par email
+                  </p>
                 </motion.div>
 
-                {/* Password Input */}
+                {/* Submit Button */}
                 <motion.div
                   variants={itemVariants}
                   initial="hidden"
                   animate="visible"
                   transition={{ delay: 0.6 }}
                 >
-                  <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
-                      Mot de passe
-                    </label>
-                  </div>
-                  <Input
-                    {...register("password", {
-                      required: "Le mot de passe est requis",
-                      minLength: {
-                        value: 6,
-                        message: "Le mot de passe doit contenir au moins 6 caractères"
-                      }
-                    })}
-                    type={isVisible ? "text" : "password"}
-                    variant="bordered"
-                    placeholder="••••••••"
-                    isInvalid={!!errors.password}
-                    errorMessage={errors.password?.message}
-                    classNames={{
-                      input:
-                        "text-gray-900 placeholder:text-gray-500 pl-10 pr-10 text-base dark:text-white dark:placeholder:text-gray-400",
-                      inputWrapper:
-                        "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
-                      base: "!text-gray-800 dark:!text-gray-200",
-                    }}
-                    size="lg"
-                    radius="lg"
-                    startContent={<Lock className="h-5 w-5 text-gray-500" />}
-                    endContent={
-                      <button
-                        className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
-                        type="button"
-                        onClick={toggleVisibility}
-                      >
-                        {isVisible ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    }
-                  />
-                </motion.div>
-
-                {/* Remember Me & Forgot Password */}
-                <motion.div
-                  className="flex items-center justify-between"
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  transition={{ delay: 0.7 }}
-                >
-                  <Checkbox
-                    {...register("rememberMe")}
-                    classNames={{
-                      base: "text-gray-800",
-                      wrapper:
-                        "before:border-gray-400 after:bg-primary hover:before:border-primary transition-colors duration-300",
-                      label:
-                        "text-gray-800 text-sm font-medium hover:text-gray-900 transition-colors duration-300",
-                    }}
-                  >
-                    Se souvenir de moi
-                  </Checkbox>
-                  <Link
-                    href="/mot-de-passe-oublie"
-                    className="text-sm font-semibold text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
-                  >
-                    Mot de passe oublié ?
-                  </Link>
-                </motion.div>
-
-                {/* Login Button */}
-                <motion.div
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  transition={{ delay: 0.8 }}
-                >
                   <Button
                     type="submit"
                     isLoading={isLoading}
-                    isDisabled={isLoading}
+                    isDisabled={isLoading || mfaCode.length !== 6}
                     className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:opacity-70 disabled:cursor-not-allowed"
                     size="lg"
                   >
                     {!isLoading ? (
                       <div className="flex items-center justify-center gap-2">
-                        <span>Se connecter</span>
+                        <span>Vérifier le code</span>
                         <ArrowRight className="h-5 w-5" />
                       </div>
                     ) : (
-                      <span>Connexion en cours...</span>
+                      <span>Vérification en cours...</span>
                     )}
+                  </Button>
+                </motion.div>
+
+                {/* Back Button */}
+                <motion.div
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: 0.7 }}
+                >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={onBack}
+                    isDisabled={isLoading}
+                    className="w-full py-4 text-gray-600 hover:text-gray-800 transition-colors duration-300"
+                    size="lg"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Retour à la connexion
                   </Button>
                 </motion.div>
               </form>
@@ -517,17 +434,25 @@ const Connexion: React.FC = () => {
                 variants={itemVariants}
                 initial="hidden"
                 animate="visible"
-                transition={{ delay: 0.9 }}
+                transition={{ delay: 0.8 }}
               >
                 <p className="text-sm text-gray-500">
-                  All Rights Reserved by{" "}
-                  <Link
-                    href="https://www.datalysconsulting.com/"
+                  Vous n'avez pas reçu de code ?{" "}
+                  <button
+                    type="button"
                     className="font-semibold text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
-                    target="_blank"
+                    disabled={countdown > 0}
+                    onClick={() => {
+                      // TODO: Implémenter le renvoi de code
+                      setCountdown(60);
+                      showNotification(simpleNotificationHelpers.info(
+                        "Code renvoyé",
+                        "Un nouveau code a été envoyé à votre email"
+                      ));
+                    }}
                   >
-                    DATALYS Consulting
-                  </Link>
+                    {countdown > 0 ? `Renvoyer dans ${countdown}s` : "Renvoyer le code"}
+                  </button>
                 </p>
               </motion.div>
             </div>
@@ -538,4 +463,4 @@ const Connexion: React.FC = () => {
   );
 };
 
-export default Connexion;
+export default VerificationMFA;

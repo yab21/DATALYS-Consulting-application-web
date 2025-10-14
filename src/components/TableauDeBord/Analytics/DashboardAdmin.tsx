@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 
 // Types pour les analytics
@@ -85,7 +85,7 @@ const DashboardAdmin: React.FC = () => {
     hasPermission,
   } = useAuth();
 
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("30d");
   const [refreshing, setRefreshing] = useState(false);

@@ -11,7 +11,7 @@ import {
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { projectsService, CreateProjectFormData } from "@/services/projects";
 import { FolderPlus, Users, Shield, Save, ArrowLeft, FileText } from "lucide-react";
 import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
@@ -42,7 +42,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
 }) => {
   const router = useRouter();
   const { user } = useAuth();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   
   // États
   const [formData, setFormData] = useState<ProjectFormData>({
@@ -70,7 +70,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
       setPartnerNames(names);
     } catch (error) {
       console.error("Erreur lors du chargement des partenaires:", error);
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur",
         "Impossible de charger la liste des partenaires"
       ));
@@ -129,7 +129,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
           formData.partner_name
         );
         
-        showNotification(notificationHelpers.success(
+        showNotification(simpleNotificationHelpers.success(
           "Projet modifié",
           `Le projet "${formData.title}" a été modifié avec succès`
         ));
@@ -143,7 +143,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
         
         await projectsService.createProject(createData, user.id);
         
-        showNotification(notificationHelpers.success(
+        showNotification(simpleNotificationHelpers.success(
           "Projet créé",
           `Le projet "${formData.title}" a été créé avec succès`
         ));
@@ -160,7 +160,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
       
     } catch (error) {
       console.error("Erreur lors de la soumission:", error);
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur",
         error instanceof Error ? error.message : "Une erreur s'est produite"
       ));

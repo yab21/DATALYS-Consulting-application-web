@@ -38,13 +38,13 @@ import { useRouter } from "next/navigation";
 import { projectsService, Project } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import LoadingState from "@/components/UI/Loading/LoadingState";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import OptimizedProjectForm from "./OptimizedProjectForm";
 
 const OptimizedProjectList: React.FC = () => {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   
@@ -151,7 +151,7 @@ const OptimizedProjectList: React.FC = () => {
             console.log(`✅ Projets trouvés via correspondance manuelle: ${filteredProjects.length}`);
             
             if (filteredProjects.length > 0) {
-              showNotification(notificationHelpers.info(
+              showNotification(simpleNotificationHelpers.info(
                 "Projets chargés",
                 `${filteredProjects.length} projet(s) trouvé(s) pour votre compte`
               ));
@@ -161,7 +161,7 @@ const OptimizedProjectList: React.FC = () => {
           // Si toujours aucun projet trouvé après la correspondance manuelle
           if (filteredProjects.length === 0) {
             console.log("💡 L'utilisateur partenaire devra contacter l'administrateur pour associer ses projets");
-            showNotification(notificationHelpers.warning(
+            showNotification(simpleNotificationHelpers.warning(
               "Aucun projet assigné", 
               "Aucun projet n'est actuellement assigné à votre compte. Contactez l'administrateur si vous devriez avoir accès à des projets."
             ));
@@ -182,7 +182,7 @@ const OptimizedProjectList: React.FC = () => {
       
       // Vérifier les permissions avant de charger les données
       if (!user) {
-        showNotification(notificationHelpers.error(
+        showNotification(simpleNotificationHelpers.error(
           "Erreur d'authentification",
           "Utilisateur non connecté"
         ));
@@ -197,7 +197,7 @@ const OptimizedProjectList: React.FC = () => {
         { canRead: false, canModify: false };
 
       if (!projectPermissions.canRead) {
-        showNotification(notificationHelpers.error(
+        showNotification(simpleNotificationHelpers.error(
           "Accès refusé",
           "Vous n'avez pas les permissions pour accéder aux projets"
         ));
@@ -237,7 +237,7 @@ const OptimizedProjectList: React.FC = () => {
         // Pas besoin de charger tous les partenaires
         setPartnerNames([]); 
       } else {
-        showNotification(notificationHelpers.error(
+        showNotification(simpleNotificationHelpers.error(
           "Accès refusé", 
           `Rôle non reconnu: ${user.role_id}`
         ));
@@ -253,21 +253,21 @@ const OptimizedProjectList: React.FC = () => {
         // plutôt qu'une session expirée
         if (user && user.role_id === 2) { // PARTNER
           console.warn("Erreur 401 pour un partenaire - possibilité de problème de permissions backend");
-          showNotification(notificationHelpers.warning(
+          showNotification(simpleNotificationHelpers.warning(
             "Problème d'accès",
             "Impossible d'accéder aux projets. Vérifiez vos permissions ou contactez l'administrateur."
           ));
           // Ne pas rediriger car l'utilisateur est connecté mais n'a peut-être pas les bonnes permissions
         } else {
           // Pour les admins, c'est probablement une session expirée
-          showNotification(notificationHelpers.error(
+          showNotification(simpleNotificationHelpers.error(
             "Session expirée",
             "Votre session a expiré. Vous allez être redirigé vers la connexion."
           ));
           // Laisser TokenExpirationHandler gérer la redirection pour les admins
         }
       } else {
-        showNotification(notificationHelpers.error(
+        showNotification(simpleNotificationHelpers.error(
           "Erreur",
           "Impossible de charger les données"
         ));
@@ -310,7 +310,7 @@ const OptimizedProjectList: React.FC = () => {
       
     } catch (error) {
       console.error("Erreur lors du chargement des projets:", error);
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur",
         "Impossible de charger les projets du partenaire"
       ));
@@ -353,7 +353,7 @@ const OptimizedProjectList: React.FC = () => {
         user.id
       );
       
-      showNotification(notificationHelpers.success(
+      showNotification(simpleNotificationHelpers.success(
         "Projet supprimé",
         `Le projet "${selectedProject.title}" a été supprimé avec succès`
       ));
@@ -364,7 +364,7 @@ const OptimizedProjectList: React.FC = () => {
       
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur",
         "Impossible de supprimer le projet"
       ));

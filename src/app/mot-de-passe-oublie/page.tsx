@@ -19,9 +19,9 @@ import {
 import { useForm } from "react-hook-form";
 import { AuthService } from "@/services/auth";
 import {
-  useNotifications,
-  notificationHelpers,
-} from "@/components/UI/Notifications/NotificationSystem";
+  useSimpleNotifications,
+  simpleNotificationHelpers,
+} from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 interface ForgotPasswordForm {
   email: string;
@@ -31,7 +31,7 @@ const MotDePasseOublie = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [emailSent, setEmailSent] = useState(false);
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
 
   const {
     register,
@@ -50,9 +50,9 @@ const MotDePasseOublie = () => {
         setEmailSent(true);
         setErrorMessage("");
         showNotification(
-          notificationHelpers.success(
-            "Email envoyé !",
-            "Vérifiez votre boîte mail pour le lien de réinitialisation.",
+          simpleNotificationHelpers.success(
+            "Succès",
+            result.message || "Email de récupération envoyé",
           ),
         );
       } else {
@@ -60,19 +60,18 @@ const MotDePasseOublie = () => {
           result.message || "Erreur lors de la demande de réinitialisation",
         );
         showNotification(
-          notificationHelpers.error(
-            "Erreur d'envoi",
-            result.message ||
-              "Impossible d'envoyer l'email de réinitialisation.",
+          simpleNotificationHelpers.error(
+            "Erreur",
+            result.message || "Impossible d'envoyer l'email de réinitialisation",
           ),
         );
       }
     } catch (error) {
       setErrorMessage("Erreur de connexion. Veuillez réessayer.");
       showNotification(
-        notificationHelpers.error(
+        simpleNotificationHelpers.error(
           "Erreur",
-          "Une erreur s'est produite. Veuillez réessayer.",
+          "Une erreur s'est produite. Veuillez réessayer",
         ),
       );
     } finally {

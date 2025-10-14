@@ -1,9 +1,11 @@
 /**
  * Service API centralisé pour l'application DATALYS Consulting
  * Architecture préparée pour l'intégration backend
+ * Intégré avec TopBarProgress pour feedback visuel global
  */
 
 import { z } from 'zod';
+import NProgress from 'nprogress';
 
 // Types et schemas de validation
 export const ApiResponseSchema = z.object({
@@ -56,10 +58,63 @@ export class ApiService {
   private baseURL: string;
   private defaultHeaders: Record<string, string>;
   private authToken: string | null = null;
+  private activeRequests: number = 0;
+  private progressEnabled: boolean = true;
 
   constructor(baseURL?: string) {
     this.baseURL = baseURL || API_CONFIG.baseURL;
     this.defaultHeaders = { ...API_CONFIG.headers };
+    this.configureProgress();
+  }
+
+  /**
+   * Configuration initiale de NProgress
+   */
+  private configureProgress() {
+    if (typeof window !== 'undefined') {
+      NProgress.configure({
+        minimum: 0.15,
+        speed: 400,
+        showSpinner: false,
+        easing: 'ease-out',
+        trickleSpeed: 200,
+      });
+    }
+  }
+
+  /**
+   * Gestion du démarrage du progress
+   */
+  private startProgress() {
+    if (typeof window !== 'undefined' && this.progressEnabled) {
+      this.activeRequests += 1;
+      if (this.activeRequests === 1) {
+        NProgress.start();
+      }
+    }
+  }
+
+  /**
+   * Gestion de la fin du progress
+   */
+  private finishProgress() {
+    if (typeof window !== 'undefined' && this.progressEnabled) {
+      this.activeRequests = Math.max(0, this.activeRequests - 1);
+      if (this.activeRequests === 0) {
+        NProgress.done();
+      }
+    }
+  }
+
+  /**
+   * Active/désactive le progress bar
+   */
+  setProgressEnabled(enabled: boolean) {
+    this.progressEnabled = enabled;
+    if (!enabled && typeof window !== 'undefined') {
+      this.activeRequests = 0;
+      NProgress.done();
+    }
   }
 
   /**
@@ -112,7 +167,7 @@ export class ApiService {
   }
 
   /**
-   * Méthode générique pour les requêtes avec retry
+   * Méthode générique pour les requêtes avec retry et progress
    */
   private async request<T>(
     endpoint: string,
@@ -127,61 +182,75 @@ export class ApiService {
       ...fetchOptions
     } = options;
 
-    // Construction de l'URL avec paramètres
-    let url = `${this.baseURL}${endpoint}`;
-    if (params) {
-      const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          searchParams.append(key, String(value));
-        }
-      });
-      url += `?${searchParams.toString()}`;
-    }
+    // Démarrer le progress bar
+    this.startProgress();
 
-    // Headers finaux
-    const finalHeaders = {
-      ...this.defaultHeaders,
-      ...headers,
-    };
-
-    // Configuration fetch avec timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    let lastError: Error;
-
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const response = await fetch(url, {
-          ...fetchOptions,
-          headers: finalHeaders,
-          signal: controller.signal,
+    try {
+      // Construction de l'URL avec paramètres
+      let url = `${this.baseURL}${endpoint}`;
+      if (params) {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            searchParams.append(key, String(value));
+          }
         });
-
-        clearTimeout(timeoutId);
-        return await this.handleResponse<T>(response);
-
-      } catch (error) {
-        lastError = error as Error;
-        
-        // Ne pas retry sur certaines erreurs
-        if (error instanceof ApiError && error.status < 500) {
-          throw error;
-        }
-
-        // Dernière tentative
-        if (attempt === retries) {
-          break;
-        }
-
-        // Attendre avant le retry
-        await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
+        url += `?${searchParams.toString()}`;
       }
-    }
 
-    clearTimeout(timeoutId);
-    throw lastError!;
+      // Headers finaux
+      const finalHeaders = {
+        ...this.defaultHeaders,
+        ...headers,
+      };
+
+      // Configuration fetch avec timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      let lastError: Error;
+
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const response = await fetch(url, {
+            ...fetchOptions,
+            headers: finalHeaders,
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+          const result = await this.handleResponse<T>(response);
+          
+          // Terminer le progress en cas de succès
+          this.finishProgress();
+          return result;
+
+        } catch (error) {
+          lastError = error as Error;
+          
+          // Ne pas retry sur certaines erreurs
+          if (error instanceof ApiError && error.status < 500) {
+            throw error;
+          }
+
+          // Dernière tentative
+          if (attempt === retries) {
+            break;
+          }
+
+          // Attendre avant le retry
+          await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
+        }
+      }
+
+      clearTimeout(timeoutId);
+      throw lastError!;
+
+    } catch (error) {
+      // Terminer le progress en cas d'erreur
+      this.finishProgress();
+      throw error;
+    }
   }
 
   /**

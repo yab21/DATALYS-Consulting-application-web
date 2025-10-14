@@ -8,8 +8,8 @@ import {
   useProjectCache,
   VirtualizedTable,
   SkeletonTable,
-  useNotifications,
-  notificationHelpers
+  useSimpleNotifications,
+  simpleNotificationHelpers
 } from "@/components/Optimizations";
 import { useRouter } from "next/navigation";
 
@@ -32,7 +32,7 @@ interface Partner {
 
 const OptimizedPartnerList: React.FC = () => {
   const router = useRouter();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
 
   // Cache intelligent pour les partenaires
   const { 
@@ -312,7 +312,7 @@ const OptimizedPartnerList: React.FC = () => {
         router.push(`/tableaudebord/partenaire/modifier/${partner.id}`);
         break;
       case 'activate':
-        showNotification(notificationHelpers.info(
+        showNotification(simpleNotificationHelpers.info(
           "Réactivation du partenaire",
           `Le partenaire "${partner.nom}" sera réactivé sous peu`
         ));
@@ -326,7 +326,7 @@ const OptimizedPartnerList: React.FC = () => {
 
   const handleRefresh = () => {
     refetch();
-    showNotification(notificationHelpers.success(
+    showNotification(simpleNotificationHelpers.success(
       "Liste actualisée",
       "La liste des partenaires a été mise à jour"
     ));

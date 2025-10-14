@@ -52,7 +52,7 @@ import {
   projectPartnersService 
 } from '@/services/projectPartners';
 import { useAuth } from '@/context/AuthContext';
-import { useNotifications } from '@/context/NotificationContext';
+import { useSimpleNotifications } from '@/context/NotificationContext';
 
 interface ProjectPartnerManagerProps {
   projectId: number;
@@ -76,7 +76,7 @@ const ProjectPartnerManager: React.FC<ProjectPartnerManagerProps> = ({
   className = ""
 }) => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   // États principaux
   const [projectPartners, setProjectPartners] = useState<ProjectPartner[]>([]);

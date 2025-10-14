@@ -4,7 +4,7 @@ import { Input, Select, SelectItem } from "@nextui-org/react";
 import { Button } from "@nextui-org/button";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { domaines } from "../GererProjet/domaineData";
-import { useNotifications } from "@/context/NotificationContext";
+import { useSimpleNotifications } from "@/context/NotificationContext";
 import { useRouter } from "next/navigation";
 
 interface ProjectData {
@@ -29,7 +29,7 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
   const router = useRouter();
 
   useEffect(() => {

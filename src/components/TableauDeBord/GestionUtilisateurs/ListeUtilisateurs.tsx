@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission, UserRole } from "@/lib/permissions";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { UsersService, User as UserType } from "@/services/users";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import Link from "next/link";
@@ -75,7 +75,7 @@ const ListeUtilisateurs: React.FC = () => {
     canDelete,
   } = useAuth();
 
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);

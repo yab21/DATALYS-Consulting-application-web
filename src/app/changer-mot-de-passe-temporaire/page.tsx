@@ -1,10 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import ChangerMotDePasseTemporaire from "@/components/Auth/ChangerMotDePasseTemporaire";
 
 const PageChangerMotDePasseTemporaire: React.FC = () => {
-  return <ChangerMotDePasseTemporaire />;
+  return (
+    <Suspense fallback={null}>
+      <ChangerMotDePasseTemporaire />
+    </Suspense>
+  );
 };
 
 export default PageChangerMotDePasseTemporaire;

@@ -29,7 +29,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { dashboardService } from "@/services/dashboard";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { ProfessionalCard, ProfessionalButton, SectionHeader, MetricCard } from "@/components/UI/Professional";
 
 // Types pour les données du dashboard
@@ -90,7 +90,7 @@ interface ActivityItem {
 
 const ModernDashboard: React.FC = () => {
   const { user, isAdmin, isPartner, hasPermission, isLoading: authLoading } = useAuth();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   
   // États principaux
   const [stats, setStats] = useState<DashboardStats>({

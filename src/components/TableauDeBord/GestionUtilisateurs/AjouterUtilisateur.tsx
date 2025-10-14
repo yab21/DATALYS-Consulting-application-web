@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission, UserRole } from "@/lib/permissions";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { UsersService, CreateUserData } from "@/services/users";
 import { partnersService, Partner as PartnerType } from "@/services/partners";
 import { useRouter } from "next/navigation";
@@ -52,7 +52,7 @@ const AjouterUtilisateur: React.FC = () => {
     hasPermission,
   } = useAuth();
 
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

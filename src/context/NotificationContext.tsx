@@ -141,17 +141,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 };
 
 // Hook personnalisé
-export const useNotifications = (): NotificationContextType => {
+export const useSimpleNotifications = (): NotificationContextType => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error('useSimpleNotifications must be used within a NotificationProvider');
   }
   return context;
 };
 
 // Hook pour les notifications toast
 export const useToast = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   return {
     success: (title: string, body: string, options?: Partial<Notification>) =>

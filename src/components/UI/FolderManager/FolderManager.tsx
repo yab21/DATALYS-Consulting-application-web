@@ -43,7 +43,7 @@ import {
 } from 'lucide-react';
 import { foldersService, Folder as FolderType } from '@/services/folders';
 import { useAuth } from '@/context/AuthContext';
-import { useNotifications } from '@/components/UI/Notifications/NotificationProvider';
+import { useSimpleNotifications } from '@/components/UI/Notifications/NotificationProvider';
 
 interface FolderManagerProps {
   projectId: number;
@@ -74,7 +74,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
   className = ""
 }) => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
   
   // États
   const [folders, setFolders] = useState<FolderType[]>([]);

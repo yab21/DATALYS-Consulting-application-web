@@ -26,10 +26,10 @@ export { useOptimizedForm } from "@/hooks/useOptimizedForm";
 
 // Notifications System
 export { 
-  useNotifications, 
-  NotificationProvider,
-  notificationHelpers 
-} from "@/components/UI/Notifications/NotificationSystem";
+  useSimpleNotifications, 
+  SimpleNotificationProvider,
+  simpleNotificationHelpers 
+} from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 // Optimized Components Examples
 export { default as OptimizedProjectList } from "@/components/TableauDeBord/Projet/OptimizedProjectList";

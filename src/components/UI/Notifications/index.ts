@@ -1,4 +1,8 @@
-export { NotificationProvider, useNotifications, useNotificationHelpers } from './NotificationProvider';
+export { 
+  SimpleNotificationProvider, 
+  useSimpleNotifications, 
+  simpleNotificationHelpers 
+} from './SimpleNotificationSystem';
 export { default as ToastNotification } from './ToastNotification';
 export { default as AlertDialog } from './AlertDialog';
 export type { Notification } from './NotificationProvider';

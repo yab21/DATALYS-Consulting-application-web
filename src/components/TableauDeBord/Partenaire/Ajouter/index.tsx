@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { partnersService, CreatePartnerFormData } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { Permission } from "@/lib/permissions";
 import { PermissionGuard } from "@/components/Security/PermissionGuard";
 import { ArrowLeft, Save, Building, Mail, Phone, Shield } from "lucide-react";
@@ -37,7 +37,7 @@ const AjouterPartenaire: React.FC = () => {
     hasPermission, 
     canCreate 
   } = useAuth();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStep, setSubmitStep] = useState<'idle' | 'creating' | 'completed'>('idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -64,7 +64,7 @@ const AjouterPartenaire: React.FC = () => {
     // Rediriger si l'utilisateur n'a pas les permissions nécessaires
     if (isAuthenticated && !isAdmin()) {
       console.log("❌ Accès refusé - Utilisateur non administrateur");
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Accès refusé",
         "Seuls les administrateurs peuvent créer des partenaires"
       ));
@@ -74,7 +74,7 @@ const AjouterPartenaire: React.FC = () => {
 
     if (isAuthenticated && !hasPermission(Permission.CREATE_PARTNERS)) {
       console.log("❌ Accès refusé - Permission CREATE_PARTNERS manquante");
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Permissions insuffisantes",
         "Vous n'avez pas la permission de créer des partenaires"
       ));
@@ -147,7 +147,7 @@ const AjouterPartenaire: React.FC = () => {
     if (!isAuthenticated || !user) {
       const errorMsg = "Vous devez être connecté pour créer un partenaire";
       console.log("❌ Utilisateur non authentifié");
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur d'authentification",
         errorMsg
       ));
@@ -157,7 +157,7 @@ const AjouterPartenaire: React.FC = () => {
     // Vérifier explicitement le token dans le service
     if (!token) {
       console.log("❌ Aucun token trouvé dans localStorage");
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur d'authentification",
         "Token d'authentification manquant"
       ));
@@ -185,7 +185,7 @@ const AjouterPartenaire: React.FC = () => {
       console.log("📋 Données préparées:", partnerData);
 
       // Notification initiale
-      showNotification(notificationHelpers.info(
+      showNotification(simpleNotificationHelpers.info(
         "Création en cours...",
         `Création du partenaire ${formData.name}`
       ));
@@ -200,7 +200,7 @@ const AjouterPartenaire: React.FC = () => {
         setSubmitStep('completed');
         
         // Notification de succès
-        showNotification(notificationHelpers.success(
+        showNotification(simpleNotificationHelpers.success(
           "Partenaire créé ! 🎉",
           `${formData.name} a été créé avec succès`
         ));
@@ -256,7 +256,7 @@ const AjouterPartenaire: React.FC = () => {
         }
       }
       
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         errorTitle,
         errorMessage
       ));

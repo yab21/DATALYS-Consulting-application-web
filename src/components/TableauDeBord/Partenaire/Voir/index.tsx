@@ -14,7 +14,7 @@ import { ProfessionalCard, MetricCard, SectionHeader, ProfessionalButton } from 
 import { partnersService } from "@/services/partners";
 import { projectsService } from "@/services/projects";
 import { dashboardService } from "@/services/dashboard";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import CreateIncidentModal from "../Incidents/CreateIncidentModal";
 import { Building2, FolderOpen, Calendar, Users, TrendingUp, AlertTriangle, Mail, Phone, MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
 
@@ -78,7 +78,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
     resolved: 0,
     critical: 0
   });
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
 
   // Charger les données du partenaire
   useEffect(() => {

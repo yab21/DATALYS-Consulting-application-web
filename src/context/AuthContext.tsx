@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setIsLoading(true);
 
-      const response = await AuthService.login({ email, password });
+      const response = await AuthService.login({ identifier: email, password });
 
       if (response.status === 'success' && response.data) {
         const userData: User = {

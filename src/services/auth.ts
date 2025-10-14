@@ -6,10 +6,13 @@ import {
   getDefaultHeaders,
   ApiResponse,
   LoginResponse,
+  MFAVerificationRequest,
+  MFAVerificationResponse,
 } from "@/lib/api-config";
+import { SecureStorage } from "@/lib/secure-storage";
 
 export interface LoginCredentials {
-  email: string;
+  identifier: string;
   password: string;
 }
 
@@ -52,9 +55,20 @@ export class AuthService {
       const result = await response.json();
 
       // Adapter la réponse de l'API réelle au format attendu
-      if (result.status === "success" && result.data) {
-        // Stocker le token et les informations utilisateur
-        this.storeAuthData(result.data);
+      if (result.status === "success") {
+        // Si MFA requis, ne pas stocker les données d'authentification
+        if (result.data?.requires_mfa) {
+          return {
+            status: "success",
+            message: result.message,
+            data: result.data,
+          };
+        }
+        
+        // Connexion normale : stocker le token et les informations utilisateur
+        if (result.data && result.data.token) {
+          this.storeAuthData(result.data);
+        }
         
         return {
           status: "success",
@@ -69,6 +83,53 @@ export class AuthService {
       }
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);
+      return {
+        status: "error",
+        message: "Erreur de connexion. Veuillez réessayer.",
+      };
+    }
+  }
+
+  /**
+   * Vérification du code MFA
+   */
+  static async verifyMFA(
+    request: MFAVerificationRequest
+  ): Promise<MFAVerificationResponse> {
+    try {
+      const response = await fetch(
+        buildApiUrl(API_CONFIG.ENDPOINTS.AUTH.VERIFY_MFA),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+            "Cache-Control": "no-cache",
+          },
+          body: JSON.stringify(request),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.status === "success" && result.data) {
+        // Vérification MFA réussie : stocker les données d'authentification
+        this.storeAuthData(result.data);
+        
+        return {
+          status: "success",
+          message: result.message,
+          data: result.data,
+        };
+      } else {
+        return {
+          status: "error",
+          message: result.message || "Code MFA incorrect",
+          remaining_attempts: result.remaining_attempts,
+        };
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification MFA:", error);
       return {
         status: "error",
         message: "Erreur de connexion. Veuillez réessayer.",
@@ -121,8 +182,8 @@ export class AuthService {
   static isAuthenticated(): boolean {
     if (typeof window === "undefined") return false;
 
-    const token = localStorage.getItem("authToken");
-    const userInfo = localStorage.getItem("userInfo");
+    const token = SecureStorage.getItem("authToken");
+    const userInfo = SecureStorage.getItem("userInfo");
 
     return !!(token && userInfo);
   }
@@ -132,7 +193,7 @@ export class AuthService {
    */
   static getToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("authToken");
+    return SecureStorage.getItem("authToken");
   }
 
   /**
@@ -141,7 +202,7 @@ export class AuthService {
   static getUser(): User | null {
     if (typeof window === "undefined") return null;
 
-    const userInfo = localStorage.getItem("userInfo");
+    const userInfo = SecureStorage.getItem("userInfo");
     if (!userInfo) return null;
 
     try {
@@ -157,9 +218,9 @@ export class AuthService {
   private static storeAuthData(data: LoginResponse): void {
     if (typeof window === "undefined") return;
 
-    // Stocker dans localStorage pour l'accès client
-    localStorage.setItem("authToken", data.token);
-    localStorage.setItem(
+    // Stocker de manière sécurisée avec chiffrement
+    SecureStorage.setItem("authToken", data.token);
+    SecureStorage.setItem(
       "userInfo",
       JSON.stringify({
         id: data.id,
@@ -173,8 +234,11 @@ export class AuthService {
       }),
     );
 
-    // Stocker aussi dans les cookies pour l'accès côté serveur (middleware)
-    document.cookie = `authToken=${data.token}; path=/; max-age=86400; SameSite=Strict`;
+    // Stocker aussi dans les cookies sécurisés pour l'accès côté serveur (middleware)
+    const isProduction = process.env.NODE_ENV === 'production';
+    const secureFlag = isProduction ? '; Secure' : '';
+    
+    document.cookie = `authToken=${data.token}; path=/; max-age=86400; SameSite=Strict${secureFlag}`;
     document.cookie = `userInfo=${JSON.stringify({
       id: data.id,
       name: data.name,
@@ -184,7 +248,7 @@ export class AuthService {
       is_active: data.is_active,
       created_at: data.created_at,
       updated_at: data.updated_at,
-    })}; path=/; max-age=86400; SameSite=Strict`;
+    })}; path=/; max-age=86400; SameSite=Strict${secureFlag}`;
   }
 
   /**
@@ -193,10 +257,10 @@ export class AuthService {
   static clearAuthData(): void {
     if (typeof window === "undefined") return;
 
-    // Supprimer du localStorage
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userInfo");
-    localStorage.removeItem("rememberMe");
+    // Supprimer du stockage sécurisé
+    SecureStorage.removeItem("authToken");
+    SecureStorage.removeItem("userInfo");
+    SecureStorage.removeItem("rememberMe");
 
     // Supprimer aussi les cookies
     document.cookie = `authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import LoadingSpinner from "@/components/UI/Loading/LoadingSpinner";
+import { useTopBarProgress } from "@/hooks/useTopBarProgress";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,25 +16,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const { start, finish } = useTopBarProgress();
+
+  useEffect(() => {
+    if (isLoading) {
+      start();
+    } else {
+      finish();
+    }
+  }, [isLoading, start, finish]);
 
   useEffect(() => {
     // Si l'utilisateur n'est pas connecté et que le chargement est terminé, rediriger vers la connexion
     if (!isLoading && !isAuthenticated) {
+      start(); // Progress pour la redirection
       router.push("/connexion");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, start]);
 
-  // Afficher un loader pendant la vérification de l'authentification
+  // Pendant la vérification d'authentification, on n'affiche que la progress bar
   if (isLoading) {
-    return (
-      fallback || (
-        <LoadingSpinner 
-          size="xl" 
-          text="Vérification de votre session DATALYS" 
-          fullScreen={true}
-        />
-      )
-    );
+    return fallback || null;
   }
 
   // Si l'utilisateur n'est pas connecté, ne rien afficher (la redirection est en cours)

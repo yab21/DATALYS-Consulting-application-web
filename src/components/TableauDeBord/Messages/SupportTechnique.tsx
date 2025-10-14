@@ -49,7 +49,7 @@ import {
   Send,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import messagesService, { 
   Message, 
   MessageFilters, 
@@ -69,7 +69,7 @@ interface SupportStats {
 
 const SupportTechnique: React.FC = () => {
   const { user, isAdmin } = useAuth();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const { isOpen, onOpen, onClose } = useDisclosure();
   
   const [supportTickets, setSupportTickets] = useState<Message[]>([]);

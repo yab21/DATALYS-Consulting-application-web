@@ -19,7 +19,7 @@ import {
 } from "@nextui-org/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useNotifications } from "@/context/NotificationContext";
+import { useSimpleNotifications } from "@/context/NotificationContext";
 
 // Types
 interface Partner {
@@ -129,7 +129,7 @@ const PartnerManager: React.FC<PartnerManagerProps> = ({
   const [newPartnerRole, setNewPartnerRole] = useState("collaborator");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   // Filtrer les partenaires disponibles (exclure ceux déjà dans le projet)
   const availablePartners = AVAILABLE_PARTNERS.filter(

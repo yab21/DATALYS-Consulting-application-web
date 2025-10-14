@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 interface UseOptimizedFormOptions<T> {
   initialValues: T;
@@ -47,7 +47,7 @@ export function useOptimizedForm<T extends Record<string, any>>({
   onAutoSave,
 }: UseOptimizedFormOptions<T>): UseOptimizedFormReturn<T> {
   
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   
   // États
   const [values, setValuesState] = useState<T>(initialValues);
@@ -109,12 +109,12 @@ export function useOptimizedForm<T extends Record<string, any>>({
         saveDraft();
       }
       
-      showNotification(notificationHelpers.success(
+      showNotification(simpleNotificationHelpers.success(
         "Sauvegarde automatique",
         "Vos modifications ont été sauvegardées"
       ));
     } catch (error) {
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur de sauvegarde",
         "Impossible de sauvegarder automatiquement"
       ));
@@ -207,7 +207,7 @@ export function useOptimizedForm<T extends Record<string, any>>({
     }
 
     if (!validateForm()) {
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreurs de validation",
         "Veuillez corriger les erreurs avant de soumettre"
       ));
@@ -226,12 +226,12 @@ export function useOptimizedForm<T extends Record<string, any>>({
         clearDraft();
       }
       
-      showNotification(notificationHelpers.success(
+      showNotification(simpleNotificationHelpers.success(
         "Succès",
         "Formulaire soumis avec succès"
       ));
     } catch (error) {
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur de soumission",
         error instanceof Error ? error.message : "Une erreur est survenue"
       ));
@@ -287,7 +287,7 @@ export function useOptimizedForm<T extends Record<string, any>>({
       setValuesState(draftValues);
       setIsDirty(true);
       
-      showNotification(notificationHelpers.info(
+      showNotification(simpleNotificationHelpers.info(
         "Draft chargé",
         "Un brouillon de ce formulaire a été restauré"
       ));

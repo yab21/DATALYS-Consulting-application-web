@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE_URL = process.env.API_BACKEND_URL || 'http://82.112.253.137:8082';
 
+// Configuration de sécurité pour la whitelist des hosts autorisés
+const ALLOWED_HOSTS = (process.env.ALLOWED_API_HOSTS?.split(',') || [
+  '82.112.253.137:8082', // Backend production
+  'localhost:8082',      // Backend développement
+  '127.0.0.1:8082'       // Backend local
+]).map(host => host.trim());
+
+// Configuration CORS sécurisée
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://applicationweb.datalysconsulting.com';
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   return handleProxyRequest(request, params, 'GET');
 }
@@ -31,6 +42,19 @@ async function handleProxyRequest(
     const { path } = await params;
     const apiPath = path.join('/');
     const targetUrl = `${API_BASE_URL}/${apiPath}`;
+    
+    // 🔒 VALIDATION DE SÉCURITÉ : Vérifier que l'host de destination est autorisé
+    const targetHost = new URL(targetUrl).host;
+    if (!ALLOWED_HOSTS.includes(targetHost)) {
+      console.warn(`🚨 SÉCURITÉ: Tentative d'accès à un host non autorisé: ${targetHost}`);
+      return NextResponse.json(
+        { 
+          error: 'Host non autorisé',
+          message: 'Cette destination n\'est pas dans la liste des serveurs autorisés'
+        }, 
+        { status: 403 }
+      );
+    }
     
     // Construire l'URL avec les query parameters
     const url = new URL(targetUrl);
@@ -72,7 +96,12 @@ async function handleProxyRequest(
     }
 
     // Faire l'appel à l'API backend
-    console.log(`🔄 Proxy ${method} vers:`, url.toString());
+    // 🔒 LOGS SÉCURISÉS : Ne pas exposer l'URL complète en production
+    if (isDevelopment) {
+      console.log(`🔄 Proxy ${method} vers:`, url.toString());
+    } else {
+      console.log(`🔄 Proxy ${method} vers: ${method} /${apiPath}`);
+    }
     
     const response = await fetch(url.toString(), {
       method,
@@ -83,15 +112,16 @@ async function handleProxyRequest(
     // Récupérer la réponse
     const responseText = await response.text();
     
-    // Créer la réponse Next.js
+    // Créer la réponse Next.js avec CORS sécurisé
     return new NextResponse(responseText, {
       status: response.status,
       statusText: response.statusText,
       headers: {
         'Content-Type': response.headers.get('content-type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': isDevelopment ? '*' : CORS_ORIGIN,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
       },
     });
 
@@ -108,14 +138,16 @@ async function handleProxyRequest(
   }
 }
 
-// Gestion des requêtes OPTIONS pour CORS
+// Gestion des requêtes OPTIONS pour CORS sécurisé
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': isDevelopment ? '*' : CORS_ORIGIN,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400', // Cache preflight pour 24h
     },
   });
 }

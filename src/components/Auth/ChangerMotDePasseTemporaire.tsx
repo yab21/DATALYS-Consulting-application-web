@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { API_CONFIG, buildApiUrl, getDefaultHeaders } from "@/lib/api-config";
 import { useAuth } from "@/context/AuthContext";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 interface PasswordChangeData {
   email: string;
@@ -37,7 +37,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { loginWithUserData } = useAuth();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
 
   const [formData, setFormData] = useState<PasswordChangeData>({
     email: "",
@@ -115,8 +115,8 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
       if (data.status === 'success') {
         showNotification({
           type: "success",
-          title: "Mot de passe mis à jour",
-          message: "Votre mot de passe a été changé avec succès. Connexion automatique...",
+          title: "Succès",
+          message: data.message || "Mot de passe mis à jour avec succès",
           duration: 3000,
         });
 
@@ -147,6 +147,14 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
         setErrors({ current_password: "Mot de passe incorrect" });
       } else if (error.message.includes('400')) {
         errorMessage = "Données de formulaire invalides";
+      } else {
+        // Essayer d'extraire le message d'erreur du backend si disponible
+        try {
+          const errorData = JSON.parse(error.message);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // Garder le message par défaut si parsing échoue
+        }
       }
 
       showNotification({

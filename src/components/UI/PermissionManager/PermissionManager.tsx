@@ -33,7 +33,7 @@ import {
   cn,
 } from '@nextui-org/react';
 import { motion } from 'framer-motion';
-import { useNotifications } from '@/context/NotificationContext';
+import { useSimpleNotifications } from '@/context/NotificationContext';
 
 // Types pour les permissions
 export type Permission = 
@@ -316,7 +316,7 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
 
   const { hasPermission, canManageUser } = usePermissions();
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   // Définir tous les callbacks avant les returns conditionnels
   const handleEditUser = useCallback((user: User) => {

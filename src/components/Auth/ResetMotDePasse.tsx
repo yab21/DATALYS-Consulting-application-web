@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AuthService } from "@/services/auth";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 interface ResetPasswordForm {
   newPassword: string;
@@ -32,7 +32,7 @@ interface ResetPasswordForm {
 const ResetMotDePasse: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
 
   const [isLoading, setIsLoading] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -73,7 +73,7 @@ const ResetMotDePasse: React.FC = () => {
 
       if (result.status === "success") {
         showNotification(
-          notificationHelpers.success(
+          simpleNotificationHelpers.success(
             "Mot de passe mis à jour !",
             "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe."
           )
@@ -85,7 +85,7 @@ const ResetMotDePasse: React.FC = () => {
         }, 2000);
       } else {
         showNotification(
-          notificationHelpers.error(
+          simpleNotificationHelpers.error(
             "Erreur de réinitialisation",
             result.message || "Impossible de mettre à jour le mot de passe."
           )
@@ -94,7 +94,7 @@ const ResetMotDePasse: React.FC = () => {
     } catch (error) {
       console.error("Erreur reset mot de passe:", error);
       showNotification(
-        notificationHelpers.error(
+        simpleNotificationHelpers.error(
           "Erreur",
           "Une erreur s'est produite lors de la réinitialisation."
         )

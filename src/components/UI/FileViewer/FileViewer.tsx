@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 import { ProjectFile, filesService } from '@/services/files';
 import { useAuth } from '@/context/AuthContext';
-import { useNotifications } from '@/context/NotificationContext';
+import { useSimpleNotifications } from '@/context/NotificationContext';
 
 interface FileViewerProps {
   projectId: number;
@@ -64,7 +64,7 @@ const FileViewer: React.FC<FileViewerProps> = ({
   className = ""
 }) => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
   
   // États
   const [files, setFiles] = useState<ProjectFile[]>([]);

@@ -48,7 +48,7 @@ import {
   Share2,
   Trash2
 } from 'lucide-react';
-import { useNotifications } from '@/components/UI/Notifications/NotificationSystem';
+import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
 import { filesService } from '@/services/files';
 import { useAuth } from '@/context/AuthContext';
 import FilePreview from '@/components/UI/FilePreview/FilePreview';
@@ -261,7 +261,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
   const [newFolderName, setNewFolderName] = useState('');
   const [shareSettings, setShareSettings] = useState<FileItem | null>(null);
 
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const { user } = useAuth();
 
   // Conversion des types API vers les types locaux

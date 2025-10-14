@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { RolesService, Role } from "@/services/roles";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 
@@ -56,7 +56,7 @@ const GestionRoles: React.FC = () => {
     hasPermission,
   } = useAuth();
 
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<Role[]>([]);

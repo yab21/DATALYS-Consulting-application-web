@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { Button } from "@nextui-org/button";
 import { Input } from "@nextui-org/react";
-import { useNotifications } from "@/context/NotificationContext";
+import { useSimpleNotifications } from "@/context/NotificationContext";
 
 const AjouterProjet = () => {
   const [formData, setFormData] = useState({
@@ -13,7 +13,7 @@ const AjouterProjet = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

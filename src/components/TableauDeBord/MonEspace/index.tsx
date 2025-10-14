@@ -28,7 +28,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { projectsService, Project } from "@/services/projects";
-import { useNotifications } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import Link from "next/link";
 
@@ -70,7 +70,7 @@ const MonEspacePartenaire: React.FC = () => {
     canAccessProject,
   } = useAuth();
 
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState<PartnerStats>({

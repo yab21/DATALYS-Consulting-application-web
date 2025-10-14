@@ -17,7 +17,7 @@ import {
 import { AlertTriangle, Plus } from "lucide-react";
 import { IncidentsService, type CreateIncidentData } from "@/services/incidents";
 import { type Project } from "@/services/projects";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 interface CreateIncidentModalProps {
   partnerId: string;
@@ -33,7 +33,7 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
   onIncidentCreated,
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState<CreateIncidentData>({
@@ -71,7 +71,7 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
       await IncidentsService.createIncident(formData);
       
       onClose();
-      showNotification(notificationHelpers.success(
+      showNotification(simpleNotificationHelpers.success(
         "Incident créé avec succès",
         `L'incident "${formData.title}" a été signalé`
       ));
@@ -81,7 +81,7 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
       
     } catch (error: any) {
       console.error("❌ Erreur création incident:", error);
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur de création",
         error.message || "Impossible de créer l'incident"
       ));

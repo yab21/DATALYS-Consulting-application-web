@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { Input, Checkbox } from "@nextui-org/react";
 import { useRouter } from "next/navigation";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { Lock, Eye, EyeOff, ArrowLeft, Save, Shield } from "lucide-react";
 import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
 import Link from "next/link";
@@ -22,7 +22,7 @@ const ChangerMotDePasse = () => {
   const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const router = useRouter();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const { user } = useAuth();
 
   // Validation du mot de passe
@@ -105,9 +105,9 @@ const ChangerMotDePasse = () => {
       
       // Vérifier le succès de la réponse
       if (response && (response.code === 200 || response.status === 'success')) {
-        showNotification(notificationHelpers.success(
-          "Mot de passe modifié !",
-          "Votre mot de passe a été changé avec succès"
+        showNotification(simpleNotificationHelpers.success(
+          "Succès",
+          response?.message || "Mot de passe modifié avec succès"
         ));
         
         // Reset form
@@ -136,19 +136,26 @@ const ChangerMotDePasse = () => {
       let errorMessage = "Une erreur s'est produite lors du changement de mot de passe";
       
       if (error instanceof Error) {
-        if (error.message.includes("mot de passe actuel")) {
-          errorMessage = "Le mot de passe actuel est incorrect";
-        } else if (error.message.includes("non connecté")) {
-          errorMessage = "Vous devez être connecté pour changer votre mot de passe";
-        } else if (error.message.includes("propre mot de passe")) {
-          errorMessage = "Vous ne pouvez changer que votre propre mot de passe";
-        } else {
-          errorMessage = error.message;
+        // Essayer d'extraire le message du backend d'abord
+        try {
+          const errorResponse = JSON.parse(error.message);
+          errorMessage = errorResponse.message || errorMessage;
+        } catch {
+          // Si pas de JSON, utiliser la logique existante
+          if (error.message.includes("mot de passe actuel")) {
+            errorMessage = "Le mot de passe actuel est incorrect";
+          } else if (error.message.includes("non connecté")) {
+            errorMessage = "Vous devez être connecté pour changer votre mot de passe";
+          } else if (error.message.includes("propre mot de passe")) {
+            errorMessage = "Vous ne pouvez changer que votre propre mot de passe";
+          } else {
+            errorMessage = error.message;
+          }
         }
       }
       
       setError(errorMessage);
-      showNotification(notificationHelpers.error(
+      showNotification(simpleNotificationHelpers.error(
         "Erreur",
         errorMessage
       ));

@@ -48,7 +48,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { IncidentsService, type Incident as ApiIncident, type IncidentCriteria, type CreateIncidentData, type UpdateIncidentData } from "@/services/incidents";
 import { projectsService, type Project } from "@/services/projects";
 import { UsersService, type User as UserType } from "@/services/users";
@@ -196,7 +196,7 @@ const MOCK_INCIDENTS: Incident[] = [
 
 const GestionIncidents: React.FC = () => {
   const { hasPermission } = useAuth();
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [filteredIncidents, setFilteredIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -601,7 +601,7 @@ const GestionIncidents: React.FC = () => {
       });
       
       setShowCreateModal(false);
-      showNotification(notificationHelpers.success("Succès", "Incident créé avec succès"));
+      showNotification(simpleNotificationHelpers.success("Succès", "Incident créé avec succès"));
       console.log("✅ Incident créé avec succès");
       
     } catch (error: any) {
@@ -610,7 +610,7 @@ const GestionIncidents: React.FC = () => {
       // Le service incidents va maintenant bien capturer les erreurs API
       let errorMessage = error.message || "Une erreur inattendue s'est produite";
       
-      showNotification(notificationHelpers.error("Erreur", errorMessage));
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
     } finally {
       setIsCreating(false);
     }
@@ -641,7 +641,7 @@ const GestionIncidents: React.FC = () => {
       
       setShowEditModal(false);
       setSelectedIncident(null);
-      showNotification(notificationHelpers.success("Succès", "Incident modifié avec succès"));
+      showNotification(simpleNotificationHelpers.success("Succès", "Incident modifié avec succès"));
       console.log("✅ Incident modifié avec succès");
       
     } catch (error: any) {
@@ -650,7 +650,7 @@ const GestionIncidents: React.FC = () => {
       // Le service incidents va maintenant bien capturer les erreurs API
       let errorMessage = error.message || "Une erreur inattendue s'est produite";
       
-      showNotification(notificationHelpers.error("Erreur", errorMessage));
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
     } finally {
       setIsUpdating(false);
     }
@@ -672,7 +672,7 @@ const GestionIncidents: React.FC = () => {
       
       setShowDeleteModal(false);
       setSelectedIncident(null);
-      showNotification(notificationHelpers.success("Succès", "Incident supprimé avec succès"));
+      showNotification(simpleNotificationHelpers.success("Succès", "Incident supprimé avec succès"));
       console.log("✅ Incident supprimé avec succès");
       
     } catch (error: any) {
@@ -681,7 +681,7 @@ const GestionIncidents: React.FC = () => {
       // Le service incidents va maintenant bien capturer les erreurs API
       let errorMessage = error.message || "Une erreur inattendue s'est produite";
       
-      showNotification(notificationHelpers.error("Erreur", errorMessage));
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
     } finally {
       setIsDeleting(false);
     }

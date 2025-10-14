@@ -6,21 +6,31 @@ import "flatpickr/dist/flatpickr.min.css";
 import "@/css/satoshi.css";
 import "@/css/style.css";
 import "@/styles/modal-fixes.css";
+// TopBarProgress styles
+import "nprogress/nprogress.css";
+import "@/styles/nprogress.css";
 import React, { useEffect, useState } from "react";
-import Loader from "@/components/common/Loader";
-import { NotificationProvider } from "@/components/UI/Notifications/NotificationSystem";
+import { SimpleNotificationProvider } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { PerformanceUtils } from "@/components/Optimizations";
 import { AuthProvider } from "@/context/AuthContext";
+import { useTopBarProgress } from "@/hooks/useTopBarProgress";
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [loading, setLoading] = useState<boolean>(true);
+  const { configure } = useTopBarProgress();
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
+    // Configuration du TopBarProgress pour DATALYS
+    configure({
+      minimum: 0.15,
+      speed: 400,
+      showSpinner: false,
+      easing: 'ease-out',
+      trickleSpeed: 200,
+    });
     
     // Initialiser le monitoring des performances Web Vitals
     PerformanceUtils.observeWebVitals();
@@ -44,15 +54,15 @@ export default function RootLayout({
         }
       }
     }, 2000);
-  }, []);
+  }, [configure]);
 
   return (
     <html lang="en">
       <body suppressHydrationWarning={true}>
         <AuthProvider>
-          <NotificationProvider>
-            {loading ? <Loader /> : children}
-          </NotificationProvider>
+          <SimpleNotificationProvider>
+            {children}
+          </SimpleNotificationProvider>
         </AuthProvider>
       </body>
     </html>

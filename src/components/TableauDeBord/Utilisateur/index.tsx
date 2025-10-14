@@ -4,12 +4,12 @@ import React, { useEffect, useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import DataTable, { Column } from "@/components/UI/DataTable/DataTable";
 import PermissionManager, { User } from "@/components/UI/PermissionManager/PermissionManager";
-import { useNotifications } from "@/context/NotificationContext";
+import { useSimpleNotifications } from "@/context/NotificationContext";
 
 const Utilisateur = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   // Données mockées pour remplacer Firebase
   useEffect(() => {

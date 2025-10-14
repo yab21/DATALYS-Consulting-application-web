@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNotifications, notificationHelpers } from "@/components/UI/Notifications/NotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 // Types
 interface CacheEntry<T> {
@@ -149,7 +149,7 @@ export const useApiCache = <T,>(
   const [error, setError] = useState<Error | null>(null);
   const [isStale, setIsStale] = useState(false);
   
-  const { showNotification } = useNotifications();
+  const { showNotification } = useSimpleNotifications();
   const retryCount = useRef(0);
   const abortController = useRef<AbortController | null>(null);
 
@@ -206,7 +206,7 @@ export const useApiCache = <T,>(
           fetchData(forceRefresh);
         }, retryDelay * Math.pow(2, retryCount.current - 1)); // Backoff exponentiel
       } else {
-        showNotification(notificationHelpers.error(
+        showNotification(simpleNotificationHelpers.error(
           "Erreur de chargement",
           `Impossible de charger les données: ${error.message}`
         ));

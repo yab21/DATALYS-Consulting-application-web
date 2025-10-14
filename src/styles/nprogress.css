@@ -1,0 +1,113 @@
+/* NProgress customization for DATALYS Consulting */
+
+/* Make sure to hide pointer events so the bar doesn't interfere with the user's experience */
+#nprogress {
+  pointer-events: none;
+}
+
+/* The progress bar itself */
+#nprogress .bar {
+  background: linear-gradient(
+    90deg, 
+    #4ba9b7 0%, 
+    #06B6D4 50%,
+    #4ba9b7 100%
+  ) !important;
+  
+  position: fixed;
+  z-index: 1031;
+  top: 0;
+  left: 0;
+  
+  width: 100%;
+  height: 3px;
+  
+  /* Smooth transitions */
+  transition: width 0.4s ease-out;
+  
+  /* Subtle glow effect */
+  box-shadow: 
+    0 0 8px rgba(75, 169, 183, 0.6),
+    0 0 16px rgba(75, 169, 183, 0.3);
+}
+
+/* The peg (moving part of the progress bar) */
+#nprogress .peg {
+  display: block;
+  position: absolute;
+  right: 0px;
+  width: 100px;
+  height: 100%;
+  
+  /* Enhanced glow for the moving part */
+  box-shadow: 
+    0 0 12px #4ba9b7, 
+    0 0 6px #4ba9b7,
+    0 0 20px rgba(75, 169, 183, 0.4);
+  
+  opacity: 1.0;
+  
+  /* Subtle rotation for dynamic effect */
+  transform: rotate(2deg) translate(0px, -2px);
+  
+  /* Smooth animation */
+  transition: all 0.3s ease-out;
+}
+
+/* Remove spinner completely (we want clean top bar only) */
+#nprogress .spinner {
+  display: none !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  #nprogress .bar {
+    background: linear-gradient(
+      90deg, 
+      #4ba9b7 0%, 
+      #22d3ee 50%,
+      #4ba9b7 100%
+    ) !important;
+    
+    box-shadow: 
+      0 0 10px rgba(75, 169, 183, 0.8),
+      0 0 20px rgba(75, 169, 183, 0.4);
+  }
+  
+  #nprogress .peg {
+    box-shadow: 
+      0 0 15px #4ba9b7, 
+      0 0 8px #4ba9b7,
+      0 0 25px rgba(75, 169, 183, 0.6);
+  }
+}
+
+/* Animation for smooth appearance */
+@keyframes nprogress-pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+/* Pulse effect for long-running operations */
+#nprogress .bar.pulse {
+  animation: nprogress-pulse 2s ease-in-out infinite;
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  #nprogress .bar {
+    height: 2px;
+  }
+  
+  #nprogress .peg {
+    width: 80px;
+    transform: rotate(1deg) translate(0px, -1px);
+  }
+}

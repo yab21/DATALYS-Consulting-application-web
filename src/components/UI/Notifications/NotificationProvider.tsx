@@ -26,10 +26,10 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-export const useNotifications = () => {
+export const useSimpleNotifications = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error('useSimpleNotifications must be used within a NotificationProvider');
   }
   return context;
 };
@@ -247,7 +247,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({ notification, onRem
 
 // Utilitaires d'export pour utilisation facile
 export const useNotificationHelpers = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   return {
     showSuccess: (title: string, message: string, options?: Partial<Notification>) =>

@@ -6,7 +6,7 @@ import { Button } from "@nextui-org/button";
 import { Input } from "@nextui-org/react";
 import { Select, SelectItem } from "@nextui-org/react";
 import { domaines } from "./domaineData";
-import { useNotifications } from "@/context/NotificationContext";
+import { useSimpleNotifications } from "@/context/NotificationContext";
 
 const ModifierCompte = () => {
   const [formData, setFormData] = useState({
@@ -21,7 +21,7 @@ const ModifierCompte = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const { addNotification } = useNotifications();
+  const { addNotification } = useSimpleNotifications();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
