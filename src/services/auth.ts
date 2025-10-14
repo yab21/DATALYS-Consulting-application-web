@@ -182,8 +182,8 @@ export class AuthService {
   static isAuthenticated(): boolean {
     if (typeof window === "undefined") return false;
 
-    const token = SecureStorage.getItem("authToken");
-    const userInfo = SecureStorage.getItem("userInfo");
+    const token = localStorage.getItem("authToken");
+    const userInfo = localStorage.getItem("userInfo");
 
     return !!(token && userInfo);
   }
@@ -193,7 +193,7 @@ export class AuthService {
    */
   static getToken(): string | null {
     if (typeof window === "undefined") return null;
-    return SecureStorage.getItem("authToken");
+    return localStorage.getItem("authToken");
   }
 
   /**
@@ -202,7 +202,7 @@ export class AuthService {
   static getUser(): User | null {
     if (typeof window === "undefined") return null;
 
-    const userInfo = SecureStorage.getItem("userInfo");
+    const userInfo = localStorage.getItem("userInfo");
     if (!userInfo) return null;
 
     try {
@@ -218,9 +218,9 @@ export class AuthService {
   private static storeAuthData(data: LoginResponse): void {
     if (typeof window === "undefined") return;
 
-    // Stocker de manière sécurisée avec chiffrement
-    SecureStorage.setItem("authToken", data.token);
-    SecureStorage.setItem(
+    // Stocker dans localStorage pour cohérence avec AuthContext
+    localStorage.setItem("authToken", data.token);
+    localStorage.setItem(
       "userInfo",
       JSON.stringify({
         id: data.id,
@@ -257,7 +257,11 @@ export class AuthService {
   static clearAuthData(): void {
     if (typeof window === "undefined") return;
 
-    // Supprimer du stockage sécurisé
+    // Supprimer du localStorage
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userInfo");
+    
+    // Nettoyer aussi SecureStorage au cas où
     SecureStorage.removeItem("authToken");
     SecureStorage.removeItem("userInfo");
     SecureStorage.removeItem("rememberMe");
