@@ -53,16 +53,29 @@ export class SecureStorage {
         const decrypted = CryptoJS.AES.decrypt(value, this.encryptionKey);
         const result = decrypted.toString(CryptoJS.enc.Utf8);
         
-        if (result) {
+        if (result && result.length > 0) {
           console.log(`🔓 SecureStorage: ${key} déchiffré avec succès`);
           return result;
         } else {
-          console.warn(`⚠️ SecureStorage: Échec du déchiffrement pour ${key}, tentative fallback`);
-          return value; // Fallback si déchiffrement échoue
+          console.warn(`⚠️ SecureStorage: Échec du déchiffrement pour ${key}, nettoyage et fallback`);
+          // Nettoyer les données corrompues
+          localStorage.removeItem(key + '_encrypted');
+          // Si les données semblent être du JSON non chiffré, les retourner
+          try {
+            JSON.parse(value);
+            return value;
+          } catch {
+            // Sinon, forcer la déconnexion
+            this.removeItem(key);
+            return null;
+          }
         }
       } catch (error) {
         console.warn(`⚠️ SecureStorage: Erreur de déchiffrement pour ${key}:`, error);
-        return value; // Fallback vers valeur brute
+        // Nettoyer les données corrompues et forcer nouveau login
+        localStorage.removeItem(key + '_encrypted');
+        this.removeItem(key);
+        return null;
       }
     } else {
       // Données non chiffrées (ancien format) - rétrocompatibilité
@@ -146,6 +159,37 @@ export class SecureStorage {
   }
 
   /**
+   * Nettoyage d'urgence en cas de corruption des données chiffrées
+   */
+  static emergencyCleanup(): void {
+    if (typeof window === 'undefined') return;
+
+    console.log('🚨 SecureStorage: Nettoyage d\'urgence des données corrompues');
+    
+    const keysToCheck = ['authToken', 'userInfo', 'refreshToken'];
+    
+    keysToCheck.forEach(key => {
+      const isEncrypted = localStorage.getItem(key + '_encrypted') === 'true';
+      if (isEncrypted) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          try {
+            const decrypted = CryptoJS.AES.decrypt(value, this.encryptionKey);
+            const result = decrypted.toString(CryptoJS.enc.Utf8);
+            if (!result || result.length === 0) {
+              console.log(`🧹 Nettoyage: Suppression de ${key} (déchiffrement échoué)`);
+              this.removeItem(key);
+            }
+          } catch (error) {
+            console.log(`🧹 Nettoyage: Suppression de ${key} (erreur déchiffrement)`);
+            this.removeItem(key);
+          }
+        }
+      }
+    });
+  }
+
+  /**
    * Test de fonctionnement du chiffrement
    */
   static testEncryption(): boolean {
@@ -178,6 +222,9 @@ export const secureLocalStorage = {
 
 // Initialisation automatique et test au premier import
 if (typeof window !== 'undefined') {
+  // Nettoyage d'urgence en cas de données corrompues
+  SecureStorage.emergencyCleanup();
+  
   // Test rapide du chiffrement
   SecureStorage.testEncryption();
   
@@ -185,4 +232,15 @@ if (typeof window !== 'undefined') {
   setTimeout(() => {
     SecureStorage.migrateAllSensitiveKeys();
   }, 1000);
+
+  // Utilitaire global pour le débogage (développement uniquement)
+  if (process.env.NODE_ENV === 'development') {
+    (window as any).debugSecureStorage = {
+      cleanup: () => SecureStorage.emergencyCleanup(),
+      clearAll: () => SecureStorage.clearAll(),
+      test: () => SecureStorage.testEncryption(),
+      migrate: () => SecureStorage.migrateAllSensitiveKeys()
+    };
+    console.log('🔧 Debug: window.debugSecureStorage disponible pour le débogage');
+  }
 }
