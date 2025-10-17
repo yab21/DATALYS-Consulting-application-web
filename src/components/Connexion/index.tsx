@@ -87,8 +87,8 @@ const Connexion: React.FC = () => {
           // Rediriger vers la page de changement de mot de passe
           setTimeout(() => {
             setIsLoading(false);
+            finish(); // Terminer la progress bar avant la redirection
             router.push(`/changer-mot-de-passe-temporaire?email=${encodeURIComponent(data.identifier)}`);
-            // finish() sera appelé à l'arrivée sur la nouvelle page
           }, 1500);
           return;
         }
@@ -108,8 +108,8 @@ const Connexion: React.FC = () => {
         // Rediriger vers le tableau de bord
         setTimeout(() => {
           setIsLoading(false);
+          finish(); // Terminer la progress bar avant la redirection
           router.push("/tableaudebord");
-          // finish() sera appelé à l'arrivée sur la nouvelle page
         }, 1000);
       } else {
         finish();
@@ -384,13 +384,13 @@ const Connexion: React.FC = () => {
                     {...register("identifier", {
                       required: "L'identifiant est requis",
                       pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Format d'identifiant invalide"
+                        value: /^([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|[A-Z0-9]+)$/i,
+                        message: "Format d'identifiant invalide (email ou code client)"
                       }
                     })}
-                    type="email"
+                    type="text"
                     variant="bordered"
-                    placeholder="votre@email.com"
+                    placeholder="email@exemple.com ou DTLS9UG6X8"
                     isInvalid={!!errors.identifier}
                     errorMessage={errors.identifier?.message}
                     classNames={{

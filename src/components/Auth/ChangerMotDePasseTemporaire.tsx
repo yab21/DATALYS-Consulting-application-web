@@ -23,9 +23,10 @@ import {
   Users,
   Mail
 } from "lucide-react";
-import { API_CONFIG, buildApiUrl, getDefaultHeaders } from "@/lib/api-config";
+import { AuthService } from "@/services/auth";
 import { useAuth } from "@/context/AuthContext";
-import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import VerificationMFA from "@/components/Auth/VerificationMFA";
 
 interface PasswordChangeData {
   email: string;
@@ -50,6 +51,8 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showMFA, setShowMFA] = useState(false);
+  const [pendingIdentifier, setPendingIdentifier] = useState("");
 
   // Récupérer l'email depuis les paramètres URL
   useEffect(() => {
@@ -96,33 +99,34 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.AUTH.CHANGE_TEMP_PASSWORD), {
-        method: 'POST',
-        headers: getDefaultHeaders(),
-        body: JSON.stringify({
-          email: formData.email,
-          current_password: formData.current_password,
-          new_password: formData.new_password,
-        }),
+      const result = await AuthService.changeTempPassword({
+        email: formData.email,
+        current_password: formData.current_password,
+        new_password: formData.new_password,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      if (result.status === 'success') {
+        // Vérifier si MFA est requis
+        if (result.data?.requires_mfa) {
+          setIsLoading(false);
+          setPendingIdentifier(formData.email);
+          setShowMFA(true);
+          
+          showNotification(simpleNotificationHelpers.info(
+            "Authentification",
+            result.data.message || "Code de vérification envoyé par email"
+          ));
+          return;
+        }
 
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        showNotification({
-          type: "success",
-          title: "Succès",
-          message: data.message || "Mot de passe mis à jour avec succès",
-          duration: 3000,
-        });
+        showNotification(simpleNotificationHelpers.success(
+          "Succès",
+          result.message || "Mot de passe mis à jour avec succès"
+        ));
 
         // Connexion automatique avec le nouveau token
-        if (data.data && data.data.token) {
-          await loginWithUserData(data.data);
+        if (result.data && result.data.token) {
+          await loginWithUserData(result.data);
           
           // Redirection vers le tableau de bord
           setTimeout(() => {
@@ -135,34 +139,24 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
           }, 2000);
         }
       } else {
-        throw new Error(data.message || 'Erreur lors du changement de mot de passe');
+        throw new Error(result.message || 'Erreur lors du changement de mot de passe');
       }
     } catch (error: any) {
       console.error('Erreur changement mot de passe:', error);
       
       let errorMessage = "Une erreur s'est produite lors du changement de mot de passe";
       
-      if (error.message.includes('401')) {
+      if (error.message && error.message.includes('incorrect')) {
         errorMessage = "Mot de passe actuel incorrect";
         setErrors({ current_password: "Mot de passe incorrect" });
-      } else if (error.message.includes('400')) {
-        errorMessage = "Données de formulaire invalides";
       } else {
-        // Essayer d'extraire le message d'erreur du backend si disponible
-        try {
-          const errorData = JSON.parse(error.message);
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          // Garder le message par défaut si parsing échoue
-        }
+        errorMessage = error.message || errorMessage;
       }
 
-      showNotification({
-        type: "error",
-        title: "Erreur",
-        message: errorMessage,
-        duration: 5000,
-      });
+      showNotification(simpleNotificationHelpers.error(
+        "Erreur",
+        errorMessage
+      ));
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +167,12 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
+  };
+
+  const handleBackFromMFA = () => {
+    setShowMFA(false);
+    setPendingIdentifier("");
+    setErrors({});
   };
 
   const containerVariants = {
@@ -198,6 +198,16 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
       },
     },
   };
+
+  // Si MFA est requis, afficher le composant MFA
+  if (showMFA) {
+    return (
+      <VerificationMFA
+        identifier={pendingIdentifier}
+        onBack={handleBackFromMFA}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">

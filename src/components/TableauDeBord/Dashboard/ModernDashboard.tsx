@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useTopBarProgress } from "@/hooks/useTopBarProgress";
 import {
   Chip,
 } from "@nextui-org/react";
@@ -91,6 +92,7 @@ interface ActivityItem {
 const ModernDashboard: React.FC = () => {
   const { user, isAdmin, isPartner, hasPermission, isLoading: authLoading } = useAuth();
   const { showNotification } = useSimpleNotifications();
+  const { finish } = useTopBarProgress();
   
   // États principaux
   const [stats, setStats] = useState<DashboardStats>({
@@ -250,6 +252,9 @@ const ModernDashboard: React.FC = () => {
   useEffect(() => {
     // Attendre que les données d'authentification soient chargées
     if (!authLoading && user) {
+      // Terminer toute progress bar restante au chargement du dashboard
+      finish();
+      
       console.log("🚀 Auth chargé, démarrage du dashboard pour:", {
         name: user.name,
         role_id: user.role_id,
@@ -260,7 +265,7 @@ const ModernDashboard: React.FC = () => {
         loadDashboardData();
       }, 100);
     }
-  }, [authLoading, user, isAdmin, isPartner]);
+  }, [authLoading, user, isAdmin, isPartner, finish]);
 
   const loadDashboardData = async () => {
     try {
@@ -272,6 +277,7 @@ const ModernDashboard: React.FC = () => {
         name: user?.name,
         role_id: user?.role_id,
         partner_id: user?.partner_id,
+        username: user?.username,
         isAdmin: isAdmin(),
         isPartner: isPartner()
       });
@@ -355,8 +361,7 @@ const ModernDashboard: React.FC = () => {
       } else if (isPartner()) {
         console.log("🤝 Chargement des données partenaire...");
         
-        // Utiliser l'ID utilisateur comme partner_id temporairement
-        // car partner_id n'est pas fourni dans la réponse de connexion
+        // Utiliser partner_id si disponible, sinon l'ID utilisateur comme fallback
         const partnerId = user?.partner_id || user?.id;
         
         if (!partnerId) {

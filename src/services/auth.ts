@@ -20,11 +20,19 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  username?: string;
   role_id: number;
-  partner_id?: number; // Ajouter partner_id optionnel
+  partner_id?: number; // ID du partenaire associé (pour les clients/partenaires)
   is_active: boolean;
+  is_deleted?: boolean;
+  is_temp_password?: boolean;
   created_at: string;
   updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  client_code?: string | null;
+  fcm_token?: string;
+  // Note: password_hash volontairement exclu pour la sécurité
 }
 
 export class AuthService {
@@ -47,10 +55,6 @@ export class AuthService {
           body: JSON.stringify(credentials),
         },
       );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
       const result = await response.json();
 
@@ -130,6 +134,65 @@ export class AuthService {
       }
     } catch (error) {
       console.error("Erreur lors de la vérification MFA:", error);
+      return {
+        status: "error",
+        message: "Erreur de connexion. Veuillez réessayer.",
+      };
+    }
+  }
+
+  /**
+   * Changement de mot de passe temporaire
+   */
+  static async changeTempPassword(data: {
+    email: string;
+    current_password: string;
+    new_password: string;
+  }): Promise<ApiResponse<LoginResponse>> {
+    try {
+      const response = await fetch(
+        buildApiUrl(API_CONFIG.ENDPOINTS.AUTH.CHANGE_TEMP_PASSWORD),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+            "Cache-Control": "no-cache",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        // Si MFA requis, ne pas stocker les données d'authentification
+        if (result.data?.requires_mfa) {
+          return {
+            status: "success",
+            message: result.message,
+            data: result.data,
+          };
+        }
+        
+        // Changement réussi sans MFA : stocker le token et les informations utilisateur
+        if (result.data && result.data.token) {
+          this.storeAuthData(result.data);
+        }
+        
+        return {
+          status: "success",
+          message: result.message,
+          data: result.data,
+        };
+      } else {
+        return {
+          status: "error",
+          message: result.message || "Erreur lors du changement de mot de passe",
+        };
+      }
+    } catch (error) {
+      console.error("Erreur lors du changement de mot de passe:", error);
       return {
         status: "error",
         message: "Erreur de connexion. Veuillez réessayer.",
@@ -218,37 +281,38 @@ export class AuthService {
   private static storeAuthData(data: LoginResponse): void {
     if (typeof window === "undefined") return;
 
+    // Filtrer les données sensibles avant le stockage (TypeScript ignore cette propriété car elle n'est pas dans l'interface)
+    const safeUserData = data;
+
+    // Créer un objet utilisateur sécurisé
+    const userInfo = {
+      id: safeUserData.id,
+      name: safeUserData.name,
+      email: safeUserData.email,
+      username: safeUserData.username,
+      role_id: safeUserData.role_id,
+      partner_id: safeUserData.partner_id,
+      is_active: safeUserData.is_active,
+      is_deleted: safeUserData.is_deleted,
+      is_temp_password: safeUserData.is_temp_password,
+      created_at: safeUserData.created_at,
+      updated_at: safeUserData.updated_at,
+      created_by: safeUserData.created_by,
+      updated_by: safeUserData.updated_by,
+      client_code: safeUserData.client_code,
+      fcm_token: safeUserData.fcm_token,
+    };
+
     // Stocker dans localStorage pour cohérence avec AuthContext
-    localStorage.setItem("authToken", data.token);
-    localStorage.setItem(
-      "userInfo",
-      JSON.stringify({
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        role_id: data.role_id,
-        partner_id: data.partner_id, // Ajouter partner_id
-        is_active: data.is_active,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-      }),
-    );
+    localStorage.setItem("authToken", data.token || "");
+    localStorage.setItem("userInfo", JSON.stringify(userInfo));
 
     // Stocker aussi dans les cookies sécurisés pour l'accès côté serveur (middleware)
     const isProduction = process.env.NODE_ENV === 'production';
     const secureFlag = isProduction ? '; Secure' : '';
     
-    document.cookie = `authToken=${data.token}; path=/; max-age=86400; SameSite=Strict${secureFlag}`;
-    document.cookie = `userInfo=${JSON.stringify({
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      role_id: data.role_id,
-      partner_id: data.partner_id, // Ajouter partner_id
-      is_active: data.is_active,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-    })}; path=/; max-age=86400; SameSite=Strict${secureFlag}`;
+    document.cookie = `authToken=${data.token || ""}; path=/; max-age=86400; SameSite=Strict${secureFlag}`;
+    document.cookie = `userInfo=${JSON.stringify(userInfo)}; path=/; max-age=86400; SameSite=Strict${secureFlag}`;
   }
 
   /**

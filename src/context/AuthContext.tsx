@@ -16,11 +16,18 @@ interface User {
   id: number;
   email: string;
   name: string;
+  username?: string;
   is_active: boolean;
   role_id: number;
-  partner_id?: number; // ID du partenaire associé (pour les clients)
+  partner_id?: number; // ID du partenaire associé (pour les clients/partenaires)
+  is_deleted?: boolean;
+  is_temp_password?: boolean;
   created_at: string;
   updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  client_code?: string | null;
+  fcm_token?: string;
   requires_password_change?: boolean; // Indique si l'utilisateur doit changer son mot de passe
 }
 
@@ -112,16 +119,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const response = await AuthService.login({ identifier: email, password });
 
-      if (response.status === 'success' && response.data) {
+      if (response.status === 'success' && response.data && response.data.id) {
         const userData: User = {
           id: response.data.id,
           email: response.data.email,
-          name: response.data.name,
-          is_active: response.data.is_active,
-          role_id: typeof response.data.role_id === 'string' ? parseInt(response.data.role_id) : response.data.role_id, // Assurer que c'est un nombre
-          partner_id: response.data.partner_id, // Ajouter partner_id depuis l'API
-          created_at: response.data.created_at,
-          updated_at: response.data.updated_at,
+          name: response.data.name || '',
+          username: response.data.username,
+          is_active: response.data.is_active || true,
+          role_id: typeof response.data.role_id === 'string' ? parseInt(response.data.role_id) : (response.data.role_id || 0),
+          partner_id: response.data.partner_id,
+          is_deleted: response.data.is_deleted,
+          is_temp_password: response.data.is_temp_password,
+          created_at: response.data.created_at || '',
+          updated_at: response.data.updated_at || '',
+          created_by: response.data.created_by,
+          updated_by: response.data.updated_by,
+          client_code: response.data.client_code,
+          fcm_token: response.data.fcm_token,
           requires_password_change: response.data.requires_password_change,
         };
         
@@ -129,11 +143,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           name: userData.name,
           role_id: userData.role_id,
           partner_id: userData.partner_id,
+          username: userData.username,
           requires_password_change: userData.requires_password_change
         });
 
         setUser(userData);
-        setToken(response.data.token);
+        setToken(response.data.token || null);
 
         // Créer l'utilisateur avec permissions
         const userWithPerms: UserWithPermissions = {
@@ -164,20 +179,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setIsLoading(true);
 
+      // Vérifier que les données essentielles sont présentes
+      if (!userData.id || !userData.email) {
+        throw new Error('Données utilisateur incomplètes');
+      }
+
       const user: User = {
         id: userData.id,
         email: userData.email,
-        name: userData.name,
-        is_active: userData.is_active,
-        role_id: typeof userData.role_id === 'string' ? parseInt(userData.role_id) : userData.role_id, // Assurer que c'est un nombre
+        name: userData.name || '',
+        username: userData.username,
+        is_active: userData.is_active || true,
+        role_id: typeof userData.role_id === 'string' ? parseInt(userData.role_id) : (userData.role_id || 0),
         partner_id: userData.partner_id,
-        created_at: userData.created_at,
-        updated_at: userData.updated_at,
+        is_deleted: userData.is_deleted,
+        is_temp_password: userData.is_temp_password,
+        created_at: userData.created_at || '',
+        updated_at: userData.updated_at || '',
+        created_by: userData.created_by,
+        updated_by: userData.updated_by,
+        client_code: userData.client_code,
+        fcm_token: userData.fcm_token,
         requires_password_change: userData.requires_password_change,
       };
 
       setUser(user);
-      setToken(userData.token);
+      setToken(userData.token || null);
 
       // Créer l'utilisateur avec permissions
       const userWithPerms: UserWithPermissions = {
@@ -187,8 +214,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserWithPermissions(userWithPerms);
 
       // Sauvegarder les données d'authentification
-      localStorage.setItem('authToken', userData.token);
-      localStorage.setItem('userInfo', JSON.stringify(user));
+      if (userData.token) {
+        localStorage.setItem('authToken', userData.token);
+        localStorage.setItem('userInfo', JSON.stringify(user));
+      }
 
     } catch (error) {
       // Nettoyer l'état en cas d'erreur

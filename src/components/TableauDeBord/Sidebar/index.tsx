@@ -422,67 +422,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           {/* <!-- Sidebar Menu --> */}
         </div>
 
-        {/* Footer de la sidebar */}
-        <motion.div
-          className="border-t border-gray-200/30 bg-gradient-to-br from-gray-50/80 via-white/60 to-gray-100/40 p-4 backdrop-blur-sm dark:border-gray-600/40 dark:from-gray-800/90 dark:via-gray-700/70 dark:to-gray-600/50 flex-shrink-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-        >
-          <div className="text-center">
-            {/* Logo avec effet de lueur */}
-            <motion.div
-              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-secondary to-primary/80 p-3 shadow-lg shadow-primary/20 ring-2 ring-primary/20 dark:from-primary dark:via-secondary dark:to-primary/80 dark:shadow-primary/30 dark:ring-primary/30"
-              whileHover={{ scale: 1.05, rotate: 5 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <svg
-                className="h-6 w-6 text-white drop-shadow-sm"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </motion.div>
-
-            {/* Informations de l'entreprise */}
-            <div className="space-y-2">
-              <motion.p
-                className="text-sm font-bold text-gray-800 dark:text-gray-200"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                DATALYS Consulting
-              </motion.p>
-              <motion.p
-                className="text-xs text-gray-600 dark:text-gray-400"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-              >
-                Version 2.0
-              </motion.p>
-
-              {/* Statut en ligne */}
-              <motion.div
-                className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 px-3 py-1 shadow-sm dark:from-green-900/40 dark:to-emerald-900/40"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.8 }}
-              >
-                <div className="h-2 w-2 animate-pulse rounded-full bg-gradient-to-r from-green-500 to-emerald-500" />
-                <span className="text-xs font-medium text-green-700 dark:text-green-300">
-                  En ligne
-                </span>
-              </motion.div>
-            </div>
-          </div>
-        </motion.div>
       </aside>
     </ClickOutside>
   );

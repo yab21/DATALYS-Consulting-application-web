@@ -101,19 +101,31 @@ export interface ApiResponse<T = any> {
 }
 
 export interface LoginResponse {
-  id: number;
-  name: string;
+  // Champs de base présents après MFA
+  id?: number;
+  name?: string;
   email: string;
-  token: string;
-  role_id: number;
-  partner_id?: number; // ID du partenaire associé (pour les clients)
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  username?: string;
+  token?: string;
+  role_id?: number;
+  partner_id?: number; // ID du partenaire associé (pour les clients/partenaires)
+  is_active?: boolean;
+  is_deleted?: boolean;
+  is_temp_password?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
+  client_code?: string | null;
+  fcm_token?: string;
+  
+  // Champs de contrôle de flux
   requires_password_change?: boolean; // Indique si l'utilisateur doit changer son mot de passe
   requires_mfa?: boolean; // Indique si MFA est requis
   user_id?: number; // ID utilisateur pour étape MFA
   message?: string; // Message d'information (ex: "Code envoyé")
+  
+  // Note: password_hash est volontairement exclu pour la sécurité
 }
 
 export interface MFAVerificationRequest {

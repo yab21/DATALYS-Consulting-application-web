@@ -1,21 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import {
-  Card,
-  CardBody,
   Input,
   Button,
-  Link,
 } from "@nextui-org/react";
 import { 
   Shield,
   ArrowRight,
   ArrowLeft,
-  RefreshCw,
   Clock,
   CheckCircle,
   AlertTriangle
@@ -41,15 +37,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
-  const [countdown, setCountdown] = useState(0);
 
-  // Décompte pour le renvoi de code (optionnel)
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,8 +71,8 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
         // Rediriger vers le tableau de bord
         setTimeout(() => {
           setIsLoading(false);
+          finish(); // Terminer la progress bar avant la redirection
           router.push("/tableaudebord");
-          // finish() sera appelé à l'arrivée sur la nouvelle page
         }, 1000);
       } else {
         finish();
@@ -437,22 +425,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                 transition={{ delay: 0.8 }}
               >
                 <p className="text-sm text-gray-500">
-                  Vous n'avez pas reçu de code ?{" "}
-                  <button
-                    type="button"
-                    className="font-semibold text-primary transition-colors duration-300 hover:text-primary-800 hover:underline"
-                    disabled={countdown > 0}
-                    onClick={() => {
-                      // TODO: Implémenter le renvoi de code
-                      setCountdown(60);
-                      showNotification(simpleNotificationHelpers.info(
-                        "Code renvoyé",
-                        "Un nouveau code a été envoyé à votre email"
-                      ));
-                    }}
-                  >
-                    {countdown > 0 ? `Renvoyer dans ${countdown}s` : "Renvoyer le code"}
-                  </button>
+                  Vérifiez votre boîte email pour le code de vérification
                 </p>
               </motion.div>
             </div>

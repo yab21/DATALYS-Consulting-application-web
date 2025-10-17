@@ -30,9 +30,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // Si l'utilisateur n'est pas connecté et que le chargement est terminé, rediriger vers la connexion
     if (!isLoading && !isAuthenticated) {
       start(); // Progress pour la redirection
-      router.push("/connexion");
+      // Terminer la progress bar après un délai pour permettre la redirection
+      setTimeout(() => {
+        finish();
+        router.push("/connexion");
+      }, 100);
     }
-  }, [isAuthenticated, isLoading, router, start]);
+  }, [isAuthenticated, isLoading, router, start, finish]);
 
   // Pendant la vérification d'authentification, on n'affiche que la progress bar
   if (isLoading) {
