@@ -2,7 +2,7 @@
 
 export enum UserRole {
   ADMIN = 1,        // Datalys Consulting - Contrôle total
-  PARTNER = 2       // Client externe - Lecture seule sur ses données
+  PARTNER = 5       // Client externe - Lecture seule sur ses données
 }
 
 export enum Permission {
@@ -178,6 +178,11 @@ export class PermissionManager {
     if (!user || !user.role_id) return false;
     
     const rolePermissions = ROLE_PERMISSIONS[user.role_id];
+    if (!rolePermissions) {
+      console.warn(`Role ID ${user.role_id} not found in ROLE_PERMISSIONS`);
+      return false;
+    }
+    
     return rolePermissions.includes(permission);
   }
 
@@ -192,7 +197,7 @@ export class PermissionManager {
    * Vérifie si un utilisateur est partenaire
    */
   static isPartner(user: UserWithPermissions): boolean {
-    return user.role_id === UserRole.PARTNER;
+    return user.role_id === UserRole.PARTNER; // role_id === 5
   }
 
   /**

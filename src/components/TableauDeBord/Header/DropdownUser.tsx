@@ -5,7 +5,7 @@ import Link from "next/link";
 import ClickOutside from "@/components/ClickOutside";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, Settings, Bell } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import LoadingSpinner from "@/components/UI/Loading/LoadingSpinner";
 
 const DropdownUser = () => {
@@ -25,10 +25,10 @@ const DropdownUser = () => {
     };
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setIsLoggingOut(true);
     try {
-      await logout();
+      logout();
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
     } finally {

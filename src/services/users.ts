@@ -5,12 +5,19 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role_id: UserRole;
+  role_id: number; // 1 = admin, 5 = partner
   partner_id?: number;
   is_active: boolean;
-  last_login?: string;
+  is_deleted?: boolean;
+  is_temp_password?: boolean;
+  client_code?: string;
+  username?: string;
+  fcm_token?: string;
+  password_hash?: string;
   created_at: string;
   updated_at: string;
+  created_by?: string;
+  updated_by?: string;
   partner_name?: string;
 }
 
@@ -92,12 +99,16 @@ export class UsersService {
   }
 
   static async createUser(userData: CreateUserData, adminId?: number): Promise<any> {
-    // Récupérer l'ID de l'admin depuis localStorage ou utiliser la valeur par défaut
-    const userId = adminId || this.getCurrentUserId() || 1;
+    // Récupérer l'ID et l'email de l'admin depuis localStorage
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) {
+      throw new Error('Utilisateur non connecté');
+    }
     
     const requestBody = {
       user: {
-        id: userId
+        id: adminId || currentUser.id,
+        email: currentUser.email
       },
       datas: [userData]
     };
@@ -110,12 +121,16 @@ export class UsersService {
   }
 
   static async updateUser(userData: UpdateUserData, adminId?: number): Promise<any> {
-    // Récupérer l'ID de l'admin depuis localStorage ou utiliser la valeur par défaut
-    const userId = adminId || this.getCurrentUserId() || 1;
+    // Récupérer l'ID et l'email de l'admin depuis localStorage
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) {
+      throw new Error('Utilisateur non connecté');
+    }
     
     const requestBody = {
       user: {
-        id: userId
+        id: adminId || currentUser.id,
+        email: currentUser.email
       },
       datas: [userData]
     };
@@ -196,6 +211,22 @@ export class UsersService {
         try {
           const user = JSON.parse(userStr);
           return user.id;
+        } catch (error) {
+          console.error('Erreur lors de la lecture des données utilisateur:', error);
+        }
+      }
+    }
+    return null;
+  }
+
+  // Nouvelle méthode pour récupérer l'utilisateur complet
+  static getCurrentUser(): { id: number; email: string } | null {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          return { id: user.id, email: user.email };
         } catch (error) {
           console.error('Erreur lors de la lecture des données utilisateur:', error);
         }

@@ -3,6 +3,8 @@
  * Basé sur les APIs documentées dans le guide d'intégration
  */
 
+import { SecureStorage } from '@/lib/secure-storage';
+
 // Interfaces TypeScript
 export interface ProjectFile {
   id: number;
@@ -60,7 +62,7 @@ class FilesService {
   }
 
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('authToken');
+    const token = SecureStorage.getItem('authToken');
     return {
       'Authorization': `Bearer ${token}`
     };
@@ -275,7 +277,7 @@ class FilesService {
           xhr.open('POST', `${this.baseUrl}/files/upload`);
           
           // Ajouter l'en-tête d'authentification
-          const token = localStorage.getItem('authToken');
+          const token = SecureStorage.getItem('authToken');
           if (token) {
             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
           }
@@ -389,7 +391,7 @@ class FilesService {
    * Obtenir l'URL de prévisualisation d'un fichier avec authentification
    */
   getAuthenticatedFileUrl(filePath: string): string {
-    const token = localStorage.getItem('authToken');
+    const token = SecureStorage.getItem('authToken');
     const cleanPath = filePath.replace(/^\/+/, '');
     const baseUrl = `${this.baseUrl}/files/serve/${cleanPath}`;
     

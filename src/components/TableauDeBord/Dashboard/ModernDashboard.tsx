@@ -283,10 +283,24 @@ const ModernDashboard: React.FC = () => {
       });
       
       if (isAdmin()) {
-        // Charger les données admin
-        const adminDashboard = await dashboardService.getDashboardAdmin();
-        console.log("📡 Réponse API admin:", adminDashboard);
+        // 🚧 TEMPORAIRE: Endpoint dashboard admin non disponible sur le backend (404)
+        console.log("🚧 Dashboard admin temporairement désactivé - endpoint backend retourne 404");
+        console.warn("⚠️ API Dashboard Admin indisponible - /dashboard/admin/overview n'existe pas");
         
+        // Utiliser des données par défaut pour les admins
+        setStats({
+          projects: { total: 0, active: 0, completed: 0, pending: 0, growth: 0 },
+          partners: { total: 0, active: 0, new_this_month: 0, growth: 0 },
+          files: { total: 0, size_gb: 0, recent_uploads: 0, growth: 0 },
+          messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
+          incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
+        });
+        setActivities([]);
+        
+        /* COMMENTÉ - À réactiver quand l'endpoint backend sera implémenté
+        try {
+          const adminDashboard = await dashboardService.getDashboardAdmin();
+          console.log("📡 Réponse API admin dashboard:", adminDashboard);
         if (adminDashboard && ((adminDashboard as any).code === 200 || (adminDashboard as any).success === true || adminDashboard.data)) {
           const data = adminDashboard.data || adminDashboard;
           
@@ -358,6 +372,10 @@ const ModernDashboard: React.FC = () => {
         } else {
           console.error("❌ API admin a échoué");
         }
+        } catch (error) {
+          console.error("❌ Erreur lors du chargement des données admin:", error);
+        }
+        */
       } else if (isPartner()) {
         console.log("🤝 Chargement des données partenaire...");
         

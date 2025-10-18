@@ -1,4 +1,5 @@
 import { API_CONFIG } from "@/lib/api-config";
+import { SecureStorage } from "@/lib/secure-storage";
 
 // Types pour le système de messages
 export interface Message {
@@ -103,7 +104,7 @@ class MessagesService {
   
   // Récupérer le token d'authentification
   private getAuthHeaders() {
-    const token = localStorage.getItem('authToken');
+    const token = SecureStorage.getItem('authToken');
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { SecureStorage } from "@/lib/secure-storage";
 import {
   Input,
   Textarea,
-  Select,
-  SelectItem,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Button,
   Divider,
 } from "@nextui-org/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
@@ -16,7 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { Permission } from "@/lib/permissions";
 import { PermissionGuard } from "@/components/Security/PermissionGuard";
-import { ArrowLeft, Save, Building, Mail, Phone, Shield } from "lucide-react";
+import { ArrowLeft, Save, Building, Mail, Phone, ChevronDown } from "lucide-react";
 import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
 
 // Types
@@ -24,9 +28,27 @@ interface PartnerForm {
   name: string;
   email: string;
   phone: string;
+  country_code: string;
   address: string;
-  is_active: boolean;
 }
+
+// Liste des codes pays courants avec règles de validation
+const COUNTRY_CODES = [
+  { code: "+237", name: "Cameroun", flag: "🇨🇲", phoneLength: 9, example: "+237612345678" },
+  { code: "+33", name: "France", flag: "🇫🇷", phoneLength: 9, example: "+33123456789" },
+  { code: "+1", name: "États-Unis", flag: "🇺🇸", phoneLength: 10, example: "+11234567890" },
+  { code: "+44", name: "Royaume-Uni", flag: "🇬🇧", phoneLength: 10, example: "+441234567890" },
+  { code: "+49", name: "Allemagne", flag: "🇩🇪", phoneLength: 11, example: "+4912345678901" },
+  { code: "+34", name: "Espagne", flag: "🇪🇸", phoneLength: 9, example: "+34123456789" },
+  { code: "+39", name: "Italie", flag: "🇮🇹", phoneLength: 10, example: "+391234567890" },
+  { code: "+41", name: "Suisse", flag: "🇨🇭", phoneLength: 9, example: "+41123456789" },
+  { code: "+32", name: "Belgique", flag: "🇧🇪", phoneLength: 9, example: "+32123456789" },
+  { code: "+225", name: "Côte d'Ivoire", flag: "🇨🇮", phoneLength: 8, example: "+22512345678" },
+  { code: "+221", name: "Sénégal", flag: "🇸🇳", phoneLength: 9, example: "+221123456789" },
+  { code: "+212", name: "Maroc", flag: "🇲🇦", phoneLength: 9, example: "+212123456789" },
+  { code: "+213", name: "Algérie", flag: "🇩🇿", phoneLength: 9, example: "+213123456789" },
+  { code: "+216", name: "Tunisie", flag: "🇹🇳", phoneLength: 8, example: "+21612345678" },
+];
 
 const AjouterPartenaire: React.FC = () => {
   const router = useRouter();
@@ -46,16 +68,26 @@ const AjouterPartenaire: React.FC = () => {
     name: "",
     email: "",
     phone: "",
+    country_code: "+237", // Valeur par défaut pour le Cameroun
     address: "",
-    is_active: true,
   });
+
+  // State séparé pour le Select NextUI
+  const [selectedCountry, setSelectedCountry] = useState<string>("+237");
+
+  // Synchroniser le country code au chargement
+  useEffect(() => {
+    if (selectedCountry && formData.country_code !== selectedCountry) {
+      setFormData(prev => ({ ...prev, country_code: selectedCountry }));
+    }
+  }, [selectedCountry, formData.country_code]);
 
   // Vérification des permissions et authentification
   useEffect(() => {
     console.log("🔐 État d'authentification:", {
       isAuthenticated,
       user,
-      hasToken: !!localStorage.getItem('authToken'),
+      hasToken: !!SecureStorage.getItem('authToken'),
       isAdmin: isAdmin(),
       canCreate: canCreate(),
       hasCreatePermission: hasPermission(Permission.CREATE_PARTNERS)
@@ -99,6 +131,23 @@ const AjouterPartenaire: React.FC = () => {
 
     if (!formData.phone.trim()) {
       newErrors.phone = "Le téléphone est requis";
+    } else {
+      // Validation simple : seulement les chiffres après le code pays
+      const selectedCountryInfo = COUNTRY_CODES.find(c => c.code === formData.country_code);
+      if (selectedCountryInfo) {
+        const cleanPhone = formData.phone.replace(/[\s\-\(\)]/g, '');
+        
+        // Vérifier que ce sont bien des chiffres et la bonne longueur
+        if (!/^\d+$/.test(cleanPhone)) {
+          newErrors.phone = "Le numéro ne doit contenir que des chiffres";
+        } else if (cleanPhone.length !== selectedCountryInfo.phoneLength) {
+          newErrors.phone = `${selectedCountryInfo.phoneLength} chiffres attendus pour ${selectedCountryInfo.name}`;
+        }
+      }
+    }
+
+    if (!formData.country_code.trim()) {
+      newErrors.country_code = "Le code pays est requis";
     }
 
     if (!formData.address.trim()) {
@@ -131,7 +180,7 @@ const AjouterPartenaire: React.FC = () => {
     console.log("🚀 Début de la soumission du formulaire");
     
     // Debug d'authentification détaillé
-    const token = localStorage.getItem('authToken');
+    const token = SecureStorage.getItem('authToken');
     console.log("🔑 Debug authentification:", {
       isAuthenticated,
       user,
@@ -178,8 +227,9 @@ const AjouterPartenaire: React.FC = () => {
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
+        country_code: formData.country_code.trim(),
         address: formData.address.trim(),
-        is_active: formData.is_active,
+        is_active: true, // Par défaut actif à la création
       };
 
       console.log("📋 Données préparées:", partnerData);
@@ -334,13 +384,66 @@ const AjouterPartenaire: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid gap-6 md:grid-cols-2 mt-6">
-                <div className="space-y-2">
+              <div className="grid gap-6 md:grid-cols-3 mt-6">
+                <div className="space-y-2 md:col-span-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Code Pays <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-2">
+                    <Dropdown>
+                      <DropdownTrigger>
+                        <div 
+                          className={`w-full h-12 px-3 border-2 rounded-xl cursor-pointer transition-colors
+                            flex items-center justify-between
+                            hover:border-gray-300 dark:hover:border-gray-500
+                            ${errors.country_code ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}
+                          `}
+                        >
+                          <span className="text-gray-900 dark:text-white text-sm">
+                            {(() => {
+                              if (!selectedCountry) return "Sélectionner un code pays";
+                              const country = COUNTRY_CODES.find(c => c.code === selectedCountry);
+                              return country ? `${country.flag} ${country.code} - ${country.name}` : `Code: ${selectedCountry}`;
+                            })()}
+                          </span>
+                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                        </div>
+                      </DropdownTrigger>
+                      <DropdownMenu 
+                        onAction={(key) => {
+                          const value = key as string;
+                          setSelectedCountry(value);
+                          handleInputChange("country_code", value);
+                        }}
+                        className="max-h-60 overflow-auto"
+                      >
+                        {COUNTRY_CODES.map((country) => (
+                          <DropdownItem key={country.code}>
+                            {country.flag} {country.code} - {country.name}
+                          </DropdownItem>
+                        ))}
+                      </DropdownMenu>
+                    </Dropdown>
+                    {errors.country_code && (
+                      <p className="text-xs text-red-500">{errors.country_code}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Téléphone <span className="text-red-500">*</span>
                   </label>
                   <Input
-                    placeholder="+33 1 23 45 67 89"
+                    placeholder={(() => {
+                      const selectedCountryInfo = COUNTRY_CODES.find(c => c.code === formData.country_code);
+                      if (selectedCountryInfo) {
+                        // Afficher seulement les chiffres après le code pays
+                        const exampleDigits = selectedCountryInfo.example.substring(selectedCountryInfo.code.length);
+                        return exampleDigits;
+                      }
+                      return "Numéro de téléphone";
+                    })()}
                     value={formData.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     isInvalid={!!errors.phone}
@@ -349,25 +452,6 @@ const AjouterPartenaire: React.FC = () => {
                     size="lg"
                     variant="bordered"
                   />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Statut
-                  </label>
-                  <Select
-                    selectedKeys={[formData.is_active ? "actif" : "inactif"]}
-                    onSelectionChange={(keys) => {
-                      const value = Array.from(keys)[0] as string;
-                      setFormData(prev => ({ ...prev, is_active: value === "actif" }));
-                    }}
-                    size="lg"
-                    variant="bordered"
-                    startContent={<Shield className="h-4 w-4 text-gray-400" />}
-                  >
-                    <SelectItem key="actif" value="actif">✅ Actif</SelectItem>
-                    <SelectItem key="inactif" value="inactif">⚪ Inactif</SelectItem>
-                  </Select>
                 </div>
               </div>
               
@@ -410,7 +494,7 @@ const AjouterPartenaire: React.FC = () => {
                   onClick={handleSubmit}
                   isLoading={isSubmitting}
                   startContent={!isSubmitting && <Save className="h-4 w-4" />}
-                  isDisabled={!formData.name || !formData.email || !formData.phone || !formData.address}
+                  isDisabled={!formData.name || !formData.email || !formData.phone || !formData.country_code || !formData.address}
                 >
                   {isSubmitting ? (
                     submitStep === 'creating' ? "Création du partenaire..." :

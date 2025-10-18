@@ -3,6 +3,8 @@
  * Basé sur les APIs documentées dans le guide d'intégration
  */
 
+import { SecureStorage } from '@/lib/secure-storage';
+
 // Interfaces TypeScript
 export interface ProjectPartner {
   id: number;
@@ -100,7 +102,7 @@ class ProjectPartnersService {
   }
 
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('authToken');
+    const token = SecureStorage.getItem('authToken');
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`

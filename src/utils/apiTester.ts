@@ -1,5 +1,6 @@
 // Script de test pour valider toutes les APIs
 import { API_CONFIG } from '@/lib/api-config';
+import { SecureStorage } from '@/lib/secure-storage';
 
 interface ApiTestResult {
   endpoint: string;
@@ -25,7 +26,7 @@ class ApiTester {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.authToken = localStorage.getItem('authToken');
+      this.authToken = SecureStorage.getItem('authToken');
     }
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { SecureStorage } from '@/lib/secure-storage';
 import {
   Button,
   Card,
@@ -380,7 +381,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       const response = await fetch('/api/proxy/files/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${SecureStorage.getItem('authToken')}`
         },
         body: formData
       });

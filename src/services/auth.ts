@@ -245,8 +245,8 @@ export class AuthService {
   static isAuthenticated(): boolean {
     if (typeof window === "undefined") return false;
 
-    const token = localStorage.getItem("authToken");
-    const userInfo = localStorage.getItem("userInfo");
+    const token = SecureStorage.getItem("authToken");
+    const userInfo = SecureStorage.getItem("userInfo");
 
     return !!(token && userInfo);
   }
@@ -256,7 +256,7 @@ export class AuthService {
    */
   static getToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("authToken");
+    return SecureStorage.getItem("authToken");
   }
 
   /**

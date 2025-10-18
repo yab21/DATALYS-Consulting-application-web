@@ -1,0 +1,711 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import { SecureStorage } from "@/lib/secure-storage";
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+  Chip,
+  Button,
+  Input,
+  Pagination,
+  Select,
+  SelectItem,
+  Avatar,
+} from "@nextui-org/react";
+import { 
+  Search, 
+  Edit, 
+  Eye, 
+  Trash2,
+  Plus,
+  Phone,
+  Filter,
+  Users,
+  Shield
+} from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import LoadingState from "@/components/UI/Loading/LoadingState";
+import { partnersService, Partner, GetPartnersParams } from "@/services/partners";
+import { useAuth } from "@/context/AuthContext";
+import { Permission } from "@/lib/permissions";
+import PartnerModals from "./PartnerModals";
+
+// Interface pour la gestion des modals
+interface ModalState {
+  isOpen: boolean;
+  type: 'edit' | 'delete' | 'view' | null;
+  partner: Partner | null;
+}
+
+// Interface pour les filtres
+interface TableFilters {
+  search: string;
+  status: 'all' | 'active' | 'inactive';
+}
+
+// Interface pour les statistiques
+interface PartnerStats {
+  totalPartners: number;
+  activePartners: number;
+  inactivePartners: number;
+}
+
+// Interface pour la pagination côté serveur
+interface PaginationState {
+  page: number;
+  rowsPerPage: number;
+  total: number;
+  totalPages: number;
+}
+
+const TablePartner: React.FC = () => {
+  // États pour les données
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [paginatedPartners, setPaginatedPartners] = useState<Partner[]>([]);
+  
+  // États pour les statistiques
+  const [stats, setStats] = useState<PartnerStats>({
+    totalPartners: 0,
+    activePartners: 0,
+    inactivePartners: 0,
+  });
+  
+  // États pour la pagination
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 1,
+    rowsPerPage: 10,
+    total: 0,
+    totalPages: 0
+  });
+  
+  // États pour les filtres
+  const [filters, setFilters] = useState<TableFilters>({
+    search: "",
+    status: "all"
+  });
+  
+  
+  // États pour les modals
+  const [modalState, setModalState] = useState<ModalState>({
+    isOpen: false,
+    type: null,
+    partner: null
+  });
+  
+  
+  // Gestion des erreurs d'images
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  
+  // États pour les notifications
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'success',
+    isVisible: false
+  });
+  
+  // Hook d'authentification
+  const { 
+    isAuthenticated, 
+    isLoading: authLoading,
+    isAdmin,
+    hasPermission,
+    canCreate
+  } = useAuth();
+
+  // Fonction utilitaire pour corriger les URLs d'images
+  const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
+    if (!url) return url;
+    
+    // Les URLs passent par le proxy pour éviter les mixed content
+    if (url.includes('82.112.253.137:8082/files/serve/')) {
+      return url.replace('http://82.112.253.137:8082', '/api/proxy');
+    }
+    
+    // Pour les URLs avec localhost:8081
+    if (url.includes('localhost:8081')) {
+      const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
+      if (pathMatch) {
+        const filename = pathMatch[1];
+        return `/api/proxy/files/serve/logos/${filename}`;
+      } else {
+        return url.replace('localhost:8081', '')
+                  .replace('/uploads/', '/api/proxy/files/serve/');
+      }
+    }
+    
+    // Pour les URLs qui pointent déjà vers 82.112.253.137:8081
+    if (url.includes('82.112.253.137:8081/uploads/')) {
+      const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
+      if (pathMatch) {
+        const filename = pathMatch[1];
+        return `/api/proxy/files/serve/logos/${filename}`;
+      }
+    }
+    
+    // Si l'URL est relative avec /uploads/
+    if (url.startsWith('/uploads/logos/')) {
+      const filename = url.replace('/uploads/logos/', '');
+      return `/api/proxy/files/serve/logos/${filename}`;
+    }
+    
+    return url;
+  }, []);
+
+  // Gestion des erreurs d'images
+  const handleImageError = useCallback((partnerId: number, imageUrl?: string) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`🖼️ Image indisponible pour le partenaire ${partnerId}:`, imageUrl);
+    }
+    setImageErrors(prev => new Set(prev).add(partnerId.toString()));
+  }, []);
+
+  // Validation d'URL d'image
+  const isValidImageUrl = useCallback((url: string | undefined): boolean => {
+    if (!url) return false;
+    try {
+      const urlObj = new URL(url);
+      return ['http:', 'https:'].includes(urlObj.protocol);
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Chargement des données depuis l'API
+  const loadPartners = useCallback(async () => {
+    // Attendre que l'authentification soit chargée
+    if (authLoading) {
+      console.log("🔄 Authentification en cours de chargement...");
+      return;
+    }
+
+    const token = SecureStorage.getItem('authToken');
+    console.log("🔑 Debug état authentification table:", {
+      isAuthenticated,
+      authLoading,
+      token: token ? `${token.substring(0, 20)}...` : null,
+    });
+
+    if (!isAuthenticated) {
+      console.log("❌ Utilisateur non authentifié");
+      setError("Vous devez être connecté pour voir les partenaires");
+      setLoading(false);
+      return;
+    }
+
+    // Vérification des permissions - Seuls les admins peuvent voir les partenaires
+    if (!isAdmin()) {
+      console.log("❌ Accès refusé - Utilisateur non administrateur");
+      setError("Accès refusé. Seuls les administrateurs peuvent gérer les partenaires.");
+      setLoading(false);
+      return;
+    }
+
+    if (!token) {
+      console.log("❌ Token manquant");
+      setError("Token d'authentification manquant");
+      setLoading(false);
+      return;
+    }
+
+    console.log("✅ Utilisateur authentifié, chargement des partenaires...");
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // S'assurer que le token est bien défini dans le service
+      partnersService.setToken(token);
+      console.log("🔐 Token défini dans le service pour la table");
+      
+      // Préparer les paramètres de la requête
+      const params: GetPartnersParams = {
+        index: pagination.page - 1, // L'API commence à 0
+        size: pagination.rowsPerPage,
+        data: {}
+      };
+
+      // Ajouter les filtres de recherche
+      if (filters.search.trim()) {
+        params.data!.name = filters.search.trim();
+      }
+
+      // Ajouter le filtre de statut
+      if (filters.status === 'active') {
+        params.data!.is_active = true;
+      } else if (filters.status === 'inactive') {
+        params.data!.is_active = false;
+      }
+
+      console.log("📡 Appel API getPartners avec params:", params);
+      const result = await partnersService.getPartners(params);
+      console.log("📋 Résultat getPartners:", result);
+      
+      if (result.items) {
+        // Corriger les URLs d'images
+        result.items.forEach((partner) => {
+          if (partner.logo_url) {
+            partner.logo_url = fixImageUrl(partner.logo_url);
+          }
+        });
+        
+        setPartners(result.items);
+        
+        // Calculer les statistiques
+        const totalPartners = result.items.length;
+        const activePartners = result.items.filter((p) => p.is_active).length;
+        const inactivePartners = result.items.filter((p) => !p.is_active).length;
+
+        setStats({
+          totalPartners,
+          activePartners,
+          inactivePartners,
+        });
+        
+        // Mettre à jour la pagination
+        setPagination(prev => ({
+          ...prev,
+          total: result.count || 0,
+          totalPages: Math.ceil((result.count || 0) / prev.rowsPerPage)
+        }));
+      } else {
+        setPartners([]);
+        setStats({
+          totalPartners: 0,
+          activePartners: 0,
+          inactivePartners: 0,
+        });
+        setPagination(prev => ({
+          ...prev,
+          total: 0,
+          totalPages: 0
+        }));
+      }
+    } catch (err) {
+      console.error("❌ Erreur lors du chargement des partenaires:", err);
+      setError(`Erreur lors du chargement des partenaires: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading, isAdmin, pagination.page, pagination.rowsPerPage, filters, fixImageUrl]);
+
+  // Effet pour charger les données au démarrage et lors des changements de filtres/pagination
+  useEffect(() => {
+    loadPartners();
+  }, [loadPartners]);
+
+  // Pagination effect pour la pagination côté client
+  useEffect(() => {
+    const startIndex = (pagination.page - 1) * pagination.rowsPerPage;
+    const endIndex = startIndex + pagination.rowsPerPage;
+    setPaginatedPartners(partners.slice(startIndex, endIndex));
+  }, [partners, pagination.page, pagination.rowsPerPage]);
+
+  // Calculer le nombre total de pages côté client
+  const totalPages = Math.ceil(partners.length / pagination.rowsPerPage);
+
+  // Fonction pour gérer les changements de page
+  const handlePageChange = useCallback((page: number) => {
+    setPagination(prev => ({ ...prev, page }));
+  }, []);
+
+
+  // Fonction pour gérer les changements de filtres
+  const handleFilterChange = useCallback((key: keyof TableFilters, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setPagination(prev => ({ ...prev, page: 1 })); // Retourner à la première page
+  }, []);
+
+  // Fonction pour afficher les notifications
+  const showNotification = useCallback((message: string, type: 'success' | 'error') => {
+    setNotification({ message, type, isVisible: true });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, isVisible: false }));
+    }, 5000);
+  }, []);
+
+  // Handlers pour les callbacks des modals
+  const handleModalSuccess = useCallback((message: string) => {
+    showNotification(message, 'success');
+  }, [showNotification]);
+
+  const handleModalError = useCallback((message: string) => {
+    showNotification(message, 'error');
+  }, [showNotification]);
+
+
+
+
+  // Gestion des états de chargement et d'erreur
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Gestion des Partenaires
+          </h1>
+        </div>
+        <LoadingState type="skeleton" skeletonVariant="card" skeletonCount={6} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !isAdmin()) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-800 dark:bg-red-900/20">
+        <Shield className="mx-auto mb-4 h-16 w-16 text-red-500" />
+        <h3 className="mb-2 text-xl font-bold text-red-600 dark:text-red-400">
+          Accès Administrateur Requis
+        </h3>
+        <p className="text-red-600 dark:text-red-400">
+          Seuls les administrateurs peuvent accéder à la gestion des partenaires.
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-800 dark:bg-red-900/20">
+        <div className="mb-4 text-red-500">
+          <svg
+            width="64"
+            height="64"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="mx-auto"
+          >
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+          </svg>
+        </div>
+        <h3 className="mb-2 text-xl font-bold text-red-600 dark:text-red-400">
+          Erreur de chargement
+        </h3>
+        <p className="text-red-600 dark:text-red-400">{error}</p>
+        <div className="mt-4 flex gap-3 justify-center">
+          {error.includes("connecté") ? (
+            <Link href="/connexion">
+              <Button
+                color="primary"
+                className="bg-gradient-to-r from-blue-500 to-blue-600"
+              >
+                Se connecter
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              color="primary"
+              onPress={() => window.location.reload()}
+            >
+              Réessayer
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* En-tête avec statistiques */}
+      <motion.div
+        className="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white">
+              Gestion des Partenaires
+            </h1>
+            <div className="flex flex-wrap gap-3">
+              <Chip size="lg" variant="flat" color="primary">
+                {stats.totalPartners} partenaires
+              </Chip>
+              <Chip size="lg" variant="flat" color="success">
+                {stats.activePartners} actifs
+              </Chip>
+              <Chip size="lg" variant="flat" color="warning">
+                {stats.inactivePartners} inactifs
+              </Chip>
+            </div>
+          </div>
+
+          {canCreate() && hasPermission(Permission.CREATE_PARTNERS) && (
+            <Link href="/tableaudebord/partenaire/ajouter">
+              <Button
+                color="primary"
+                size="lg"
+                startContent={<Plus className="h-5 w-5" />}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 font-semibold shadow-lg"
+              >
+                Nouveau Partenaire
+              </Button>
+            </Link>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Filtres */}
+      <motion.div
+        className="rounded-2xl border border-gray-100 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex-1">
+            <Input
+              placeholder="Rechercher un partenaire..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              startContent={<Search className="h-4 w-4 text-gray-400" />}
+              className="max-w-md"
+              size="lg"
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Filtres:</span>
+            </div>
+            <Select
+              selectedKeys={filters.status ? [filters.status] : []}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                handleFilterChange('status', value || "all");
+              }}
+              className="min-w-[130px]"
+              size="sm"
+              placeholder="Statut"
+            >
+              <SelectItem key="all" value="all">
+                Tous
+              </SelectItem>
+              <SelectItem key="active" value="active">
+                Actifs
+              </SelectItem>
+              <SelectItem key="inactive" value="inactive">
+                Inactifs
+              </SelectItem>
+            </Select>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Table des partenaires */}
+      <motion.div
+        className="space-y-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <Table 
+          aria-label="Table des partenaires"
+          selectionMode="none"
+          className="w-full"
+          classNames={{
+            wrapper: "min-h-[400px] shadow-none border border-gray-200 dark:border-gray-700 w-full",
+            table: "min-h-[200px] w-full table-fixed",
+            th: "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-sm",
+            td: "py-4 px-3",
+          }}
+          bottomContent={
+            partners.length > 0 ? (
+              <div className="flex w-full justify-between items-center px-2 py-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Affichage de {((pagination.page - 1) * pagination.rowsPerPage) + 1} à {Math.min(pagination.page * pagination.rowsPerPage, partners.length)} sur {partners.length} partenaires
+                </span>
+                {partners.length > 10 && (
+                  <Pagination
+                    isCompact
+                    showControls
+                    showShadow
+                    color="primary"
+                    page={pagination.page}
+                    total={totalPages}
+                    onChange={handlePageChange}
+                  />
+                )}
+              </div>
+            ) : null
+          }
+        >
+          <TableHeader>
+            <TableColumn key="partner" width="30%">PARTENAIRE</TableColumn>
+            <TableColumn key="phone" width="20%">TÉLÉPHONE</TableColumn>
+            <TableColumn key="status" width="15%">STATUT</TableColumn>
+            <TableColumn key="created" width="15%">CRÉÉ LE</TableColumn>
+            <TableColumn key="actions" width="20%">ACTIONS</TableColumn>
+          </TableHeader>
+          <TableBody 
+            items={paginatedPartners}
+            emptyContent="Aucun partenaire trouvé"
+          >
+            {(partner) => (
+              <TableRow key={partner.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    {isValidImageUrl(partner.logo_url) && !imageErrors.has(partner.id.toString()) ? (
+                      <Avatar
+                        size="sm"
+                        src={fixImageUrl(partner.logo_url)!}
+                        name={partner.name.charAt(0)}
+                        className="bg-blue-500 text-white"
+                        onError={() => handleImageError(partner.id, partner.logo_url)}
+                      />
+                    ) : (
+                      <Avatar
+                        size="sm"
+                        name={partner.name.charAt(0)}
+                        className="bg-blue-500 text-white"
+                      />
+                    )}
+                    <div className="flex flex-col">
+                      <p className="font-semibold text-sm text-gray-900 dark:text-white">{partner.name}</p>
+                      <p className="font-medium text-sm text-gray-600 dark:text-gray-400">{partner.email}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{partner.phone}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    className="capitalize"
+                    color={partner.is_active ? "success" : "warning"}
+                    size="sm"
+                    variant="flat"
+                  >
+                    {partner.is_active ? "Actif" : "Inactif"}
+                  </Chip>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {new Date(partner.created_at).toLocaleDateString('fr-FR')}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="relative flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="primary"
+                      isIconOnly
+                      onPress={() => setModalState({
+                        isOpen: true,
+                        type: 'view',
+                        partner
+                      })}
+                      title="Voir détails"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    
+                    <Link href={`/tableaudebord/partenaire/${partner.id}`}>
+                      <Button
+                        size="sm"
+                        variant="light"
+                        color="secondary"
+                        isIconOnly
+                        title="Voir projets"
+                      >
+                        <Users className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="warning"
+                      isIconOnly
+                      onPress={() => setModalState({
+                        isOpen: true,
+                        type: 'edit',
+                        partner
+                      })}
+                      title="Modifier"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="danger"
+                      isIconOnly
+                      onPress={() => setModalState({
+                        isOpen: true,
+                        type: 'delete',
+                        partner
+                      })}
+                      title="Supprimer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </motion.div>
+
+      {/* Notification */}
+      {notification.isVisible && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          className="fixed top-4 right-4 z-50"
+        >
+          <div className={`rounded-lg p-4 shadow-lg ${
+            notification.type === 'success' 
+              ? 'bg-green-100 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300'
+              : 'bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300'
+          }`}>
+            <div className="flex items-center gap-2">
+              {notification.type === 'success' ? (
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              )}
+              <span className="font-medium">{notification.message}</span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Modals */}
+      <PartnerModals
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        partner={modalState.partner}
+        onClose={() => setModalState({ isOpen: false, type: null, partner: null })}
+        onRefresh={loadPartners}
+        onSuccess={handleModalSuccess}
+        onError={handleModalError}
+      />
+    </div>
+  );
+};
+
+export default TablePartner;

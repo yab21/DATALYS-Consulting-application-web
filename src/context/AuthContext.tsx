@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuthService } from '@/services/auth';
 import { ApiResponse, LoginResponse } from '@/lib/api-config';
+import { SecureStorage } from '@/lib/secure-storage';
 import { 
   UserWithPermissions, 
   Permission, 
@@ -65,8 +66,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const loadAuthData = () => {
       try {
-        const storedToken = localStorage.getItem('authToken');
-        const storedUser = localStorage.getItem('userInfo');
+        const storedToken = SecureStorage.getItem('authToken');
+        const storedUser = SecureStorage.getItem('userInfo');
 
         if (storedToken && storedUser) {
           const userData = JSON.parse(storedUser);
@@ -102,8 +103,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch (error) {
         console.error('Erreur lors du chargement des données d\'authentification:', error);
         // Nettoyer les données corrompues
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userInfo');
+        SecureStorage.removeItem('authToken');
+        SecureStorage.removeItem('userInfo');
       } finally {
         setIsLoading(false);
       }
@@ -215,8 +216,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // Sauvegarder les données d'authentification
       if (userData.token) {
-        localStorage.setItem('authToken', userData.token);
-        localStorage.setItem('userInfo', JSON.stringify(user));
+        SecureStorage.setItem('authToken', userData.token);
+        SecureStorage.setItem('userInfo', JSON.stringify(user));
       }
 
     } catch (error) {

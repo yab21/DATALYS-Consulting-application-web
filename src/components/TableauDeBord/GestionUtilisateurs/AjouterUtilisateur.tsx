@@ -6,7 +6,6 @@ import {
   Input,
   Select,
   SelectItem,
-  Switch,
   Divider,
 } from "@nextui-org/react";
 import {
@@ -22,7 +21,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Permission, UserRole } from "@/lib/permissions";
+import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { UsersService, CreateUserData } from "@/services/users";
 import { partnersService, Partner as PartnerType } from "@/services/partners";
@@ -38,7 +37,6 @@ interface UserFormData {
   confirmPassword: string;
   role_name: string; // Changement pour correspondre à l'API
   partner_id?: number;
-  is_active: boolean;
 }
 
 // Utilise le type Partner du service
@@ -66,7 +64,6 @@ const AjouterUtilisateur: React.FC = () => {
     password: "",
     confirmPassword: "",
     role_name: "admin", // Valeur par défaut pour les admins uniquement
-    is_active: true,
   });
 
   // Vérification des permissions d'accès
@@ -211,30 +208,45 @@ const AjouterUtilisateur: React.FC = () => {
         password: formData.password,
         role_name: formData.role_name,
         partner_id: formData.partner_id,
-        is_active: formData.is_active,
+        is_active: true, // Par défaut actif
       };
 
       const response = await UsersService.createUser(userData);
       
       if (response.code === 200 || response.status === 'success') {
+        const successMessage = typeof response.message === 'string' 
+          ? response.message 
+          : `Utilisateur ${formData.name} créé avec succès`;
+          
         showNotification({
           type: "success",
           title: "Succès",
-          message: response.message || `Utilisateur ${formData.name} créé avec succès`,
+          message: successMessage,
           duration: 3000,
         });
 
         // Redirection vers la liste des utilisateurs
         router.push("/tableaudebord/gestion-utilisateurs");
       } else {
-        throw new Error(response.message || 'Erreur lors de la création');
+        const errorMessage = typeof response.message === 'string' 
+          ? response.message 
+          : 'Erreur lors de la création';
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error("Erreur lors de la création:", error);
+      
+      let errorMessage = "Impossible de créer l'utilisateur";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error && 'message' in error) {
+        errorMessage = typeof error.message === 'string' ? error.message : errorMessage;
+      }
+      
       showNotification({
         type: "error",
         title: "Erreur",
-        message: error instanceof Error ? error.message : "Impossible de créer l'utilisateur",
+        message: errorMessage,
         duration: 5000,
       });
     } finally {
@@ -250,7 +262,7 @@ const AjouterUtilisateur: React.FC = () => {
     <div className="mx-auto max-w-4xl space-y-6">
       <SectionHeader
         title="Nouvel Utilisateur"
-        subtitle="Créez un compte administrateur avec accès complet au système"
+        subtitle="Créez un compte utilisateur pour l'accès au système"
         icon={<UserPlus />}
         actions={
           <Link href="/tableaudebord/gestion-utilisateurs">
@@ -430,9 +442,40 @@ const AjouterUtilisateur: React.FC = () => {
                 <SelectItem key="admin" value="admin">
                   Administrateur - Contrôle total du système
                 </SelectItem>
+                <SelectItem key="partner" value="partner">
+                  Partenaire - Accès aux projets et documents assignés
+                </SelectItem>
               </Select>
             </div>
 
+            {/* Sélection du partenaire pour les utilisateurs partenaires */}
+            {formData.role_name && formData.role_name === "partner" && (
+              <div className="space-y-2 mt-6">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Partenaire associé (optionnel)
+                </label>
+                <Select
+                  placeholder="Sélectionner un partenaire"
+                  selectedKeys={formData.partner_id ? [formData.partner_id.toString()] : []}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] as string;
+                    handleInputChange("partner_id", value ? parseInt(value) : undefined);
+                  }}
+                  isInvalid={!!errors.partner_id}
+                  errorMessage={errors.partner_id}
+                  size="lg"
+                  variant="bordered"
+                  isLoading={loadingPartners}
+                  startContent={<Users className="h-4 w-4 text-gray-400" />}
+                >
+                  {partners.map((partner) => (
+                    <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                      {partner.name} {partner.email && `(${partner.email})`}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
+            )}
             
             {/* Description du rôle */}
             <div className="mt-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
@@ -464,6 +507,30 @@ const AjouterUtilisateur: React.FC = () => {
                     </li>
                   </ul>
                 </div>
+              ) : formData.role_name === "partner" ? (
+                <div>
+                  <h5 className="mb-2 font-semibold text-[#3a8a95] dark:text-[#4ba9b7]">
+                    Permissions Partenaire
+                  </h5>
+                  <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#4ba9b7]"></div>
+                      Accès aux projets où il est assigné
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#4ba9b7]"></div>
+                      Gestion complète de ses documents
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#4ba9b7]"></div>
+                      Téléchargement et upload de fichiers
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#4ba9b7]"></div>
+                      Dashboard personnalisé de ses activités
+                    </li>
+                  </ul>
+                </div>
               ) : (
                 <div>
                   <h5 className="mb-2 font-semibold text-[#3a8a95] dark:text-[#4ba9b7]">
@@ -488,40 +555,6 @@ const AjouterUtilisateur: React.FC = () => {
             </div>
           </div>
 
-              <Divider />
-
-          {/* Statut */}
-          <div>
-            <SectionHeader
-              title="Statut du Compte"
-              icon={<Users />}
-              variant="compact"
-              color="primary"
-              divider
-            />
-
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700/50 mt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-[#4ba9b7]" />
-                  <div>
-                    <h5 className="text-base font-semibold text-gray-900 dark:text-white">
-                      Compte actif
-                    </h5>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      L'utilisateur pourra se connecter immédiatement après création
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  isSelected={formData.is_active}
-                  onValueChange={(value) => handleInputChange("is_active", value)}
-                  color="success"
-                  size="lg"
-                />
-              </div>
-            </div>
-          </div>
 
           {/* Actions */}
           <div className="border-t border-gray-200 pt-6 dark:border-gray-600">

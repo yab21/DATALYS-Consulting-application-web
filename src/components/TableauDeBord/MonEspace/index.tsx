@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { SecureStorage } from "@/lib/secure-storage";
 import { motion } from "framer-motion";
 import {
   Card,
@@ -159,7 +160,7 @@ const MonEspacePartenaire: React.FC = () => {
 
       setLoading(true);
       try {
-        const token = localStorage.getItem("authToken");
+        const token = SecureStorage.getItem("authToken");
         if (token) {
           projectsService.setToken(token);
           

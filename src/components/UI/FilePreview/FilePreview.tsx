@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { SecureStorage } from '@/lib/secure-storage';
 import { 
   Modal, 
   ModalContent, 
@@ -295,7 +296,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ isOpen, onClose, file, baseUr
 
   const handleDownload = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = SecureStorage.getItem('authToken');
       const response = await fetch(`${baseUrl}/files/download/${file.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`

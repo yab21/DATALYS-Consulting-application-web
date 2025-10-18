@@ -26,6 +26,11 @@ export class SecureStorage {
       localStorage.setItem(key, encrypted);
       localStorage.setItem(key + '_encrypted', 'true');
       
+      // Émettre un événement custom pour les changements d'authentification
+      if (key === 'authToken' || key === 'userInfo') {
+        window.dispatchEvent(new CustomEvent('auth-change', { detail: { action: 'set', key } }));
+      }
+      
       console.log(`✅ SecureStorage: ${key} stocké avec chiffrement`);
     } catch (error) {
       console.warn(`⚠️ SecureStorage: Échec du chiffrement pour ${key}, fallback vers stockage normal:`, error);
@@ -92,6 +97,12 @@ export class SecureStorage {
 
     localStorage.removeItem(key);
     localStorage.removeItem(key + '_encrypted'); // Nettoyer aussi le flag
+    
+    // Émettre un événement custom pour les changements d'authentification
+    if (key === 'authToken' || key === 'userInfo') {
+      window.dispatchEvent(new CustomEvent('auth-change', { detail: { action: 'remove', key } }));
+    }
+    
     console.log(`🗑️ SecureStorage: ${key} supprimé`);
   }
 

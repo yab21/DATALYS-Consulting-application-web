@@ -4,6 +4,7 @@ import {
   buildApiUrl,
   getDefaultHeaders,
 } from "@/lib/api-config";
+import { SecureStorage } from '@/lib/secure-storage';
 
 export interface Project {
   id: number;
@@ -82,7 +83,7 @@ export class ProjectsService {
   constructor() {
     // Initialiser le token depuis localStorage
     if (typeof window !== "undefined") {
-      this.token = localStorage.getItem('authToken');
+      this.token = SecureStorage.getItem('authToken');
     }
   }
 

@@ -1,4 +1,5 @@
 // Service API pour la gestion des partenaires
+import { SecureStorage } from '@/lib/secure-storage';
 export interface Partner {
   id: number;
   name: string;
@@ -18,11 +19,25 @@ export interface CreatePartnerData {
   name: string;
   email: string;
   phone: string;
+  country_code: string;
   address: string;
   is_active: boolean;
+  logo_url?: string;
 }
 
 export interface CreatePartnerFormData extends CreatePartnerData {
+  logo?: File;
+}
+
+export interface UpdatePartnerData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  is_active?: boolean;
+}
+
+export interface UpdatePartnerFormData extends UpdatePartnerData {
   logo?: File;
 }
 
@@ -67,7 +82,7 @@ class PartnersService {
   constructor() {
     // Récupérer le token depuis le localStorage au chargement
     if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('authToken');
+      this.token = SecureStorage.getItem('authToken');
     }
   }
 
@@ -75,7 +90,7 @@ class PartnersService {
   setToken(token: string) {
     this.token = token;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('authToken', token);
+      SecureStorage.setItem('authToken', token);
     }
   }
 
@@ -83,7 +98,7 @@ class PartnersService {
   clearToken() {
     this.token = null;
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
+      SecureStorage.removeItem('authToken');
     }
   }
 
@@ -97,7 +112,7 @@ class PartnersService {
     
     // Synchroniser le token avec le localStorage si nécessaire
     if (!this.token && typeof window !== 'undefined') {
-      this.token = localStorage.getItem('authToken');
+      this.token = SecureStorage.getItem('authToken');
     }
     
     if (this.token) {
@@ -148,11 +163,9 @@ class PartnersService {
         throw new Error('Token d\'authentification manquant dans le service');
       }
 
-      const userIdToUse = userId || 1;
-      
       // Étape 1: Créer le partenaire sans logo (toujours avec JSON selon les nouvelles APIs)
       console.log('📝 Étape 1: Création du partenaire sans logo...');
-      const partnerResult = await this.createPartnerWithJSON(partnerData, userIdToUse);
+      const partnerResult = await this.createPartnerWithJSON(partnerData);
       
       if (partnerResult.code !== 200) {
         throw new Error(partnerResult.message?.message || 'Erreur lors de la création du partenaire');
@@ -252,20 +265,18 @@ class PartnersService {
     return await this.handleResponse(response);
   }
 
-  // Création avec JSON (sans logo) - format adapté selon l'exemple API
-  private async createPartnerWithJSON(partnerData: CreatePartnerFormData, userId: number): Promise<PartnerApiResponse<Partner[]>> {
+  // Création avec JSON - format direct selon l'API
+  private async createPartnerWithJSON(partnerData: CreatePartnerFormData): Promise<PartnerApiResponse<Partner[]>> {
     const requestBody = {
-      user: { id: userId },
-      datas: [{
-        name: partnerData.name,
-        email: partnerData.email,
-        phone: partnerData.phone,
-        address: partnerData.address,
-        is_active: partnerData.is_active,
-      }]
+      name: partnerData.name,
+      email: partnerData.email,
+      phone: partnerData.phone,
+      country_code: partnerData.country_code,
+      address: partnerData.address,
+      ...(partnerData.logo_url && { logo_url: partnerData.logo_url })
     };
 
-    console.log('📤 Envoi JSON:', requestBody);
+    console.log('📤 Envoi JSON création (format direct):', requestBody);
 
     const response = await fetch(`${this.baseUrl}/partners/create`, {
       method: 'POST',
@@ -310,6 +321,44 @@ class PartnersService {
 
     const result = await response.json();
     console.log('✅ Réponse API complète:', result);
+    
+    // Vérifier si l'API retourne un code d'erreur dans le JSON (ex: {code: 400, message: {...}})
+    if (result.code && result.code !== 200) {
+      console.error('❌ Code d\'erreur API dans JSON:', result.code, result.message);
+      
+      let errorString = 'Erreur inconnue';
+      
+      // Extraire le message d'erreur de la structure imbriquée
+      if (result.message && typeof result.message === 'object' && 'message' in result.message) {
+        const messageText = String(result.message.message);
+        // Vérifier si c'est vraiment un message d'erreur ou de succès
+        if (messageText.toLowerCase().includes('succès') || messageText.toLowerCase().includes('créé')) {
+          console.log('✅ Message de succès détecté:', messageText);
+          // Ne pas traiter comme une erreur, continuer le traitement normal
+        } else {
+          errorString = messageText;
+          console.error('❌ Message d\'erreur extrait:', errorString);
+          throw new Error(errorString);
+        }
+      } else if (result.message && typeof result.message === 'string') {
+        const messageText = result.message;
+        if (messageText.toLowerCase().includes('succès') || messageText.toLowerCase().includes('créé')) {
+          console.log('✅ Message de succès détecté:', messageText);
+        } else {
+          errorString = messageText;
+          console.error('❌ Message d\'erreur extrait:', errorString);
+          throw new Error(errorString);
+        }
+      } else if (result.error && typeof result.error === 'string') {
+        errorString = result.error;
+        console.error('❌ Message d\'erreur extrait:', errorString);
+        throw new Error(errorString);
+      } else if (result.message) {
+        errorString = JSON.stringify(result.message);
+        console.error('❌ Message d\'erreur extrait:', errorString);
+        throw new Error(errorString);
+      }
+    }
     
     return {
       code: result.code,
@@ -418,6 +467,147 @@ class PartnersService {
       return result.items || [];
     } catch (error) {
       console.error('Erreur lors de la récupération des partenaires actifs:', error);
+      throw error;
+    }
+  }
+
+  // Modifier un partenaire
+  async updatePartner(partnerId: number, partnerData: UpdatePartnerFormData, userId?: number): Promise<PartnerApiResponse<Partner[]> & { logoUploadError?: string }> {
+    try {
+      console.log('🔄 Modification du partenaire démarrée:', {
+        partnerId,
+        hasToken: !!this.token,
+        userId: userId,
+        hasLogo: !!partnerData.logo
+      });
+
+      if (!this.token) {
+        throw new Error('Token d\'authentification manquant dans le service');
+      }
+
+      // Note: userId n'est plus utilisé car l'API utilise maintenant le format direct
+      
+      // Étape 1: Modifier le partenaire sans logo
+      console.log('📝 Étape 1: Modification du partenaire sans logo...');
+      const partnerResult = await this.updatePartnerWithJSON(partnerId, partnerData);
+      
+      if (partnerResult.code !== 200) {
+        throw new Error(partnerResult.message?.message || 'Erreur lors de la modification du partenaire');
+      }
+      
+      let logoUploadError: string | undefined = undefined;
+      
+      // Étape 2: Upload du logo si présent (optionnel)
+      if (partnerData.logo && partnerData.logo instanceof File) {
+        console.log('🖼️ Étape 2: Upload du nouveau logo...');
+        
+        try {
+          await this.uploadPartnerLogo(partnerId, partnerData.logo);
+          console.log('✅ Logo modifié avec succès');
+        } catch (logoError) {
+          console.warn('⚠️ Partenaire modifié mais échec upload logo:', logoError);
+          logoUploadError = logoError instanceof Error ? logoError.message : 'Erreur inconnue lors de l\'upload du logo';
+        }
+      }
+      
+      return {
+        ...partnerResult,
+        logoUploadError
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de la modification du partenaire:', error);
+      throw error;
+    }
+  }
+
+  // Modification avec JSON
+  private async updatePartnerWithJSON(partnerId: number, partnerData: UpdatePartnerFormData): Promise<PartnerApiResponse<Partner[]>> {
+    // L'API partners/update attend un objet direct, pas le format {user, datas}
+    const requestBody: any = {
+      id: partnerId
+    };
+    
+    // Ajouter les champs seulement s'ils sont fournis et non vides
+    if (partnerData.name !== undefined && partnerData.name.trim() !== '') {
+      requestBody.name = partnerData.name.trim();
+    }
+    if (partnerData.email !== undefined && partnerData.email.trim() !== '') {
+      requestBody.email = partnerData.email.trim();
+    }
+    if (partnerData.phone !== undefined && partnerData.phone.trim() !== '') {
+      requestBody.phone = partnerData.phone.trim();
+    }
+    if (partnerData.address !== undefined && partnerData.address.trim() !== '') {
+      requestBody.address = partnerData.address.trim();
+    }
+    if (partnerData.is_active !== undefined) {
+      requestBody.is_active = partnerData.is_active;
+    }
+
+    console.log('📤 Envoi JSON update (format direct):', requestBody);
+    console.log('📋 Request body stringified:', JSON.stringify(requestBody, null, 2));
+
+    const response = await fetch(`${this.baseUrl}/partners/update`, {
+      method: 'POST',
+      headers: this.getHeaders(false),
+      body: JSON.stringify(requestBody),
+    });
+
+    return await this.handleResponse(response);
+  }
+
+  // Supprimer un partenaire (soft delete)
+  async deletePartner(partnerId: number, userId?: number): Promise<PartnerApiResponse<any>> {
+    try {
+      console.log('🗑️ Suppression du partenaire démarrée:', {
+        partnerId,
+        hasToken: !!this.token,
+        userId: userId
+      });
+
+      if (!this.token) {
+        throw new Error('Token d\'authentification manquant dans le service');
+      }
+
+      // L'API partners/delete attend un objet direct, comme pour update
+      const requestBody = {
+        id: partnerId
+      };
+
+      console.log('📤 Envoi JSON delete (format direct):', requestBody);
+
+      const response = await fetch(`${this.baseUrl}/partners/delete`, {
+        method: 'POST',
+        headers: this.getHeaders(false),
+        body: JSON.stringify(requestBody),
+      });
+
+      const result = await this.handleResponse(response);
+      
+      if (result.code !== 200) {
+        throw new Error(result.message?.message || 'Erreur lors de la suppression du partenaire');
+      }
+
+      console.log('✅ Partenaire supprimé avec succès');
+      return result;
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression du partenaire:', error);
+      throw error;
+    }
+  }
+
+  // Récupérer un partenaire par ID
+  async getPartnerById(partnerId: number): Promise<Partner | null> {
+    try {
+      const result = await this.getPartners({
+        index: 0,
+        size: 1000, // Pour être sûr de récupérer le partenaire
+      });
+      
+      const partner = result.items?.find(p => p.id === partnerId);
+      return partner || null;
+    } catch (error) {
+      console.error('Erreur lors de la récupération du partenaire par ID:', error);
       throw error;
     }
   }

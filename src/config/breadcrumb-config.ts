@@ -1,4 +1,5 @@
 // Configuration des breadcrumbs pour DATALYS Consulting
+import { SecureStorage } from '@/lib/secure-storage';
 
 export interface BreadcrumbItem {
   label: string;
@@ -83,7 +84,7 @@ export const BREADCRUMB_ROUTES: RouteConfig[] = [
           return `Partenaire: ${params.id}`;
         }
         
-        const token = localStorage.getItem('authToken');
+        const token = SecureStorage.getItem('authToken');
         if (!token) {
           return `Partenaire: ${params.id}`;
         }

@@ -3,6 +3,8 @@
  * Basé sur les APIs documentées dans le guide d'intégration
  */
 
+import { SecureStorage } from '@/lib/secure-storage';
+
 // Interfaces TypeScript
 export interface Folder {
   id: number;
@@ -76,7 +78,7 @@ class FoldersService {
   }
 
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('authToken');
+    const token = SecureStorage.getItem('authToken');
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
@@ -433,7 +435,7 @@ class FoldersService {
       const response = await fetch(`${this.baseUrl}/folders/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${SecureStorage.getItem('authToken')}`
           // Pas de Content-Type pour multipart/form-data, le navigateur l'ajoute
         },
         body: formData
@@ -498,7 +500,7 @@ class FoldersService {
       const response = await fetch(`${this.baseUrl}/folders/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${SecureStorage.getItem('authToken')}`
           // Pas de Content-Type pour multipart/form-data, le navigateur l'ajoute
         },
         body: formData

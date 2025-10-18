@@ -36,15 +36,14 @@ export const useAuth = () => {
 
     checkAuth();
 
-    // Écouter les changements dans localStorage (pour la synchronisation entre onglets)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "authToken" || e.key === "userInfo") {
-        checkAuth();
-      }
+    // Écouter les changements dans SecureStorage via custom events
+    const handleAuthChange = () => {
+      checkAuth();
     };
 
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    // Écouter les changements d'authentification via custom events
+    window.addEventListener("auth-change", handleAuthChange);
+    return () => window.removeEventListener("auth-change", handleAuthChange);
   }, []);
 
   // Fonction de déconnexion

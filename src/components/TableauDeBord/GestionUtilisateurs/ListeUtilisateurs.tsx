@@ -230,12 +230,14 @@ const ListeUtilisateurs: React.FC = () => {
 
   const getRoleLabel = (roleId: UserRole | number) => {
     if (roleId === UserRole.ADMIN || roleId === 1) return "Administrateur";
-    return "Utilisateur/Partenaire";
+    if (roleId === UserRole.PARTNER || roleId === 5) return "Partenaire";
+    return "Utilisateur";
   };
 
   const getRoleColor = (roleId: UserRole | number) => {
     if (roleId === UserRole.ADMIN || roleId === 1) return "danger";
-    return "primary";
+    if (roleId === UserRole.PARTNER || roleId === 5) return "primary";
+    return "default";
   };
 
   const handleUserAction = (user: User, action: "view" | "edit" | "delete" | "toggle") => {
@@ -278,7 +280,7 @@ const ListeUtilisateurs: React.FC = () => {
                     ...user, 
                     name: editForm.name,
                     email: editForm.email,
-                    role_id: editForm.role_name === "admin" ? UserRole.ADMIN : UserRole.PARTNER,
+                    role_id: editForm.role_name === "admin" ? UserRole.ADMIN : (editForm.role_name === "partner" ? UserRole.PARTNER : 5),
                     is_active: editForm.is_active,
                   }
                 : user
@@ -468,7 +470,7 @@ const ListeUtilisateurs: React.FC = () => {
               <SelectItem key="1" value="1">
                 Administrateurs
               </SelectItem>
-              <SelectItem key="2" value="2">
+              <SelectItem key="5" value="5">
                 Partenaires
               </SelectItem>
             </Select>
@@ -517,7 +519,7 @@ const ListeUtilisateurs: React.FC = () => {
               <TableColumn>UTILISATEUR</TableColumn>
               <TableColumn>RÔLE</TableColumn>
               <TableColumn>STATUT</TableColumn>
-              <TableColumn className="hidden lg:table-cell">DERNIÈRE CONNEXION</TableColumn>
+              <TableColumn className="hidden lg:table-cell">DERNIÈRE ACTIVITÉ</TableColumn>
               <TableColumn>ACTIONS</TableColumn>
             </TableHeader>
             <TableBody>
@@ -555,7 +557,7 @@ const ListeUtilisateurs: React.FC = () => {
                     variant="flat"
                     color={getRoleColor(user.role_id)}
                     startContent={
-                      user.role_id === UserRole.ADMIN ? (
+                      (user.role_id === UserRole.ADMIN || user.role_id === 1) ? (
                         <Shield className="h-3 w-3" />
                       ) : (
                         <Users className="h-3 w-3" />
@@ -582,8 +584,14 @@ const ListeUtilisateurs: React.FC = () => {
                   </Chip>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
-                  <span className="text-sm text-gray-500 dark:text-gray-400 italic">
-                    Non disponible
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {new Date(user.updated_at).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
                   </span>
                 </TableCell>
                 <TableCell>
@@ -677,7 +685,7 @@ const ListeUtilisateurs: React.FC = () => {
                           variant="flat" 
                           color={getRoleColor(user.role_id)}
                           startContent={
-                            user.role_id === UserRole.ADMIN ? (
+                            (user.role_id === UserRole.ADMIN || user.role_id === 1) ? (
                               <Shield className="h-3 w-3" />
                             ) : (
                               <Users className="h-3 w-3" />
@@ -889,7 +897,7 @@ const ListeUtilisateurs: React.FC = () => {
                                   variant="flat"
                                   color={getRoleColor(selectedUser.role_id)}
                                   startContent={
-                                    selectedUser.role_id === UserRole.ADMIN ? (
+                                    (selectedUser.role_id === UserRole.ADMIN || selectedUser.role_id === 1) ? (
                                       <Shield className="h-4 w-4" />
                                     ) : (
                                       <Users className="h-4 w-4" />
@@ -977,10 +985,16 @@ const ListeUtilisateurs: React.FC = () => {
                                 </div>
                                 <div>
                                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    Dernière connexion
+                                    Dernière activité
                                   </label>
-                                  <p className="font-bold text-gray-500 dark:text-gray-400 italic">
-                                    Information non disponible
+                                  <p className="font-bold text-gray-900 dark:text-white">
+                                    {new Date(selectedUser.updated_at).toLocaleDateString("fr-FR", {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit"
+                                    })}
                                   </p>
                                 </div>
                               </div>

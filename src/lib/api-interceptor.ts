@@ -1,6 +1,7 @@
 "use client";
 
 import { errorHandler } from "./error-handler";
+import { SecureStorage } from "./secure-storage";
 
 // Types pour les réponses d'erreur
 interface ApiErrorResponse {
@@ -91,9 +92,9 @@ class ApiInterceptor {
       "Token expiré détecté, nettoyage des données d'authentification",
     );
 
-    // Nettoyer le localStorage
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userInfo");
+    // Nettoyer le SecureStorage
+    SecureStorage.removeItem("authToken");
+    SecureStorage.removeItem("userInfo");
 
     // Appeler le callback de redirection si défini
     if (this.redirectCallback) {
@@ -206,7 +207,7 @@ class ApiInterceptor {
 
       // Ajouter le token s'il existe
       if (typeof window !== "undefined") {
-        const token = localStorage.getItem("authToken");
+        const token = SecureStorage.getItem("authToken");
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
         }

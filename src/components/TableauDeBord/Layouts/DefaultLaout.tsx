@@ -35,10 +35,10 @@ export default function DefaultLayout({
               {/* <!-- ===== Main Content Star ===== --> */}
               <main className="flex-1">
                 <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 flex flex-col min-h-[calc(100vh-80px)]">
-                  <div className="flex-1">
+                  <div className="flex-1 pb-8">
                     {children}
                   </div>
-                  <footer className="mt-auto py-4 border-t border-gray-200/30 bg-gradient-to-br from-gray-50/80 via-white/60 to-gray-100/40 backdrop-blur-sm dark:border-gray-600/40 dark:from-gray-800/90 dark:via-gray-700/70 dark:to-gray-600/50">
+                  <footer className="mt-8 py-4 border-t border-gray-200/30 bg-gradient-to-br from-gray-50/80 via-white/60 to-gray-100/40 backdrop-blur-sm dark:border-gray-600/40 dark:from-gray-800/90 dark:via-gray-700/70 dark:to-gray-600/50">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl mx-auto px-4">
                       {/* Section droits d'auteur */}
                       <div className="flex justify-center md:justify-start">

@@ -244,8 +244,26 @@ class DashboardService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("❌ Erreur API admin:", errorText);
+        console.error("❌ Erreur API admin:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        
+        // Gestion spécifique des erreurs 404
+        if (response.status === 404) {
+          throw new Error(`Endpoint non trouvé: /dashboard/admin/overview n'existe pas sur le backend`);
+        }
+        
         throw new Error(`Erreur HTTP: ${response.status} - ${errorText}`);
+      }
+
+      // Vérifier que la réponse est bien du JSON avant de parser
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error("❌ Réponse non-JSON reçue:", textResponse.substring(0, 200));
+        throw new Error(`Réponse invalide: attendu JSON, reçu ${contentType}`);
       }
 
       const data = await response.json();
