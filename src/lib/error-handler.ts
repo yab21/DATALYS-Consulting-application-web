@@ -281,14 +281,46 @@ export class ErrorHandler {
       }
     }
     
-    // Analyser les erreurs réseau
-    else if (error?.name === 'NetworkError' || error?.message?.includes('fetch')) {
-      errorDetails.code = 'NETWORK_ERROR';
-      errorDetails.message = 'Problème de connexion réseau';
-      errorDetails.type = 'network';
-      errorDetails.severity = 'high';
-      errorDetails.retryable = true;
-      errorDetails.fallbackAvailable = true;
+    // Analyser les erreurs réseau avec détection avancée
+    else if (this.isNetworkError(error)) {
+      const networkErrorType = this.detectNetworkErrorType(error);
+      
+      switch (networkErrorType) {
+        case 'connection_lost':
+          errorDetails.code = 'CONNECTION_LOST';
+          errorDetails.message = 'Connexion Internet perdue';
+          errorDetails.type = 'network';
+          errorDetails.severity = 'high';
+          errorDetails.retryable = true;
+          errorDetails.fallbackAvailable = true;
+          break;
+          
+        case 'slow_connection':
+          errorDetails.code = 'SLOW_CONNECTION';
+          errorDetails.message = 'Connexion lente détectée';
+          errorDetails.type = 'network';
+          errorDetails.severity = 'medium';
+          errorDetails.retryable = true;
+          errorDetails.fallbackAvailable = true;
+          break;
+          
+        case 'dns_failure':
+          errorDetails.code = 'DNS_FAILURE';
+          errorDetails.message = 'Problème de résolution DNS';
+          errorDetails.type = 'network';
+          errorDetails.severity = 'high';
+          errorDetails.retryable = true;
+          errorDetails.fallbackAvailable = false;
+          break;
+          
+        default:
+          errorDetails.code = 'NETWORK_ERROR';
+          errorDetails.message = 'Problème de connexion réseau';
+          errorDetails.type = 'network';
+          errorDetails.severity = 'high';
+          errorDetails.retryable = true;
+          errorDetails.fallbackAvailable = true;
+      }
     }
     
     // Analyser les erreurs de timeout
@@ -610,6 +642,187 @@ export class ErrorHandler {
       errorsBySeverity,
       recentErrors: this.errorQueue.slice(-10)
     };
+  }
+
+  /**
+   * Détecter si c'est une erreur réseau
+   */
+  private isNetworkError(error: any): boolean {
+    return (
+      error?.name === 'NetworkError' ||
+      error?.name === 'TypeError' ||
+      error?.message?.includes('fetch') ||
+      error?.message?.includes('network') ||
+      error?.message?.includes('Failed to fetch') ||
+      error?.message?.includes('NetworkError') ||
+      error?.message?.includes('ERR_NETWORK') ||
+      error?.message?.includes('ERR_INTERNET_DISCONNECTED') ||
+      !navigator.onLine
+    );
+  }
+
+  /**
+   * Détecter le type d'erreur réseau
+   */
+  private detectNetworkErrorType(error: any): 'connection_lost' | 'slow_connection' | 'dns_failure' | 'generic' {
+    const errorMessage = error?.message?.toLowerCase() || '';
+    
+    // Vérifier si hors ligne
+    if (!navigator.onLine) {
+      return 'connection_lost';
+    }
+    
+    // Détecter les erreurs DNS
+    if (errorMessage.includes('dns') || 
+        errorMessage.includes('getaddrinfo') ||
+        errorMessage.includes('name resolution')) {
+      return 'dns_failure';
+    }
+    
+    // Détecter les connexions lentes (timeout court)
+    if (errorMessage.includes('timeout') && 
+        this.isSlowConnectionDetected()) {
+      return 'slow_connection';
+    }
+    
+    // Détecter la perte de connexion
+    if (errorMessage.includes('internet_disconnected') ||
+        errorMessage.includes('network_changed') ||
+        errorMessage.includes('connection_lost')) {
+      return 'connection_lost';
+    }
+    
+    return 'generic';
+  }
+
+  /**
+   * Détecter une connexion lente
+   */
+  private isSlowConnectionDetected(): boolean {
+    // Utiliser l'API Network Information si disponible
+    if ('connection' in navigator) {
+      const connection = (navigator as any).connection;
+      if (connection) {
+        // Connexion lente si effective type est slow-2g ou 2g
+        return connection.effectiveType === 'slow-2g' || 
+               connection.effectiveType === '2g' ||
+               connection.downlink < 1; // Moins de 1 Mbps
+      }
+    }
+    
+    // Fallback: vérifier les métriques de performance récentes
+    return this.checkRecentPerformanceMetrics();
+  }
+
+  /**
+   * Vérifier les métriques de performance récentes
+   */
+  private checkRecentPerformanceMetrics(): boolean {
+    if (typeof window !== 'undefined' && 'performance' in window) {
+      const entries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+      if (entries.length > 0) {
+        const entry = entries[0];
+        // Considérer comme lent si le temps de réponse > 3 secondes
+        const responseTime = entry.responseEnd - entry.responseStart;
+        return responseTime > 3000;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Intégration avec la queue de requêtes
+   */
+  public async handleNetworkError(
+    error: any, 
+    request: { url: string; options?: RequestInit },
+    priority: 'low' | 'medium' | 'high' = 'medium'
+  ): Promise<void> {
+    const errorDetails = this.analyzeError(error, {
+      url: request.url,
+      method: request.options?.method || 'GET'
+    });
+
+    // Si c'est une erreur réseau retryable, ajouter à la queue
+    if (errorDetails.type === 'network' && errorDetails.retryable) {
+      try {
+        // Import dynamique pour éviter les dépendances circulaires
+        const { requestQueue } = await import('./request-queue');
+        
+        await requestQueue.enqueue(
+          request.url,
+          request.options || {},
+          priority,
+          3, // maxRetries
+          {
+            description: `Retry après erreur: ${errorDetails.message}`,
+            component: errorDetails.context.component
+          }
+        );
+        
+        console.log('📋 Requête ajoutée à la queue de retry réseau');
+      } catch (queueError) {
+        console.error('Erreur lors de l\'ajout à la queue:', queueError);
+      }
+    }
+
+    // Gérer l'erreur normalement
+    await this.handleError(errorDetails);
+  }
+
+  /**
+   * Vérifier la qualité de la connexion réseau
+   */
+  public async checkNetworkQuality(): Promise<{
+    isOnline: boolean;
+    quality: 'excellent' | 'good' | 'poor' | 'offline';
+    latency?: number;
+    bandwidth?: number;
+  }> {
+    if (!navigator.onLine) {
+      return { isOnline: false, quality: 'offline' };
+    }
+
+    try {
+      const startTime = performance.now();
+      
+      // Test avec une petite requête
+      const response = await fetch('/api/proxy/health', {
+        method: 'HEAD',
+        cache: 'no-cache'
+      });
+      
+      const endTime = performance.now();
+      const latency = endTime - startTime;
+
+      let quality: 'excellent' | 'good' | 'poor' = 'good';
+      
+      if (latency < 100) {
+        quality = 'excellent';
+      } else if (latency > 1000) {
+        quality = 'poor';
+      }
+
+      // Vérifier la bande passante si l'API est disponible
+      let bandwidth: number | undefined;
+      if ('connection' in navigator) {
+        const connection = (navigator as any).connection;
+        bandwidth = connection?.downlink;
+        
+        if (bandwidth && bandwidth < 0.5) {
+          quality = 'poor';
+        }
+      }
+
+      return {
+        isOnline: response.ok,
+        quality,
+        latency,
+        bandwidth
+      };
+    } catch (error) {
+      return { isOnline: false, quality: 'offline' };
+    }
   }
 
   /**

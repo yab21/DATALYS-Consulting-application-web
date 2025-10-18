@@ -14,6 +14,8 @@ import { SimpleNotificationProvider } from "@/components/UI/Notifications/Simple
 import { PerformanceUtils } from "@/components/Optimizations";
 import { AuthProvider } from "@/context/AuthContext";
 import { useTopBarProgress } from "@/hooks/useTopBarProgress";
+import { NetworkProvider } from "@/components/UI/NetworkStatus/NetworkProvider";
+// Toaster sera fourni par NetworkProvider
 
 export default function RootLayout({
   children,
@@ -60,9 +62,16 @@ export default function RootLayout({
     <html lang="en">
       <body suppressHydrationWarning={true}>
         <AuthProvider>
-          <SimpleNotificationProvider>
-            {children}
-          </SimpleNotificationProvider>
+          <NetworkProvider 
+            showIndicator={true}
+            indicatorPosition="top-right"
+            enableAutoSync={true}
+            enableToasts={true}
+          >
+            <SimpleNotificationProvider>
+              {children}
+            </SimpleNotificationProvider>
+          </NetworkProvider>
         </AuthProvider>
       </body>
     </html>
