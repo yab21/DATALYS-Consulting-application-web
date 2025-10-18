@@ -1,5 +1,6 @@
 import { API_CONFIG } from "@/lib/api-config";
 import { SecureStorage } from "@/lib/secure-storage";
+import { extractBackendMessage } from '@/lib/error-handler';
 
 // Types pour le système de messages
 export interface Message {
@@ -134,7 +135,8 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur envoi message:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -161,7 +163,8 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur envoi notification:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -187,7 +190,8 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération notifications:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -216,7 +220,8 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur marquage notification:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -247,7 +252,8 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération messages:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -274,7 +280,8 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur réponse message:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -305,7 +312,8 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération conversation:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -334,7 +342,8 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur marquage lu:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -369,7 +378,8 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur création support:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -407,7 +417,8 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération support:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -444,7 +455,8 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération mes tickets support:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -475,7 +487,8 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur recherche communications:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -510,7 +523,8 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur mise à jour statut:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 

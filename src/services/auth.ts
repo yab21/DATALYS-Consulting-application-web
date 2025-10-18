@@ -10,6 +10,7 @@ import {
   MFAVerificationResponse,
 } from "@/lib/api-config";
 import { SecureStorage } from "@/lib/secure-storage";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 export interface LoginCredentials {
   identifier: string;
@@ -87,9 +88,10 @@ export class AuthService {
       }
     } catch (error) {
       console.error("Erreur lors de la connexion:", error);
+      const message = extractBackendMessage(error);
       return {
         status: "error",
-        message: "Erreur de connexion. Veuillez réessayer.",
+        message,
       };
     }
   }
@@ -134,9 +136,10 @@ export class AuthService {
       }
     } catch (error) {
       console.error("Erreur lors de la vérification MFA:", error);
+      const message = extractBackendMessage(error);
       return {
         status: "error",
-        message: "Erreur de connexion. Veuillez réessayer.",
+        message,
       };
     }
   }
@@ -193,9 +196,10 @@ export class AuthService {
       }
     } catch (error) {
       console.error("Erreur lors du changement de mot de passe:", error);
+      const message = extractBackendMessage(error);
       return {
         status: "error",
-        message: "Erreur de connexion. Veuillez réessayer.",
+        message,
       };
     }
   }
@@ -357,9 +361,10 @@ export class AuthService {
       return result;
     } catch (error) {
       console.error("Erreur lors de la demande de réinitialisation:", error);
+      const message = extractBackendMessage(error);
       return {
         status: "error",
-        message: "Erreur de connexion. Veuillez réessayer.",
+        message,
       };
     }
   }
@@ -387,9 +392,10 @@ export class AuthService {
       return result;
     } catch (error) {
       console.error("Erreur lors de la réinitialisation:", error);
+      const message = extractBackendMessage(error);
       return {
         status: "error",
-        message: "Erreur de connexion. Veuillez réessayer.",
+        message,
       };
     }
   }

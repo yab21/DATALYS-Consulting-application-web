@@ -1,4 +1,5 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders, ApiResponse } from '@/lib/api-config';
+import { extractBackendMessage } from '@/lib/error-handler';
 
 export interface SearchFilters {
   query?: string;
@@ -118,7 +119,8 @@ class SearchService {
       };
     } catch (error) {
       console.error('Erreur lors de la recherche globale:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -211,7 +213,8 @@ class SearchService {
       };
     } catch (error) {
       console.error(`Erreur lors de la recherche ${entityType}:`, error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -306,7 +309,8 @@ class SearchService {
       localStorage.setItem('datalys-saved-searches', JSON.stringify(savedSearches));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de la recherche:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -328,7 +332,8 @@ class SearchService {
       localStorage.setItem('datalys-saved-searches', JSON.stringify(filteredSearches));
     } catch (error) {
       console.error('Erreur lors de la suppression de la recherche sauvegardée:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 

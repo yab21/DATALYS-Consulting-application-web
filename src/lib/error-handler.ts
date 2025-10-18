@@ -11,6 +11,52 @@ export interface ErrorContext {
   action?: string;
 }
 
+/**
+ * Extrait le vrai message d'erreur du backend de manière cohérente
+ */
+function extractBackendMessage(error: any): string {
+  // 1. Si c'est une ApiError personnalisée
+  if (error?.name === 'ApiError' && error?.message) {
+    return error.message;
+  }
+  
+  // 2. Format de réponse API standard avec data
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  
+  // 3. Format imbriqué {message: {message: "..."}}
+  if (error?.message?.message && typeof error.message.message === 'string') {
+    return error.message.message;
+  }
+  
+  // 4. Format avec result.message (pour auth service)
+  if (error?.result?.message && typeof error.result.message === 'string') {
+    return error.result.message;
+  }
+  
+  // 5. Format direct avec status/message
+  if (error?.status === 'error' && error?.message && typeof error.message === 'string') {
+    return error.message;
+  }
+  
+  // 6. Message direct simple
+  if (error?.message && typeof error.message === 'string' && 
+      !error.message.startsWith('HTTP ') && 
+      !error.message.includes('fetch')) {
+    return error.message;
+  }
+  
+  // 7. Fallback pour erreurs réseau/HTTP
+  if (error?.status || error?.statusCode) {
+    const status = error.status || error.statusCode;
+    return `Erreur serveur (${status})`;
+  }
+  
+  // 8. Dernier recours
+  return 'Une erreur inattendue s\'est produite';
+}
+
 export interface ErrorDetails {
   code: string;
   message: string;
@@ -162,6 +208,9 @@ export class ErrorHandler {
       fallbackAvailable: false
     };
 
+    // Extraire le vrai message du backend
+    const backendMessage = extractBackendMessage(error);
+
     // Analyser les erreurs HTTP
     if (error?.status || error?.statusCode) {
       const status = error.status || error.statusCode;
@@ -170,7 +219,9 @@ export class ErrorHandler {
       switch (true) {
         case status === 401:
           errorDetails.code = 'AUTH_UNAUTHORIZED';
-          errorDetails.message = 'Session expirée, veuillez vous reconnecter';
+          errorDetails.message = backendMessage.includes('Session') || backendMessage.includes('Token') || backendMessage.includes('Unauthorized') 
+            ? backendMessage 
+            : 'Session expirée, veuillez vous reconnecter';
           errorDetails.type = 'auth';
           errorDetails.severity = 'high';
           errorDetails.retryable = false;
@@ -178,7 +229,9 @@ export class ErrorHandler {
           
         case status === 403:
           errorDetails.code = 'AUTH_FORBIDDEN';
-          errorDetails.message = 'Accès non autorisé';
+          errorDetails.message = backendMessage.includes('Forbidden') || backendMessage.includes('accès') 
+            ? backendMessage 
+            : 'Accès non autorisé';
           errorDetails.type = 'permission';
           errorDetails.severity = 'high';
           errorDetails.retryable = false;
@@ -186,7 +239,9 @@ export class ErrorHandler {
           
         case status === 404:
           errorDetails.code = 'NOT_FOUND';
-          errorDetails.message = 'Ressource non trouvée';
+          errorDetails.message = backendMessage.includes('Not Found') || backendMessage.includes('trouvé') 
+            ? backendMessage 
+            : 'Ressource non trouvée';
           errorDetails.type = 'api';
           errorDetails.severity = 'medium';
           errorDetails.retryable = false;
@@ -195,7 +250,9 @@ export class ErrorHandler {
           
         case status === 429:
           errorDetails.code = 'RATE_LIMITED';
-          errorDetails.message = 'Trop de requêtes, veuillez patienter';
+          errorDetails.message = backendMessage.includes('rate') || backendMessage.includes('limite') 
+            ? backendMessage 
+            : 'Trop de requêtes, veuillez patienter';
           errorDetails.type = 'api';
           errorDetails.severity = 'medium';
           errorDetails.retryable = true;
@@ -203,7 +260,9 @@ export class ErrorHandler {
           
         case status >= 500:
           errorDetails.code = 'SERVER_ERROR';
-          errorDetails.message = 'Erreur serveur, veuillez réessayer';
+          errorDetails.message = backendMessage !== 'Une erreur inattendue s\'est produite' 
+            ? backendMessage 
+            : 'Erreur serveur, veuillez réessayer';
           errorDetails.type = 'api';
           errorDetails.severity = 'high';
           errorDetails.retryable = true;
@@ -212,7 +271,9 @@ export class ErrorHandler {
           
         case status >= 400:
           errorDetails.code = 'CLIENT_ERROR';
-          errorDetails.message = error.message || 'Données invalides';
+          errorDetails.message = backendMessage !== 'Une erreur inattendue s\'est produite' 
+            ? backendMessage 
+            : 'Données invalides';
           errorDetails.type = 'validation';
           errorDetails.severity = 'medium';
           errorDetails.retryable = false;
@@ -241,9 +302,9 @@ export class ErrorHandler {
     }
     
     // Analyser les erreurs API personnalisées
-    else if (error?.message) {
-      errorDetails.message = error.message;
-      if (error.message.toLowerCase().includes('token')) {
+    else {
+      errorDetails.message = backendMessage;
+      if (backendMessage.toLowerCase().includes('token')) {
         errorDetails.type = 'auth';
         errorDetails.code = 'TOKEN_ERROR';
         errorDetails.severity = 'high';
@@ -576,5 +637,8 @@ export const retryOperation = <T>(
   operationId: string,
   config?: Partial<RetryConfig>
 ) => errorHandler.retryWithBackoff(operation, operationId, config);
+
+// Export de la fonction utilitaire pour usage dans les services
+export { extractBackendMessage };
 
 export default errorHandler;

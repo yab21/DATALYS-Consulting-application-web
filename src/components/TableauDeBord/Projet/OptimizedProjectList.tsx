@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { 
   Plus, 
   FolderOpen, 
@@ -16,8 +17,6 @@ import {
 import { 
   Button, 
   Chip, 
-  Card, 
-  CardBody, 
   Table, 
   TableHeader, 
   TableColumn, 
@@ -27,26 +26,20 @@ import {
   Select, 
   SelectItem, 
   Input,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure
+  Pagination,
+  Avatar
 } from "@nextui-org/react";
 import { useRouter } from "next/navigation";
 import { projectsService, Project } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
-import OptimizedProjectForm from "./OptimizedProjectForm";
+import ProjectModals from "./ProjectModals";
 
 const OptimizedProjectList: React.FC = () => {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const { showNotification } = useSimpleNotifications();
-  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
-  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   
   // États
   const [projects, setProjects] = useState<Project[]>([]);
@@ -55,8 +48,22 @@ const OptimizedProjectList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPartner, setSelectedPartner] = useState<string>("tous");
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+
+  // États pour la pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [paginatedProjects, setPaginatedProjects] = useState<Project[]>([]);
+
+  // États pour les modals
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: 'edit' | 'delete' | 'view' | null;
+    project: Project | null;
+  }>({
+    isOpen: false,
+    type: null,
+    project: null
+  });
 
   // Charger les données initiales
   useEffect(() => {
@@ -71,6 +78,18 @@ const OptimizedProjectList: React.FC = () => {
   useEffect(() => {
     filterProjects();
   }, [projects, searchTerm, selectedPartner]);
+
+  // Pagination effect
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    setPaginatedProjects(filteredProjects.slice(startIndex, endIndex));
+  }, [filteredProjects, currentPage, itemsPerPage]);
+
+  // Réinitialiser à la page 1 quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedPartner]);
 
   // Méthode de fallback pour charger les projets des partenaires
   const loadProjectsWithFallback = async (user: any): Promise<Project[]> => {
@@ -331,52 +350,31 @@ const OptimizedProjectList: React.FC = () => {
     }
   };
 
-  const handleEdit = (project: Project) => {
-    setSelectedProject(project);
-    onEditOpen();
+  const handleProjectAction = (project: Project, action: 'view' | 'edit' | 'delete') => {
+    setModalState({
+      isOpen: true,
+      type: action,
+      project
+    });
   };
 
-  const handleDelete = (project: Project) => {
-    setSelectedProject(project);
-    onDeleteOpen();
+  // Handlers pour les callbacks des modals
+  const handleModalSuccess = (message: string) => {
+    showNotification(simpleNotificationHelpers.success(
+      "Succès",
+      message
+    ));
   };
 
-  const confirmDelete = async () => {
-    if (!selectedProject || !user) return;
-    
-    try {
-      setActionLoading(true);
-      
-      await projectsService.deleteProject(
-        selectedProject.id, 
-        selectedProject.title, 
-        user.id
-      );
-      
-      showNotification(simpleNotificationHelpers.success(
-        "Projet supprimé",
-        `Le projet "${selectedProject.title}" a été supprimé avec succès`
-      ));
-      
-      // Recharger la liste
-      await loadInitialData();
-      onDeleteClose();
-      
-    } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      showNotification(simpleNotificationHelpers.error(
-        "Erreur",
-        "Impossible de supprimer le projet"
-      ));
-    } finally {
-      setActionLoading(false);
-    }
+  const handleModalError = (message: string) => {
+    showNotification(simpleNotificationHelpers.error(
+      "Erreur",
+      message
+    ));
   };
 
-  const handleFormSuccess = async () => {
-    await loadInitialData();
-    onEditClose();
-  };
+  // Calculer le nombre total de pages
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
 
   const formatDate = (dateString: string) => {
     try {
@@ -396,68 +394,87 @@ const OptimizedProjectList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header et actions */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {user?.role_id === 1 ? "Gestion des Projets" : "Mes Projets"}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {filteredProjects.length} projet(s) trouvé(s)
-          </p>
+    <div className="space-y-8">
+      {/* En-tête avec statistiques */}
+      <motion.div
+        className="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white">
+              {user?.role_id === 1 ? "Gestion des Projets" : "Mes Projets"}
+            </h1>
+            <div className="flex flex-wrap gap-3">
+              <Chip size="lg" variant="flat" color="primary">
+                {filteredProjects.length} projets
+              </Chip>
+              <Chip size="lg" variant="flat" color="success">
+                {filteredProjects.filter(p => p.is_active).length} actifs
+              </Chip>
+              <Chip size="lg" variant="flat" color="warning">
+                {filteredProjects.filter(p => !p.is_active).length} inactifs
+              </Chip>
+            </div>
+          </div>
+
+          {/* Bouton nouveau projet uniquement pour les admins */}
+          {user?.role_id === 1 && (
+            <Button
+              color="primary"
+              size="lg"
+              startContent={<Plus className="h-5 w-5" />}
+              onPress={() => router.push("/tableaudebord/projet/ajouter")}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 font-semibold shadow-lg"
+            >
+              Nouveau Projet
+            </Button>
+          )}
         </div>
-        
-        {/* Bouton nouveau projet uniquement pour les admins */}
-        {user?.role_id === 1 && (
-          <Button
-            color="primary"
-            startContent={<Plus className="w-4 h-4" />}
-            onPress={() => router.push("/tableaudebord/projet/ajouter")}
-            className="bg-gradient-to-r from-blue-500 to-blue-600"
-          >
-            Nouveau Projet
-          </Button>
-        )}
-      </div>
+      </motion.div>
 
       {/* Filtres */}
-      <Card>
-        <CardBody className="space-y-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="flex-1">
-              <Input
-                placeholder="Rechercher un projet..."
-                value={searchTerm}
-                onValueChange={setSearchTerm}
-                startContent={<Search className="w-4 h-4 text-gray-400" />}
-                variant="bordered"
-              />
+      <motion.div
+        className="rounded-2xl border border-gray-100 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex-1">
+            <Input
+              placeholder="Rechercher un projet..."
+              value={searchTerm}
+              onValueChange={setSearchTerm}
+              startContent={<Search className="h-4 w-4 text-gray-400" />}
+              className="max-w-md"
+              size="lg"
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Filtres:</span>
             </div>
             
             {/* Filtrage par partenaire uniquement pour les admins */}
             {user?.role_id === 1 && (
-              <div className="w-full md:w-64">
-                <Select
-                  label="Filtrer par partenaire"
-                  selectedKeys={[selectedPartner]}
-                  onSelectionChange={handlePartnerChange}
-                  variant="bordered"
-                  startContent={<Filter className="w-4 h-4" />}
-                  classNames={{
-                    trigger: "min-h-12",
-                    value: "text-left",
-                    selectorIcon: "right-3"
-                  }}
-                  items={[{ key: "tous", label: "Tous les partenaires" }, ...partnerNames.map(name => ({ key: name, label: name }))]}
-                >
-                  {(item) => (
-                    <SelectItem key={item.key} value={item.key}>
-                      {item.label}
-                    </SelectItem>
-                  )}
-                </Select>
-              </div>
+              <Select
+                selectedKeys={selectedPartner ? [selectedPartner] : []}
+                onSelectionChange={handlePartnerChange}
+                className="min-w-[180px]"
+                size="sm"
+                placeholder="Partenaire"
+                items={[{ key: "tous", label: "Tous les partenaires" }, ...partnerNames.map(name => ({ key: name, label: name }))]}
+              >
+                {(item) => (
+                  <SelectItem key={item.key} value={item.key}>
+                    {item.label}
+                  </SelectItem>
+                )}
+              </Select>
             )}
             
             <Button
@@ -465,162 +482,159 @@ const OptimizedProjectList: React.FC = () => {
               isIconOnly
               onPress={loadInitialData}
               isLoading={loading}
+              size="sm"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
-        </CardBody>
-      </Card>
+        </div>
+      </motion.div>
 
       {/* Table des projets */}
-      <Card>
-        <CardBody>
-          <Table aria-label="Table des projets">
-            <TableHeader>
-              <TableColumn>PROJET</TableColumn>
-              <TableColumn>PARTENAIRE</TableColumn>
-              <TableColumn>STATUT</TableColumn>
-              <TableColumn>CRÉÉ LE</TableColumn>
-              <TableColumn>ACTIONS</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent={
+      <motion.div
+        className="space-y-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <Table 
+          aria-label="Table des projets"
+          selectionMode="none"
+          className="w-full"
+          classNames={{
+            wrapper: "min-h-[400px] shadow-none border border-gray-200 dark:border-gray-700 w-full",
+            table: "min-h-[200px] w-full table-fixed",
+            th: "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-sm",
+            td: "py-4 px-3",
+          }}
+          bottomContent={
+            filteredProjects.length > 0 ? (
+              <div className="flex w-full justify-between items-center px-2 py-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, filteredProjects.length)} sur {filteredProjects.length} projets
+                </span>
+                {filteredProjects.length > 10 && (
+                  <Pagination
+                    isCompact
+                    showControls
+                    showShadow
+                    color="primary"
+                    page={currentPage}
+                    total={totalPages}
+                    onChange={setCurrentPage}
+                  />
+                )}
+              </div>
+            ) : null
+          }
+        >
+          <TableHeader>
+            <TableColumn key="project" width="30%">PROJET</TableColumn>
+            <TableColumn key="partner" width="20%">PARTENAIRE</TableColumn>
+            <TableColumn key="status" width="15%">STATUT</TableColumn>
+            <TableColumn key="created" width="15%">CRÉÉ LE</TableColumn>
+            <TableColumn key="actions" width="20%">ACTIONS</TableColumn>
+          </TableHeader>
+          <TableBody 
+            items={paginatedProjects}
+            emptyContent={
               <div className="flex flex-col items-center gap-2 py-8">
                 <FolderOpen className="w-12 h-12 text-gray-400" />
                 <p className="text-gray-500">Aucun projet trouvé</p>
               </div>
-            }>
-              {filteredProjects.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <p className="font-medium">{project.title}</p>
-                      <p className="text-sm text-gray-500">ID: {project.id}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-400" />
-                      <span>{project.partner_name || "Non assigné"}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      color={project.is_active ? "success" : "default"}
-                      variant="flat"
+            }
+          >
+            {(project) => (
+              <TableRow key={project.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar
                       size="sm"
+                      name={project.title.charAt(0)}
+                      className="bg-blue-500 text-white"
+                    />
+                    <div className="flex flex-col">
+                      <p className="font-semibold text-sm text-gray-900 dark:text-white">{project.title}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{project.partner_name || "Non assigné"}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    className="capitalize"
+                    color={project.is_active ? "success" : "warning"}
+                    size="sm"
+                    variant="flat"
+                  >
+                    {project.is_active ? "Actif" : "Inactif"}
+                  </Chip>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {formatDate(project.created_at)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="relative flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="primary"
+                      isIconOnly
+                      onPress={() => router.push(`/tableaudebord/projet/pageprojet/${project.id}`)}
+                      title="Voir projet"
                     >
-                      {project.is_active ? "Actif" : "Inactif"}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>{formatDate(project.created_at)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        isIconOnly
-                        variant="light"
-                        size="sm"
-                        onPress={() => router.push(`/tableaudebord/projet/pageprojet/${project.id}`)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      
-                      {/* Actions de modification uniquement pour les admins */}
-                      {user?.role_id === 1 && (
-                        <>
-                          <Button
-                            isIconOnly
-                            variant="light"
-                            size="sm"
-                            onPress={() => handleEdit(project)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            variant="light"
-                            size="sm"
-                            color="danger"
-                            onPress={() => handleDelete(project)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
-
-      {/* Modal d'édition */}
-      <Modal
-        isOpen={isEditOpen}
-        onClose={onEditClose}
-        size="2xl"
-        scrollBehavior="inside"
-      >
-        <ModalContent>
-          <ModalHeader>Modifier le projet</ModalHeader>
-          <ModalBody>
-            {selectedProject && (
-              <OptimizedProjectForm
-                isModal={true}
-                projectId={selectedProject.id}
-                initialData={{
-                  title: selectedProject.title,
-                  partner_name: selectedProject.partner_name || "",
-                  is_active: selectedProject.is_active
-                }}
-                onSuccess={handleFormSuccess}
-                onClose={onEditClose}
-              />
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    
+                    {/* Actions de modification uniquement pour les admins */}
+                    {user?.role_id === 1 && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="warning"
+                          isIconOnly
+                          onPress={() => handleProjectAction(project, 'edit')}
+                          title="Modifier"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="danger"
+                          isIconOnly
+                          onPress={() => handleProjectAction(project, 'delete')}
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
             )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </TableBody>
+        </Table>
+      </motion.div>
 
-      {/* Modal de confirmation de suppression */}
-      <Modal
-        isOpen={isDeleteOpen}
-        onClose={onDeleteClose}
-        size="md"
-      >
-        <ModalContent>
-          <ModalHeader>Confirmer la suppression</ModalHeader>
-          <ModalBody>
-            <p>
-              Êtes-vous sûr de vouloir supprimer le projet "{selectedProject?.title}" ?
-            </p>
-            <p className="text-sm text-gray-500">
-              Cette action est irréversible.
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="flat"
-              onPress={onDeleteClose}
-              isDisabled={actionLoading}
-            >
-              Annuler
-            </Button>
-            <Button
-              color="danger"
-              onPress={confirmDelete}
-              isLoading={actionLoading}
-            >
-              Supprimer
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Modals */}
+      <ProjectModals
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        project={modalState.project}
+        onClose={() => setModalState({ isOpen: false, type: null, project: null })}
+        onRefresh={loadInitialData}
+        onSuccess={handleModalSuccess}
+        onError={handleModalError}
+      />
     </div>
   );
 };

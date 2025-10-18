@@ -1,5 +1,6 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders, ApiResponse } from '@/lib/api-config';
 import { UserRole } from '@/lib/permissions';
+import { extractBackendMessage } from '@/lib/error-handler';
 
 export interface User {
   id: number;
@@ -79,7 +80,8 @@ export class UsersService {
       return data;
     } catch (error) {
       console.error('API Error:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 

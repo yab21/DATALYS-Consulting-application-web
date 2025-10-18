@@ -4,6 +4,7 @@
  */
 
 import { SecureStorage } from '@/lib/secure-storage';
+import { extractBackendMessage } from '@/lib/error-handler';
 
 // Interfaces TypeScript
 export interface ProjectFile {
@@ -104,8 +105,8 @@ class FilesService {
       console.error('Type d\'erreur:', typeof error);
       console.error('Error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
       
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(errorMessage);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -266,7 +267,8 @@ class FilesService {
                 reject(new Error(response.message || 'Erreur lors de l\'upload'));
               }
             } catch (error) {
-              reject(new Error('Erreur lors du parsing de la réponse'));
+              const message = extractBackendMessage(error);
+              reject(new Error(message));
             }
           });
 
@@ -290,7 +292,8 @@ class FilesService {
         
       } catch (error) {
         console.error(`Erreur lors de l'upload de ${file.name}:`, error);
-        throw error;
+        const message = extractBackendMessage(error);
+        throw new Error(message);
       }
     }
 
@@ -327,7 +330,8 @@ class FilesService {
       
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 

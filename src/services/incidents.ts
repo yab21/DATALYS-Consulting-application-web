@@ -1,4 +1,5 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders } from '@/lib/api-config';
+import { extractBackendMessage } from '@/lib/error-handler';
 
 export interface Incident {
   id: number;
@@ -86,7 +87,8 @@ export class IncidentsService {
       return data;
     } catch (error) {
       console.error('❌ Incidents API Error:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -198,7 +200,8 @@ export class IncidentsService {
       return stats;
     } catch (error) {
       console.error('Erreur lors du calcul des statistiques:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 }

@@ -5,6 +5,7 @@ import {
   getDefaultHeaders,
 } from "@/lib/api-config";
 import { SecureStorage } from '@/lib/secure-storage';
+import { extractBackendMessage } from '@/lib/error-handler';
 
 export interface Project {
   id: number;
@@ -21,7 +22,9 @@ export interface Project {
 
 export interface CreateProjectFormData {
   title: string;
-  partner_name: string; // Nouveau: utilise partner_name
+  description?: string;
+  partner_id?: number;
+  partner_name?: string; // Nouveau: utilise partner_name
   is_active?: boolean;
 }
 
@@ -42,9 +45,11 @@ export interface ProjectUpdateRequest {
   };
   datas: Array<{
     id: number;
+    name?: string;
     title: string;
+    partner_id?: number;
     partner_name?: string;
-    is_active: boolean;
+    is_active?: boolean;
   }>;
 }
 
@@ -151,7 +156,8 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des projets:", error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -206,7 +212,8 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des projets du partenaire:", error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -257,14 +264,15 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des projets par partenaire:", error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
   /**
    * Créer un nouveau projet
    */
-  async createProject(projectData: CreateProjectFormData, userId: number): Promise<ProjectApiResponse<Project[]>> {
+  async createProject(projectData: CreateProjectFormData, userId: number, userEmail?: string): Promise<ProjectApiResponse<Project[]>> {
     try {
       console.log("📡 Création d'un nouveau projet...");
       
@@ -274,7 +282,7 @@ export class ProjectsService {
         },
         datas: [{
           title: projectData.title,
-          partner_name: projectData.partner_name
+          partner_name: projectData.partner_name || ""
         }]
       };
 
@@ -303,26 +311,28 @@ export class ProjectsService {
       return result;
     } catch (error) {
       console.error("❌ Erreur lors de la création du projet:", error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
   /**
    * Mettre à jour un projet
    */
-  async updateProject(projectId: number, title: string, isActive: boolean, userId: number, partnerName?: string): Promise<ProjectApiResponse<Project[]>> {
+  async updateProject(projectId: number, name: string, title: string, partnerId?: number, isActive?: boolean, userId?: number, userEmail?: string): Promise<ProjectApiResponse<Project[]>> {
     try {
       console.log(`📡 Mise à jour du projet ${projectId}...`);
       
       const requestBody: ProjectUpdateRequest = {
         user: {
-          id: userId
+          id: userId || 0
         },
         datas: [{
           id: projectId,
+          name: name,
           title: title,
-          is_active: isActive,
-          ...(partnerName && { partner_name: partnerName })
+          partner_id: partnerId,
+          is_active: isActive
         }]
       };
 
@@ -351,7 +361,8 @@ export class ProjectsService {
       return result;
     } catch (error) {
       console.error("❌ Erreur lors de la mise à jour du projet:", error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -397,7 +408,8 @@ export class ProjectsService {
       return result;
     } catch (error) {
       console.error("❌ Erreur lors de la suppression du projet:", error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -441,7 +453,57 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des partenaires:", error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Obtenir une map des partenaires (id -> nom) pour la sélection
+   */
+  async getPartnersMap(): Promise<Map<string, string>> {
+    try {
+      console.log("📡 Récupération de la map des partenaires...");
+      
+      // Utiliser le service partners pour récupérer la liste
+      const response = await fetch(
+        buildApiUrl('/partners/getByCriteria'),
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify({
+            index: 0,
+            size: 100,
+            data: {
+              is_active: true
+            }
+          }),
+        }
+      );
+
+      console.log("📨 Statut de la réponse:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("✅ Partenaires récupérés:", result);
+
+      if (result.code === 200 && result.items) {
+        // Créer une map id -> nom
+        const partnersMap = new Map<string, string>();
+        result.items.forEach((partner: any) => {
+          partnersMap.set(partner.id.toString(), partner.name || partner.company_name);
+        });
+        return partnersMap;
+      } else {
+        throw new Error(result.message?.message || 'Erreur lors de la récupération des partenaires');
+      }
+    } catch (error) {
+      console.error("❌ Erreur lors de la récupération de la map des partenaires:", error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 }

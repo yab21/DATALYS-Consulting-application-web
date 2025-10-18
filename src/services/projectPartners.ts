@@ -3,6 +3,8 @@
  * Basé sur les APIs documentées dans le guide d'intégration
  */
 
+import { extractBackendMessage } from '@/lib/error-handler';
+
 import { SecureStorage } from '@/lib/secure-storage';
 
 // Interfaces TypeScript

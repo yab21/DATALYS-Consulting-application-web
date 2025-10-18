@@ -13,6 +13,8 @@ import {
   CardBody,
   Chip,
   Divider,
+  Select,
+  SelectItem,
 } from "@nextui-org/react";
 import { 
   Save, 
@@ -23,7 +25,8 @@ import {
   Phone,
   MapPin,
   Calendar,
-  User
+  User,
+  Globe
 } from "lucide-react";
 import { Partner, UpdatePartnerFormData, partnersService } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
@@ -42,6 +45,7 @@ interface EditFormData {
   name: string;
   email: string;
   phone: string;
+  country_code: string;
   address: string;
   logo?: File;
 }
@@ -62,6 +66,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     name: '',
     email: '',
     phone: '',
+    country_code: '+237',
     address: '',
     logo: undefined
   });
@@ -77,6 +82,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         name: partner.name,
         email: partner.email,
         phone: partner.phone,
+        country_code: partner.country_code || '+237', // Utiliser le country_code existant ou valeur par défaut
         address: partner.address,
         logo: undefined
       });
@@ -149,6 +155,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         name: editForm.name,
         email: editForm.email,
         phone: editForm.phone,
+        country_code: editForm.country_code,
         address: editForm.address,
         logo: editForm.logo
       };
@@ -225,8 +232,27 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     return editForm.name.trim() && 
            editForm.email.trim() && 
            editForm.phone.trim() && 
+           editForm.country_code.trim() && 
            editForm.address.trim();
   };
+
+  // Liste des codes pays
+  const COUNTRY_CODES = [
+    { code: "+237", name: "Cameroun", flag: "🇨🇲" },
+    { code: "+33", name: "France", flag: "🇫🇷" },
+    { code: "+1", name: "États-Unis", flag: "🇺🇸" },
+    { code: "+44", name: "Royaume-Uni", flag: "🇬🇧" },
+    { code: "+49", name: "Allemagne", flag: "🇩🇪" },
+    { code: "+34", name: "Espagne", flag: "🇪🇸" },
+    { code: "+39", name: "Italie", flag: "🇮🇹" },
+    { code: "+41", name: "Suisse", flag: "🇨🇭" },
+    { code: "+32", name: "Belgique", flag: "🇧🇪" },
+    { code: "+225", name: "Côte d'Ivoire", flag: "🇨🇮" },
+    { code: "+221", name: "Sénégal", flag: "🇸🇳" },
+    { code: "+212", name: "Maroc", flag: "🇲🇦" },
+    { code: "+213", name: "Algérie", flag: "🇩🇿" },
+    { code: "+216", name: "Tunisie", flag: "🇹🇳" },
+  ];
 
   if (!partner) return null;
 
@@ -441,12 +467,47 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   isRequired
                 />
                 
+                <Select
+                  label="Code pays"
+                  placeholder="Sélectionner un code pays"
+                  selectedKeys={editForm.country_code ? [editForm.country_code] : []}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0] as string;
+                    handleEditFormChange('country_code', value);
+                  }}
+                  startContent={<Globe className="h-4 w-4" />}
+                  isRequired
+                  renderValue={(items) => {
+                    return items.map((item) => {
+                      const country = COUNTRY_CODES.find(c => c.code === item.key);
+                      return (
+                        <div key={item.key} className="flex items-center gap-2">
+                          <span>{country?.flag}</span>
+                          <span>{country?.code}</span>
+                        </div>
+                      );
+                    });
+                  }}
+                >
+                  {COUNTRY_CODES.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      <div className="flex items-center gap-2">
+                        <span>{country.flag}</span>
+                        <span>{country.code}</span>
+                        <span className="text-gray-500">{country.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </Select>
+                
                 <Input
                   label="Téléphone"
-                  placeholder="+33 1 23 45 67 89"
+                  placeholder="123456789"
                   value={editForm.phone}
                   onValueChange={(value) => handleEditFormChange('phone', value)}
+                  startContent={<Phone className="h-4 w-4" />}
                   isRequired
+                  description={`Format: ${editForm.country_code}123456789`}
                 />
               </div>
               

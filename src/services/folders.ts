@@ -4,6 +4,7 @@
  */
 
 import { SecureStorage } from '@/lib/secure-storage';
+import { extractBackendMessage } from '@/lib/error-handler';
 
 // Interfaces TypeScript
 export interface Folder {
@@ -121,8 +122,8 @@ class FoldersService {
       console.error('Type d\'erreur:', typeof error);
       console.error('Error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
       
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(errorMessage);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -463,7 +464,8 @@ class FoldersService {
       return data;
     } catch (error) {
       console.error('Erreur lors de l\'upload de fichiers:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -528,7 +530,8 @@ class FoldersService {
       return data;
     } catch (error) {
       console.error('Erreur lors de l\'upload du fichier ZIP:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 

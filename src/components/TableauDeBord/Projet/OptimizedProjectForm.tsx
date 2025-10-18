@@ -20,7 +20,8 @@ import Link from "next/link";
 // Interface pour le formulaire
 interface ProjectFormData {
   title: string;
-  partner_name: string;
+  description: string;
+  partner_id: number | null;
   is_active: boolean;
 }
 
@@ -47,12 +48,13 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
   // États
   const [formData, setFormData] = useState<ProjectFormData>({
     title: "",
-    partner_name: "",
+    description: "",
+    partner_id: null,
     is_active: true,
     ...initialData
   });
   
-  const [partnerNames, setPartnerNames] = useState<string[]>([]);
+  const [partners, setPartners] = useState<Array<{id: number, name: string}>>([]);
   const [loading, setLoading] = useState(false);
   const [loadingPartners, setLoadingPartners] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,9 +67,31 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
   const loadPartnerNames = async () => {
     try {
       setLoadingPartners(true);
-      const names = await projectsService.getPartnerNames();
-      console.log("👥 Partenaires chargés:", names);
-      setPartnerNames(names);
+      // Pour récupérer les partenaires avec leurs IDs, on utilise l'API complète
+      const response = await fetch('/api/partners/getByCriteria', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          index: 0,
+          size: 100,
+          data: { is_active: true }
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const partnersData = result.items?.map((partner: any) => ({
+          id: partner.id,
+          name: partner.name || partner.company_name
+        })) || [];
+        console.log("👥 Partenaires chargés:", partnersData);
+        setPartners(partnersData);
+      } else {
+        // Fallback vers l'ancienne méthode
+        const names = await projectsService.getPartnerNames();
+        const partnersData = names.map((name, index) => ({ id: index + 1, name }));
+        setPartners(partnersData);
+      }
     } catch (error) {
       console.error("Erreur lors du chargement des partenaires:", error);
       showNotification(simpleNotificationHelpers.error(
@@ -89,8 +113,8 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
       newErrors.title = "Le titre doit contenir au moins 3 caractères";
     }
     
-    if (!formData.partner_name?.trim()) {
-      newErrors.partner_name = "Veuillez sélectionner un partenaire";
+    if (!formData.partner_id) {
+      newErrors.partner_id = "Veuillez sélectionner un partenaire";
     }
     
     setErrors(newErrors);
@@ -103,8 +127,8 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Effacer l'erreur du champ modifié
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+    if (errors[field as string]) {
+      setErrors(prev => ({ ...prev, [field as string]: "" }));
     }
   };
 
@@ -123,10 +147,12 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
         // Mode édition
         await projectsService.updateProject(
           projectId, 
-          formData.title, 
+          formData.title, // name
+          formData.title, // title
+          formData.partner_id || 0, // partner_id
           formData.is_active, 
           user.id,
-          formData.partner_name
+          user.email
         );
         
         showNotification(simpleNotificationHelpers.success(
@@ -137,11 +163,12 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
         // Mode création
         const createData: CreateProjectFormData = {
           title: formData.title,
-          partner_name: formData.partner_name,
+          description: formData.description,
+          partner_id: formData.partner_id!,
           is_active: formData.is_active
         };
         
-        await projectsService.createProject(createData, user.id);
+        await projectsService.createProject(createData, user.id, user.email);
         
         showNotification(simpleNotificationHelpers.success(
           "Projet créé",
@@ -214,7 +241,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
                   Titre du projet <span className="text-red-500">*</span>
                 </label>
                 <Input
-                  placeholder="Ex: Refonte site web client"
+                  placeholder="Ex: Migration Data Center, Sécurisation réseau entreprise"
                   value={formData.title}
                   onValueChange={(value) => handleInputChange("title", value)}
                   isInvalid={!!errors.title}
@@ -231,25 +258,40 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
                 </label>
                 <Select
                   placeholder="Sélectionnez un partenaire"
-                  selectedKeys={formData.partner_name ? [formData.partner_name] : []}
+                  selectedKeys={formData.partner_id ? [formData.partner_id.toString()] : []}
                   onSelectionChange={(keys) => {
                     const selectedKey = Array.from(keys)[0] as string;
-                    handleInputChange("partner_name", selectedKey);
+                    const partnerId = parseInt(selectedKey);
+                    handleInputChange("partner_id", partnerId);
                   }}
-                  isInvalid={!!errors.partner_name}
-                  errorMessage={errors.partner_name}
+                  isInvalid={!!errors.partner_id}
+                  errorMessage={errors.partner_id as string}
                   isLoading={loadingPartners}
                   size="lg"
                   variant="bordered"
                   startContent={<Users className="h-4 w-4 text-gray-400" />}
                 >
-                  {partnerNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
+                  {partners.map((partner) => (
+                    <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                      {partner.name}
                     </SelectItem>
                   ))}
                 </Select>
               </div>
+            </div>
+            
+            <div className="space-y-2 mt-6">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Description du projet
+              </label>
+              <Input
+                placeholder="Description détaillée du projet..."
+                value={formData.description}
+                onValueChange={(value) => handleInputChange("description", value)}
+                startContent={<FileText className="h-4 w-4 text-gray-400" />}
+                size="lg"
+                variant="bordered"
+              />
             </div>
             
             <div className="space-y-2 mt-6">
@@ -302,7 +344,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
                 type="submit"
                 isLoading={loading}
                 startContent={!loading && <Save className="h-4 w-4" />}
-                isDisabled={!formData.title || !formData.partner_name}
+                isDisabled={!formData.title || !formData.partner_id}
               >
                 {loading 
                   ? (projectId ? "Modification..." : "Création...") 

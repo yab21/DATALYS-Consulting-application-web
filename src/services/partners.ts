@@ -1,10 +1,12 @@
 // Service API pour la gestion des partenaires
 import { SecureStorage } from '@/lib/secure-storage';
+import { extractBackendMessage } from '@/lib/error-handler';
 export interface Partner {
   id: number;
   name: string;
   email: string;
   phone: string;
+  country_code?: string;
   address: string;
   is_active: boolean;
   logo_url?: string;
@@ -33,6 +35,7 @@ export interface UpdatePartnerData {
   name?: string;
   email?: string;
   phone?: string;
+  country_code?: string;
   address?: string;
   is_active?: boolean;
 }
@@ -144,7 +147,8 @@ class PartnersService {
       return result;
     } catch (error) {
       console.error('Erreur lors de la connexion:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -195,7 +199,8 @@ class PartnersService {
       };
     } catch (error) {
       console.error('❌ Erreur lors de la création du partenaire:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -226,7 +231,8 @@ class PartnersService {
       console.log('✅ Logo uploadé:', result);
     } catch (error) {
       console.error('❌ Erreur lors de l\'upload du logo:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -424,7 +430,8 @@ class PartnersService {
       };
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des partenaires:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -439,7 +446,8 @@ class PartnersService {
       return result.items || [];
     } catch (error) {
       console.error('Erreur lors de la récupération de tous les partenaires:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -453,7 +461,8 @@ class PartnersService {
       return result.items || [];
     } catch (error) {
       console.error('Erreur lors de la recherche de partenaires:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -467,7 +476,8 @@ class PartnersService {
       return result.items || [];
     } catch (error) {
       console.error('Erreur lors de la récupération des partenaires actifs:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -516,7 +526,8 @@ class PartnersService {
       };
     } catch (error) {
       console.error('❌ Erreur lors de la modification du partenaire:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -592,7 +603,8 @@ class PartnersService {
       return result;
     } catch (error) {
       console.error('❌ Erreur lors de la suppression du partenaire:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
@@ -608,7 +620,8 @@ class PartnersService {
       return partner || null;
     } catch (error) {
       console.error('Erreur lors de la récupération du partenaire par ID:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 

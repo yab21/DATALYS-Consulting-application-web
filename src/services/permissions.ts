@@ -1,4 +1,5 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders } from '@/lib/api-config';
+import { extractBackendMessage } from '@/lib/error-handler';
 
 export interface UserProjectPermission {
   id: number;
@@ -62,7 +63,8 @@ export class PermissionsService {
       return data;
     } catch (error) {
       console.error('API Error:', error);
-      throw error;
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
   }
 
