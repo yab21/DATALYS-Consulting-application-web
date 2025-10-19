@@ -7,10 +7,26 @@ import { useRequestQueue } from '@/lib/request-queue';
 import { errorHandler } from '@/lib/error-handler';
 import NetworkStatusIndicator from './NetworkStatusIndicator';
 // Remplacement temporaire de Sonner par le système de notification existant
+// Toast simple qui ne déclenche pas d'événements pour éviter les boucles infinies
 const toast = {
   error: (title: string, options?: { description?: string; duration?: number; action?: { label: string; onClick: () => void } }) => {
     console.error(`❌ ${title}`, options?.description);
-    // Émettre un événement pour le système de notification existant
+  },
+  success: (title: string, options?: { description?: string; duration?: number }) => {
+    console.log(`✅ ${title}`, options?.description);
+  },
+  warning: (title: string, options?: { description?: string; duration?: number }) => {
+    console.warn(`⚠️ ${title}`, options?.description);
+  },
+  info: (title: string, options?: { description?: string; duration?: number }) => {
+    console.info(`ℹ️ ${title}`, options?.description);
+  }
+};
+
+// API publique pour déclencher des notifications depuis l'extérieur
+export const networkNotifications = {
+  error: (title: string, options?: { description?: string; duration?: number }) => {
+    console.error(`❌ ${title}`, options?.description);
     window.dispatchEvent(new CustomEvent('global-error-notification', {
       detail: { type: 'error', title, message: options?.description || '', persistent: false }
     }));

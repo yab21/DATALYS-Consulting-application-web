@@ -1,38 +1,72 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders } from '@/lib/api-config';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { securedFetch } from '@/lib/api-interceptor';
+import { UsersService } from '@/services/users';
 
 export interface Incident {
   id: number;
   title: string;
   description: string;
-  user_name: string;
-  project_name: string;
+  incident_number: string;
+  type: string;
+  priority: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
+  priority_label: string;
+  status: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+  status_color: 'blue' | 'orange' | 'gray' | 'purple' | 'green' | 'default';
+  category: string;
+  impact: string;
+  impact_label: string;
+  domain: string;
+  declarant_name: string;
+  user_id: number;
+  project_id: number;
+  sla_prise_en_charge_status: 'respecte' | 'en_retard' | 'non_applicable';
+  sla_resolution_status: 'respecte' | 'en_retard' | 'non_applicable';
   is_active: boolean;
+  is_read: boolean;
+  refusal_count: number;
+  resolution_notes?: string;
   created_at: string;
   updated_at: string;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
-  status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+  created_by: number;
+  updated_by: number;
 }
 
 export interface CreateIncidentData {
   title: string;
   description: string;
-  user_name: string;
-  project_name: string;
+  type: string;
+  priority: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
+  status: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+  category: string;
+  impact: string;
+  domain: string;
+  declarant_name: string;
+  user_id: number;
+  project_id: number;
+  assigned_to?: number;
   is_active: boolean;
-  priority?: string;
-  status?: string;
+  is_read?: boolean;
+  resolution_notes?: string;
 }
 
 export interface UpdateIncidentData {
   id: number;
   title?: string;
   description?: string;
-  user_name?: string;
-  project_name?: string;
+  type?: string;
+  priority?: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
+  status?: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+  category?: string;
+  impact?: string;
+  domain?: string;
+  declarant_name?: string;
+  user_id?: number;
+  project_id?: number;
+  assigned_to?: number;
   is_active?: boolean;
-  priority?: string;
-  status?: string;
+  is_read?: boolean;
+  resolution_notes?: string;
 }
 
 export interface IncidentCriteria {
@@ -40,12 +74,33 @@ export interface IncidentCriteria {
   size?: number;
   data?: {
     title?: string;
-    user_name?: string;
-    project_name?: string;
+    type?: string;
+    priority?: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
+    status?: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+    category?: string;
+    impact?: string;
+    domain?: string;
+    user_id?: number;
+    project_id?: number;
     is_active?: boolean;
-    priority?: string;
-    status?: string;
+    is_read?: boolean;
   };
+}
+
+export interface ExportIncidentOptions {
+  format: 'pdf' | 'xlsx' | 'csv';
+  criteria?: {
+    status?: string;
+    priority?: string;
+    category?: string;
+    domain?: string;
+    user_id?: number;
+    project_id?: number;
+  };
+  date_from: string;
+  date_to: string;
+  include_stats: boolean;
+  include_details?: boolean;
 }
 
 export class IncidentsService {
@@ -109,14 +164,25 @@ export class IncidentsService {
 
   // Créer un nouvel incident
   static async createIncident(incidentData: CreateIncidentData, userId?: number): Promise<any> {
-    // Récupérer l'ID de l'utilisateur connecté
-    const currentUserId = userId || this.getCurrentUserId() || 1;
+    // Récupérer les informations de l'utilisateur connecté
+    const currentUser = UsersService.getCurrentUser();
+    if (!currentUser) {
+      throw new Error('Utilisateur non connecté');
+    }
+    
+    // Préparer les données avec assigned_to basé sur user_id
+    const processedData = {
+      ...incidentData,
+      // Si assigned_to n'est pas spécifié, utiliser user_id comme valeur par défaut
+      assigned_to: incidentData.assigned_to || incidentData.user_id
+    };
     
     const requestBody = {
       user: {
-        id: currentUserId
+        id: userId || currentUser.id,
+        email: currentUser.email
       },
-      datas: [incidentData]
+      datas: [processedData]
     };
     
     return this.makeRequest(
@@ -128,13 +194,28 @@ export class IncidentsService {
 
   // Mettre à jour un incident
   static async updateIncident(incidentData: UpdateIncidentData, userId?: number): Promise<any> {
-    const currentUserId = userId || this.getCurrentUserId() || 1;
+    // Récupérer les informations de l'utilisateur connecté
+    const currentUser = UsersService.getCurrentUser();
+    if (!currentUser) {
+      throw new Error('Utilisateur non connecté');
+    }
+    
+    // Préparer les données avec assigned_to basé sur user_id si spécifié
+    const processedData = {
+      ...incidentData
+    };
+    
+    // Si user_id est modifié, synchroniser avec assigned_to
+    if (incidentData.user_id !== undefined) {
+      processedData.assigned_to = incidentData.user_id;
+    }
     
     const requestBody = {
       user: {
-        id: currentUserId
+        id: userId || currentUser.id,
+        email: currentUser.email
       },
-      datas: [incidentData]
+      datas: [processedData]
     };
     
     return this.makeRequest(
@@ -159,21 +240,6 @@ export class IncidentsService {
     );
   }
 
-  // Méthode helper pour récupérer l'ID de l'utilisateur connecté
-  private static getCurrentUserId(): number | null {
-    if (typeof window !== 'undefined') {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          return user.id;
-        } catch (error) {
-          console.error('Erreur lors de la lecture des données utilisateur:', error);
-        }
-      }
-    }
-    return null;
-  }
 
   // Méthodes utilitaires pour les statistiques
   static async getIncidentStats(): Promise<any> {
@@ -200,6 +266,95 @@ export class IncidentsService {
       return stats;
     } catch (error) {
       console.error('Erreur lors du calcul des statistiques:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  // Exporter les incidents selon les critères spécifiés
+  static async exportIncidents(options: ExportIncidentOptions, userId?: number): Promise<any> {
+    // Récupérer les informations de l'utilisateur connecté
+    const currentUser = UsersService.getCurrentUser();
+    if (!currentUser) {
+      throw new Error('Utilisateur non connecté');
+    }
+    
+    const requestBody = {
+      user: {
+        id: userId || currentUser.id,
+        email: currentUser.email
+      },
+      format: options.format,
+      criteria: options.criteria || {},
+      date_from: options.date_from,
+      date_to: options.date_to,
+      include_stats: options.include_stats,
+      ...(options.include_details && { include_details: options.include_details })
+    };
+    
+    return this.makeRequest(
+      '/incidents/export',
+      'POST',
+      requestBody
+    );
+  }
+
+  // Méthode spécialisée pour l'export de fichiers (PDF, Excel, CSV)
+  static async exportIncidentsFile(options: ExportIncidentOptions): Promise<Blob> {
+    const currentUser = UsersService.getCurrentUser();
+    if (!currentUser) {
+      throw new Error('Utilisateur non connecté');
+    }
+    
+    const requestBody = {
+      user: {
+        id: currentUser.id,
+        email: currentUser.email
+      },
+      format: options.format,
+      criteria: options.criteria || {},
+      date_from: options.date_from,
+      date_to: options.date_to,
+      include_stats: options.include_stats,
+      ...(options.include_details && { include_details: options.include_details })
+    };
+    
+    try {
+      const response = await securedFetch(`${API_CONFIG.BASE_URL}/incidents/export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log(`📡 Export response status: ${response.status}`);
+
+      if (!response.ok) {
+        // Essayer de récupérer un message d'erreur JSON si possible
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Export échoué: ${response.status}`);
+        } catch {
+          throw new Error(`Export échoué: ${response.status} ${response.statusText}`);
+        }
+      }
+
+      // Vérifier le Content-Type pour s'assurer que c'est bien un fichier
+      const contentType = response.headers.get('content-type');
+      console.log(`📄 Content-Type: ${contentType}`);
+
+      // Récupérer le blob
+      const blob = await response.blob();
+      console.log(`📦 Taille du fichier exporté: ${blob.size} bytes`);
+      
+      if (blob.size === 0) {
+        throw new Error('Le fichier exporté est vide');
+      }
+
+      return blob;
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export des incidents:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

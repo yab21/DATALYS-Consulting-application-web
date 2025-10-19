@@ -44,7 +44,10 @@ import {
   XCircle,
   ArrowUpRight,
   Calendar,
-  User as UserIcon
+  User as UserIcon,
+  Timer,
+  TrendingUp,
+  Download
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
@@ -58,11 +61,20 @@ interface Incident {
   id: string;
   titre: string;
   description: string;
-  priorite: "faible" | "moyenne" | "haute" | "critique";
-  statut: "ouvert" | "en_cours" | "resolu" | "ferme";
-  projectId: string;
+  incident_number: string;
+  type: string;
+  priorite: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
+  priorite_label: string;
+  statut: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+  statut_color: 'blue' | 'orange' | 'gray' | 'purple' | 'green' | 'default';
+  category: string;
+  impact: string;
+  impact_label: string;
+  domain: string;
+  declarant_name: string;
+  user_id: number;
+  project_id: number;
   projectNom: string;
-  partnerId: string;
   partnerNom: string;
   partnerLogo?: string;
   dateCreation: Date;
@@ -70,6 +82,11 @@ interface Incident {
   assigneA: string;
   commentaires: number;
   tempsMoyenResolution?: number;
+  sla_prise_en_charge_status: 'respecte' | 'en_retard' | 'non_applicable';
+  sla_resolution_status: 'respecte' | 'en_retard' | 'non_applicable';
+  is_read: boolean;
+  refusal_count: number;
+  resolution_notes?: string;
 }
 
 // Fonction de conversion API vers interface locale
@@ -77,122 +94,46 @@ const convertApiIncidentToLocal = (apiIncident: ApiIncident): Incident => ({
   id: apiIncident.id.toString(),
   titre: apiIncident.title,
   description: apiIncident.description,
-  priorite: (apiIncident.priority as any) || "moyenne",
-  statut: (apiIncident.status as any) || "ouvert",
-  projectId: "proj-" + apiIncident.id,
-  projectNom: apiIncident.project_name || `Projet ${apiIncident.id}`,
-  partnerId: "partner-" + apiIncident.id,
-  partnerNom: apiIncident.user_name || "Utilisateur",
+  incident_number: apiIncident.incident_number,
+  type: apiIncident.type,
+  priorite: apiIncident.priority,
+  priorite_label: apiIncident.priority_label,
+  statut: apiIncident.status,
+  statut_color: apiIncident.status_color,
+  category: apiIncident.category,
+  impact: apiIncident.impact,
+  impact_label: apiIncident.impact_label,
+  domain: apiIncident.domain,
+  declarant_name: apiIncident.declarant_name,
+  user_id: apiIncident.user_id,
+  project_id: apiIncident.project_id,
+  projectNom: `Projet ${apiIncident.project_id}`,
+  partnerNom: apiIncident.declarant_name || "Utilisateur",
   partnerLogo: undefined,
   dateCreation: new Date(apiIncident.created_at),
-  dateResolution: apiIncident.status === "resolved" ? new Date(apiIncident.updated_at) : undefined,
+  dateResolution: undefined, // Plus de statut résolu dans le nouveau système
   assigneA: "Support Technique",
   commentaires: Math.floor(Math.random() * 10) + 1,
-  tempsMoyenResolution: apiIncident.status === "resolved" ? Math.random() * 48 : undefined,
+  tempsMoyenResolution: undefined, // Plus de statut résolu dans le nouveau système
+  sla_prise_en_charge_status: apiIncident.sla_prise_en_charge_status,
+  sla_resolution_status: apiIncident.sla_resolution_status,
+  is_read: apiIncident.is_read,
+  refusal_count: apiIncident.refusal_count,
+  resolution_notes: apiIncident.resolution_notes,
 });
 
 interface IncidentStats {
   total: number;
-  ouverts: number;
+  nouveaux: number;
   enCours: number;
+  enAttente: number;
+  enArbitrage: number;
   resolus: number;
-  critiques: number;
+  p0: number;
+  p1: number;
   tempsMoyenResolution: number;
 }
 
-// Données mockées étendues
-const MOCK_INCIDENTS: Incident[] = [
-  {
-    id: "inc-1",
-    titre: "Problème de connectivité VPN",
-    description: "Les utilisateurs n'arrivent pas à se connecter au VPN depuis ce matin. Erreur de timeout lors de l'authentification.",
-    priorite: "haute",
-    statut: "en_cours",
-    projectId: "proj-1",
-    projectNom: "Migration Cloud AWS",
-    partnerId: "partner-1",
-    partnerNom: "TechCorp Solutions",
-    partnerLogo: "/images/partners/techcorp.svg",
-    dateCreation: new Date("2024-01-20T08:30:00"),
-    assigneA: "Support Technique",
-    commentaires: 5,
-    tempsMoyenResolution: 4.5,
-  },
-  {
-    id: "inc-2",
-    titre: "Lenteur application web",
-    description: "L'application web présente des lenteurs importantes, particulièrement lors du chargement des données",
-    priorite: "moyenne",
-    statut: "ouvert",
-    projectId: "proj-3",
-    projectNom: "Application Mobile",
-    partnerId: "partner-2",
-    partnerNom: "InnovTech Corp",
-    dateCreation: new Date("2024-01-18T14:20:00"),
-    assigneA: "Équipe DevOps",
-    commentaires: 2,
-  },
-  {
-    id: "inc-3",
-    titre: "Erreur de synchronisation",
-    description: "Problème de synchronisation des données entre les serveurs de production et de backup",
-    priorite: "critique",
-    statut: "resolu",
-    projectId: "proj-1",
-    projectNom: "Migration Cloud AWS",
-    partnerId: "partner-1",
-    partnerNom: "TechCorp Solutions",
-    dateCreation: new Date("2024-01-15T09:15:00"),
-    dateResolution: new Date("2024-01-16T11:30:00"),
-    assigneA: "Admin Système",
-    commentaires: 8,
-    tempsMoyenResolution: 26.25,
-  },
-  {
-    id: "inc-4",
-    titre: "Problème d'authentification SSO",
-    description: "Les utilisateurs ne peuvent pas se connecter via SSO, redirection en boucle",
-    priorite: "critique",
-    statut: "ouvert",
-    projectId: "proj-4",
-    projectNom: "Sécurisation Réseau",
-    partnerId: "partner-3",
-    partnerNom: "SecureNet Ltd",
-    dateCreation: new Date("2024-01-19T16:45:00"),
-    assigneA: "Équipe Sécurité",
-    commentaires: 1,
-  },
-  {
-    id: "inc-5",
-    titre: "Backup automatique en échec",
-    description: "Les sauvegardes automatiques nocturnes échouent depuis 3 jours",
-    priorite: "haute",
-    statut: "en_cours",
-    projectId: "proj-2",
-    projectNom: "Infrastructure Cloud",
-    partnerId: "partner-2",
-    partnerNom: "InnovTech Corp",
-    dateCreation: new Date("2024-01-17T07:00:00"),
-    assigneA: "Admin Système",
-    commentaires: 4,
-  },
-  {
-    id: "inc-6",
-    titre: "Certificat SSL expiré",
-    description: "Le certificat SSL du domaine principal a expiré, site inaccessible",
-    priorite: "critique",
-    statut: "resolu",
-    projectId: "proj-5",
-    projectNom: "Site Web Corporate",
-    partnerId: "partner-4",
-    partnerNom: "WebCorp Agency",
-    dateCreation: new Date("2024-01-16T10:20:00"),
-    dateResolution: new Date("2024-01-16T12:45:00"),
-    assigneA: "Équipe DevOps",
-    commentaires: 3,
-    tempsMoyenResolution: 2.42,
-  },
-];
 
 const GestionIncidents: React.FC = () => {
   const { hasPermission } = useAuth();
@@ -208,32 +149,63 @@ const GestionIncidents: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   
   // États de loading pour les boutons
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // États pour les formulaires
   const [createForm, setCreateForm] = useState<CreateIncidentData>({
     title: "",
     description: "",
-    user_name: "",
-    project_name: "",
+    type: "",
+    priority: "P2",
+    status: "nouveau",
+    category: "",
+    impact: "",
+    domain: "",
+    declarant_name: "",
+    user_id: 0,
+    project_id: 0,
     is_active: true,
-    priority: "moyenne",
-    status: "ouvert"
+    is_read: false,
+    resolution_notes: ""
   });
   
   const [editForm, setEditForm] = useState<UpdateIncidentData>({
     id: 0,
     title: "",
     description: "",
-    user_name: "",
-    project_name: "",
+    type: "",
+    priority: "P2",
+    status: "nouveau",
+    category: "",
+    impact: "",
+    domain: "",
+    declarant_name: "",
+    user_id: 0,
+    project_id: 0,
     is_active: true,
-    priority: "moyenne",
-    status: "ouvert"
+    is_read: false,
+    resolution_notes: ""
+  });
+
+  // État pour le formulaire d'export
+  const [exportForm, setExportForm] = useState({
+    format: 'pdf' as 'pdf' | 'xlsx' | 'csv',
+    date_from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0], // Premier jour du mois
+    date_to: new Date().toISOString().split('T')[0], // Aujourd'hui
+    include_stats: true,
+    include_details: true,
+    status: '',
+    priority: '',
+    category: '',
+    domain: '',
+    project_id: 0,
+    user_id: 0
   });
   
   // Charger les projets et utilisateurs au montage du composant
@@ -306,10 +278,13 @@ const GestionIncidents: React.FC = () => {
   }, []);
   const [stats, setStats] = useState<IncidentStats>({
     total: 0,
-    ouverts: 0,
+    nouveaux: 0,
     enCours: 0,
+    enAttente: 0,
+    enArbitrage: 0,
     resolus: 0,
-    critiques: 0,
+    p0: 0,
+    p1: 0,
     tempsMoyenResolution: 0
   });
 
@@ -340,8 +315,8 @@ const GestionIncidents: React.FC = () => {
           size: pageSize,
           data: {
             is_active: true,
-            ...(statusFilter !== "tous" && { status: statusFilter }),
-            ...(priorityFilter !== "tous" && { priority: priorityFilter }),
+            ...(statusFilter !== "tous" && { status: statusFilter as any }),
+            ...(priorityFilter !== "tous" && { priority: priorityFilter as any }),
           }
         };
         
@@ -368,10 +343,13 @@ const GestionIncidents: React.FC = () => {
         // Calcul des statistiques
         const newStats: IncidentStats = {
           total: convertedIncidents.length,
-          ouverts: convertedIncidents.filter(i => i.statut === "ouvert").length,
+          nouveaux: convertedIncidents.filter(i => i.statut === "nouveau").length,
           enCours: convertedIncidents.filter(i => i.statut === "en_cours").length,
+          enAttente: convertedIncidents.filter(i => i.statut === "en_attente").length,
+          enArbitrage: convertedIncidents.filter(i => i.statut === "en_arbitrage").length,
           resolus: convertedIncidents.filter(i => i.statut === "resolu").length,
-          critiques: convertedIncidents.filter(i => i.priorite === "critique").length,
+          p0: convertedIncidents.filter(i => i.priorite === "P0").length,
+          p1: convertedIncidents.filter(i => i.priorite === "P1").length,
           tempsMoyenResolution: convertedIncidents
             .filter(i => i.tempsMoyenResolution)
             .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) / 
@@ -384,24 +362,26 @@ const GestionIncidents: React.FC = () => {
       } catch (error) {
         console.error("❌ Erreur lors du chargement des incidents:", error);
         
-        // Fallback vers les données mockées en cas d'erreur
-        console.log("🔄 Fallback vers les données mockées");
-        setIncidents(MOCK_INCIDENTS);
-        setFilteredIncidents(MOCK_INCIDENTS);
+        // Afficher un message d'erreur à l'utilisateur
+        showNotification(simpleNotificationHelpers.error(
+          "Erreur", 
+          "Impossible de charger les incidents. Veuillez réessayer."
+        ));
         
-        const newStats: IncidentStats = {
-          total: MOCK_INCIDENTS.length,
-          ouverts: MOCK_INCIDENTS.filter(i => i.statut === "ouvert").length,
-          enCours: MOCK_INCIDENTS.filter(i => i.statut === "en_cours").length,
-          resolus: MOCK_INCIDENTS.filter(i => i.statut === "resolu").length,
-          critiques: MOCK_INCIDENTS.filter(i => i.priorite === "critique").length,
-          tempsMoyenResolution: MOCK_INCIDENTS
-            .filter(i => i.tempsMoyenResolution)
-            .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) / 
-            (MOCK_INCIDENTS.filter(i => i.tempsMoyenResolution).length || 1)
-        };
-        
-        setStats(newStats);
+        // Réinitialiser les données
+        setIncidents([]);
+        setFilteredIncidents([]);
+        setStats({
+          total: 0,
+          nouveaux: 0,
+          enCours: 0,
+          enAttente: 0,
+          enArbitrage: 0,
+          resolus: 0,
+          p0: 0,
+          p1: 0,
+          tempsMoyenResolution: 0
+        });
       } finally {
         setLoading(false);
       }
@@ -444,28 +424,33 @@ const GestionIncidents: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "ouvert": return "danger";
-      case "en_cours": return "warning";
-      case "resolu": return "success";
-      case "ferme": return "default";
+      case "nouveau": return "primary"; // Bleu
+      case "en_cours": return "warning"; // Orange
+      case "en_attente": return "default"; // Gris
+      case "en_arbitrage": return "secondary"; // Violet
+      case "resolu": return "success"; // Vert
+      case "ferme": return "default"; // Gris
       default: return "default";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "critique": return "danger";
-      case "haute": return "warning";
-      case "moyenne": return "primary";
-      case "faible": return "success";
+      case "P0": return "danger"; // Rouge - Arrêt de service
+      case "P1": return "warning"; // Orange - Haute
+      case "P2": return "primary"; // Bleu - Moyenne
+      case "P3": return "success"; // Vert - Faible
+      case "P4": return "default"; // Gris - Très faible
       default: return "default";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "ouvert": return <XCircle className="h-4 w-4" />;
+      case "nouveau": return <AlertTriangle className="h-4 w-4" />;
       case "en_cours": return <Clock className="h-4 w-4" />;
+      case "en_attente": return <Clock className="h-4 w-4" />;
+      case "en_arbitrage": return <UserCheck className="h-4 w-4" />;
       case "resolu": return <CheckCircle className="h-4 w-4" />;
       case "ferme": return <CheckCircle className="h-4 w-4" />;
       default: return <AlertTriangle className="h-4 w-4" />;
@@ -474,85 +459,81 @@ const GestionIncidents: React.FC = () => {
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case "critique": return "🔴";
-      case "haute": return "🟠";
-      case "moyenne": return "🟡";
-      case "faible": return "🟢";
+      case "P0": return "🔴"; // Arrêt de service
+      case "P1": return "🟠"; // Haute
+      case "P2": return "🟡"; // Moyenne
+      case "P3": return "🟢"; // Faible
+      case "P4": return "⚪"; // Très faible
       default: return "⚪";
     }
   };
+
+  // Fonctions utilitaires pour les SLA
+  const getSLAColor = (status: string) => {
+    switch (status) {
+      case "respecte": return "success";
+      case "en_retard": return "danger";
+      case "non_applicable": return "default";
+      default: return "default";
+    }
+  };
+
+  const getSLAIcon = (status: string) => {
+    switch (status) {
+      case "respecte": return <CheckCircle className="h-3 w-3" />;
+      case "en_retard": return <Timer className="h-3 w-3" />;
+      case "non_applicable": return <Clock className="h-3 w-3" />;
+      default: return <Clock className="h-3 w-3" />;
+    }
+  };
+
+  const getSLALabel = (status: string) => {
+    switch (status) {
+      case "respecte": return "Respecté";
+      case "en_retard": return "En retard";
+      case "non_applicable": return "N/A";
+      default: return "N/A";
+    }
+  };
+
 
   const handleIncidentAction = async (incident: Incident, action: string) => {
     setSelectedIncident(incident);
     
     switch (action) {
       case "view":
-        setShowDetailModal(true);
+        // Rediriger vers la page de détail de l'incident
+        window.location.href = `/tableaudebord/incidents/${incident.id}`;
         break;
       case "edit":
         // Pré-remplir le formulaire d'édition
         console.log("🔧 Pré-remplissage du formulaire d'édition:", incident);
         
-        // Les vrais noms d'utilisateur et projet à utiliser
-        // (ils viennent de la fonction de conversion qui utilise les données de l'API)
-        const originalUserName = incident.partnerNom; // "Utilisateur" (générique)
-        const originalProjectName = incident.projectNom; // "Projet 92" (générique)
-        
-        // Vérifier si ces noms existent dans nos listes
-        const userExists = users.find(u => u.name === originalUserName);
-        const projectExists = projects.find(p => p.title === originalProjectName);
-        
-        // Si pas trouvés, utiliser le premier disponible ou garder une valeur par défaut
-        const validUserName = userExists ? userExists.name : (users.length > 0 ? users[0].name : "");
-        const validProjectName = projectExists ? projectExists.title : (projects.length > 0 ? projects[0].title : "");
-        
         const editData = {
           id: parseInt(incident.id),
           title: incident.titre,
           description: incident.description,
-          user_name: validUserName,
-          project_name: validProjectName,
-          is_active: true,
+          type: incident.type,
           priority: incident.priorite,
-          status: incident.statut === "en_cours" ? "en_cours" : incident.statut
+          status: incident.statut,
+          category: incident.category,
+          impact: incident.impact,
+          domain: incident.domain,
+          declarant_name: incident.declarant_name,
+          user_id: incident.user_id,
+          project_id: incident.project_id,
+          is_active: true,
+          is_read: incident.is_read,
+          resolution_notes: incident.resolution_notes || ""
         };
         
         console.log("📝 Données du formulaire d'édition:", editData);
-        console.log("👤 Utilisateur original:", incident.partnerNom, "-> Utilisateur valide:", validUserName, "(existe:", !!userExists, ")");
-        console.log("📋 Projet original:", incident.projectNom, "-> Projet valide:", validProjectName, "(existe:", !!projectExists, ")");
-        console.log("📊 Utilisateurs disponibles:", users.map(u => u.name));
-        console.log("📊 Projets disponibles:", projects.map(p => p.title));
         
         setEditForm(editData);
         setShowEditModal(true);
         break;
       case "delete":
         setShowDeleteModal(true);
-        break;
-      case "assign":
-        // Logique d'assignation
-        console.log("Assigner incident:", incident.id);
-        break;
-      case "resolve":
-        try {
-          // Appeler l'API pour marquer comme résolu
-          await IncidentsService.updateIncident({
-            id: parseInt(incident.id),
-            status: "resolved",
-            is_active: true
-          });
-          
-          // Mettre à jour l'état local
-          setIncidents(prev => prev.map(i => 
-            i.id === incident.id 
-              ? { ...i, statut: "resolu", dateResolution: new Date() }
-              : i
-          ));
-          
-          console.log("✅ Incident marqué comme résolu:", incident.id);
-        } catch (error) {
-          console.error("❌ Erreur lors de la résolution de l'incident:", error);
-        }
         break;
     }
   };
@@ -564,8 +545,6 @@ const GestionIncidents: React.FC = () => {
     setIsCreating(true);
     try {
       console.log("🔄 Création d'un nouvel incident:", createForm);
-      console.log("👤 Utilisateur sélectionné:", createForm.user_name);
-      console.log("📋 Projet sélectionné:", createForm.project_name);
       
       await IncidentsService.createIncident(createForm);
       
@@ -593,11 +572,18 @@ const GestionIncidents: React.FC = () => {
       setCreateForm({
         title: "",
         description: "",
-        user_name: "",
-        project_name: "",
+        type: "incident",
+        priority: "P2",
+        status: "nouveau",
+        category: "technique",
+        impact: "genant",
+        domain: "application",
+        declarant_name: "",
+        user_id: 0,
+        project_id: 0,
         is_active: true,
-        priority: "moyenne",
-        status: "ouvert"
+        is_read: false,
+        resolution_notes: ""
       });
       
       setShowCreateModal(false);
@@ -687,6 +673,57 @@ const GestionIncidents: React.FC = () => {
     }
   };
 
+  // Fonction pour exporter les incidents
+  const handleExportIncidents = async () => {
+    if (isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      console.log("📊 Export d'incidents démarré:", exportForm);
+      
+      // Préparer les critères d'export
+      const exportOptions = {
+        format: exportForm.format,
+        criteria: {
+          ...(exportForm.status && exportForm.status !== 'tous' && { status: exportForm.status }),
+          ...(exportForm.priority && exportForm.priority !== 'tous' && { priority: exportForm.priority }),
+          ...(exportForm.category && exportForm.category !== 'tous' && { category: exportForm.category }),
+          ...(exportForm.domain && exportForm.domain !== 'tous' && { domain: exportForm.domain }),
+          ...(exportForm.user_id > 0 && { user_id: exportForm.user_id }),
+          ...(exportForm.project_id > 0 && { project_id: exportForm.project_id })
+        },
+        date_from: exportForm.date_from,
+        date_to: exportForm.date_to,
+        include_stats: exportForm.include_stats,
+        include_details: exportForm.include_details
+      };
+      
+      // Utiliser la nouvelle méthode qui gère correctement les fichiers binaires
+      const blob = await IncidentsService.exportIncidentsFile(exportOptions);
+      
+      // Créer un lien de téléchargement
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `incidents_export_${new Date().toISOString().split('T')[0]}.${exportForm.format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setShowExportModal(false);
+      showNotification(simpleNotificationHelpers.success("Succès", "Export généré avec succès"));
+      console.log("✅ Export terminé avec succès");
+      
+    } catch (error: any) {
+      console.error("❌ Erreur lors de l'export:", error);
+      let errorMessage = error.message || "Une erreur inattendue s'est produite lors de l'export";
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const formatDuration = (hours: number) => {
     if (hours < 1) return `${Math.round(hours * 60)}min`;
     if (hours < 24) return `${Math.round(hours)}h`;
@@ -751,14 +788,14 @@ const GestionIncidents: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Ouverts
+                    Nouveaux
                   </p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {stats.ouverts}
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {stats.nouveaux}
                   </p>
                 </div>
-                <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900/30">
-                  <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/30">
+                  <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
             </CardBody>
@@ -799,14 +836,14 @@ const GestionIncidents: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Résolus
+                    En Arbitrage
                   </p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {stats.resolus}
+                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {stats.enArbitrage}
                   </p>
                 </div>
-                <div className="rounded-lg bg-green-100 p-3 dark:bg-green-900/30">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
+                  <UserCheck className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </CardBody>
@@ -823,10 +860,10 @@ const GestionIncidents: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Critiques
+                    P0 (Critiques)
                   </p>
                   <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {stats.critiques}
+                    {stats.p0}
                   </p>
                 </div>
                 <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900/30">
@@ -888,10 +925,11 @@ const GestionIncidents: React.FC = () => {
                   startContent={<Filter className="h-4 w-4" />}
                 >
                   <SelectItem key="tous" value="tous">Tous</SelectItem>
-                  <SelectItem key="ouvert" value="ouvert">Ouvert</SelectItem>
+                  <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
                   <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
+                  <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
+                  <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
                   <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
-                  <SelectItem key="ferme" value="ferme">Fermé</SelectItem>
                 </Select>
 
                 <Select
@@ -902,14 +940,23 @@ const GestionIncidents: React.FC = () => {
                   startContent={<AlertTriangle className="h-4 w-4" />}
                 >
                   <SelectItem key="tous" value="tous">Toutes</SelectItem>
-                  <SelectItem key="critique" value="critique">Critique</SelectItem>
-                  <SelectItem key="haute" value="haute">Haute</SelectItem>
-                  <SelectItem key="moyenne" value="moyenne">Moyenne</SelectItem>
-                  <SelectItem key="faible" value="faible">Faible</SelectItem>
+                  <SelectItem key="P0" value="P0">P0 - Critique</SelectItem>
+                  <SelectItem key="P1" value="P1">P1 - Haute</SelectItem>
+                  <SelectItem key="P2" value="P2">P2 - Moyenne</SelectItem>
+                  <SelectItem key="P3" value="P3">P3 - Faible</SelectItem>
+                  <SelectItem key="P4" value="P4">P4 - Très faible</SelectItem>
                 </Select>
               </div>
 
               <div className="flex items-center gap-4">
+                <Button
+                  variant="flat"
+                  startContent={<Download className="h-4 w-4" />}
+                  onPress={() => setShowExportModal(true)}
+                  className="border-gray-300 hover:bg-gray-50"
+                >
+                  Exporter
+                </Button>
                 <Button
                   color="primary"
                   onPress={() => setShowCreateModal(true)}
@@ -937,11 +984,9 @@ const GestionIncidents: React.FC = () => {
             <Table aria-label="Table des incidents" className="min-h-[400px]">
               <TableHeader>
                 <TableColumn>INCIDENT</TableColumn>
-                <TableColumn>PARTENAIRE</TableColumn>
-                <TableColumn>PROJET</TableColumn>
                 <TableColumn>PRIORITÉ</TableColumn>
                 <TableColumn>STATUT</TableColumn>
-                <TableColumn>ASSIGNÉ À</TableColumn>
+                <TableColumn>DÉLAIS DE TRAITEMENT</TableColumn>
                 <TableColumn>CRÉÉ</TableColumn>
                 <TableColumn align="center">ACTIONS</TableColumn>
               </TableHeader>
@@ -950,27 +995,21 @@ const GestionIncidents: React.FC = () => {
                   <TableRow key={incident.id}>
                     <TableCell>
                       <div className="flex flex-col">
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {incident.titre}
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {incident.titre}
+                          </p>
+                          {!incident.is_read && (
+                            <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          #{incident.incident_number}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
                           {incident.description}
                         </p>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar
-                          size="sm"
-                          src={incident.partnerLogo}
-                          name={incident.partnerNom.charAt(0)}
-                          className="bg-primary-100 text-primary-600"
-                        />
-                        <span className="font-medium">{incident.partnerNom}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{incident.projectNom}</span>
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -993,9 +1032,23 @@ const GestionIncidents: React.FC = () => {
                       </Chip>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">{incident.assigneA}</span>
+                      <div className="flex flex-col gap-1">
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={getSLAColor(incident.sla_prise_en_charge_status)}
+                          startContent={getSLAIcon(incident.sla_prise_en_charge_status)}
+                        >
+                          Prise en charge: {getSLALabel(incident.sla_prise_en_charge_status)}
+                        </Chip>
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={getSLAColor(incident.sla_resolution_status)}
+                          startContent={getSLAIcon(incident.sla_resolution_status)}
+                        >
+                          Résolution: {getSLALabel(incident.sla_resolution_status)}
+                        </Chip>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -1026,7 +1079,7 @@ const GestionIncidents: React.FC = () => {
                               startContent={<Eye className="h-4 w-4" />}
                               onPress={() => handleIncidentAction(incident, "view")}
                             >
-                              Voir détails
+                              Upload
                             </DropdownItem>,
                             ...(hasPermission(Permission.HANDLE_ALL_INCIDENTS) ? [
                               <DropdownItem
@@ -1036,23 +1089,6 @@ const GestionIncidents: React.FC = () => {
                               >
                                 Modifier
                               </DropdownItem>,
-                              <DropdownItem
-                                key="assign"
-                                startContent={<UserCheck className="h-4 w-4" />}
-                                onPress={() => handleIncidentAction(incident, "assign")}
-                              >
-                                Réassigner
-                              </DropdownItem>,
-                              ...(incident.statut !== "resolu" ? [
-                                <DropdownItem
-                                  key="resolve"
-                                  startContent={<CheckCircle className="h-4 w-4" />}
-                                  onPress={() => handleIncidentAction(incident, "resolve")}
-                                  className="text-success"
-                                >
-                                  Marquer comme résolu
-                                </DropdownItem>
-                              ] : []),
                               <DropdownItem
                                 key="delete"
                                 startContent={<XCircle className="h-4 w-4" />}
@@ -1188,20 +1224,32 @@ const GestionIncidents: React.FC = () => {
       {/* Modal création incident */}
       <Modal
         isOpen={showCreateModal}
+        isDismissable={!isCreating}
         onClose={() => {
           setShowCreateModal(false);
           setCreateForm({
             title: "",
             description: "",
-            user_name: "",
-            project_name: "",
+            type: "incident",
+            priority: "P2",
+            status: "nouveau",
+            category: "technique",
+            impact: "genant",
+            domain: "application",
+            declarant_name: "",
+            user_id: 0,
+            project_id: 0,
             is_active: true,
-            priority: "moyenne",
-            status: "ouvert"
+            is_read: false,
+            resolution_notes: ""
           });
         }}
         size="2xl"
         scrollBehavior="inside"
+        classNames={{
+          wrapper: "z-[60]",
+          backdrop: "z-[59]"
+        }}
       >
         <ModalContent>
           <ModalHeader>
@@ -1231,17 +1279,32 @@ const GestionIncidents: React.FC = () => {
                 isRequired
               />
               
+              <Select
+                label="Déclarant de l'incident"
+                placeholder="Sélectionnez la personne qui déclare l'incident"
+                selectedKeys={createForm.declarant_name ? [createForm.declarant_name] : []}
+                onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, declarant_name: Array.from(keys)[0] as string }))}
+                isLoading={loadingUsers}
+                isRequired
+              >
+                {users.map((user) => (
+                  <SelectItem key={user.name} value={user.name}>
+                    {user.name}
+                  </SelectItem>
+                ))}
+              </Select>
+
               <div className="grid grid-cols-2 gap-4">
                 <Select
-                  label="Utilisateur"
-                  placeholder="Sélectionnez un utilisateur"
-                  selectedKeys={createForm.user_name ? [createForm.user_name] : []}
-                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, user_name: Array.from(keys)[0] as string }))}
+                  label="Assigné à (Responsable)"
+                  placeholder="Sélectionnez l'utilisateur responsable"
+                  selectedKeys={createForm.user_id ? [createForm.user_id.toString()] : []}
+                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, user_id: parseInt(Array.from(keys)[0] as string) }))}
                   isLoading={loadingUsers}
                   isRequired
                 >
                   {users.map((user) => (
-                    <SelectItem key={user.name} value={user.name} textValue={`${user.name} (${user.email})`}>
+                    <SelectItem key={user.id.toString()} value={user.id.toString()} textValue={`${user.name} (${user.email})`}>
                       {user.name} ({user.email})
                     </SelectItem>
                   ))}
@@ -1250,57 +1313,105 @@ const GestionIncidents: React.FC = () => {
                 <Select
                   label="Projet"
                   placeholder="Sélectionnez un projet"
-                  selectedKeys={createForm.project_name ? [createForm.project_name] : []}
-                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, project_name: Array.from(keys)[0] as string }))}
+                  selectedKeys={createForm.project_id ? [createForm.project_id.toString()] : []}
+                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, project_id: parseInt(Array.from(keys)[0] as string) }))}
                   isLoading={loadingProjects}
                   isRequired
                 >
                   {projects.map((project) => (
-                    <SelectItem key={project.title} value={project.title} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
+                    <SelectItem key={project.id.toString()} value={project.id.toString()} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
                       {project.title} {project.partner_name ? `(${project.partner_name})` : ''}
                     </SelectItem>
                   ))}
                 </Select>
               </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <Input
+                  label="Type"
+                  placeholder="Ex: Incident, Demande, Problème..."
+                  value={createForm.type}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, type: e.target.value as any }))}
+                  isRequired
+                />
+
+                <Input
+                  label="Catégorie"
+                  placeholder="Ex: Technique, Fonctionnel..."
+                  value={createForm.category}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value as any }))}
+                  isRequired
+                />
+
+                <Input
+                  label="Domaine"
+                  placeholder="Ex: Réseau, Application..."
+                  value={createForm.domain}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, domain: e.target.value as any }))}
+                  isRequired
+                />
+              </div>
+
+              <Input
+                label="Impact"
+                placeholder="Ex: Arrêt de service, Ralentissement..."
+                value={createForm.impact}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, impact: e.target.value as any }))}
+                isRequired
+              />
               
               <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Priorité"
                   selectedKeys={createForm.priority ? [createForm.priority] : []}
-                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, priority: Array.from(keys)[0] as string }))}
+                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
+                  isRequired
                 >
-                  <SelectItem key="faible" value="faible">Faible</SelectItem>
-                  <SelectItem key="moyenne" value="moyenne">Moyenne</SelectItem>
-                  <SelectItem key="haute" value="haute">Haute</SelectItem>
-                  <SelectItem key="critique" value="critique">Critique</SelectItem>
+                  <SelectItem key="P0" value="P0">P0 - Arrêt de service (immédiat)</SelectItem>
+                  <SelectItem key="P1" value="P1">P1 - Haute (dégradation)</SelectItem>
+                  <SelectItem key="P2" value="P2">P2 - Moyenne</SelectItem>
+                  <SelectItem key="P3" value="P3">P3 - Faible</SelectItem>
+                  <SelectItem key="P4" value="P4">P4 - Très faible</SelectItem>
                 </Select>
                 
                 <Select
                   label="Statut"
                   selectedKeys={createForm.status ? [createForm.status] : []}
-                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as string }))}
+                  onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
+                  isRequired
                 >
-                  <SelectItem key="ouvert" value="ouvert">Ouvert</SelectItem>
+                  <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
                   <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
+                  <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
+                  <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
                   <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
-                  <SelectItem key="ferme" value="ferme">Fermé</SelectItem>
                 </Select>
               </div>
+              
+              <Textarea
+                label="Notes de résolution (optionnel)"
+                placeholder="Ajoutez des notes sur la résolution de l'incident..."
+                value={createForm.resolution_notes}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
+                minRows={2}
+              />
             </div>
           </ModalBody>
           <ModalFooter>
             <Button
               variant="light"
               onPress={() => setShowCreateModal(false)}
+              isDisabled={isCreating}
             >
               Annuler
             </Button>
             <Button
               color="primary"
               onPress={handleCreateIncident}
-              isDisabled={!createForm.title || !createForm.description || !createForm.user_name || !createForm.project_name}
+              isLoading={isCreating}
+              isDisabled={!createForm.title || !createForm.description || !createForm.declarant_name || !createForm.user_id || !createForm.project_id}
             >
-              Créer l'incident
+              {isCreating ? "Création..." : "Créer l'incident"}
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -1310,9 +1421,14 @@ const GestionIncidents: React.FC = () => {
       {selectedIncident && (
         <Modal
           isOpen={showEditModal}
+          isDismissable={!isUpdating}
           onClose={() => setShowEditModal(false)}
           size="2xl"
           scrollBehavior="inside"
+          classNames={{
+            wrapper: "z-[60]",
+            backdrop: "z-[59]"
+          }}
         >
           <ModalContent>
             <ModalHeader>
@@ -1340,16 +1456,31 @@ const GestionIncidents: React.FC = () => {
                   isRequired
                 />
                 
+                <Select
+                  label="Déclarant de l'incident"
+                  placeholder="Sélectionnez la personne qui déclare l'incident"
+                  selectedKeys={editForm.declarant_name ? [editForm.declarant_name] : []}
+                  onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, declarant_name: Array.from(keys)[0] as string }))}
+                  isLoading={loadingUsers}
+                  isRequired
+                >
+                  {users.map((user) => (
+                    <SelectItem key={user.name} value={user.name}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </Select>
+
                 <div className="grid grid-cols-2 gap-4">
                   <Select
-                    label="Utilisateur"
-                    selectedKeys={editForm.user_name ? [editForm.user_name] : []}
-                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, user_name: Array.from(keys)[0] as string }))}
+                    label="Assigné à (Responsable)"
+                    selectedKeys={editForm.user_id ? [editForm.user_id.toString()] : []}
+                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, user_id: parseInt(Array.from(keys)[0] as string) }))}
                     isLoading={loadingUsers}
                     isRequired
                   >
                     {users.map((user) => (
-                      <SelectItem key={user.name} value={user.name} textValue={`${user.name} (${user.email})`}>
+                      <SelectItem key={user.id.toString()} value={user.id.toString()} textValue={`${user.name} (${user.email})`}>
                         {user.name} ({user.email})
                       </SelectItem>
                     ))}
@@ -1357,48 +1488,95 @@ const GestionIncidents: React.FC = () => {
                   
                   <Select
                     label="Projet"
-                    selectedKeys={editForm.project_name ? [editForm.project_name] : []}
-                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, project_name: Array.from(keys)[0] as string }))}
+                    selectedKeys={editForm.project_id ? [editForm.project_id.toString()] : []}
+                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, project_id: parseInt(Array.from(keys)[0] as string) }))}
                     isLoading={loadingProjects}
                     isRequired
                   >
                     {projects.map((project) => (
-                      <SelectItem key={project.title} value={project.title} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
+                      <SelectItem key={project.id.toString()} value={project.id.toString()} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
                         {project.title} {project.partner_name ? `(${project.partner_name})` : ''}
                       </SelectItem>
                     ))}
                   </Select>
                 </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <Input
+                    label="Type"
+                    placeholder="Ex: Incident, Demande, Problème..."
+                    value={editForm.type}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, type: e.target.value as any }))}
+                    isRequired
+                  />
+
+                  <Input
+                    label="Catégorie"
+                    placeholder="Ex: Technique, Fonctionnel..."
+                    value={editForm.category}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value as any }))}
+                    isRequired
+                  />
+
+                  <Input
+                    label="Domaine"
+                    placeholder="Ex: Réseau, Application..."
+                    value={editForm.domain}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, domain: e.target.value as any }))}
+                    isRequired
+                  />
+                </div>
+
+                <Input
+                  label="Impact"
+                  placeholder="Ex: Arrêt de service, Ralentissement..."
+                  value={editForm.impact}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, impact: e.target.value as any }))}
+                  isRequired
+                />
                 
                 <div className="grid grid-cols-2 gap-4">
                   <Select
                     label="Priorité"
                     selectedKeys={editForm.priority ? [editForm.priority] : []}
-                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, priority: Array.from(keys)[0] as string }))}
+                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
+                    isRequired
                   >
-                    <SelectItem key="faible" value="faible">Faible</SelectItem>
-                    <SelectItem key="moyenne" value="moyenne">Moyenne</SelectItem>
-                    <SelectItem key="haute" value="haute">Haute</SelectItem>
-                    <SelectItem key="critique" value="critique">Critique</SelectItem>
+                    <SelectItem key="P0" value="P0">P0 - Arrêt de service (immédiat)</SelectItem>
+                    <SelectItem key="P1" value="P1">P1 - Haute (dégradation)</SelectItem>
+                    <SelectItem key="P2" value="P2">P2 - Moyenne</SelectItem>
+                    <SelectItem key="P3" value="P3">P3 - Faible</SelectItem>
+                    <SelectItem key="P4" value="P4">P4 - Très faible</SelectItem>
                   </Select>
                   
                   <Select
                     label="Statut"
                     selectedKeys={editForm.status ? [editForm.status] : []}
-                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, status: Array.from(keys)[0] as string }))}
+                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
+                    isRequired
                   >
-                    <SelectItem key="ouvert" value="ouvert">Ouvert</SelectItem>
+                    <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
                     <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
+                    <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
+                    <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
                     <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
-                    <SelectItem key="ferme" value="ferme">Fermé</SelectItem>
                   </Select>
                 </div>
+                
+                <Textarea
+                  label="Notes de résolution (optionnel)"
+                  placeholder="Ajoutez des notes sur la résolution de l'incident..."
+                  value={editForm.resolution_notes}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
+                  minRows={2}
+                />
               </div>
             </ModalBody>
             <ModalFooter>
               <Button
                 variant="light"
                 onPress={() => setShowEditModal(false)}
+                isDisabled={isUpdating}
               >
                 Annuler
               </Button>
@@ -1456,6 +1634,165 @@ const GestionIncidents: React.FC = () => {
           </ModalContent>
         </Modal>
       )}
+
+      {/* Modal d'export */}
+      <Modal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        size="2xl"
+        scrollBehavior="inside"
+        classNames={{
+          wrapper: "z-[60]",
+          backdrop: "z-[59]"
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
+                <Download className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold">Exporter les incidents</h3>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-6">
+              {/* Format d'export */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Format d'export</label>
+                <Select
+                  selectedKeys={[exportForm.format]}
+                  onSelectionChange={(keys) => setExportForm(prev => ({ ...prev, format: Array.from(keys)[0] as any }))}
+                  className="max-w-xs"
+                >
+                  <SelectItem key="pdf" value="pdf">PDF</SelectItem>
+                  <SelectItem key="xlsx" value="xlsx">Excel (XLSX)</SelectItem>
+                  <SelectItem key="csv" value="csv">CSV</SelectItem>
+                </Select>
+              </div>
+
+              {/* Période */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  type="date"
+                  label="Date de début"
+                  value={exportForm.date_from}
+                  onChange={(e) => setExportForm(prev => ({ ...prev, date_from: e.target.value }))}
+                />
+                <Input
+                  type="date"
+                  label="Date de fin"
+                  value={exportForm.date_to}
+                  onChange={(e) => setExportForm(prev => ({ ...prev, date_to: e.target.value }))}
+                />
+              </div>
+
+              {/* Filtres optionnels */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  label="Statut (optionnel)"
+                  selectedKeys={exportForm.status ? [exportForm.status] : []}
+                  onSelectionChange={(keys) => setExportForm(prev => ({ ...prev, status: Array.from(keys)[0] as string || '' }))}
+                  placeholder="Tous les statuts"
+                >
+                  <SelectItem key="tous" value="">Tous</SelectItem>
+                  <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
+                  <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
+                  <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
+                  <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
+                  <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
+                </Select>
+
+                <Select
+                  label="Priorité (optionnel)"
+                  selectedKeys={exportForm.priority ? [exportForm.priority] : []}
+                  onSelectionChange={(keys) => setExportForm(prev => ({ ...prev, priority: Array.from(keys)[0] as string || '' }))}
+                  placeholder="Toutes les priorités"
+                >
+                  <SelectItem key="tous" value="">Toutes</SelectItem>
+                  <SelectItem key="P0" value="P0">P0 - Critique</SelectItem>
+                  <SelectItem key="P1" value="P1">P1 - Haute</SelectItem>
+                  <SelectItem key="P2" value="P2">P2 - Moyenne</SelectItem>
+                  <SelectItem key="P3" value="P3">P3 - Faible</SelectItem>
+                  <SelectItem key="P4" value="P4">P4 - Très faible</SelectItem>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  label="Catégorie (optionnel)"
+                  selectedKeys={exportForm.category ? [exportForm.category] : []}
+                  onSelectionChange={(keys) => setExportForm(prev => ({ ...prev, category: Array.from(keys)[0] as string || '' }))}
+                  placeholder="Toutes les catégories"
+                >
+                  <SelectItem key="tous" value="">Toutes</SelectItem>
+                  <SelectItem key="technique" value="technique">Technique</SelectItem>
+                  <SelectItem key="fonctionnel" value="fonctionnel">Fonctionnel</SelectItem>
+                  <SelectItem key="securite" value="securite">Sécurité</SelectItem>
+                  <SelectItem key="performance" value="performance">Performance</SelectItem>
+                  <SelectItem key="autre" value="autre">Autre</SelectItem>
+                </Select>
+
+                <Select
+                  label="Domaine (optionnel)"
+                  selectedKeys={exportForm.domain ? [exportForm.domain] : []}
+                  onSelectionChange={(keys) => setExportForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string || '' }))}
+                  placeholder="Tous les domaines"
+                >
+                  <SelectItem key="tous" value="">Tous</SelectItem>
+                  <SelectItem key="reseau" value="reseau">Réseau</SelectItem>
+                  <SelectItem key="application" value="application">Application</SelectItem>
+                  <SelectItem key="infrastructure" value="infrastructure">Infrastructure</SelectItem>
+                  <SelectItem key="securite" value="securite">Sécurité</SelectItem>
+                  <SelectItem key="donnees" value="donnees">Données</SelectItem>
+                  <SelectItem key="autre" value="autre">Autre</SelectItem>
+                </Select>
+              </div>
+
+              {/* Options d'export */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium">Options d'export</label>
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={exportForm.include_stats}
+                      onChange={(e) => setExportForm(prev => ({ ...prev, include_stats: e.target.checked }))}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Inclure les statistiques</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={exportForm.include_details}
+                      onChange={(e) => setExportForm(prev => ({ ...prev, include_details: e.target.checked }))}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Inclure les détails complets</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={() => setShowExportModal(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="primary"
+              startContent={<Download className="h-4 w-4" />}
+              onPress={handleExportIncidents}
+              isLoading={isExporting}
+            >
+              {isExporting ? "Export en cours..." : "Exporter"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 };

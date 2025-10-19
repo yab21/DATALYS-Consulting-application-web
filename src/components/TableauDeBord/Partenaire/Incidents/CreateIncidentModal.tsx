@@ -39,11 +39,18 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
   const [formData, setFormData] = useState<CreateIncidentData>({
     title: "",
     description: "",
-    user_name: partnerName, // Pré-rempli avec le nom du partenaire
-    project_name: "",
+    type: "incident",
+    priority: "P2",
+    status: "nouveau",
+    category: "technique",
+    impact: "genant",
+    domain: "application",
+    declarant_name: partnerName, // Pré-rempli avec le nom du partenaire
+    user_id: 0,
+    project_id: 0,
     is_active: true,
-    priority: "moyenne",
-    status: "ouvert"
+    is_read: false,
+    resolution_notes: ""
   });
 
   // Réinitialiser le formulaire quand le modal s'ouvre
@@ -53,11 +60,18 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
       setFormData({
         title: "",
         description: "",
-        user_name: partnerName,
-        project_name: "",
+        type: "incident",
+        priority: "P2",
+        status: "nouveau",
+        category: "technique",
+        impact: "genant",
+        domain: "application",
+        declarant_name: partnerName,
+        user_id: 0,
+        project_id: 0,
         is_active: true,
-        priority: "moyenne",
-        status: "ouvert"
+        is_read: false,
+        resolution_notes: ""
       });
     }
   }, [isOpen, partnerName, projects]);
@@ -90,7 +104,7 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
     }
   };
 
-  const isFormValid = formData.title.trim() && formData.description.trim() && formData.project_name;
+  const isFormValid = formData.title.trim() && formData.description.trim() && formData.project_id > 0;
 
   return (
     <>
@@ -165,13 +179,13 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               <Select
                 label="Projet concerné"
                 placeholder={projects.length > 0 ? "Sélectionnez le projet impacté" : "Aucun projet disponible"}
-                selectedKeys={formData.project_name ? new Set([formData.project_name]) : new Set()}
+                selectedKeys={formData.project_id > 0 ? new Set([formData.project_id.toString()]) : new Set()}
                 onSelectionChange={(keys) => {
                   const selectedKey = Array.from(keys)[0] as string;
                   console.log("🎯 Projet sélectionné:", selectedKey);
                   setFormData(prev => ({ 
                     ...prev, 
-                    project_name: selectedKey || ""
+                    project_id: parseInt(selectedKey) || 0
                   }));
                 }}
                 isRequired
@@ -199,12 +213,12 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Priorité"
-                  selectedKeys={new Set([formData.priority || "moyenne"])}
+                  selectedKeys={new Set([formData.priority || "P2"])}
                   onSelectionChange={(keys) => {
                     const selectedKey = Array.from(keys)[0] as string;
                     setFormData(prev => ({ 
                       ...prev, 
-                      priority: selectedKey || "moyenne"
+                      priority: selectedKey as any || "P2"
                     }));
                   }}
                   variant="bordered"
@@ -214,20 +228,21 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
                     value: "text-gray-900 dark:text-white"
                   }}
                 >
-                  <SelectItem key="faible">🟢 Faible</SelectItem>
-                  <SelectItem key="moyenne">🟡 Moyenne</SelectItem>
-                  <SelectItem key="haute">🟠 Haute</SelectItem>
-                  <SelectItem key="critique">🔴 Critique</SelectItem>
+                  <SelectItem key="P0">🔴 P0 - Critique</SelectItem>
+                  <SelectItem key="P1">🟠 P1 - Haute</SelectItem>
+                  <SelectItem key="P2">🟡 P2 - Moyenne</SelectItem>
+                  <SelectItem key="P3">🟢 P3 - Faible</SelectItem>
+                  <SelectItem key="P4">⚪ P4 - Très faible</SelectItem>
                 </Select>
                 
                 <Select
                   label="Statut initial"
-                  selectedKeys={new Set([formData.status || "ouvert"])}
+                  selectedKeys={new Set([formData.status || "nouveau"])}
                   onSelectionChange={(keys) => {
                     const selectedKey = Array.from(keys)[0] as string;
                     setFormData(prev => ({ 
                       ...prev, 
-                      status: selectedKey || "ouvert"
+                      status: selectedKey as any || "nouveau"
                     }));
                   }}
                   variant="bordered"
@@ -237,8 +252,10 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
                     value: "text-gray-900 dark:text-white"
                   }}
                 >
-                  <SelectItem key="ouvert">🔴 Ouvert</SelectItem>
+                  <SelectItem key="nouveau">🔵 Nouveau</SelectItem>
                   <SelectItem key="en_cours">🟡 En cours</SelectItem>
+                  <SelectItem key="en_attente">⚪ En attente</SelectItem>
+                  <SelectItem key="en_arbitrage">🟣 En arbitrage</SelectItem>
                 </Select>
               </div>
             </div>

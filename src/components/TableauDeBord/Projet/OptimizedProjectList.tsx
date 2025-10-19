@@ -242,7 +242,7 @@ const OptimizedProjectList: React.FC = () => {
       // Vérifier si l'utilisateur peut accéder aux projets
       const projectPermissions = user.role_id === 1 ? // ADMIN
         { canRead: true, canModify: true } :
-        user.role_id === 2 ? // PARTNER  
+        user.role_id === 5 ? // PARTNER  
         { canRead: true, canModify: false } :
         { canRead: false, canModify: false };
 
@@ -287,7 +287,7 @@ const OptimizedProjectList: React.FC = () => {
         
         setPartnerNames(partnersResponse);
         setProjects(projectsWithPartnerNames);
-      } else if (user.role_id === 2) { // PARTNER - ne peut voir que ses projets
+      } else if (user.role_id === 5) { // PARTNER - ne peut voir que ses projets
         // Pour les partenaires, utiliser l'endpoint spécifique s'ils ont un partner_id
         let partnerProjects: Project[] = [];
         
@@ -325,7 +325,7 @@ const OptimizedProjectList: React.FC = () => {
       if (error.message && error.message.includes('401')) {
         // Pour les partenaires, une erreur 401 peut indiquer un problème de permissions
         // plutôt qu'une session expirée
-        if (user && user.role_id === 2) { // PARTNER
+        if (user && user.role_id === 5) { // PARTNER
           console.warn("Erreur 401 pour un partenaire - possibilité de problème de permissions backend");
           showNotification(simpleNotificationHelpers.warning(
             "Problème d'accès",
