@@ -1,15 +1,13 @@
 // Service de gestion des projets pour DATALYS Consulting
 
-import {
-  buildApiUrl,
-  getDefaultHeaders,
-} from "@/lib/api-config";
-import { SecureStorage } from '@/lib/secure-storage';
-import { extractBackendMessage } from '@/lib/error-handler';
+import { buildApiUrl, getDefaultHeaders } from "@/lib/api-config";
+import { SecureStorage } from "@/lib/secure-storage";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 export interface Project {
   id: number;
   title: string;
+  description?: string;
   partner_name?: string; // Nouveau: nom du partenaire
   partner_id?: number; // Gardé pour compatibilité réponse API
   is_active: boolean;
@@ -22,9 +20,7 @@ export interface Project {
 
 export interface CreateProjectFormData {
   title: string;
-  description?: string;
-  partner_id?: number;
-  partner_name?: string; // Nouveau: utilise partner_name
+  partner_id: number;
   is_active?: boolean;
 }
 
@@ -32,21 +28,24 @@ export interface CreateProjectFormData {
 export interface ProjectCreateRequest {
   user: {
     id: number;
+    email: string;
   };
   datas: Array<{
     title: string;
-    partner_name: string;
+    partner_id: number;
   }>;
 }
 
 export interface ProjectUpdateRequest {
   user: {
     id: number;
+    email: string;
   };
   datas: Array<{
     id: number;
     name?: string;
     title: string;
+    description?: string;
     partner_id?: number;
     partner_name?: string;
     is_active?: boolean;
@@ -56,6 +55,7 @@ export interface ProjectUpdateRequest {
 export interface ProjectDeleteRequest {
   user: {
     id: number;
+    email: string;
   };
   datas: Array<{
     id: number;
@@ -88,7 +88,7 @@ export class ProjectsService {
   constructor() {
     // Initialiser le token depuis localStorage
     if (typeof window !== "undefined") {
-      this.token = SecureStorage.getItem('authToken');
+      this.token = SecureStorage.getItem("authToken");
     }
   }
 
@@ -105,7 +105,7 @@ export class ProjectsService {
   private getAuthHeaders(): HeadersInit {
     return {
       ...getDefaultHeaders(),
-      ...(this.token && { 'Authorization': `Bearer ${this.token}` }),
+      ...(this.token && { Authorization: `Bearer ${this.token}` }),
     };
   }
 
@@ -115,23 +115,20 @@ export class ProjectsService {
   async getActiveProjects(): Promise<Project[]> {
     try {
       console.log("📡 Appel API getActiveProjects...");
-      
+
       const requestBody: ProjectByCriteriaRequest = {
         index: 0,
         size: 100,
         data: {
-          is_active: true
-        }
+          is_active: true,
+        },
       };
 
-      const response = await fetch(
-        buildApiUrl('/projects/getByCriteria'),
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify(requestBody),
-        }
-      );
+      const response = await fetch(buildApiUrl("/projects/getByCriteria"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
 
       console.log("📨 Statut de la réponse:", response.status);
 
@@ -146,13 +143,19 @@ export class ProjectsService {
         // Transformer les données pour extraire le nom du partenaire
         const transformedProjects = result.items.map((project: any) => ({
           ...project,
-          partner_name: project.partner?.name || null
+          partner_name: project.partner?.name || null,
         }));
-        
-        console.log("📝 Projets transformés avec partner_name:", transformedProjects.slice(0, 2));
+
+        console.log(
+          "📝 Projets transformés avec partner_name:",
+          transformedProjects.slice(0, 2),
+        );
         return transformedProjects;
       } else {
-        throw new Error(result.message?.message || 'Erreur lors de la récupération des projets');
+        throw new Error(
+          result.message?.message ||
+            "Erreur lors de la récupération des projets",
+        );
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des projets:", error);
@@ -166,18 +169,20 @@ export class ProjectsService {
    */
   async getPartnerProjects(partnerId: number): Promise<Project[]> {
     try {
-      console.log(`📡 Appel API getPartnerProjects pour partenaire ${partnerId}...`);
-      
+      console.log(
+        `📡 Appel API getPartnerProjects pour partenaire ${partnerId}...`,
+      );
+
       const response = await fetch(
         buildApiUrl(`/dashboard/partner/${partnerId}/projects`),
         {
-          method: 'POST',
+          method: "POST",
           headers: this.getAuthHeaders(),
           body: JSON.stringify({
             index: 0,
-            size: 100
+            size: 100,
           }),
-        }
+        },
       );
 
       console.log("📨 Statut de la réponse:", response.status);
@@ -191,27 +196,35 @@ export class ProjectsService {
 
       if (result.success && result.data?.projects) {
         // Transformer les données du dashboard vers le format Project
-        const transformedProjects: Project[] = result.data.projects.map((project: any) => ({
-          id: project.id,
-          title: project.name || project.title,
-          partner_name: project.partner_name || null,
-          partner_id: partnerId,
-          is_active: project.is_active !== false, // Par défaut true si non spécifié
-          is_deleted: project.is_deleted || false,
-          created_at: project.created_at || new Date().toISOString(),
-          updated_at: project.updated_at || new Date().toISOString(),
-          created_by: project.created_by || 0,
-          updated_by: project.updated_by || 0,
-        }));
-        
-        console.log("📝 Projets du partenaire transformés:", transformedProjects);
+        const transformedProjects: Project[] = result.data.projects.map(
+          (project: any) => ({
+            id: project.id,
+            title: project.name || project.title,
+            partner_name: project.partner_name || null,
+            partner_id: partnerId,
+            is_active: project.is_active !== false, // Par défaut true si non spécifié
+            is_deleted: project.is_deleted || false,
+            created_at: project.created_at || new Date().toISOString(),
+            updated_at: project.updated_at || new Date().toISOString(),
+            created_by: project.created_by || 0,
+            updated_by: project.updated_by || 0,
+          }),
+        );
+
+        console.log(
+          "📝 Projets du partenaire transformés:",
+          transformedProjects,
+        );
         return transformedProjects;
       } else {
         console.log("📄 Aucun projet trouvé pour le partenaire");
         return [];
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la récupération des projets du partenaire:", error);
+      console.error(
+        "❌ Erreur lors de la récupération des projets du partenaire:",
+        error,
+      );
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -222,25 +235,24 @@ export class ProjectsService {
    */
   async getProjectsByPartner(partnerName: string): Promise<Project[]> {
     try {
-      console.log(`📡 Appel API getProjectsByPartner pour partenaire ${partnerName}...`);
-      
+      console.log(
+        `📡 Appel API getProjectsByPartner pour partenaire ${partnerName}...`,
+      );
+
       const requestBody: ProjectByCriteriaRequest = {
         index: 0,
         size: 100,
         data: {
           is_active: true,
-          partner_name: partnerName
-        }
+          partner_name: partnerName,
+        },
       };
 
-      const response = await fetch(
-        buildApiUrl('/projects/getByCriteria'),
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify(requestBody),
-        }
-      );
+      const response = await fetch(buildApiUrl("/projects/getByCriteria"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
 
       console.log("📨 Statut de la réponse:", response.status);
 
@@ -255,15 +267,21 @@ export class ProjectsService {
         // Transformer les données pour extraire le nom du partenaire
         const transformedProjects = result.items.map((project: any) => ({
           ...project,
-          partner_name: project.partner?.name || null
+          partner_name: project.partner?.name || null,
         }));
-        
+
         return transformedProjects;
       } else {
-        throw new Error(result.message?.message || 'Erreur lors de la récupération des projets');
+        throw new Error(
+          result.message?.message ||
+            "Erreur lors de la récupération des projets",
+        );
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la récupération des projets par partenaire:", error);
+      console.error(
+        "❌ Erreur lors de la récupération des projets par partenaire:",
+        error,
+      );
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -272,30 +290,34 @@ export class ProjectsService {
   /**
    * Créer un nouveau projet
    */
-  async createProject(projectData: CreateProjectFormData, userId: number, userEmail?: string): Promise<ProjectApiResponse<Project[]>> {
+  async createProject(
+    projectData: CreateProjectFormData,
+    userId: number,
+    userEmail?: string,
+  ): Promise<ProjectApiResponse<Project[]>> {
     try {
       console.log("📡 Création d'un nouveau projet...");
-      
+
       const requestBody: ProjectCreateRequest = {
         user: {
-          id: userId
+          id: userId,
+          email: userEmail || '',
         },
-        datas: [{
-          title: projectData.title,
-          partner_name: projectData.partner_name || ""
-        }]
+        datas: [
+          {
+            title: projectData.title,
+            partner_id: projectData.partner_id,
+          },
+        ],
       };
 
       console.log("📋 Données du projet à créer:", requestBody);
 
-      const response = await fetch(
-        buildApiUrl('/projects/create'),
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify(requestBody),
-        }
-      );
+      const response = await fetch(buildApiUrl("/projects/create"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
 
       console.log("📨 Statut de la réponse création:", response.status);
 
@@ -319,33 +341,43 @@ export class ProjectsService {
   /**
    * Mettre à jour un projet
    */
-  async updateProject(projectId: number, name: string, title: string, partnerId?: number, isActive?: boolean, userId?: number, userEmail?: string): Promise<ProjectApiResponse<Project[]>> {
+  async updateProject(
+    projectId: number,
+    name: string,
+    title: string,
+    description?: string,
+    partnerId?: number,
+    isActive?: boolean,
+    userId?: number,
+    userEmail?: string,
+  ): Promise<ProjectApiResponse<Project[]>> {
     try {
       console.log(`📡 Mise à jour du projet ${projectId}...`);
-      
+
       const requestBody: ProjectUpdateRequest = {
         user: {
-          id: userId || 0
+          id: userId || 0,
+          email: userEmail || '',
         },
-        datas: [{
-          id: projectId,
-          name: name,
-          title: title,
-          partner_id: partnerId,
-          is_active: isActive
-        }]
+        datas: [
+          {
+            id: projectId,
+            name: name,
+            title: title,
+            description: description,
+            partner_id: partnerId,
+            is_active: isActive,
+          },
+        ],
       };
 
       console.log("📋 Données de mise à jour:", requestBody);
 
-      const response = await fetch(
-        buildApiUrl('/projects/update'),
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify(requestBody),
-        }
-      );
+      const response = await fetch(buildApiUrl("/projects/update"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
 
       console.log("📨 Statut de la réponse mise à jour:", response.status);
 
@@ -369,30 +401,35 @@ export class ProjectsService {
   /**
    * Supprimer un projet (soft delete)
    */
-  async deleteProject(projectId: number, projectTitle: string, userId: number): Promise<{code: number; message: {code: number; message: string}}> {
+  async deleteProject(
+    projectId: number,
+    projectTitle: string,
+    userId: number,
+    userEmail?: string,
+  ): Promise<{ code: number; message: { code: number; message: string } }> {
     try {
       console.log(`📡 Suppression du projet ${projectId}...`);
-      
+
       const requestBody: ProjectDeleteRequest = {
         user: {
-          id: userId
+          id: userId,
+          email: userEmail || '',
         },
-        datas: [{
-          id: projectId,
-          title: projectTitle
-        }]
+        datas: [
+          {
+            id: projectId,
+            title: projectTitle,
+          },
+        ],
       };
 
       console.log("📋 Données de suppression:", requestBody);
 
-      const response = await fetch(
-        buildApiUrl('/projects/delete'),
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify(requestBody),
-        }
-      );
+      const response = await fetch(buildApiUrl("/projects/delete"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
 
       console.log("📨 Statut de la réponse suppression:", response.status);
 
@@ -419,22 +456,19 @@ export class ProjectsService {
   async getPartnerNames(): Promise<string[]> {
     try {
       console.log("📡 Récupération des noms de partenaires...");
-      
+
       // Utiliser le service partners pour récupérer la liste
-      const response = await fetch(
-        buildApiUrl('/partners/getByCriteria'),
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify({
-            index: 0,
-            size: 100,
-            data: {
-              is_active: true
-            }
-          }),
-        }
-      );
+      const response = await fetch(buildApiUrl("/partners/getByCriteria"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          index: 0,
+          size: 100,
+          data: {
+            is_active: true,
+          },
+        }),
+      });
 
       console.log("📨 Statut de la réponse:", response.status);
 
@@ -447,12 +481,20 @@ export class ProjectsService {
 
       if (result.code === 200 && result.items) {
         // Extraire les noms des partenaires
-        return result.items.map((partner: any) => partner.name || partner.company_name);
+        return result.items.map(
+          (partner: any) => partner.name || partner.company_name,
+        );
       } else {
-        throw new Error(result.message?.message || 'Erreur lors de la récupération des partenaires');
+        throw new Error(
+          result.message?.message ||
+            "Erreur lors de la récupération des partenaires",
+        );
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la récupération des partenaires:", error);
+      console.error(
+        "❌ Erreur lors de la récupération des partenaires:",
+        error,
+      );
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -464,22 +506,19 @@ export class ProjectsService {
   async getPartnersMap(): Promise<Map<string, string>> {
     try {
       console.log("📡 Récupération de la map des partenaires...");
-      
+
       // Utiliser le service partners pour récupérer la liste
-      const response = await fetch(
-        buildApiUrl('/partners/getByCriteria'),
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-          body: JSON.stringify({
-            index: 0,
-            size: 100,
-            data: {
-              is_active: true
-            }
-          }),
-        }
-      );
+      const response = await fetch(buildApiUrl("/partners/getByCriteria"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          index: 0,
+          size: 100,
+          data: {
+            is_active: true,
+          },
+        }),
+      });
 
       console.log("📨 Statut de la réponse:", response.status);
 
@@ -494,14 +533,23 @@ export class ProjectsService {
         // Créer une map id -> nom
         const partnersMap = new Map<string, string>();
         result.items.forEach((partner: any) => {
-          partnersMap.set(partner.id.toString(), partner.name || partner.company_name);
+          partnersMap.set(
+            partner.id.toString(),
+            partner.name || partner.company_name,
+          );
         });
         return partnersMap;
       } else {
-        throw new Error(result.message?.message || 'Erreur lors de la récupération des partenaires');
+        throw new Error(
+          result.message?.message ||
+            "Erreur lors de la récupération des partenaires",
+        );
       }
     } catch (error) {
-      console.error("❌ Erreur lors de la récupération de la map des partenaires:", error);
+      console.error(
+        "❌ Erreur lors de la récupération de la map des partenaires:",
+        error,
+      );
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

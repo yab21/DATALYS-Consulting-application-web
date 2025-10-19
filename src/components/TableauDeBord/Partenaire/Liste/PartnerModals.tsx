@@ -26,14 +26,15 @@ import {
   MapPin,
   Calendar,
   User,
-  Globe
+  Globe,
+  UserPlus
 } from "lucide-react";
-import { Partner, UpdatePartnerFormData, partnersService } from "@/services/partners";
+import { Partner, UpdatePartnerFormData, CreatePartnerData, partnersService } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
 
 interface PartnerModalsProps {
   isOpen: boolean;
-  type: 'edit' | 'delete' | 'view' | null;
+  type: 'edit' | 'delete' | 'view' | 'create' | null;
   partner: Partner | null;
   onClose: () => void;
   onRefresh: () => void;
@@ -48,6 +49,14 @@ interface EditFormData {
   country_code: string;
   address: string;
   logo?: File;
+}
+
+interface CreateFormData {
+  name: string;
+  email: string;
+  phone: string;
+  country_code: string;
+  address: string;
 }
 
 const PartnerModals: React.FC<PartnerModalsProps> = ({
@@ -71,7 +80,17 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     logo: undefined
   });
   
+  // États pour le formulaire de création
+  const [createForm, setCreateForm] = useState<CreateFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    country_code: '+237',
+    address: ''
+  });
+  
   const [editLoading, setEditLoading] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -79,11 +98,11 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
   useEffect(() => {
     if (partner && type === 'edit') {
       setEditForm({
-        name: partner.name,
-        email: partner.email,
-        phone: partner.phone,
-        country_code: partner.country_code || '+237', // Utiliser le country_code existant ou valeur par défaut
-        address: partner.address,
+        name: partner?.name || '',
+        email: partner?.email || '',
+        phone: partner?.phone || '',
+        country_code: partner?.country_code || '+237', // Utiliser le country_code existant ou valeur par défaut
+        address: partner?.address || '',
         logo: undefined
       });
       setLogoPreview(null);
@@ -227,6 +246,80 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     }
   };
 
+  // Gestion des changements dans le formulaire de création
+  const handleCreateFormChange = (field: keyof CreateFormData, value: any) => {
+    setCreateForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Fonction pour créer un partenaire
+  const handleCreateSubmit = async () => {
+    if (!user) return;
+
+    setCreateLoading(true);
+    try {
+      const partnerData: CreatePartnerData = {
+        name: createForm.name,
+        email: createForm.email,
+        phone: createForm.phone,
+        country_code: createForm.country_code,
+        address: createForm.address,
+        is_active: true
+      };
+      
+      const result = await partnersService.createPartner(partnerData, user.id);
+      
+      if (result.code === 200) {
+        onSuccess?.('Partenaire créé avec succès');
+        onRefresh();
+        onClose();
+        // Réinitialiser le formulaire
+        setCreateForm({
+          name: '',
+          email: '',
+          phone: '',
+          country_code: '+237',
+          address: ''
+        });
+      } else {
+        onError?.(result.message?.message || 'Erreur lors de la création');
+      }
+    } catch (error) {
+      console.error('Erreur création:', error);
+      
+      let errorMessage = 'Erreur lors de la création';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      onError?.(errorMessage);
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  // Validation du formulaire de création
+  const isCreateFormValid = () => {
+    return createForm.name.trim() && 
+           createForm.email.trim() && 
+           createForm.phone.trim() && 
+           createForm.country_code.trim() && 
+           createForm.address.trim();
+  };
+
+  // Réinitialiser le formulaire de création quand le modal s'ouvre
+  useEffect(() => {
+    if (type === 'create' && isOpen) {
+      setCreateForm({
+        name: '',
+        email: '',
+        phone: '',
+        country_code: '+237',
+        address: ''
+      });
+    }
+  }, [type, isOpen]);
+
   // Validation du formulaire
   const isFormValid = () => {
     return editForm.name.trim() && 
@@ -254,7 +347,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     { code: "+216", name: "Tunisie", flag: "🇹🇳" },
   ];
 
-  if (!partner) return null;
+  if (!partner && type !== 'create') return null;
 
   // Modal de visualisation
   if (type === 'view') {
@@ -274,23 +367,23 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
           <ModalHeader className="flex flex-col gap-1 pb-4">
             <div className="flex items-center gap-4">
               <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700">
-                {partner.logo_url ? (
+                {partner?.logo_url ? (
                   <img
-                    src={fixImageUrl(partner.logo_url)!}
-                    alt={partner.name}
+                    src={fixImageUrl(partner?.logo_url)!}
+                    alt={partner?.name}
                     className="h-full w-full object-cover p-2"
                   />
                 ) : (
                   <div className="text-2xl font-bold text-gray-500 dark:text-gray-200">
-                    {partner.name.charAt(0).toUpperCase()}
+                    {partner?.name.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {partner.name}
+                  {partner?.name}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300">{partner.email}</p>
+                <p className="text-gray-600 dark:text-gray-300">{partner?.email}</p>
               </div>
             </div>
           </ModalHeader>
@@ -304,7 +397,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       <Mail className="h-5 w-5 text-blue-500" />
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                        <p className="font-medium">{partner.email}</p>
+                        <p className="font-medium">{partner?.email}</p>
                       </div>
                     </div>
                     
@@ -312,7 +405,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       <Phone className="h-5 w-5 text-green-500" />
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Téléphone</p>
-                        <p className="font-medium">{partner.phone}</p>
+                        <p className="font-medium">{partner?.phone}</p>
                       </div>
                     </div>
                     
@@ -320,7 +413,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       <MapPin className="h-5 w-5 text-red-500" />
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Adresse</p>
-                        <p className="font-medium">{partner.address}</p>
+                        <p className="font-medium">{partner?.address}</p>
                       </div>
                     </div>
                     
@@ -329,11 +422,11 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Statut</p>
                         <Chip
-                          color={partner.is_active ? "success" : "warning"}
+                          color={partner?.is_active ? "success" : "warning"}
                           size="sm"
                           variant="flat"
                         >
-                          {partner.is_active ? "Actif" : "Inactif"}
+                          {partner?.is_active ? "Actif" : "Inactif"}
                         </Chip>
                       </div>
                     </div>
@@ -348,7 +441,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Créé le</p>
                       <p className="font-medium">
-                        {new Date(partner.created_at).toLocaleDateString('fr-FR', {
+                        {new Date(partner?.created_at || '').toLocaleDateString('fr-FR', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
@@ -407,7 +500,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                     ) : partner && partner.logo_url && fixImageUrl(partner.logo_url) ? (
                       <img
                         src={fixImageUrl(partner.logo_url)!}
-                        alt={partner.name}
+                        alt={partner?.name}
                         className="h-full w-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -423,7 +516,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       className="fallback-logo absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-400"
                       style={{ display: (logoPreview || (partner && partner.logo_url && fixImageUrl(partner.logo_url))) ? 'none' : 'flex' }}
                     >
-                      {partner ? partner.name.charAt(0).toUpperCase() : 'P'}
+                      {partner ? partner?.name?.charAt(0).toUpperCase() : 'P'}
                     </div>
                   </div>
                   <div>
@@ -575,7 +668,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
           <ModalBody className="px-6 py-4">
             <div className="space-y-4">
               <p className="text-gray-600 dark:text-gray-300">
-                Êtes-vous sûr de vouloir supprimer le partenaire <strong>{partner.name}</strong> ?
+                Êtes-vous sûr de vouloir supprimer le partenaire <strong>{partner?.name}</strong> ?
               </p>
               
               <Card className="border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
@@ -612,6 +705,125 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               startContent={!deleteLoading ? <X className="h-4 w-4" /> : undefined}
             >
               {deleteLoading ? 'Suppression...' : 'Supprimer'}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    );
+  }
+
+  // Modal de création
+  if (type === 'create') {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="2xl"
+        scrollBehavior="inside"
+        placement="center"
+        isDismissable={!createLoading}
+        classNames={{
+          base: "bg-white dark:bg-gray-900 max-h-[90vh]",
+          backdrop: "bg-black/50 backdrop-blur-sm",
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-[#4ba9b7]/10 p-2">
+                <UserPlus className="h-5 w-5 text-[#4ba9b7]" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Nouveau Partenaire</h3>
+                <p className="text-sm text-gray-600">Créer un nouveau partenaire</p>
+              </div>
+            </div>
+          </ModalHeader>
+          
+          <ModalBody className="px-6 py-4">
+            <div className="space-y-4">
+              <Input
+                label="Nom du partenaire"
+                placeholder="Ex: ACME Corporation"
+                value={createForm.name}
+                onValueChange={(value) => handleCreateFormChange('name', value)}
+                startContent={<User className="h-4 w-4" />}
+                isRequired
+                size="sm"
+              />
+              
+              <Input
+                label="Adresse email"
+                placeholder="contact@example.com"
+                type="email"
+                value={createForm.email}
+                onValueChange={(value) => handleCreateFormChange('email', value)}
+                startContent={<Mail className="h-4 w-4" />}
+                isRequired
+                size="sm"
+              />
+              
+              <div className="flex gap-3">
+                <Select
+                  label="Code pays"
+                  placeholder="Sélectionner"
+                  selectedKeys={createForm.country_code ? [createForm.country_code] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedCode = Array.from(keys)[0] as string;
+                    if (selectedCode) {
+                      handleCreateFormChange('country_code', selectedCode);
+                    }
+                  }}
+                  size="sm"
+                  className="w-36"
+                >
+                  {COUNTRY_CODES.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.flag} {country.code}
+                    </SelectItem>
+                  ))}
+                </Select>
+                
+                <Input
+                  label="Numéro de téléphone"
+                  placeholder="123456789"
+                  value={createForm.phone}
+                  onValueChange={(value) => handleCreateFormChange('phone', value)}
+                  startContent={<Phone className="h-4 w-4" />}
+                  isRequired
+                  size="sm"
+                  className="flex-1"
+                />
+              </div>
+              
+              <Input
+                label="Adresse"
+                placeholder="123 Rue Example, Ville, Pays"
+                value={createForm.address}
+                onValueChange={(value) => handleCreateFormChange('address', value)}
+                startContent={<MapPin className="h-4 w-4" />}
+                isRequired
+                size="sm"
+              />
+            </div>
+          </ModalBody>
+          
+          <ModalFooter>
+            <Button 
+              variant="flat" 
+              onPress={onClose}
+              isDisabled={createLoading}
+            >
+              Annuler
+            </Button>
+            <Button 
+              color="primary" 
+              onPress={handleCreateSubmit}
+              isLoading={createLoading}
+              isDisabled={!isCreateFormValid()}
+              startContent={!createLoading ? <Save className="h-4 w-4" /> : undefined}
+            >
+              {createLoading ? 'Création...' : 'Créer'}
             </Button>
           </ModalFooter>
         </ModalContent>

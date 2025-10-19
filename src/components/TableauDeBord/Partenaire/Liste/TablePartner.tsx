@@ -54,7 +54,7 @@ import PartnerModals from "./PartnerModals";
 // Interface pour la gestion des modals
 interface ModalState {
   isOpen: boolean;
-  type: 'edit' | 'delete' | 'view' | null;
+  type: 'edit' | 'delete' | 'view' | 'create' | null;
   partner: Partner | null;
 }
 
@@ -492,16 +492,15 @@ const TablePartner: React.FC = () => {
           </div>
 
           {canCreate() && hasPermission(Permission.CREATE_PARTNERS) && (
-            <Link href="/tableaudebord/partenaire/ajouter">
-              <Button
-                color="primary"
-                size="lg"
-                startContent={<Plus className="h-5 w-5" />}
-                className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
-              >
-                Nouveau Partenaire
-              </Button>
-            </Link>
+            <Button
+              color="primary"
+              size="lg"
+              startContent={<Plus className="h-5 w-5" />}
+              onPress={() => setModalState({ isOpen: true, type: 'create', partner: null })}
+              className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
+            >
+              Nouveau Partenaire
+            </Button>
           )}
         </div>
       </motion.div>

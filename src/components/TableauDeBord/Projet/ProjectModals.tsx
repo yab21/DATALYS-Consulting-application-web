@@ -13,7 +13,6 @@ import {
   CardBody,
   Chip,
   Divider,
-  Switch,
   Select,
   SelectItem,
 } from "@nextui-org/react";
@@ -26,14 +25,14 @@ import {
   Users,
   Eye,
   Edit,
-  Trash2,
+  FolderPlus,
 } from "lucide-react";
-import { projectsService, Project } from "@/services/projects";
+import { projectsService, Project, CreateProjectFormData } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 
 interface ProjectModalsProps {
   isOpen: boolean;
-  type: 'edit' | 'delete' | 'view' | null;
+  type: 'edit' | 'delete' | 'view' | 'create' | null;
   project: Project | null;
   onClose: () => void;
   onRefresh: () => void;
@@ -42,7 +41,12 @@ interface ProjectModalsProps {
 }
 
 interface EditFormData {
-  name: string;
+  title: string;
+  partner_id: number;
+  is_active: boolean;
+}
+
+interface CreateFormData {
   title: string;
   partner_id: number;
   is_active: boolean;
@@ -61,13 +65,20 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
   
   // États pour le formulaire de modification
   const [editForm, setEditForm] = useState<EditFormData>({
-    name: '',
+    title: '',
+    partner_id: 0,
+    is_active: true
+  });
+  
+  // États pour le formulaire de création
+  const [createForm, setCreateForm] = useState<CreateFormData>({
     title: '',
     partner_id: 0,
     is_active: true
   });
   
   const [editLoading, setEditLoading] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [partners, setPartners] = useState<Array<{id: number, name: string}>>([]);
 
@@ -86,7 +97,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
       }
     };
 
-    if (type === 'edit' && isOpen) {
+    if ((type === 'edit' || type === 'create') && isOpen) {
       loadPartners();
     }
   }, [type, isOpen]);
@@ -95,7 +106,6 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
   useEffect(() => {
     if (project && type === 'edit') {
       setEditForm({
-        name: project.title,
         title: project.title,
         partner_id: project.partner_id || 0,
         is_active: project.is_active
@@ -103,9 +113,25 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
     }
   }, [project, type]);
 
-  // Gestion des changements dans le formulaire
+  // Réinitialiser le formulaire de création quand le modal s'ouvre
+  useEffect(() => {
+    if (type === 'create' && isOpen) {
+      setCreateForm({
+        title: '',
+        partner_id: 0,
+        is_active: true
+      });
+    }
+  }, [type, isOpen]);
+
+  // Gestion des changements dans le formulaire de modification
   const handleEditFormChange = (field: keyof EditFormData, value: any) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Gestion des changements dans le formulaire de création
+  const handleCreateFormChange = (field: keyof CreateFormData, value: any) => {
+    setCreateForm(prev => ({ ...prev, [field]: value }));
   };
 
   // Fonction pour modifier un projet
@@ -116,8 +142,9 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
     try {
       const result = await projectsService.updateProject(
         project.id,
-        editForm.name,
         editForm.title,
+        editForm.title,
+        '', // description vide
         editForm.partner_id,
         editForm.is_active,
         user.id,
@@ -152,7 +179,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
 
     setDeleteLoading(true);
     try {
-      const result = await projectsService.deleteProject(project.id, project.title, user.id);
+      const result = await projectsService.deleteProject(project.id, project.title, user.id, user.email);
       
       if (result) {
         onSuccess?.('Projet supprimé avec succès');
@@ -176,15 +203,65 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
     }
   };
 
-  // Validation du formulaire
-  const isFormValid = () => {
-    return editForm.name.trim() && editForm.title.trim() && editForm.partner_id > 0;
+  // Validation du formulaire de modification
+  const isEditFormValid = () => {
+    return editForm.title.trim() && editForm.partner_id > 0;
   };
 
-  if (!project) return null;
+  // Validation du formulaire de création
+  const isCreateFormValid = () => {
+    return createForm.title.trim() && createForm.partner_id > 0;
+  };
+
+  // Fonction pour créer un projet
+  const handleCreateSubmit = async () => {
+    if (!user) return;
+
+    setCreateLoading(true);
+    try {
+      const projectData: CreateProjectFormData = {
+        title: createForm.title,
+        partner_id: createForm.partner_id
+      };
+      
+      const result = await projectsService.createProject(
+        projectData,
+        user.id,
+        user.email
+      );
+      
+      if (result) {
+        onSuccess?.('Projet créé avec succès');
+        onRefresh();
+        onClose();
+        // Réinitialiser le formulaire
+        setCreateForm({
+          title: '',
+          partner_id: 0,
+          is_active: true
+        });
+      } else {
+        onError?.('Erreur lors de la création');
+      }
+    } catch (error) {
+      console.error('Erreur création:', error);
+      
+      let errorMessage = 'Erreur lors de la création';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      onError?.(errorMessage);
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  if (!project && type !== 'create') return null;
 
   // Modal de visualisation
-  if (type === 'view') {
+  if (type === 'view' && project) {
     return (
       <Modal
         isOpen={isOpen}
@@ -295,7 +372,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
   }
 
   // Modal de modification
-  if (type === 'edit') {
+  if (type === 'edit' && project) {
     return (
       <Modal
         isOpen={isOpen}
@@ -320,15 +397,6 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
               <div>
                 <h4 className="text-lg font-semibold mb-4">Informations du projet</h4>
                 <div className="grid grid-cols-1 gap-4">
-                  <Input
-                    label="Nom du projet"
-                    placeholder="Nom du projet"
-                    value={editForm.name}
-                    onValueChange={(value) => handleEditFormChange('name', value)}
-                    startContent={<FolderOpen className="h-4 w-4" />}
-                    isRequired
-                  />
-                  
                   <Input
                     label="Titre du projet"
                     placeholder="Ex: Migration Data Center, Sécurisation réseau entreprise"
@@ -359,29 +427,6 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
                   </Select>
                 </div>
               </div>
-
-              <Divider />
-
-              {/* Statut du projet */}
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Statut du projet</h4>
-                <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <div>
-                    <p className="font-medium">Projet {editForm.is_active ? "actif" : "inactif"}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {editForm.is_active 
-                        ? "Le projet est visible et accessible"
-                        : "Le projet est masqué et inaccessible"
-                      }
-                    </p>
-                  </div>
-                  <Switch
-                    isSelected={editForm.is_active}
-                    onValueChange={(value) => handleEditFormChange('is_active', value)}
-                    color="success"
-                  />
-                </div>
-              </div>
             </div>
           </ModalBody>
           
@@ -397,7 +442,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
               color="primary" 
               onPress={handleEditSubmit}
               isLoading={editLoading}
-              isDisabled={!isFormValid()}
+              isDisabled={!isEditFormValid()}
               startContent={!editLoading ? <Save className="h-4 w-4" /> : undefined}
             >
               {editLoading ? 'Modification...' : 'Modifier'}
@@ -409,7 +454,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
   }
 
   // Modal de suppression
-  if (type === 'delete') {
+  if (type === 'delete' && project) {
     return (
       <Modal
         isOpen={isOpen}
@@ -476,6 +521,92 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
               startContent={!deleteLoading ? <X className="h-4 w-4" /> : undefined}
             >
               {deleteLoading ? 'Suppression...' : 'Supprimer'}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    );
+  }
+
+  // Modal de création
+  if (type === 'create') {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="2xl"
+        scrollBehavior="inside"
+        placement="center"
+        isDismissable={!createLoading}
+        classNames={{
+          base: "bg-white dark:bg-gray-900 max-h-[90vh]",
+          backdrop: "bg-black/50 backdrop-blur-sm",
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-[#4ba9b7]/10 p-2">
+                <FolderPlus className="h-5 w-5 text-[#4ba9b7]" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Nouveau Projet</h3>
+                <p className="text-sm text-gray-600">Créer un nouveau projet</p>
+              </div>
+            </div>
+          </ModalHeader>
+          
+          <ModalBody className="px-6 py-4">
+            <div className="space-y-4">
+              <Input
+                label="Titre du projet"
+                placeholder="Ex: Migration Data Center, Sécurisation réseau entreprise"
+                value={createForm.title}
+                onValueChange={(value) => handleCreateFormChange('title', value)}
+                startContent={<Edit className="h-4 w-4" />}
+                isRequired
+                size="sm"
+              />
+              
+              <Select
+                label="Partenaire"
+                placeholder="Sélectionner un partenaire"
+                selectedKeys={createForm.partner_id ? [createForm.partner_id.toString()] : []}
+                onSelectionChange={(keys) => {
+                  const selectedId = Array.from(keys)[0] as string;
+                  if (selectedId) {
+                    handleCreateFormChange('partner_id', parseInt(selectedId));
+                  }
+                }}
+                startContent={<Users className="h-4 w-4" />}
+                isRequired
+                size="sm"
+              >
+                {partners.map((partner) => (
+                  <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                    {partner.name}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
+          </ModalBody>
+          
+          <ModalFooter>
+            <Button 
+              variant="flat" 
+              onPress={onClose}
+              isDisabled={createLoading}
+            >
+              Annuler
+            </Button>
+            <Button 
+              color="primary" 
+              onPress={handleCreateSubmit}
+              isLoading={createLoading}
+              isDisabled={!isCreateFormValid()}
+              startContent={!createLoading ? <Save className="h-4 w-4" /> : undefined}
+            >
+              {createLoading ? 'Création...' : 'Créer'}
             </Button>
           </ModalFooter>
         </ModalContent>

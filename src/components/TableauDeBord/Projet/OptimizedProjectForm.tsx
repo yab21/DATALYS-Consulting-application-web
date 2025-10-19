@@ -20,7 +20,6 @@ import Link from "next/link";
 // Interface pour le formulaire
 interface ProjectFormData {
   title: string;
-  description: string;
   partner_id: number | null;
   is_active: boolean;
 }
@@ -48,7 +47,6 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
   // États
   const [formData, setFormData] = useState<ProjectFormData>({
     title: "",
-    description: "",
     partner_id: null,
     is_active: true,
     ...initialData
@@ -149,6 +147,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
           projectId, 
           formData.title, // name
           formData.title, // title
+          '', // description vide
           formData.partner_id || 0, // partner_id
           formData.is_active, 
           user.id,
@@ -163,9 +162,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
         // Mode création
         const createData: CreateProjectFormData = {
           title: formData.title,
-          description: formData.description,
-          partner_id: formData.partner_id!,
-          is_active: formData.is_active
+          partner_id: formData.partner_id!
         };
         
         await projectsService.createProject(createData, user.id, user.email);
@@ -280,19 +277,6 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
               </div>
             </div>
             
-            <div className="space-y-2 mt-6">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Description du projet
-              </label>
-              <Input
-                placeholder="Description détaillée du projet..."
-                value={formData.description}
-                onValueChange={(value) => handleInputChange("description", value)}
-                startContent={<FileText className="h-4 w-4 text-gray-400" />}
-                size="lg"
-                variant="bordered"
-              />
-            </div>
             
             <div className="space-y-2 mt-6">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">

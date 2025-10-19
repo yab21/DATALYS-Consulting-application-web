@@ -81,16 +81,84 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 />
               </svg>
             ),
-            label: "Projet",
-            route: "#",
-            children: [
-              // Ajouter projet - seulement pour les admins avec permission
-              ...(isAdmin() && hasPermission(Permission.CREATE_PROJECTS_ALL_PARTNERS)
-                ? [{ label: "Ajouter", route: "/tableaudebord/projet/ajouter" }]
-                : []),
-              // Gérer projets - pour tous les utilisateurs (ils verront selon leurs permissions)
-              { label: "Gérer", route: "/tableaudebord/projet/gerer" },
-            ],
+            label: "Gérer les projets",
+            route: "/tableaudebord/projet/gerer",
+          },
+          // Menu Partenaires - pour les admins avec permissions
+          ...(isAdmin() && hasPermission(Permission.CREATE_PARTNERS) ? [{
+            icon: (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="fill-current transition-all duration-300 group-hover:scale-110"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="fill-current"
+                  d="M14 7V5h8v2zm0 4V9h8v2zm0 4v-2h8v2zm-6-1q-1.25 0-2.125-.875T5 11t.875-2.125T8 8t2.125.875T11 11t-.875 2.125T8 14m-6 6v-1.9q0-.525.25-1t.7-.75q1.125-.675 2.388-1.012T8 15t2.663.338t2.387 1.012q.45.275.7.75t.25 1V20zm2.15-2h7.7q-.875-.5-1.85-.75T8 17t-2 .25t-1.85.75M8 12q.425 0 .713-.288T9 11t-.288-.712T8 10t-.712.288T7 11t.288.713T8 12m0 6"
+                />
+              </svg>
+            ),
+            label: "Gérer les partenaires",
+            route: "/tableaudebord/partenaire/liste",
+          }] : []),
+          // Menu Utilisateurs - pour les admins avec permissions
+          ...(isAdmin() && hasPermission(Permission.CREATE_USERS) ? [{
+            icon: (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="fill-current transition-all duration-300 group-hover:scale-110"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="fill-current"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            ),
+            label: "Gérer les utilisateurs",
+            route: "/tableaudebord/gestion-utilisateurs",
+          }] : []),
+          // Menu Incidents - pour les admins avec permissions
+          ...(isAdmin() && hasPermission(Permission.VIEW_ALL_INCIDENTS) ? [{
+            icon: (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="fill-current transition-all duration-300 group-hover:scale-110"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="fill-current"
+                  d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
+                />
+              </svg>
+            ),
+            label: "Incidents",
+            route: "/tableaudebord/incidents",
+          }] : []),
+          // Menu Support - pour tous les utilisateurs
+          {
+            icon: (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="fill-current transition-all duration-300 group-hover:scale-110"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="fill-current"
+                  d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4zM6.5 10.5L10.5 6.5 8.5 4.5l-4 4 2 2z"
+                />
+              </svg>
+            ),
+            label: "Support",
+            route: "/tableaudebord/support",
           },
         ],
       },
@@ -189,50 +257,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       route: "/tableaudebord/messages",
     });
 
-    // Menu Support Technique (pour tous les utilisateurs)
-    autresMenu.menuItems.unshift({
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="fill-current transition-all duration-300 group-hover:scale-110"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-        >
-          <path
-            fill="fill-current"
-            d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4zM6.5 10.5L10.5 6.5 8.5 4.5l-4 4 2 2z"
-          />
-        </svg>
-      ),
-      label: "Support",
-      route: "/tableaudebord/support",
-    });
+    // Menu Support supprimé - maintenant dans la section GESTION
 
     // Ajouter les menus Admin uniquement pour les admins avec permissions
     if (isAdmin()) {
 
-      // Menu Incidents (Admin seulement)
-      if (hasPermission(Permission.VIEW_ALL_INCIDENTS)) {
-        autresMenu.menuItems.unshift({
-          icon: (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="fill-current transition-all duration-300 group-hover:scale-110"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                fill="fill-current"
-                d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
-              />
-            </svg>
-          ),
-          label: "Incidents",
-          route: "/tableaudebord/incidents",
-        });
-      }
+      // Menu Incidents supprimé - maintenant dans la section GESTION
 
       // Menu Analytics supprimé - maintenant intégré dans le tableau de bord principal
 
@@ -262,69 +292,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         });
       }
 
-      // Menu Gestion des Utilisateurs
-      if (hasPermission(Permission.CREATE_USERS)) {
-        autresMenu.menuItems.unshift({
-          icon: (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="fill-current transition-all duration-300 group-hover:scale-110"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                fill="fill-current"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-          ),
-          label: "Utilisateurs",
-          route: "#",
-          children: [
-            { label: "Liste des utilisateurs", route: "/tableaudebord/gestion-utilisateurs" },
-            { label: "Ajouter utilisateur", route: "/tableaudebord/gestion-utilisateurs/ajouter" },
-          ],
-        });
-      }
+      // Menu Gestion des Utilisateurs supprimé - maintenant dans la section GESTION
 
-      // Menu Partenaires
-      if (hasPermission(Permission.CREATE_PARTNERS)) {
-        const partnerChildren = [
-          {
-            label: "Liste des partenaires",
-            route: "/tableaudebord/partenaire/liste",
-          }
-        ];
-
-        // Ajouter "Ajouter partenaire" seulement si l'utilisateur a la permission
-        if (hasPermission(Permission.CREATE_PARTNERS)) {
-          partnerChildren.push({
-            label: "Ajouter partenaire",
-            route: "/tableaudebord/partenaire/ajouter",
-          });
-        }
-
-        autresMenu.menuItems.unshift({
-          icon: (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="fill-current transition-all duration-300 group-hover:scale-110"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                fill="fill-current"
-                d="M14 7V5h8v2zm0 4V9h8v2zm0 4v-2h8v2zm-6-1q-1.25 0-2.125-.875T5 11t.875-2.125T8 8t2.125.875T11 11t-.875 2.125T8 14m-6 6v-1.9q0-.525.25-1t.7-.75q1.125-.675 2.388-1.012T8 15t2.663.338t2.387 1.012q.45.275.7.75t.25 1V20zm2.15-2h7.7q-.875-.5-1.85-.75T8 17t-2 .25t-1.85.75M8 12q.425 0 .713-.288T9 11t-.288-.712T8 10t-.712.288T7 11t.288.713T8 12m0 6"
-              />
-            </svg>
-          ),
-          label: "Partenaire",
-          route: "#",
-          children: partnerChildren,
-        });
-      }
+      // Menu Partenaires supprimé - maintenant dans la section GESTION
     }
 
     baseMenuGroups.push(autresMenu);

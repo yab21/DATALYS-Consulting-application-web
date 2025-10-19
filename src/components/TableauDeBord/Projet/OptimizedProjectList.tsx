@@ -66,7 +66,7 @@ const OptimizedProjectList: React.FC = () => {
   // États pour les modals
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    type: 'edit' | 'delete' | 'view' | null;
+    type: 'edit' | 'delete' | 'view' | 'create' | null;
     project: Project | null;
   }>({
     isOpen: false,
@@ -482,7 +482,7 @@ const OptimizedProjectList: React.FC = () => {
               color="primary"
               size="lg"
               startContent={<Plus className="h-5 w-5" />}
-              onPress={() => router.push("/tableaudebord/projet/ajouter")}
+              onPress={() => setModalState({ isOpen: true, type: 'create', project: null })}
               className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
             >
               Nouveau Projet
@@ -663,11 +663,11 @@ const OptimizedProjectList: React.FC = () => {
           }
         >
           <TableHeader>
-            <TableColumn key="project" width="30%">PROJET</TableColumn>
+            <TableColumn key="project" width="35%">PROJET</TableColumn>
             <TableColumn key="partner" width="20%">PARTENAIRE</TableColumn>
             <TableColumn key="status" width="15%">STATUT</TableColumn>
             <TableColumn key="created" width="15%">CRÉÉ LE</TableColumn>
-            <TableColumn key="actions" width="20%">ACTIONS</TableColumn>
+            <TableColumn key="actions" width="15%">ACTIONS</TableColumn>
           </TableHeader>
           <TableBody 
             items={paginatedProjects}
