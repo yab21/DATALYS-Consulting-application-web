@@ -154,7 +154,7 @@ export class ErrorHandler {
       window.addEventListener('offline', () => {
         // Attendre un délai pour vérifier si c'est vraiment hors ligne
         setTimeout(() => {
-          if (!navigator.onLine) {
+          if (typeof window !== 'undefined' && !navigator.onLine) {
             isReallyOffline = true;
             this.handleError({
               code: 'NETWORK_OFFLINE',
@@ -657,7 +657,7 @@ export class ErrorHandler {
       error?.message?.includes('NetworkError') ||
       error?.message?.includes('ERR_NETWORK') ||
       error?.message?.includes('ERR_INTERNET_DISCONNECTED') ||
-      !navigator.onLine
+      (typeof window !== 'undefined' && !navigator.onLine)
     );
   }
 
@@ -668,7 +668,7 @@ export class ErrorHandler {
     const errorMessage = error?.message?.toLowerCase() || '';
     
     // Vérifier si hors ligne
-    if (!navigator.onLine) {
+    if (typeof window !== 'undefined' && !navigator.onLine) {
       return 'connection_lost';
     }
     
@@ -779,7 +779,7 @@ export class ErrorHandler {
     latency?: number;
     bandwidth?: number;
   }> {
-    if (!navigator.onLine) {
+    if (typeof window !== 'undefined' && !navigator.onLine) {
       return { isOnline: false, quality: 'offline' };
     }
 

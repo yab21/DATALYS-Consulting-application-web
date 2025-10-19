@@ -36,16 +36,18 @@ class RequestQueue {
   constructor() {
     this.loadFromStorage();
     
-    // Écouteur pour traiter la queue quand la connexion revient
-    window.addEventListener('online', () => {
-      console.log('🔄 Connexion rétablie, traitement de la queue...');
-      this.processQueue();
-    });
+    // Écouteur pour traiter la queue quand la connexion revient (côté client seulement)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        console.log('🔄 Connexion rétablie, traitement de la queue...');
+        this.processQueue();
+      });
 
-    // Sauvegarde périodique
-    setInterval(() => {
-      this.saveToStorage();
-    }, 30000);
+      // Sauvegarde périodique
+      setInterval(() => {
+        this.saveToStorage();
+      }, 30000);
+    }
   }
 
   // Ajouter une requête à la queue
@@ -83,7 +85,7 @@ class RequestQueue {
       console.log(`📋 Requête ajoutée à la queue: ${url} (priorité: ${priority})`);
       
       // Essayer de traiter immédiatement si en ligne
-      if (navigator.onLine && !this.isProcessing) {
+      if (typeof window !== 'undefined' && navigator.onLine && !this.isProcessing) {
         this.processQueue();
       }
 
@@ -102,7 +104,7 @@ class RequestQueue {
 
     console.log(`🔄 Traitement de ${this.queue.length} requête(s) en attente...`);
 
-    while (this.queue.length > 0 && navigator.onLine) {
+    while (this.queue.length > 0 && (typeof window === 'undefined' || navigator.onLine)) {
       const request = this.queue.shift()!;
       
       try {
@@ -152,7 +154,7 @@ class RequestQueue {
   private async handleRequestFailure(request: QueuedRequest, error: any): Promise<void> {
     request.retryCount++;
 
-    if (request.retryCount < request.maxRetries && navigator.onLine) {
+    if (request.retryCount < request.maxRetries && (typeof window === 'undefined' || navigator.onLine)) {
       console.log(`🔄 Retry ${request.retryCount}/${request.maxRetries} pour: ${request.url}`);
       
       // Ajouter un délai exponentiel

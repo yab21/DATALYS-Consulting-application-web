@@ -16,7 +16,7 @@ export interface NetworkStatusHook extends NetworkStatus {
 
 export function useNetworkStatus(): NetworkStatusHook {
   const [status, setStatus] = useState<NetworkStatus>({
-    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    isOnline: typeof window !== 'undefined' && typeof navigator !== 'undefined' ? navigator.onLine : true,
     isConnecting: false,
     connectionType: 'fast',
     lastConnected: null,
@@ -25,6 +25,11 @@ export function useNetworkStatus(): NetworkStatusHook {
 
   // Test la qualité de la connexion
   const testConnectionQuality = useCallback(async (): Promise<'fast' | 'slow' | 'offline'> => {
+    // Retourner offline si on est côté serveur
+    if (typeof window === 'undefined') {
+      return 'offline';
+    }
+    
     try {
       const startTime = Date.now();
       
@@ -94,6 +99,11 @@ export function useNetworkStatus(): NetworkStatusHook {
 
   // Écouteurs d'événements réseau
   useEffect(() => {
+    // Ne pas ajouter d'événements côté serveur
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const handleOnline = () => {
       console.log('🌐 Connexion détectée, vérification...');
       checkConnection();
@@ -135,6 +145,11 @@ export function useNetworkStatus(): NetworkStatusHook {
 
   // Vérification sur changement de visibilité
   useEffect(() => {
+    // Ne pas ajouter d'événements côté serveur
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const handleVisibilityChange = () => {
       if (!document.hidden && !status.isOnline) {
         console.log('🔄 Page visible, vérification de la connexion...');
