@@ -29,7 +29,7 @@ import {
   Globe,
   UserPlus
 } from "lucide-react";
-import { Partner, UpdatePartnerFormData, CreatePartnerData, partnersService } from "@/services/partners";
+import { Partner, UpdatePartnerFormData, CreatePartnerData, CreatePartnerFormData, partnersService } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
 
 interface PartnerModalsProps {
@@ -57,6 +57,7 @@ interface CreateFormData {
   phone: string;
   country_code: string;
   address: string;
+  logo?: File;
 }
 
 const PartnerModals: React.FC<PartnerModalsProps> = ({
@@ -86,13 +87,16 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     email: '',
     phone: '',
     country_code: '+237',
-    address: ''
+    address: '',
+    logo: undefined
   });
   
   const [editLoading, setEditLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [createLogoPreview, setCreateLogoPreview] = useState<string | null>(null);
+  
 
   // Initialiser le formulaire avec les données du partenaire
   useEffect(() => {
@@ -149,7 +153,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
 
-  // Gestion de l'upload de logo
+  // Gestion de l'upload de logo pour l'édition
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -159,6 +163,21 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Gestion de l'upload de logo pour la création
+  const handleCreateLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setCreateForm(prev => ({ ...prev, logo: file }));
+      
+      // Créer un aperçu
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCreateLogoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -189,10 +208,13 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
 
       const result = await partnersService.updatePartner(partner.id, updateData, user.id);
       
-      if (result.code === 200) {
-        onSuccess?.('Partenaire modifié avec succès');
+      if (result.code === 200 || result.code === 201) {
+        // Utiliser le message du backend s'il existe, sinon message par défaut
+        const successMessage = result.message?.message || 'Partenaire modifié avec succès';
+        onSuccess?.(successMessage);
         if (result.logoUploadError) {
-          onError?.(`Attention: ${result.logoUploadError}`);
+          // Log warning au lieu d'une notification d'erreur pour les problèmes de logo
+          console.warn('⚠️ Problème logo:', result.logoUploadError);
         }
         onRefresh();
         onClose();
@@ -223,8 +245,10 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     try {
       const result = await partnersService.deletePartner(partner.id, user.id);
       
-      if (result.code === 200) {
-        onSuccess?.('Partenaire supprimé avec succès');
+      if (result.code === 200 || result.code === 201) {
+        // Utiliser le message du backend s'il existe, sinon message par défaut
+        const successMessage = result.message?.message || 'Partenaire supprimé avec succès';
+        onSuccess?.(successMessage);
         onRefresh();
         onClose();
       } else {
@@ -257,19 +281,26 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
 
     setCreateLoading(true);
     try {
-      const partnerData: CreatePartnerData = {
+      const partnerData: CreatePartnerFormData = {
         name: createForm.name,
         email: createForm.email,
         phone: createForm.phone,
         country_code: createForm.country_code,
         address: createForm.address,
-        is_active: true
+        is_active: true,
+        logo: createForm.logo
       };
       
       const result = await partnersService.createPartner(partnerData, user.id);
       
-      if (result.code === 200) {
-        onSuccess?.('Partenaire créé avec succès');
+      if (result.code === 200 || result.code === 201) {
+        // Utiliser le message du backend s'il existe, sinon message par défaut
+        const successMessage = result.message?.message || 'Partenaire créé avec succès';
+        onSuccess?.(successMessage);
+        if (result.logoUploadError) {
+          // Utiliser warning au lieu d'error pour les problèmes de logo
+          console.warn('⚠️ Problème logo:', result.logoUploadError);
+        }
         onRefresh();
         onClose();
         // Réinitialiser le formulaire
@@ -278,8 +309,10 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
           email: '',
           phone: '',
           country_code: '+237',
-          address: ''
+          address: '',
+          logo: undefined
         });
+        setCreateLogoPreview(null);
       } else {
         onError?.(result.message?.message || 'Erreur lors de la création');
       }
@@ -315,8 +348,10 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         email: '',
         phone: '',
         country_code: '+237',
-        address: ''
+        address: '',
+        logo: undefined
       });
+      setCreateLogoPreview(null);
     }
   }, [type, isOpen]);
 
@@ -405,7 +440,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       <Phone className="h-5 w-5 text-green-500" />
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Téléphone</p>
-                        <p className="font-medium">{partner?.phone}</p>
+                        <p className="font-medium">{partner?.phone_formatted || partner?.phone}</p>
                       </div>
                     </div>
                     
@@ -670,6 +705,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               <p className="text-gray-600 dark:text-gray-300">
                 Êtes-vous sûr de vouloir supprimer le partenaire <strong>{partner?.name}</strong> ?
               </p>
+
               
               <Card className="border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
                 <CardBody className="p-4">
@@ -742,9 +778,48 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
           
           <ModalBody className="px-6 py-4">
             <div className="space-y-4">
+              {/* Logo upload */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Logo (optionnel)</label>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
+                    {createLogoPreview ? (
+                      <img
+                        src={createLogoPreview}
+                        alt="Aperçu"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-xl font-bold text-gray-400">
+                        P
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCreateLogoChange}
+                      className="hidden"
+                      id="create-logo-upload"
+                    />
+                    <label
+                      htmlFor="create-logo-upload"
+                      className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-700 dark:hover:bg-gray-600"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Choisir un logo
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG jusqu'à 2MB</p>
+                  </div>
+                </div>
+              </div>
+
+              <Divider />
+
               <Input
                 label="Nom du partenaire"
-                placeholder="Ex: ACME Corporation"
+                placeholder="Nom de l'entreprise ou organisation"
                 value={createForm.name}
                 onValueChange={(value) => handleCreateFormChange('name', value)}
                 startContent={<User className="h-4 w-4" />}
@@ -774,12 +849,29 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       handleCreateFormChange('country_code', selectedCode);
                     }
                   }}
+                  startContent={<Globe className="h-4 w-4" />}
+                  isRequired
                   size="sm"
                   className="w-36"
+                  renderValue={(items) => {
+                    return items.map((item) => {
+                      const country = COUNTRY_CODES.find(c => c.code === item.key);
+                      return (
+                        <div key={item.key} className="flex items-center gap-2">
+                          <span>{country?.flag}</span>
+                          <span>{country?.code}</span>
+                        </div>
+                      );
+                    });
+                  }}
                 >
                   {COUNTRY_CODES.map((country) => (
                     <SelectItem key={country.code} value={country.code}>
-                      {country.flag} {country.code}
+                      <div className="flex items-center gap-2">
+                        <span>{country.flag}</span>
+                        <span>{country.code}</span>
+                        <span className="text-gray-500">{country.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </Select>

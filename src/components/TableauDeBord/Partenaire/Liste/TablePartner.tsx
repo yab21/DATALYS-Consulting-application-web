@@ -50,6 +50,7 @@ import { projectsService } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import PartnerModals from "./PartnerModals";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 // Interface pour la gestion des modals
 interface ModalState {
@@ -125,16 +126,8 @@ const TablePartner: React.FC = () => {
   // Gestion des erreurs d'images
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   
-  // États pour les notifications
-  const [notification, setNotification] = useState<{
-    message: string;
-    type: 'success' | 'error';
-    isVisible: boolean;
-  }>({
-    message: '',
-    type: 'success',
-    isVisible: false
-  });
+  // Système de notifications
+  const { showNotification } = useSimpleNotifications();
   
   // Hook d'authentification
   const { 
@@ -383,21 +376,13 @@ const TablePartner: React.FC = () => {
     setPagination(prev => ({ ...prev, page: 1 })); // Retourner à la première page
   }, []);
 
-  // Fonction pour afficher les notifications
-  const showNotification = useCallback((message: string, type: 'success' | 'error') => {
-    setNotification({ message, type, isVisible: true });
-    setTimeout(() => {
-      setNotification(prev => ({ ...prev, isVisible: false }));
-    }, 5000);
-  }, []);
-
   // Handlers pour les callbacks des modals
   const handleModalSuccess = useCallback((message: string) => {
-    showNotification(message, 'success');
+    showNotification(simpleNotificationHelpers.success('Succès', message));
   }, [showNotification]);
 
   const handleModalError = useCallback((message: string) => {
-    showNotification(message, 'error');
+    showNotification(simpleNotificationHelpers.error('Erreur', message));
   }, [showNotification]);
 
 
@@ -711,7 +696,9 @@ const TablePartner: React.FC = () => {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{partner.phone}</span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {partner.phone_formatted || partner.phone}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -791,35 +778,6 @@ const TablePartner: React.FC = () => {
           </TableBody>
         </Table>
       </motion.div>
-
-      {/* Notification */}
-      {notification.isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          className="fixed top-4 right-4 z-50"
-        >
-          <div className={`rounded-lg p-4 shadow-lg ${
-            notification.type === 'success' 
-              ? 'bg-green-100 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300'
-              : 'bg-red-100 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300'
-          }`}>
-            <div className="flex items-center gap-2">
-              {notification.type === 'success' ? (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              )}
-              <span className="font-medium">{notification.message}</span>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       {/* Modals */}
       <PartnerModals

@@ -6,6 +6,7 @@ export interface Partner {
   name: string;
   email: string;
   phone: string;
+  phone_formatted?: string;
   country_code?: string;
   address: string;
   is_active: boolean;
@@ -304,10 +305,13 @@ class PartnersService {
         const errorText = await response.text();
         console.error('❌ Erreur API brute:', errorText);
         
-        // Essayer de parser le JSON d'erreur
+        // Essayer de parser le JSON d'erreur pour extraire le message exact du backend
         try {
           const errorData = JSON.parse(errorText);
-          if (errorData.message) {
+          if (errorData.message && typeof errorData.message === 'object' && errorData.message.message) {
+            // Message structuré du backend (ex: validation téléphone)
+            errorMessage = errorData.message.message;
+          } else if (errorData.message && typeof errorData.message === 'string') {
             errorMessage = errorData.message;
           } else if (errorData.error) {
             errorMessage = errorData.error;
@@ -328,42 +332,11 @@ class PartnersService {
     const result = await response.json();
     console.log('✅ Réponse API complète:', result);
     
-    // Vérifier si l'API retourne un code d'erreur dans le JSON (ex: {code: 400, message: {...}})
-    if (result.code && result.code !== 200) {
-      console.error('❌ Code d\'erreur API dans JSON:', result.code, result.message);
-      
-      let errorString = 'Erreur inconnue';
-      
-      // Extraire le message d'erreur de la structure imbriquée
-      if (result.message && typeof result.message === 'object' && 'message' in result.message) {
-        const messageText = String(result.message.message);
-        // Vérifier si c'est vraiment un message d'erreur ou de succès
-        if (messageText.toLowerCase().includes('succès') || messageText.toLowerCase().includes('créé')) {
-          console.log('✅ Message de succès détecté:', messageText);
-          // Ne pas traiter comme une erreur, continuer le traitement normal
-        } else {
-          errorString = messageText;
-          console.error('❌ Message d\'erreur extrait:', errorString);
-          throw new Error(errorString);
-        }
-      } else if (result.message && typeof result.message === 'string') {
-        const messageText = result.message;
-        if (messageText.toLowerCase().includes('succès') || messageText.toLowerCase().includes('créé')) {
-          console.log('✅ Message de succès détecté:', messageText);
-        } else {
-          errorString = messageText;
-          console.error('❌ Message d\'erreur extrait:', errorString);
-          throw new Error(errorString);
-        }
-      } else if (result.error && typeof result.error === 'string') {
-        errorString = result.error;
-        console.error('❌ Message d\'erreur extrait:', errorString);
-        throw new Error(errorString);
-      } else if (result.message) {
-        errorString = JSON.stringify(result.message);
-        console.error('❌ Message d\'erreur extrait:', errorString);
-        throw new Error(errorString);
-      }
+    // Pour les codes d'erreur 400+, extraire directement le message backend
+    if (result.code >= 400) {
+      const errorMessage = result.message?.message || result.message || `Erreur ${result.code}`;
+      console.error('❌ Erreur backend:', errorMessage);
+      throw new Error(errorMessage);
     }
     
     return {
@@ -547,6 +520,9 @@ class PartnersService {
     }
     if (partnerData.phone !== undefined && partnerData.phone.trim() !== '') {
       requestBody.phone = partnerData.phone.trim();
+    }
+    if (partnerData.country_code !== undefined) {
+      requestBody.country_code = partnerData.country_code;
     }
     if (partnerData.address !== undefined && partnerData.address.trim() !== '') {
       requestBody.address = partnerData.address.trim();
