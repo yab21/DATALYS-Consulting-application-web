@@ -16,6 +16,12 @@ import {
   Select,
   SelectItem,
   Pagination,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Card,
+  CardBody
 } from "@nextui-org/react";
 import {
   Plus,
@@ -28,6 +34,9 @@ import {
   Users,
   Filter,
   Eye,
+  Clock,
+  MoreVertical,
+  RefreshCw
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission, UserRole } from "@/lib/permissions";
@@ -46,6 +55,7 @@ interface UserStats {
   adminUsers: number;
   partnerUsers: number;
   inactiveUsers: number;
+  recentActivity: number;
 }
 
 // Interface pour la gestion des modals
@@ -79,6 +89,7 @@ const ListeUtilisateurs: React.FC = () => {
     adminUsers: 0,
     partnerUsers: 0,
     inactiveUsers: 0,
+    recentActivity: 0
   });
 
   // États pour la pagination
@@ -105,6 +116,28 @@ const ListeUtilisateurs: React.FC = () => {
       return;
     }
   }, [isAuthenticated, isAdmin, showNotification]);
+
+  // Calculer les statistiques des utilisateurs
+  const calculateUserStats = (users: User[]) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const totalUsers = users.length;
+    const activeUsers = users.filter(u => u.is_active).length;
+    const inactiveUsers = users.filter(u => !u.is_active).length;
+    const adminUsers = users.filter(u => u.role_id === 1).length;
+    const partnerUsers = users.filter(u => u.role_id === 5).length;
+    const recentActivity = users.filter(u => new Date(u.updated_at) >= today).length;
+    
+    return {
+      totalUsers,
+      activeUsers,
+      inactiveUsers,
+      adminUsers,
+      partnerUsers,
+      recentActivity
+    };
+  };
 
   // Chargement initial des utilisateurs
   useEffect(() => {
@@ -201,19 +234,9 @@ const ListeUtilisateurs: React.FC = () => {
         setUsers(userData);
         setFilteredUsers(userData);
 
-        const totalUsers = userData.length;
-        const activeUsers = userData.filter((u) => u.is_active).length;
-        const adminUsers = userData.filter((u) => u.role_id === UserRole.ADMIN).length;
-        const partnerUsers = userData.filter((u) => u.role_id === UserRole.PARTNER).length;
-        const inactiveUsers = userData.filter((u) => !u.is_active).length;
-
-        setStats({
-          totalUsers,
-          activeUsers,
-          adminUsers,
-          partnerUsers,
-          inactiveUsers,
-        });
+        // Calculer les statistiques étendues
+        const extendedStats = calculateUserStats(userData);
+        setStats(extendedStats);
       }
     } catch (error) {
       console.error("Erreur lors du chargement des utilisateurs:", error);
@@ -278,7 +301,7 @@ const ListeUtilisateurs: React.FC = () => {
     <div className="space-y-8">
       {/* En-tête avec statistiques */}
       <motion.div
-        className="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-2xl border border-gray-100 bg-gradient-to-br from-[#4ba9b7]/12 via-white to-[#5bb3c2]/6 p-8 shadow-lg dark:border-gray-700 dark:from-[#4ba9b7]/22 dark:via-gray-800 dark:to-[#5bb3c2]/12"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -288,20 +311,9 @@ const ListeUtilisateurs: React.FC = () => {
             <h1 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white">
               Gestion des Utilisateurs
             </h1>
-            <div className="flex flex-wrap gap-3">
-              <Chip size="lg" variant="flat" color="primary">
-                {stats.totalUsers} utilisateurs
-              </Chip>
-              <Chip size="lg" variant="flat" color="success">
-                {stats.activeUsers} actifs
-              </Chip>
-              <Chip size="lg" variant="flat" color="danger">
-                {stats.adminUsers} admins
-              </Chip>
-              <Chip size="lg" variant="flat" color="secondary">
-                {stats.partnerUsers} partenaires
-              </Chip>
-            </div>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Administration des comptes et permissions
+            </p>
           </div>
 
           {canCreate() && hasPermission(Permission.CREATE_USERS) && (
@@ -310,7 +322,7 @@ const ListeUtilisateurs: React.FC = () => {
                 color="primary"
                 size="lg"
                 startContent={<Plus className="h-5 w-5" />}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 font-semibold shadow-lg"
+                className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
               >
                 Nouvel Utilisateur
               </Button>
@@ -318,6 +330,79 @@ const ListeUtilisateurs: React.FC = () => {
           )}
         </div>
       </motion.div>
+
+      {/* Statistiques étendues */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+        {[
+          {
+            title: "Total Utilisateurs",
+            value: stats.totalUsers,
+            icon: <Users className="h-5 w-5" />,
+            color: "bg-[#4ba9b7]", 
+            textColor: "text-[#4ba9b7]"
+          },
+          {
+            title: "Utilisateurs Actifs",
+            value: stats.activeUsers,
+            icon: <UserCheck className="h-5 w-5" />,
+            color: "bg-green-500",
+            textColor: "text-green-600"
+          },
+          {
+            title: "Utilisateurs Inactifs", 
+            value: stats.inactiveUsers,
+            icon: <UserX className="h-5 w-5" />,
+            color: "bg-orange-500",
+            textColor: "text-orange-600"
+          },
+          {
+            title: "Administrateurs",
+            value: stats.adminUsers,
+            icon: <Shield className="h-5 w-5" />,
+            color: "bg-red-500",
+            textColor: "text-red-600"
+          },
+          {
+            title: "Partenaires",
+            value: stats.partnerUsers,
+            icon: <Users className="h-5 w-5" />,
+            color: "bg-purple-500",
+            textColor: "text-purple-600"
+          },
+          {
+            title: "Actifs Aujourd'hui",
+            value: stats.recentActivity,
+            icon: <Clock className="h-5 w-5" />,
+            color: "bg-blue-500",
+            textColor: "text-blue-600"
+          }
+        ].map((stat, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {stat.title}
+                    </p>
+                    <p className={`text-2xl font-bold ${stat.textColor} dark:text-white`}>
+                      {stat.value}
+                    </p>
+                  </div>
+                  <div className={`${stat.color} rounded-lg p-3 text-white`}>
+                    {stat.icon}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
 
       {/* Filtres */}
       <motion.div
@@ -382,6 +467,15 @@ const ListeUtilisateurs: React.FC = () => {
                 Inactifs
               </SelectItem>
             </Select>
+            
+            <Button
+              variant="light"
+              startContent={<RefreshCw className="h-4 w-4" />}
+              onPress={loadUsers}
+              size="sm"
+            >
+              Actualiser
+            </Button>
           </div>
         </div>
       </motion.div>
@@ -502,61 +596,58 @@ const ListeUtilisateurs: React.FC = () => {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="relative flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="primary"
-                      isIconOnly
-                      onPress={() => handleUserAction(user, "view")}
-                      title="Voir détails"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    
-                    {canModify() && hasPermission(Permission.MODIFY_ALL_PROFILES) && (
+                  <Dropdown>
+                    <DropdownTrigger>
                       <Button
-                        size="sm"
-                        variant="light"
-                        color="warning"
                         isIconOnly
-                        onPress={() => handleUserAction(user, "edit")}
-                        title="Modifier"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                    
-                    {canModify() && (
-                      <Button
+                        variant="light" 
                         size="sm"
-                        variant="light"
-                        color={user.is_active ? "warning" : "success"}
-                        isIconOnly
-                        onPress={() => handleUserAction(user, "toggle")}
-                        title={user.is_active ? "Désactiver" : "Activer"}
+                        className="text-gray-500 hover:text-gray-700"
                       >
-                        {user.is_active ? (
-                          <UserX className="h-4 w-4" />
-                        ) : (
-                          <UserCheck className="h-4 w-4" />
-                        )}
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
-                    )}
-                    
-                    {canDelete() && hasPermission(Permission.DELETE_USERS) && (
-                      <Button
-                        size="sm"
-                        variant="light"
-                        color="danger"
-                        isIconOnly
-                        onPress={() => handleUserAction(user, "delete")}
-                        title="Supprimer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Actions de l'utilisateur">
+                      {[
+                        <DropdownItem
+                          key="view"
+                          startContent={<Eye className="h-4 w-4" />}
+                          onPress={() => handleUserAction(user, "view")}
+                        >
+                          Voir détails
+                        </DropdownItem>,
+                        ...(canModify() && hasPermission(Permission.MODIFY_ALL_PROFILES) ? [
+                          <DropdownItem
+                            key="edit"
+                            startContent={<Edit className="h-4 w-4" />}
+                            onPress={() => handleUserAction(user, "edit")}
+                          >
+                            Modifier
+                          </DropdownItem>
+                        ] : []),
+                        ...(canModify() ? [
+                          <DropdownItem
+                            key="toggle"
+                            startContent={user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                            color={user.is_active ? "warning" : "success"}
+                            onPress={() => handleUserAction(user, "toggle")}
+                          >
+                            {user.is_active ? "Désactiver" : "Activer"}
+                          </DropdownItem>
+                        ] : []),
+                        ...(canDelete() && hasPermission(Permission.DELETE_USERS) ? [
+                          <DropdownItem
+                            key="delete"
+                            startContent={<Trash2 className="h-4 w-4" />}
+                            color="danger"
+                            onPress={() => handleUserAction(user, "delete")}
+                          >
+                            Supprimer
+                          </DropdownItem>
+                        ] : [])
+                      ]}
+                    </DropdownMenu>
+                  </Dropdown>
                 </TableCell>
               </TableRow>
             )}

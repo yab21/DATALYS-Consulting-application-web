@@ -12,7 +12,10 @@ import {
   Trash2, 
   Filter, 
   Search,
-  RefreshCw 
+  RefreshCw,
+  CheckCircle,
+  Clock,
+  MoreVertical
 } from "lucide-react";
 import { 
   Button, 
@@ -27,7 +30,13 @@ import {
   SelectItem, 
   Input,
   Pagination,
-  Avatar
+  Avatar,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Card,
+  CardBody
 } from "@nextui-org/react";
 import { useRouter } from "next/navigation";
 import { projectsService, Project } from "@/services/projects";
@@ -64,6 +73,28 @@ const OptimizedProjectList: React.FC = () => {
     type: null,
     project: null
   });
+
+  // Calculer les statistiques des projets
+  const calculateProjectStats = (projects: Project[]) => {
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    
+    const totalProjects = projects.length;
+    const activeProjects = projects.filter(p => p.is_active).length;
+    const inactiveProjects = projects.filter(p => !p.is_active).length;
+    const recentProjects = projects.filter(p => new Date(p.created_at) >= oneMonthAgo).length;
+    const partnersWithProjects = new Set(projects.map(p => p.partner_id).filter(Boolean)).size;
+    const avgProjectsPerPartner = partnersWithProjects > 0 ? Math.round(totalProjects / partnersWithProjects) : 0;
+    
+    return {
+      totalProjects,
+      activeProjects,
+      inactiveProjects,
+      recentProjects,
+      partnersWithProjects,
+      avgProjectsPerPartner
+    };
+  };
 
   // Charger les données initiales
   useEffect(() => {
@@ -230,8 +261,32 @@ const OptimizedProjectList: React.FC = () => {
           projectsService.getActiveProjects()
         ]);
         
+        // Importer le service partners pour récupérer les détails complets
+        const { partnersService } = await import('@/services/partners');
+        
+        // Récupérer les partenaires complets avec leurs IDs
+        const partnersDetails = await partnersService.getPartners({
+          index: 0,
+          size: 100,
+          data: { is_active: true }
+        });
+        
+        // Créer un map des partner_id vers partner_name
+        const partnerIdToNameMap = new Map<number, string>();
+        if (partnersDetails?.items) {
+          partnersDetails.items.forEach(partner => {
+            partnerIdToNameMap.set(partner.id, partner.name);
+          });
+        }
+        
+        // Mapper les partner_id avec les noms des partenaires
+        const projectsWithPartnerNames = projectsResponse.map(project => ({
+          ...project,
+          partner_name: project.partner_id ? partnerIdToNameMap.get(project.partner_id) || undefined : undefined
+        }));
+        
         setPartnerNames(partnersResponse);
-        setProjects(projectsResponse);
+        setProjects(projectsWithPartnerNames);
       } else if (user.role_id === 2) { // PARTNER - ne peut voir que ses projets
         // Pour les partenaires, utiliser l'endpoint spécifique s'ils ont un partner_id
         let partnerProjects: Project[] = [];
@@ -406,7 +461,7 @@ const OptimizedProjectList: React.FC = () => {
     <div className="space-y-8">
       {/* En-tête avec statistiques */}
       <motion.div
-        className="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-2xl border border-gray-100 bg-gradient-to-br from-[#4ba9b7]/10 via-white to-[#4ba9b7]/5 p-8 shadow-lg dark:border-gray-700 dark:from-[#4ba9b7]/20 dark:via-gray-800 dark:to-[#4ba9b7]/10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -416,17 +471,9 @@ const OptimizedProjectList: React.FC = () => {
             <h1 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white">
               {user?.role_id === 1 ? "Gestion des Projets" : "Mes Projets"}
             </h1>
-            <div className="flex flex-wrap gap-3">
-              <Chip size="lg" variant="flat" color="primary">
-                {filteredProjects.length} projets
-              </Chip>
-              <Chip size="lg" variant="flat" color="success">
-                {filteredProjects.filter(p => p.is_active).length} actifs
-              </Chip>
-              <Chip size="lg" variant="flat" color="warning">
-                {filteredProjects.filter(p => !p.is_active).length} inactifs
-              </Chip>
-            </div>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Gestion et suivi de vos projets en cours
+            </p>
           </div>
 
           {/* Bouton nouveau projet uniquement pour les admins */}
@@ -436,13 +483,91 @@ const OptimizedProjectList: React.FC = () => {
               size="lg"
               startContent={<Plus className="h-5 w-5" />}
               onPress={() => router.push("/tableaudebord/projet/ajouter")}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 font-semibold shadow-lg"
+              className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
             >
               Nouveau Projet
             </Button>
           )}
         </div>
       </motion.div>
+
+      {/* Statistiques étendues */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+        {(() => {
+          const stats = calculateProjectStats(projects);
+          const projectStatsCards = [
+            {
+              title: "Total Projets",
+              value: stats.totalProjects,
+              icon: <FolderOpen className="h-5 w-5" />,
+              color: "bg-[#4ba9b7]",
+              textColor: "text-[#4ba9b7]"
+            },
+            {
+              title: "Projets Actifs", 
+              value: stats.activeProjects,
+              icon: <CheckCircle className="h-5 w-5" />,
+              color: "bg-green-500",
+              textColor: "text-green-600"
+            },
+            {
+              title: "Projets Inactifs",
+              value: stats.inactiveProjects,
+              icon: <Clock className="h-5 w-5" />,
+              color: "bg-orange-500", 
+              textColor: "text-orange-600"
+            },
+            {
+              title: "Nouveaux ce Mois",
+              value: stats.recentProjects,
+              icon: <Plus className="h-5 w-5" />,
+              color: "bg-blue-500",
+              textColor: "text-blue-600"
+            },
+            {
+              title: "Partenaires Actifs",
+              value: stats.partnersWithProjects,
+              icon: <Users className="h-5 w-5" />,
+              color: "bg-purple-500",
+              textColor: "text-purple-600"
+            },
+            {
+              title: "Projets/Partenaire",
+              value: stats.avgProjectsPerPartner,
+              icon: <Calendar className="h-5 w-5" />,
+              color: "bg-indigo-500", 
+              textColor: "text-indigo-600"
+            }
+          ];
+          
+          return projectStatsCards.map((stat, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <CardBody className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        {stat.title}
+                      </p>
+                      <p className={`text-2xl font-bold ${stat.textColor} dark:text-white`}>
+                        {stat.value}
+                      </p>
+                    </div>
+                    <div className={`${stat.color} rounded-lg p-3 text-white`}>
+                      {stat.icon}
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </motion.div>
+          ));
+        })()}
+      </div>
 
       {/* Filtres */}
       <motion.div
@@ -589,44 +714,46 @@ const OptimizedProjectList: React.FC = () => {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div className="relative flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="primary"
-                      isIconOnly
-                      onPress={() => router.push(`/tableaudebord/projet/pageprojet/${project.id}`)}
-                      title="Voir projet"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    
-                    {/* Actions de modification uniquement pour les admins */}
-                    {user?.role_id === 1 && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="light"
-                          color="warning"
-                          isIconOnly
-                          onPress={() => handleProjectAction(project, 'edit')}
-                          title="Modifier"
+                  <Dropdown>
+                    <DropdownTrigger>
+                      <Button
+                        isIconOnly
+                        variant="light" 
+                        size="sm"
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Actions du projet">
+                      {[
+                        <DropdownItem
+                          key="view"
+                          startContent={<Eye className="h-4 w-4" />}
+                          onPress={() => router.push(`/tableaudebord/projet/pageprojet/${project.id}`)}
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="light"
-                          color="danger"
-                          isIconOnly
-                          onPress={() => handleProjectAction(project, 'delete')}
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                          Voir détails
+                        </DropdownItem>,
+                        ...(user?.role_id === 1 ? [
+                          <DropdownItem
+                            key="edit"
+                            startContent={<Edit className="h-4 w-4" />}
+                            onPress={() => handleProjectAction(project, 'edit')}
+                          >
+                            Modifier
+                          </DropdownItem>,
+                          <DropdownItem
+                            key="delete"
+                            startContent={<Trash2 className="h-4 w-4" />}
+                            color="danger"
+                            onPress={() => handleProjectAction(project, 'delete')}
+                          >
+                            Supprimer
+                          </DropdownItem>
+                        ] : [])
+                      ]}
+                    </DropdownMenu>
+                  </Dropdown>
                 </TableCell>
               </TableRow>
             )}

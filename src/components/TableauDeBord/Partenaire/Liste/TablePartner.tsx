@@ -16,6 +16,12 @@ import {
   Select,
   SelectItem,
   Avatar,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Card,
+  CardBody
 } from "@nextui-org/react";
 import { 
   Search, 
@@ -26,12 +32,21 @@ import {
   Phone,
   Filter,
   Users,
-  Shield
+  Shield,
+  CheckCircle,
+  Clock,
+  Calendar,
+  UserCheck,
+  UserX,
+  FolderOpen,
+  MoreVertical,
+  RefreshCw
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { partnersService, Partner, GetPartnersParams } from "@/services/partners";
+import { projectsService } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import PartnerModals from "./PartnerModals";
@@ -54,6 +69,9 @@ interface PartnerStats {
   totalPartners: number;
   activePartners: number;
   inactivePartners: number;
+  newPartners: number;
+  partnersWithProjects: number;
+  avgProjectsPerPartner: number;
 }
 
 // Interface pour la pagination côté serveur
@@ -76,6 +94,9 @@ const TablePartner: React.FC = () => {
     totalPartners: 0,
     activePartners: 0,
     inactivePartners: 0,
+    newPartners: 0,
+    partnersWithProjects: 0,
+    avgProjectsPerPartner: 0
   });
   
   // États pour la pagination
@@ -182,6 +203,46 @@ const TablePartner: React.FC = () => {
     }
   }, []);
 
+  // Calculer les statistiques des partenaires
+  const calculatePartnerStats = async (partners: Partner[]) => {
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    
+    try {
+      // Charger les projets pour calculer les statistiques croisées
+      const projects = await projectsService.getActiveProjects();
+      
+      const totalPartners = partners.length;
+      const activePartners = partners.filter(p => p.is_active).length;
+      const inactivePartners = partners.filter(p => !p.is_active).length;
+      const newPartners = partners.filter(p => new Date(p.created_at) >= oneMonthAgo).length;
+      const partnersWithProjects = projects.reduce((acc, project) => {
+        if (project.partner_id) acc.add(project.partner_id);
+        return acc;
+      }, new Set()).size;
+      const avgProjectsPerPartner = activePartners > 0 ? Math.round(projects.length / activePartners) : 0;
+      
+      return {
+        totalPartners,
+        activePartners,
+        inactivePartners,
+        newPartners,
+        partnersWithProjects,
+        avgProjectsPerPartner
+      };
+    } catch (error) {
+      console.error('Erreur calcul statistiques partenaires:', error);
+      return {
+        totalPartners: partners.length,
+        activePartners: partners.filter(p => p.is_active).length,
+        inactivePartners: partners.filter(p => !p.is_active).length,
+        newPartners: 0,
+        partnersWithProjects: 0,
+        avgProjectsPerPartner: 0
+      };
+    }
+  };
+
   // Chargement des données depuis l'API
   const loadPartners = useCallback(async () => {
     // Attendre que l'authentification soit chargée
@@ -261,16 +322,9 @@ const TablePartner: React.FC = () => {
         
         setPartners(result.items);
         
-        // Calculer les statistiques
-        const totalPartners = result.items.length;
-        const activePartners = result.items.filter((p) => p.is_active).length;
-        const inactivePartners = result.items.filter((p) => !p.is_active).length;
-
-        setStats({
-          totalPartners,
-          activePartners,
-          inactivePartners,
-        });
+        // Calculer les statistiques étendues
+        const extendedStats = await calculatePartnerStats(result.items);
+        setStats(extendedStats);
         
         // Mettre à jour la pagination
         setPagination(prev => ({
@@ -284,6 +338,9 @@ const TablePartner: React.FC = () => {
           totalPartners: 0,
           activePartners: 0,
           inactivePartners: 0,
+          newPartners: 0,
+          partnersWithProjects: 0,
+          avgProjectsPerPartner: 0
         });
         setPagination(prev => ({
           ...prev,
@@ -419,7 +476,7 @@ const TablePartner: React.FC = () => {
     <div className="space-y-8">
       {/* En-tête avec statistiques */}
       <motion.div
-        className="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-2xl border border-gray-100 bg-gradient-to-br from-[#4ba9b7]/15 via-white to-[#6bb6c7]/8 p-8 shadow-lg dark:border-gray-700 dark:from-[#4ba9b7]/25 dark:via-gray-800 dark:to-[#6bb6c7]/15"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -429,17 +486,9 @@ const TablePartner: React.FC = () => {
             <h1 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white">
               Gestion des Partenaires
             </h1>
-            <div className="flex flex-wrap gap-3">
-              <Chip size="lg" variant="flat" color="primary">
-                {stats.totalPartners} partenaires
-              </Chip>
-              <Chip size="lg" variant="flat" color="success">
-                {stats.activePartners} actifs
-              </Chip>
-              <Chip size="lg" variant="flat" color="warning">
-                {stats.inactivePartners} inactifs
-              </Chip>
-            </div>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Administration de votre réseau de partenaires
+            </p>
           </div>
 
           {canCreate() && hasPermission(Permission.CREATE_PARTNERS) && (
@@ -448,7 +497,7 @@ const TablePartner: React.FC = () => {
                 color="primary"
                 size="lg"
                 startContent={<Plus className="h-5 w-5" />}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 font-semibold shadow-lg"
+                className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
               >
                 Nouveau Partenaire
               </Button>
@@ -456,6 +505,79 @@ const TablePartner: React.FC = () => {
           )}
         </div>
       </motion.div>
+
+      {/* Statistiques étendues */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+        {[
+          {
+            title: "Total Partenaires",
+            value: stats.totalPartners,
+            icon: <Users className="h-5 w-5" />,
+            color: "bg-[#4ba9b7]",
+            textColor: "text-[#4ba9b7]"
+          },
+          {
+            title: "Partenaires Actifs",
+            value: stats.activePartners, 
+            icon: <UserCheck className="h-5 w-5" />,
+            color: "bg-green-500",
+            textColor: "text-green-600"
+          },
+          {
+            title: "Partenaires Inactifs",
+            value: stats.inactivePartners,
+            icon: <UserX className="h-5 w-5" />,
+            color: "bg-orange-500",
+            textColor: "text-orange-600"
+          },
+          {
+            title: "Nouveaux ce Mois", 
+            value: stats.newPartners,
+            icon: <Plus className="h-5 w-5" />,
+            color: "bg-blue-500",
+            textColor: "text-blue-600"
+          },
+          {
+            title: "Avec Projets",
+            value: stats.partnersWithProjects,
+            icon: <FolderOpen className="h-5 w-5" />,
+            color: "bg-purple-500", 
+            textColor: "text-purple-600"
+          },
+          {
+            title: "Projets Moyens",
+            value: stats.avgProjectsPerPartner,
+            icon: <Calendar className="h-5 w-5" />,
+            color: "bg-indigo-500",
+            textColor: "text-indigo-600"
+          }
+        ].map((stat, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {stat.title}
+                    </p>
+                    <p className={`text-2xl font-bold ${stat.textColor} dark:text-white`}>
+                      {stat.value}
+                    </p>
+                  </div>
+                  <div className={`${stat.color} rounded-lg p-3 text-white`}>
+                    {stat.icon}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
 
       {/* Filtres */}
       <motion.div
@@ -500,6 +622,15 @@ const TablePartner: React.FC = () => {
                 Inactifs
               </SelectItem>
             </Select>
+            
+            <Button
+              variant="light"
+              startContent={<RefreshCw className="h-4 w-4" />}
+              onPress={loadPartners}
+              size="sm"
+            >
+              Actualiser
+            </Button>
           </div>
         </div>
       </motion.div>
@@ -600,64 +731,61 @@ const TablePartner: React.FC = () => {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div className="relative flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="primary"
-                      isIconOnly
-                      onPress={() => setModalState({
-                        isOpen: true,
-                        type: 'view',
-                        partner
-                      })}
-                      title="Voir détails"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    
-                    <Link href={`/tableaudebord/partenaire/${partner.id}`}>
+                  <Dropdown>
+                    <DropdownTrigger>
                       <Button
-                        size="sm"
-                        variant="light"
-                        color="secondary"
                         isIconOnly
-                        title="Voir projets"
+                        variant="light" 
+                        size="sm"
+                        className="text-gray-500 hover:text-gray-700"
                       >
-                        <Users className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
-                    </Link>
-                    
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="warning"
-                      isIconOnly
-                      onPress={() => setModalState({
-                        isOpen: true,
-                        type: 'edit',
-                        partner
-                      })}
-                      title="Modifier"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="danger"
-                      isIconOnly
-                      onPress={() => setModalState({
-                        isOpen: true,
-                        type: 'delete',
-                        partner
-                      })}
-                      title="Supprimer"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Actions du partenaire">
+                      <DropdownItem
+                        key="view"
+                        startContent={<Eye className="h-4 w-4" />}
+                        onPress={() => setModalState({
+                          isOpen: true,
+                          type: 'view',
+                          partner
+                        })}
+                      >
+                        Voir détails
+                      </DropdownItem>
+                      <DropdownItem
+                        key="projects"
+                        startContent={<Users className="h-4 w-4" />}
+                        onPress={() => window.open(`/tableaudebord/partenaire/${partner.id}`, '_blank')}
+                      >
+                        Voir projets
+                      </DropdownItem>
+                      <DropdownItem
+                        key="edit"
+                        startContent={<Edit className="h-4 w-4" />}
+                        onPress={() => setModalState({
+                          isOpen: true,
+                          type: 'edit',
+                          partner
+                        })}
+                      >
+                        Modifier
+                      </DropdownItem>
+                      <DropdownItem
+                        key="delete"
+                        startContent={<Trash2 className="h-4 w-4" />}
+                        color="danger"
+                        onPress={() => setModalState({
+                          isOpen: true,
+                          type: 'delete',
+                          partner
+                        })}
+                      >
+                        Supprimer
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
                 </TableCell>
               </TableRow>
             )}
