@@ -390,7 +390,16 @@ const OptimizedProjectList: React.FC = () => {
   };
 
   if (loading && projects.length === 0) {
-    return <LoadingState />;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {user?.role_id === 1 ? "Gestion des Projets" : "Mes Projets"}
+          </h1>
+        </div>
+        <LoadingState type="skeleton" skeletonVariant="table" skeletonCount={8} />
+      </div>
+    );
   }
 
   return (

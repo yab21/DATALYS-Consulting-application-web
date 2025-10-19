@@ -89,7 +89,7 @@ export async function enhancedFetch(
       console.log('📋 Connexion perdue, ajout à la queue:', url);
       
       // Ajouter à la queue pour retry automatique
-      return requestQueue.enqueue(url, finalOptions, queuePriority, maxRetries, {
+      return requestQueue.enqueue(url, fetchOptions, queuePriority, maxRetries, {
         description: description || `Request to ${url}`,
         component
       });
@@ -100,7 +100,7 @@ export async function enhancedFetch(
       console.log('🔄 Retry automatique pour:', url);
       
       return errorHandler.retryWithBackoff(
-        () => fetch(url, finalOptions),
+        () => fetch(url, fetchOptions),
         `${component}_${url}`,
         {
           maxRetries,
@@ -129,7 +129,7 @@ export async function enhancedFetch(
     }
 
     // Gérer l'erreur via l'error handler
-    await errorHandler.handleNetworkError(error, { url, options: finalOptions }, queuePriority);
+    await errorHandler.handleNetworkError(error, { url, options: fetchOptions }, queuePriority);
     
     // Propager l'erreur
     throw error;
