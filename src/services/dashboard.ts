@@ -140,15 +140,16 @@ class DashboardService {
   /**
    * Récupérer le dashboard d'un partenaire
    */
-  async getDashboardPartner(partnerId: number): Promise<DashboardPartnerResponse> {
+  async getDashboardPartner(partnerId: number): Promise<any> {
     try {
       const response = await securedFetch(
         `${API_CONFIG.BASE_URL}/dashboard/partner/${partnerId}`,
         {
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({})
         }
       );
 

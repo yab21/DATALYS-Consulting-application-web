@@ -42,8 +42,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             icon: (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
                 viewBox="0 0 24 24"
                 className="transition-all duration-300 group-hover:scale-110"
               >
@@ -67,8 +67,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="fill-current transition-all duration-300 group-hover:scale-110"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -81,7 +81,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 />
               </svg>
             ),
-            label: "Gérer les projets",
+            label: "Projets",
             route: "/tableaudebord/projet/gerer",
           },
           // Menu Partenaires - pour les admins avec permissions
@@ -90,8 +90,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="fill-current transition-all duration-300 group-hover:scale-110"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -100,7 +100,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 />
               </svg>
             ),
-            label: "Gérer les partenaires",
+            label: "Partenaires",
             route: "/tableaudebord/partenaire/liste",
           }] : []),
           // Menu Utilisateurs - pour les admins avec permissions
@@ -109,8 +109,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="fill-current transition-all duration-300 group-hover:scale-110"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -119,8 +119,27 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 />
               </svg>
             ),
-            label: "Gérer les utilisateurs",
+            label: "Utilisateurs",
             route: "/tableaudebord/gestion-utilisateurs",
+          }] : []),
+          // Menu Rôles - pour les admins avec permissions
+          ...(isAdmin() && hasPermission(Permission.MANAGE_ROLES_PERMISSIONS) ? [{
+            icon: (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="fill-current transition-all duration-300 group-hover:scale-110"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="fill-current"
+                  d="M12 1l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-2.01L12 1zM12 5.5L10.5 8.5 7.5 9.5l2.5 2.44-.59 3.56L12 14.25l2.59 1.25-.59-3.56L16.5 9.5l-3-.5L12 5.5z"
+                />
+              </svg>
+            ),
+            label: "Rôles",
+            route: "/tableaudebord/parametres/roles",
           }] : []),
           // Menu Incidents - pour les admins avec permissions
           ...(isAdmin() && hasPermission(Permission.VIEW_ALL_INCIDENTS) ? [{
@@ -128,8 +147,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="fill-current transition-all duration-300 group-hover:scale-110"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -147,8 +166,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="fill-current transition-all duration-300 group-hover:scale-110"
-                width="24"
-                height="24"
+                width="28"
+                height="28"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -174,8 +193,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="fill-current transition-all duration-300 group-hover:scale-110"
-              width="24"
-              height="24"
+              width="28"
+              height="28"
               viewBox="0 0 24 24"
             >
               <path
@@ -194,8 +213,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="fill-current transition-all duration-300 group-hover:scale-110"
-              width="24"
-              height="24"
+              width="28"
+              height="28"
               viewBox="0 0 24 24"
             >
               <path
@@ -223,8 +242,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="fill-current transition-all duration-300 group-hover:scale-110"
-          width="24"
-          height="24"
+          width="28"
+          height="28"
           viewBox="0 0 24 24"
         >
           <path
@@ -243,8 +262,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="fill-current transition-all duration-300 group-hover:scale-110"
-          width="24"
-          height="24"
+          width="28"
+          height="28"
           viewBox="0 0 24 24"
         >
           <path
@@ -266,31 +285,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
       // Menu Analytics supprimé - maintenant intégré dans le tableau de bord principal
 
-      // Menu Paramètres (Rôles et Permissions)
-      if (hasPermission(Permission.MANAGE_ROLES_PERMISSIONS)) {
-        autresMenu.menuItems.unshift({
-          icon: (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="fill-current transition-all duration-300 group-hover:scale-110"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                fill="fill-current"
-                d="M12 1l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-2.01L12 1zM12 5.5L10.5 8.5 7.5 9.5l2.5 2.44-.59 3.56L12 14.25l2.59 1.25-.59-3.56L16.5 9.5l-3-.5L12 5.5z"
-              />
-            </svg>
-          ),
-          label: "Paramètres",
-          route: "#",
-          children: [
-            { label: "Gérer rôles", route: "/tableaudebord/parametres/roles" },
-            { label: "Gérer permissions", route: "/tableaudebord/parametres/permissions" },
-          ],
-        });
-      }
 
       // Menu Gestion des Utilisateurs supprimé - maintenant dans la section GESTION
 

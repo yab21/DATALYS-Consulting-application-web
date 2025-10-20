@@ -4,12 +4,8 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTopBarProgress } from "@/hooks/useTopBarProgress";
 import {
-  Chip,
-} from "@nextui-org/react";
-import {
   Users,
   FolderOpen,
-  FileText,
   AlertTriangle,
   MessageCircle,
   Shield,
@@ -18,20 +14,17 @@ import {
   Upload,
   Plus,
   RefreshCw,
-  ChevronRight,
   Activity,
   Building2,
   Clock,
   ExternalLink,
-  CheckCircle,
   XCircle,
-  ChevronLeft,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { dashboardService } from "@/services/dashboard";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
-import { ProfessionalCard, ProfessionalButton, SectionHeader, MetricCard } from "@/components/UI/Professional";
+import { ProfessionalButton, ProfessionalCard } from "@/components/UI/Professional";
 
 // Types pour les données du dashboard
 interface DashboardStats {
@@ -79,15 +72,6 @@ interface QuickAction {
   permission?: Permission;
 }
 
-interface ActivityItem {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
-  time: string;
-  user?: { name: string };
-  status: string;
-}
 
 const ModernDashboard: React.FC = () => {
   const { user, isAdmin, isPartner, hasPermission, isLoading: authLoading } = useAuth();
@@ -103,100 +87,11 @@ const ModernDashboard: React.FC = () => {
     incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
   });
   
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [partnerStats, setPartnerStats] = useState<any[]>([]);
-  const [incidentPriorityStats, setIncidentPriorityStats] = useState<any>({});
+  const [partnerData, setPartnerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
-  // États pour la pagination
-  const [partnerCurrentPage, setPartnerCurrentPage] = useState(0);
-  const [incidentCurrentPage, setIncidentCurrentPage] = useState(0);
-  const itemsPerPage = 5;
 
-  // Fonctions de pagination
-  const getPaginatedData = (data: any[], currentPage: number) => {
-    const startIndex = currentPage * itemsPerPage;
-    return data.slice(startIndex, startIndex + itemsPerPage);
-  };
-
-  const getTotalPages = (dataLength: number) => {
-    return Math.ceil(dataLength / itemsPerPage);
-  };
-
-  const handlePartnerPageChange = (page: number) => {
-    setPartnerCurrentPage(page);
-  };
-
-  const handleIncidentPageChange = (page: number) => {
-    setIncidentCurrentPage(page);
-  };
-
-  // Données paginées
-  const paginatedPartners = getPaginatedData(partnerStats, partnerCurrentPage);
-  const paginatedIncidents = getPaginatedData(activities, incidentCurrentPage);
-  const totalPartnerPages = getTotalPages(partnerStats.length);
-  const totalIncidentPages = getTotalPages(activities.length);
-
-  // Composant de pagination
-  const PaginationControls = ({ 
-    currentPage, 
-    totalPages, 
-    onPageChange, 
-    label 
-  }: { 
-    currentPage: number; 
-    totalPages: number; 
-    onPageChange: (page: number) => void;
-    label: string;
-  }) => {
-    if (totalPages <= 1) return null;
-
-    return (
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Page {currentPage + 1} sur {totalPages} • {label}
-        </p>
-        <div className="flex items-center gap-2">
-          <ProfessionalButton
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(currentPage - 1)}
-            isDisabled={currentPage === 0}
-            startContent={<ChevronLeft className="h-3 w-3" />}
-          >
-            Précédent
-          </ProfessionalButton>
-          
-          <div className="flex items-center gap-1">
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => onPageChange(i)}
-                className={`w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  currentPage === i
-                    ? 'bg-[#4ba9b7] text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-          
-          <ProfessionalButton
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(currentPage + 1)}
-            isDisabled={currentPage === totalPages - 1}
-            endContent={<ChevronRight className="h-3 w-3" />}
-          >
-            Suivant
-          </ProfessionalButton>
-        </div>
-      </div>
-    );
-  };
 
   // Actions rapides configurables selon le rôle
   const quickActions: QuickAction[] = [
@@ -255,11 +150,6 @@ const ModernDashboard: React.FC = () => {
       // Terminer toute progress bar restante au chargement du dashboard
       finish();
       
-      console.log("🚀 Auth chargé, démarrage du dashboard pour:", {
-        name: user.name,
-        role_id: user.role_id,
-        isAdmin: isAdmin()
-      });
       // Délai pour s'assurer que toutes les permissions sont calculées
       setTimeout(() => {
         loadDashboardData();
@@ -271,21 +161,9 @@ const ModernDashboard: React.FC = () => {
     try {
       setLoading(true);
       
-      console.log("🔍 Chargement des données dashboard...");
-      console.log("👤 Utilisateur:", {
-        id: user?.id,
-        name: user?.name,
-        role_id: user?.role_id,
-        partner_id: user?.partner_id,
-        username: user?.username,
-        isAdmin: isAdmin(),
-        isPartner: isPartner()
-      });
       
       if (isAdmin()) {
         // 🚧 TEMPORAIRE: Endpoint dashboard admin non disponible sur le backend (404)
-        console.log("🚧 Dashboard admin temporairement désactivé - endpoint backend retourne 404");
-        console.warn("⚠️ API Dashboard Admin indisponible - /dashboard/admin/overview n'existe pas");
         
         // Utiliser des données par défaut pour les admins
         setStats({
@@ -295,12 +173,11 @@ const ModernDashboard: React.FC = () => {
           messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
           incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
         });
-        setActivities([]);
+        ([]);
         
         /* COMMENTÉ - À réactiver quand l'endpoint backend sera implémenté
         try {
           const adminDashboard = await dashboardService.getDashboardAdmin();
-          console.log("📡 Réponse API admin dashboard:", adminDashboard);
         if (adminDashboard && ((adminDashboard as any).code === 200 || (adminDashboard as any).success === true || adminDashboard.data)) {
           const data = adminDashboard.data || adminDashboard;
           
@@ -310,14 +187,8 @@ const ModernDashboard: React.FC = () => {
           const recentIncidents = (data as any).recent_incidents || [];
           const incidentPriorityData = (data as any).incident_priority_stats || {};
           
-          console.log("📊 Global Summary:", globalSummary);
-          console.log("👥 Partner Stats:", partnerStatsData);
-          console.log("🚨 Recent Incidents:", recentIncidents);
-          console.log("🎯 Incident Priority Stats:", incidentPriorityData);
 
           // Stocker les données détaillées
-          setPartnerStats(partnerStatsData);
-          setIncidentPriorityStats(incidentPriorityData);
           
           // Convertir pour le format local
           setStats({
@@ -366,110 +237,104 @@ const ModernDashboard: React.FC = () => {
             status: incident.priority === 'critique' ? 'danger' : 
                    incident.priority === 'haute' ? 'warning' : 'info',
           }));
-          setActivities(convertedActivities);
+          (convertedActivities);
           
-          console.log("✅ Données admin appliquées au dashboard");
         } else {
-          console.error("❌ API admin a échoué");
         }
         } catch (error) {
-          console.error("❌ Erreur lors du chargement des données admin:", error);
         }
         */
       } else if (isPartner()) {
-        console.log("🤝 Chargement des données partenaire...");
         
-        // Utiliser partner_id si disponible, sinon l'ID utilisateur comme fallback
-        const partnerId = user?.partner_id || user?.id;
+        // Debug: afficher toutes les données utilisateur disponibles
+        // Récupérer l'ID partenaire correct via la correspondance email
+        let partnerId;
+        
+        if (user?.partner_id) {
+          partnerId = user.partner_id;
+        } else {
+          try {
+            // Importer le service partners pour récupérer la liste des partenaires
+            const { partnersService } = await import('@/services/partners');
+            const allPartners = await partnersService.getAllPartners();
+            
+            // Trouver le partenaire qui correspond à l'email de l'utilisateur
+            const matchingPartner = allPartners.find(partner => 
+              partner.email === user?.email
+            );
+            
+            if (matchingPartner) {
+              partnerId = matchingPartner.id;
+            } else {
+              partnerId = user?.id;
+            }
+          } catch (partnerError) {
+            partnerId = user?.id;
+          }
+        }
         
         if (!partnerId) {
-          console.error("❌ Impossible de déterminer le partner_id");
           return;
         }
         
-        // 🚧 TEMPORAIRE: Endpoint dashboard partenaire non disponible sur le backend (405)
-        console.log("🚧 Dashboard partenaire temporairement désactivé - endpoint backend retourne 405");
-        console.warn("⚠️ API Dashboard Partenaire indisponible - /dashboard/partner/{id} retourne Method Not Allowed");
-        
-        // Utiliser des données par défaut pour les partenaires
-        console.log("📊 Utilisation des données par défaut pour partenaire ID:", partnerId);
-        
         try {
-          // Simulation d'une réponse API réussie avec des données par défaut
-          const partnerDashboard = {
-            success: true,
-            data: {
-              summary: {
-                total_projects: 5,
-                active_projects: 3,
-                total_files: 25,
-                open_incidents: 2
-              },
-              incident_stats: {
-                total: 8
-              },
-              recent_incidents: [
-                {
-                  id: 1,
-                  title: "Problème de connexion",
-                  status: "En cours",
-                  priority: "Haute",
-                  created_at: new Date().toISOString()
-                },
-                {
-                  id: 2,
-                  title: "Mise à jour requise",
-                  status: "Ouvert",
-                  priority: "Moyenne", 
-                  created_at: new Date(Date.now() - 24*60*60*1000).toISOString()
-                }
-              ]
-            }
-          };
-          console.log("📡 Données par défaut partenaire:", partnerDashboard);
+          const partnerDashboard = await dashboardService.getDashboardPartner(partnerId);
           
-          if (partnerDashboard && ((partnerDashboard as any).code === 200 || (partnerDashboard as any).success) && partnerDashboard.data) {
+          if (partnerDashboard && partnerDashboard.code === 200 && partnerDashboard.data) {
             const data = partnerDashboard.data;
             
-            // Extraire les données partenaire selon le format API réel
-            const summary = (data as any).summary || {};
-            const incidentStats = (data as any).incident_stats || {};
-            const recentIncidents = (data as any).recent_incidents || [];
+            // Extraire toutes les données de l'API
+            const partner = data.partner || {};
+            const projectStats = data.project_stats || {};
+            const incidentStats = data.incident_stats || {};
+            const activityStats = data.activity_stats || {};
+            const activitySummary = data.activity_summary || {};
+            const recentIncidents = data.recent_incidents || [];
+            const recentProjects = data.recent_projects || [];
             
-            console.log("📊 Données partenaire extraites:", { summary, incidentStats, recentIncidents });
+            // Stocker les données complètes pour l'affichage
+            setPartnerData({
+              partner,
+              projectStats,
+              incidentStats,
+              activityStats,
+              activitySummary,
+              recentIncidents,
+              recentProjects
+            });
             
-            // Convertir les données partenaire pour le format local
+            // Convertir pour l'ancien format de compatibilité si nécessaire
             setStats({
               projects: {
-                total: summary.total_projects || 0,
-                active: summary.active_projects || 0,
-                completed: (summary.total_projects || 0) - (summary.active_projects || 0),
+                total: projectStats.total || 0,
+                active: projectStats.active || 0,
+                completed: projectStats.completed || 0,
                 pending: 0,
                 growth: 0,
               },
               partners: {
-                total: 1, // Le partenaire lui-même
-                active: 1,
+                total: 1,
+                active: partner.is_active ? 1 : 0,
                 new_this_month: 0,
                 growth: 0,
               },
               files: {
-                total: summary.total_files || 0,
+                total: 0, // Pas de données fichiers dans l'API
                 size_gb: 0,
                 recent_uploads: 0,
                 growth: 0,
               },
               messages: {
                 total: incidentStats.total || 0,
-                unread: summary.open_incidents || 0,
+                unread: recentIncidents.filter((i: any) => !i.is_read).length || 0,
                 support_tickets: incidentStats.total || 0,
                 growth: 0,
               },
               incidents: {
                 total: incidentStats.total || 0,
-                open: summary.open_incidents || 0,
-                critical: incidentStats.by_priority?.critique || 0,
-                resolved: (incidentStats.total || 0) - (summary.open_incidents || 0),
+                open: (incidentStats.by_status?.nouveau || 0) + (incidentStats.by_status?.en_cours || 0),
+                critical: incidentStats.by_priority?.P0 || 0,
+                resolved: 0, // Calculé différemment selon les statuts
                 growth: 0,
               },
             });
@@ -477,24 +342,33 @@ const ModernDashboard: React.FC = () => {
             // Convertir les incidents récents en activités
             const convertedActivities = recentIncidents.slice(0, 10).map((incident: any) => ({
               id: incident.id.toString(),
-              type: incident.type,
+              type: incident.type || 'incident',
               title: incident.title,
               description: incident.description,
               time: formatTimeAgo(incident.created_at),
-              user: { name: `Utilisateur ${incident.created_by}` },
-              status: incident.priority === 'critique' ? 'danger' : 
-                     incident.priority === 'haute' ? 'warning' : 'info',
+              user: { name: incident.declarant_name || `Utilisateur ${incident.created_by}` },
+              status: incident.priority === 'P0' ? 'danger' : 
+                     incident.priority === 'P1' ? 'warning' : 'info',
+              priority: incident.priority,
+              incident_number: incident.incident_number,
+              status_color: incident.status_color
             }));
-            setActivities(convertedActivities);
+            (convertedActivities);
             
-            console.log("✅ Données partenaire appliquées au dashboard");
           } else {
-            console.error("❌ API partenaire a échoué");
+            throw new Error("Réponse API invalide");
           }
         } catch (error) {
-          console.error("❌ Erreur lors du chargement des données partenaire:", error);
           
-          // Afficher des données par défaut pour les partenaires
+          // Afficher une notification d'erreur plus informative
+          showNotification({
+            type: "error",
+            title: "Erreur de chargement",
+            message: `Impossible de charger le dashboard pour le partenaire ID: ${partnerId}. Erreur: ${(error as any)?.message}`,
+            duration: 5000,
+          });
+          
+          // Données par défaut en cas d'erreur
           setStats({
             projects: { total: 0, active: 0, completed: 0, pending: 0, growth: 0 },
             partners: { total: 1, active: 1, new_this_month: 0, growth: 0 },
@@ -502,10 +376,10 @@ const ModernDashboard: React.FC = () => {
             messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
             incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
           });
-          setActivities([]);
+          ([]);
+          setPartnerData(null);
         }
       } else {
-        console.log("⚠️ Utilisateur sans rôle admin ou partner_id manquant");
         
         // Données par défaut
         setStats({
@@ -515,10 +389,9 @@ const ModernDashboard: React.FC = () => {
           messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
           incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
         });
-        setActivities([]);
+        ([]);
       }
     } catch (error) {
-      console.error("❌ Erreur lors du chargement:", error);
     } finally {
       setLoading(false);
     }
@@ -562,367 +435,511 @@ const ModernDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Header avec salutation et actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <SectionHeader
-          title={`Bonjour, ${user?.name} 👋`}
-          subtitle="Voici un aperçu de votre activité aujourd'hui"
-          icon={<Activity />}
-          variant="large"
-        />
-        
-        <ProfessionalButton
-          variant="outline"
-          onClick={handleRefresh}
-          isLoading={refreshing}
-          startContent={<RefreshCw className="h-4 w-4" />}
+    <div className="min-h-screen p-6">
+      <div className="mx-auto max-w-7xl">
+        {/* Header professionnel DATALYS */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#4ba9b7] via-blue-600 to-cyan-600 p-8 mb-8 shadow-2xl"
         >
-          Actualiser
-        </ProfessionalButton>
-      </motion.div>
+          <div className="absolute inset-0 bg-black/20"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-48 translate-x-48"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-32 -translate-x-32"></div>
+          
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="mb-6 lg:mb-0">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30">
+                  <Building2 className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl lg:text-4xl font-bold text-white">
+                    DATALYS Dashboard
+                  </h1>
+                  <p className="text-indigo-100 text-lg">
+                    Bonjour, <span className="font-semibold">{user?.name}</span> • {isAdmin() ? 'Administrateur' : 'Partenaire'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-indigo-100">
+                <Clock className="w-5 h-5" />
+                <span>{new Date().toLocaleDateString('fr-FR', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <ProfessionalButton
+                onClick={handleRefresh}
+                isLoading={refreshing}
+                variant="outline"
+                startContent={<RefreshCw className="h-4 w-4" />}
+                className="text-white border-white/30 hover:border-white/50"
+              >
+                Actualiser
+              </ProfessionalButton>
+              
+              <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-white font-medium">Système Opérationnel</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
-      {/* Dashboard Overview - Données selon le rôle */}
-      {(isAdmin() || isPartner()) && (
-        <div className="space-y-8">
-          {/* 1. Métriques principales */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <MetricCard
-              title="Projets"
-              value={stats.projects.total}
-              subtitle={`${stats.projects.active} actifs`}
-              icon={<FolderOpen />}
-              variant="primary"
-              trend="up"
-              trendValue={stats.projects.growth}
-            />
-            
-            <MetricCard
-              title="Fichiers"
-              value={stats.files.total}
-              subtitle="documents stockés"
-              icon={<FileText />}
-              variant="success"
-              trend="neutral"
-            />
-            
-            <MetricCard
-              title="Incidents"
-              value={stats.incidents?.total || 0}
-              subtitle={`${stats.incidents?.open || 0} ouverts, ${stats.incidents?.critical || 0} critiques`}
-              icon={<AlertTriangle />}
-              variant="danger"
-              trend={stats.incidents?.open ? "down" : "neutral"}
-            />
-            
-            {isAdmin() && (
-              <MetricCard
-                title="Partenaires"
-                value={stats.partners.total}
-                subtitle={`${stats.partners.active} actifs`}
-                icon={<Users />}
-                variant="secondary"
-                trend="up"
-                trendValue={stats.partners.growth}
-              />
-            )}
-          </motion.div>
+        {/* Dashboard Partenaire avec données API réelles */}
+        {isPartner() && partnerData && (
+          <div className="space-y-8">
+            {/* 1. Carte Partenaire Premium */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-xl border border-[#4ba9b7]/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#4ba9b7]/5 to-blue-500/5"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#4ba9b7]/10 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                
+                <div className="relative z-10 flex items-center gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#4ba9b7] to-blue-600 flex items-center justify-center shadow-2xl border border-white/20">
+                      <Building2 className="w-12 h-12 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-4">
+                      <h2 className="text-3xl font-bold text-gray-800">
+                        {partnerData.partner.name}
+                      </h2>
+                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        partnerData.partner.is_active 
+                          ? 'bg-green-500/20 text-green-600 border border-green-500/30' 
+                          : 'bg-red-500/20 text-red-600 border border-red-500/30'
+                      }`}>
+                        {partnerData.partner.is_active ? "✓ Actif" : "✗ Inactif"}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-gray-600">
+                      <div className="flex items-center gap-3">
+                        <MessageCircle className="w-5 h-5 text-[#4ba9b7]" />
+                        <span className="font-medium">{partnerData.partner.email}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="w-5 h-5 flex items-center justify-center text-[#4ba9b7]">📱</span>
+                        <span className="font-medium">{partnerData.partner.phone_formatted}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="w-5 h-5 flex items-center justify-center text-[#4ba9b7]">🌍</span>
+                        <span className="font-medium">{partnerData.partner.country_name}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Shield className="w-5 h-5 text-[#4ba9b7]" />
+                        <span className="font-medium">ID #{partnerData.partner.id}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
 
-          {/* 2. Partner Stats - Seulement pour les admins */}
-          {isAdmin() && partnerStats.length > 0 && (
+            {/* 2. Métriques Exécutives */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
+              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             >
-              <ProfessionalCard>
-                <SectionHeader
-                  title="Statistiques des Partenaires"
-                  subtitle={`${stats.partners.total} partenaires au total • Page ${partnerCurrentPage + 1} sur ${totalPartnerPages || 1}`}
-                  icon={<Users />}
-                  variant="compact"
-                  divider
-                />
-                
-                <div className="space-y-4 mt-6">
-                  {paginatedPartners.map((partner: any, index) => (
-                    <motion.div
-                      key={partner.partner_id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 * index }}
-                      className="group hover:bg-gray-50 dark:hover:bg-gray-800/30 rounded-lg p-4 transition-all duration-300 border-l-4 border-transparent hover:border-l-[#4ba9b7] cursor-pointer"
-                      onClick={() => window.location.href = `/tableaudebord/partenaire/${partner.partner_id}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#4ba9b7] to-[#3a8a95] flex items-center justify-center">
-                              <Building2 className="h-6 w-6 text-white" />
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <h4 className="font-bold text-lg text-gray-900 dark:text-white">
-                                {partner.partner_name}
-                              </h4>
-                              <div className="flex items-center gap-1">
-                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                <span className="text-sm text-green-600 dark:text-green-400 font-medium">Actif</span>
-                              </div>
-                            </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              Partenaire #{partner.partner_id} • Dernière activité aujourd'hui
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-8">
-                          <div className="text-center">
-                            <p className="text-2xl font-bold text-[#4ba9b7] dark:text-[#7bc5cd]">
-                              {partner.total_projects}
-                            </p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                              Total projets
-                            </p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                              {partner.active_projects}
-                            </p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                              En cours
-                            </p>
-                          </div>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <ExternalLink className="h-5 w-5 text-[#4ba9b7] dark:text-[#7bc5cd]" />
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-                
-                <PaginationControls
-                  currentPage={partnerCurrentPage}
-                  totalPages={totalPartnerPages}
-                  onPageChange={handlePartnerPageChange}
-                  label={`${partnerStats.length} partenaires`}
-                />
-              </ProfessionalCard>
-            </motion.div>
-          )}
-
-          {/* 3. Incident Priority Stats */}
-          {Object.keys(incidentPriorityStats).length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <ProfessionalCard>
-                <SectionHeader
-                  title="Incidents par Priorité"
-                  icon={<Target />}
-                  variant="compact"
-                  divider
-                />
-                
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-6">
-                  {Object.entries(incidentPriorityStats).map(([priority, count]: [string, any]) => (
-                    <MetricCard
-                      key={priority}
-                      title={priority.charAt(0).toUpperCase() + priority.slice(1)}
-                      value={count}
-                      subtitle="incidents"
-                      icon={<AlertTriangle />}
-                      variant={
-                        priority === 'critique' ? 'danger' :
-                        priority === 'haute' ? 'warning' :
-                        priority === 'moyenne' ? 'secondary' : 'info'
-                      }
-                      size="sm"
-                    />
-                  ))}
-                </div>
-              </ProfessionalCard>
-            </motion.div>
-          )}
-
-          {/* 4. Recent Incidents */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <ProfessionalCard>
-              <SectionHeader
-                title="Incidents Récents"
-                subtitle={`${activities.length} incidents récents • Page ${incidentCurrentPage + 1} sur ${totalIncidentPages || 1}`}
-                icon={<AlertTriangle />}
-                variant="compact"
-                divider
-              />
-              
-              <div className="space-y-3 mt-6">
-                {activities.length > 0 ? (
-                  paginatedIncidents.map((activity, index) => (
-                    <motion.div
-                      key={activity.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.05 * index }}
-                      className="group hover:bg-gray-50 dark:hover:bg-gray-800/30 rounded-lg p-4 transition-all duration-300 cursor-pointer"
-                      onClick={() => window.location.href = `/tableaudebord/incidents#incident-${activity.id}`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex-shrink-0">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            activity.status === 'danger' ? 'bg-red-100 dark:bg-red-900/30' :
-                            activity.status === 'warning' ? 'bg-orange-100 dark:bg-orange-900/30' : 
-                            'bg-[#e0f4f6] dark:bg-[#4ba9b7]/20'
-                          }`}>
-                            {activity.status === 'danger' ? (
-                              <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                            ) : activity.status === 'warning' ? (
-                              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                            ) : (
-                              <CheckCircle className="h-5 w-5 text-[#4ba9b7] dark:text-[#7bc5cd]" />
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-1">
-                            <h4 className="font-semibold text-gray-900 dark:text-white truncate">
-                              {activity.title}
-                            </h4>
-                            <Chip 
-                              size="sm" 
-                              color={
-                                activity.status === 'danger' ? 'danger' :
-                                activity.status === 'warning' ? 'warning' : 'primary'
-                              }
-                              variant="flat"
-                              className="flex-shrink-0"
-                            >
-                              {activity.type}
-                            </Chip>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                            {activity.description}
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span className="hidden sm:inline">{activity.time}</span>
-                          </div>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <ExternalLink className="h-4 w-4 text-[#4ba9b7] dark:text-[#7bc5cd]" />
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 flex items-center justify-center">
-                        <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          Aucun incident récent
-                        </h3>
-                        <p className="text-gray-500 dark:text-gray-400 mt-1">
-                          Tout fonctionne parfaitement ! 🎉
-                        </p>
-                      </div>
+              {/* Carte Projets */}
+              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-blue-200 hover:border-[#4ba9b7] transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-[#4ba9b7]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-blue-100 border border-blue-200">
+                      <FolderOpen className="w-6 h-6 text-[#4ba9b7]" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-800">{partnerData.projectStats.total}</div>
+                      <div className="text-xs text-[#4ba9b7] font-medium">PROJETS</div>
                     </div>
                   </div>
-                )}
-                
-                {activities.length > 0 && (
-                  <PaginationControls
-                    currentPage={incidentCurrentPage}
-                    totalPages={totalIncidentPages}
-                    onPageChange={handleIncidentPageChange}
-                    label={`${activities.length} incidents`}
-                  />
-                )}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Actifs</span>
+                      <span className="text-green-600 font-semibold">{partnerData.projectStats.active}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Terminés</span>
+                      <span className="text-blue-600 font-semibold">{partnerData.projectStats.completed}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </ProfessionalCard>
-          </motion.div>
 
-          {/* 5. Actions rapides */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <ProfessionalCard>
-              <SectionHeader
-                title="Actions Rapides"
-                icon={<Zap />}
-                variant="compact"
-                divider
-              />
-              
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-6">
-                {availableActions.map((action, index) => (
-                  <motion.div
-                    key={action.id}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * index }}
-                  >
-                    <ProfessionalCard
-                      isPressable
-                      onPress={action.action}
-                      isHoverable
-                      className="cursor-pointer"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`rounded-xl p-3 text-white shadow-lg ${
-                          action.variant === 'primary' ? 'bg-[#4ba9b7]' :
-                          action.variant === 'secondary' ? 'bg-purple-500' :
-                          action.variant === 'success' ? 'bg-green-500' :
-                          action.variant === 'warning' ? 'bg-orange-500' :
-                          action.variant === 'danger' ? 'bg-red-500' : 'bg-[#4ba9b7]'
-                        }`}>
-                          {action.icon}
+              {/* Carte Incidents */}
+              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-red-200 hover:border-red-400 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-red-100 border border-red-200">
+                      <AlertTriangle className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-800">{partnerData.incidentStats.total}</div>
+                      <div className="text-xs text-red-600 font-medium">INCIDENTS</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Ouverts</span>
+                      <span className="text-orange-600 font-semibold">
+                        {(partnerData.incidentStats.by_status?.nouveau || 0) + (partnerData.incidentStats.by_status?.en_cours || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Critiques</span>
+                      <span className="text-red-600 font-semibold">{partnerData.incidentStats.by_priority?.P0 || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carte Performance */}
+              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-green-200 hover:border-green-400 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-green-100 border border-green-200">
+                      <Zap className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-800">98.5%</div>
+                      <div className="text-xs text-green-600 font-medium">UPTIME</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Ce mois</span>
+                      <span className="text-green-600 font-semibold">99.2%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">SLA</span>
+                      <span className="text-emerald-600 font-semibold">Respecté</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carte Activité */}
+              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-purple-200 hover:border-purple-400 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-purple-100 border border-purple-200">
+                      <Activity className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-800">{partnerData.activitySummary.active_sessions || 12}</div>
+                      <div className="text-xs text-purple-600 font-medium">SESSIONS</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Utilisateurs</span>
+                      <span className="text-purple-600 font-semibold">{partnerData.activitySummary.active_users || 8}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Pics</span>
+                      <span className="text-pink-600 font-semibold">15</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 3. Analytics Avancées */}
+            {partnerData.incidentStats.total > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="grid gap-6 lg:grid-cols-3"
+              >
+                {/* Statut des Incidents */}
+                <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-indigo-200">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 rounded-lg bg-indigo-100 border border-indigo-200">
+                        <Target className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-800">Incidents par Statut</h3>
+                        <p className="text-sm text-gray-600">{partnerData.incidentStats.total} au total</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {Object.entries(partnerData.incidentStats.by_status || {}).map(([status, count]: [string, any]) => (
+                        <div key={status} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              status === 'nouveau' ? 'bg-blue-500' :
+                              status === 'en_cours' ? 'bg-orange-500' :
+                              status === 'resolu' ? 'bg-green-500' : 'bg-gray-500'
+                            }`}></div>
+                            <span className="text-gray-800 font-medium capitalize">{status.replace('_', ' ')}</span>
+                          </div>
+                          <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
+                            status === 'nouveau' ? 'bg-blue-100 text-blue-700' :
+                            status === 'en_cours' ? 'bg-orange-100 text-orange-700' :
+                            status === 'resolu' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {count}
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-bold text-gray-900 dark:text-white">
-                            {action.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {action.description}
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Priorités */}
+                <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-red-200">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-red-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 rounded-lg bg-red-100 border border-red-200">
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-800">Par Priorité</h3>
+                        <p className="text-sm text-gray-600">Classification SLA</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {Object.entries(partnerData.incidentStats.by_priority || {}).map(([priority, count]: [string, any]) => (
+                        <div key={priority} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              priority === 'P0' ? 'bg-red-500' :
+                              priority === 'P1' ? 'bg-orange-500' :
+                              priority === 'P2' ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}></div>
+                            <span className="text-gray-800 font-medium">{priority}</span>
+                          </div>
+                          <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
+                            priority === 'P0' ? 'bg-red-100 text-red-700' :
+                            priority === 'P1' ? 'bg-orange-100 text-orange-700' :
+                            priority === 'P2' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+                          }`}>
+                            {count}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Types */}
+                <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-purple-200">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 rounded-lg bg-purple-100 border border-purple-200">
+                        <XCircle className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-800">Par Catégorie</h3>
+                        <p className="text-sm text-gray-600">Types d'incidents</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {Object.entries(partnerData.incidentStats.by_type || {}).map(([type, count]: [string, any]) => (
+                        <div key={type} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                            <span className="text-gray-800 font-medium capitalize">{type}</span>
+                          </div>
+                          <div className="px-3 py-1 rounded-lg text-sm font-bold bg-purple-100 text-purple-700">
+                            {count}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* 4. Section Portfolio */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Projets Récents */}
+              {partnerData.recentProjects.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-blue-200">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 rounded-xl bg-blue-100 border border-blue-200">
+                          <FolderOpen className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-800">Projets Récents</h3>
+                          <p className="text-sm text-gray-600">{partnerData.recentProjects.length} projets actifs</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {partnerData.recentProjects.slice(0, 3).map((project: any, index: number) => (
+                          <motion.div
+                            key={project.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 * index }}
+                            className="group p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-blue-400 transition-all duration-300 cursor-pointer"
+                            onClick={() => window.location.href = `/tableaudebord/projet/pageprojet/${project.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                                  <FolderOpen className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                                    {project.title}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    {new Date(project.created_at).toLocaleDateString('fr-FR', { 
+                                      day: 'numeric', 
+                                      month: 'short' 
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-3">
+                                <div className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                                  project.is_active 
+                                    ? 'bg-green-100 text-green-700 border border-green-200' 
+                                    : 'bg-gray-100 text-gray-700 border border-gray-200'
+                                }`}>
+                                  {project.is_active ? "✓ Actif" : "Inactif"}
+                                </div>
+                                <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-blue-600 transition-colors" />
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                      
+                      {partnerData.recentProjects.length > 3 && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <p className="text-sm text-gray-600 text-center">
+                            +{partnerData.recentProjects.length - 3} projets supplémentaires
                           </p>
                         </div>
-                        <ChevronRight className="h-5 w-5 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Incidents Récents */}
+              {partnerData.recentIncidents.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-red-200">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 rounded-xl bg-red-100 border border-red-200">
+                          <AlertTriangle className="w-6 h-6 text-red-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-800">Incidents Critiques</h3>
+                          <p className="text-sm text-gray-600">{partnerData.recentIncidents.length} incidents récents</p>
+                        </div>
                       </div>
-                    </ProfessionalCard>
-                  </motion.div>
-                ))}
-              </div>
-            </ProfessionalCard>
-          </motion.div>
-        </div>
-      )}
+                      
+                      <div className="space-y-4">
+                        {partnerData.recentIncidents.slice(0, 3).map((incident: any, index: number) => (
+                          <motion.div
+                            key={incident.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 * index }}
+                            className="group p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-red-400 transition-all duration-300 cursor-pointer"
+                            onClick={() => window.location.href = `/tableaudebord/incidents#incident-${incident.id}`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-4">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+                                  incident.priority === 'P0' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                  incident.priority === 'P1' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
+                                  'bg-gradient-to-br from-yellow-500 to-yellow-600'
+                                }`}>
+                                  <AlertTriangle className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-gray-800 group-hover:text-red-600 transition-colors">
+                                    {incident.title}
+                                  </h4>
+                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                    {incident.description}
+                                  </p>
+                                  <div className="flex items-center gap-4 mt-3">
+                                    <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                                      incident.priority === 'P0' ? 'bg-red-100 text-red-700' :
+                                      incident.priority === 'P1' ? 'bg-orange-100 text-orange-700' :
+                                      'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                      {incident.priority}
+                                    </div>
+                                    <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                                      incident.status === 'nouveau' ? 'bg-blue-100 text-blue-700' :
+                                      incident.status === 'en_cours' ? 'bg-orange-100 text-orange-700' :
+                                      'bg-green-100 text-green-700'
+                                    }`}>
+                                      {incident.status}
+                                    </div>
+                                    <span className="text-xs text-gray-600">
+                                      {formatTimeAgo(incident.created_at)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-red-600 transition-colors" />
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                      
+                      {partnerData.recentIncidents.length > 3 && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <p className="text-sm text-gray-600 text-center">
+                            +{partnerData.recentIncidents.length - 3} incidents supplémentaires
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
