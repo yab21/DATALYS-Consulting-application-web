@@ -10,6 +10,8 @@ import LoadingState from "@/components/UI/Loading/LoadingState";
 import { ProfessionalCard, MetricCard, ProfessionalButton } from "@/components/UI/Professional";
 import { Incident, IncidentsService } from "@/services/incidents";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { getContextualErrorMessage } from '@/lib/error-messages';
+import { apiInterceptor } from '@/lib/api-interceptor';
 import IncidentFiles from "./IncidentFiles";
 import { 
   AlertTriangle, 
@@ -77,10 +79,21 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
         
       } catch (error) {
         console.error("❌ Erreur lors du chargement de l'incident:", error);
+        
+        // Vérifier d'abord si c'est une erreur de token expiré
+        apiInterceptor.handleApiError(error);
+
+        // Générer le message d'erreur approprié
+        const errorMessage = getContextualErrorMessage(error, {
+          operation: 'load',
+          dataType: 'incidents',
+          fallback: "Impossible de charger les données de l'incident"
+        });
+
         showNotification({
           type: "error",
           title: "Erreur de chargement",
-          message: "Impossible de charger les données de l'incident",
+          message: errorMessage,
           duration: 5000,
         });
         

@@ -43,6 +43,8 @@ import { projectsService, Project } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { getContextualErrorMessage } from '@/lib/error-messages';
+import { apiInterceptor } from '@/lib/api-interceptor';
 import ProjectModals from "./ProjectModals";
 
 const OptimizedProjectList: React.FC = () => {
@@ -341,9 +343,19 @@ const OptimizedProjectList: React.FC = () => {
           // Laisser TokenExpirationHandler gérer la redirection pour les admins
         }
       } else {
+        // Vérifier d'abord si c'est une erreur de token expiré
+        apiInterceptor.handleApiError(error);
+
+        // Générer le message d'erreur approprié
+        const errorMessage = getContextualErrorMessage(error, {
+          operation: 'load',
+          dataType: 'projects',
+          fallback: "Impossible de charger les données"
+        });
+
         showNotification(simpleNotificationHelpers.error(
           "Erreur",
-          "Impossible de charger les données"
+          errorMessage
         ));
       }
     } finally {

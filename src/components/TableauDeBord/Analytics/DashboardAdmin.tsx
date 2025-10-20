@@ -36,6 +36,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import LoadingState from "@/components/UI/Loading/LoadingState";
+import { getContextualErrorMessage } from '@/lib/error-messages';
+import { apiInterceptor } from '@/lib/api-interceptor';
 
 // Types pour les analytics
 interface GlobalStats {
@@ -243,10 +245,21 @@ const DashboardAdmin: React.FC = () => {
 
       } catch (error) {
         console.error("Erreur lors du chargement des analytics:", error);
+        
+        // Vérifier d'abord si c'est une erreur de token expiré
+        apiInterceptor.handleApiError(error);
+
+        // Générer le message d'erreur approprié
+        const errorMessage = getContextualErrorMessage(error, {
+          operation: 'load',
+          dataType: 'analytics',
+          fallback: "Impossible de charger les données analytics"
+        });
+
         showNotification({
           type: "error",
           title: "Erreur de chargement",
-          message: "Impossible de charger les données analytics",
+          message: errorMessage,
           duration: 5000,
         });
       } finally {
