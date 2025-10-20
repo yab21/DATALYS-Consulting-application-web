@@ -11,7 +11,7 @@ export interface Incident {
   type: string;
   priority: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
   priority_label: string;
-  status: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+  status: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'en_pause' | 'resolu';
   status_color: 'blue' | 'orange' | 'gray' | 'purple' | 'green' | 'default';
   category: string;
   impact: string;
@@ -37,7 +37,7 @@ export interface CreateIncidentData {
   description: string;
   type: string;
   priority: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
-  status: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+  status: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'en_pause' | 'resolu';
   category: string;
   impact: string;
   domain: string;
@@ -56,7 +56,7 @@ export interface UpdateIncidentData {
   description?: string;
   type?: string;
   priority?: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
-  status?: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+  status?: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'en_pause' | 'resolu';
   category?: string;
   impact?: string;
   domain?: string;
@@ -76,7 +76,7 @@ export interface IncidentCriteria {
     title?: string;
     type?: string;
     priority?: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
-    status?: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+    status?: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'en_pause' | 'resolu';
     category?: string;
     impact?: string;
     domain?: string;
@@ -163,11 +163,17 @@ export class IncidentsService {
   }
 
   // Créer un nouvel incident
-  static async createIncident(incidentData: CreateIncidentData, userId?: number): Promise<any> {
-    // Récupérer les informations de l'utilisateur connecté
-    const currentUser = UsersService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('Utilisateur non connecté');
+  static async createIncident(incidentData: CreateIncidentData, userId?: number, userEmail?: string): Promise<any> {
+    // Si userId et userEmail sont fournis, les utiliser directement
+    let currentUser;
+    if (userId && userEmail) {
+      currentUser = { id: userId, email: userEmail };
+    } else {
+      // Sinon, récupérer depuis UsersService (fallback)
+      currentUser = UsersService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Utilisateur non connecté');
+      }
     }
     
     // Préparer les données avec assigned_to basé sur user_id
@@ -179,7 +185,7 @@ export class IncidentsService {
     
     const requestBody = {
       user: {
-        id: userId || currentUser.id,
+        id: currentUser.id,
         email: currentUser.email
       },
       datas: [processedData]
@@ -193,11 +199,17 @@ export class IncidentsService {
   }
 
   // Mettre à jour un incident
-  static async updateIncident(incidentData: UpdateIncidentData, userId?: number): Promise<any> {
-    // Récupérer les informations de l'utilisateur connecté
-    const currentUser = UsersService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('Utilisateur non connecté');
+  static async updateIncident(incidentData: UpdateIncidentData, userId?: number, userEmail?: string): Promise<any> {
+    // Si userId et userEmail sont fournis, les utiliser directement
+    let currentUser;
+    if (userId && userEmail) {
+      currentUser = { id: userId, email: userEmail };
+    } else {
+      // Sinon, récupérer depuis UsersService (fallback)
+      currentUser = UsersService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Utilisateur non connecté');
+      }
     }
     
     // Préparer les données avec assigned_to basé sur user_id si spécifié
@@ -272,11 +284,17 @@ export class IncidentsService {
   }
 
   // Exporter les incidents selon les critères spécifiés
-  static async exportIncidents(options: ExportIncidentOptions, userId?: number): Promise<any> {
-    // Récupérer les informations de l'utilisateur connecté
-    const currentUser = UsersService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('Utilisateur non connecté');
+  static async exportIncidents(options: ExportIncidentOptions, userId?: number, userEmail?: string): Promise<any> {
+    // Si userId et userEmail sont fournis, les utiliser directement
+    let currentUser;
+    if (userId && userEmail) {
+      currentUser = { id: userId, email: userEmail };
+    } else {
+      // Sinon, récupérer depuis UsersService (fallback)
+      currentUser = UsersService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Utilisateur non connecté');
+      }
     }
     
     const requestBody = {
@@ -300,10 +318,17 @@ export class IncidentsService {
   }
 
   // Méthode spécialisée pour l'export de fichiers (PDF, Excel, CSV)
-  static async exportIncidentsFile(options: ExportIncidentOptions): Promise<Blob> {
-    const currentUser = UsersService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('Utilisateur non connecté');
+  static async exportIncidentsFile(options: ExportIncidentOptions, userId?: number, userEmail?: string): Promise<Blob> {
+    // Si userId et userEmail sont fournis, les utiliser directement
+    let currentUser;
+    if (userId && userEmail) {
+      currentUser = { id: userId, email: userEmail };
+    } else {
+      // Sinon, récupérer depuis UsersService (fallback)
+      currentUser = UsersService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Utilisateur non connecté');
+      }
     }
     
     const requestBody = {

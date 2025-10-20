@@ -65,7 +65,7 @@ interface Incident {
   type: string;
   priorite: 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
   priorite_label: string;
-  statut: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'resolu';
+  statut: 'nouveau' | 'en_cours' | 'en_attente' | 'en_arbitrage' | 'en_pause' | 'resolu';
   statut_color: 'blue' | 'orange' | 'gray' | 'purple' | 'green' | 'default';
   category: string;
   impact: string;
@@ -128,6 +128,7 @@ interface IncidentStats {
   enCours: number;
   enAttente: number;
   enArbitrage: number;
+  enPause: number;
   resolus: number;
   p0: number;
   p1: number;
@@ -136,7 +137,7 @@ interface IncidentStats {
 
 
 const GestionIncidents: React.FC = () => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [filteredIncidents, setFilteredIncidents] = useState<Incident[]>([]);
@@ -161,7 +162,7 @@ const GestionIncidents: React.FC = () => {
   const [createForm, setCreateForm] = useState<CreateIncidentData>({
     title: "",
     description: "",
-    type: "",
+    type: "incident", // Type par défaut pour les incidents
     priority: "P2",
     status: "nouveau",
     category: "",
@@ -282,6 +283,7 @@ const GestionIncidents: React.FC = () => {
     enCours: 0,
     enAttente: 0,
     enArbitrage: 0,
+    enPause: 0,
     resolus: 0,
     p0: 0,
     p1: 0,
@@ -315,6 +317,7 @@ const GestionIncidents: React.FC = () => {
           size: pageSize,
           data: {
             is_active: true,
+            type: 'incident', // Filtrer seulement les incidents (pas les supports)
             ...(statusFilter !== "tous" && { status: statusFilter as any }),
             ...(priorityFilter !== "tous" && { priority: priorityFilter as any }),
           }
@@ -347,6 +350,7 @@ const GestionIncidents: React.FC = () => {
           enCours: convertedIncidents.filter(i => i.statut === "en_cours").length,
           enAttente: convertedIncidents.filter(i => i.statut === "en_attente").length,
           enArbitrage: convertedIncidents.filter(i => i.statut === "en_arbitrage").length,
+          enPause: convertedIncidents.filter(i => i.statut === "en_pause").length,
           resolus: convertedIncidents.filter(i => i.statut === "resolu").length,
           p0: convertedIncidents.filter(i => i.priorite === "P0").length,
           p1: convertedIncidents.filter(i => i.priorite === "P1").length,
@@ -377,6 +381,7 @@ const GestionIncidents: React.FC = () => {
           enCours: 0,
           enAttente: 0,
           enArbitrage: 0,
+          enPause: 0,
           resolus: 0,
           p0: 0,
           p1: 0,
@@ -428,6 +433,7 @@ const GestionIncidents: React.FC = () => {
       case "en_cours": return "warning"; // Orange
       case "en_attente": return "default"; // Gris
       case "en_arbitrage": return "secondary"; // Violet
+      case "en_pause": return "warning"; // Orange
       case "resolu": return "success"; // Vert
       case "ferme": return "default"; // Gris
       default: return "default";
@@ -451,6 +457,7 @@ const GestionIncidents: React.FC = () => {
       case "en_cours": return <Clock className="h-4 w-4" />;
       case "en_attente": return <Clock className="h-4 w-4" />;
       case "en_arbitrage": return <UserCheck className="h-4 w-4" />;
+      case "en_pause": return <Clock className="h-4 w-4" />;
       case "resolu": return <CheckCircle className="h-4 w-4" />;
       case "ferme": return <CheckCircle className="h-4 w-4" />;
       default: return <AlertTriangle className="h-4 w-4" />;
@@ -546,13 +553,21 @@ const GestionIncidents: React.FC = () => {
     try {
       console.log("🔄 Création d'un nouvel incident:", createForm);
       
-      await IncidentsService.createIncident(createForm);
+      // Vérifier que l'utilisateur est connecté
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
+      
+      await IncidentsService.createIncident(createForm, user.id, user.email);
       
       // Recharger les données
       const criteria: IncidentCriteria = {
         index: currentPage,
         size: pageSize,
-        data: { is_active: true }
+        data: { 
+          is_active: true,
+          type: 'incident' // Filtrer seulement les incidents
+        }
       };
       
       const refreshResponse = await IncidentsService.getIncidentsByCriteria(criteria);
@@ -610,7 +625,12 @@ const GestionIncidents: React.FC = () => {
     try {
       console.log("🔄 Modification de l'incident:", editForm);
       
-      await IncidentsService.updateIncident(editForm);
+      // Vérifier que l'utilisateur est connecté
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
+      
+      await IncidentsService.updateIncident(editForm, user.id, user.email);
       
       // Mettre à jour l'état local
       setIncidents(prev => prev.map(i => 
@@ -698,8 +718,13 @@ const GestionIncidents: React.FC = () => {
         include_details: exportForm.include_details
       };
       
+      // Vérifier que l'utilisateur est connecté
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
+      
       // Utiliser la nouvelle méthode qui gère correctement les fichiers binaires
-      const blob = await IncidentsService.exportIncidentsFile(exportOptions);
+      const blob = await IncidentsService.exportIncidentsFile(exportOptions, user.id, user.email);
       
       // Créer un lien de téléchargement
       const url = URL.createObjectURL(blob);
@@ -753,7 +778,7 @@ const GestionIncidents: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Statistiques des incidents */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-7">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -860,6 +885,30 @@ const GestionIncidents: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    En Pause
+                  </p>
+                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                    {stats.enPause}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-yellow-100 p-3 dark:bg-yellow-900/30">
+                  <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     P0 (Critiques)
                   </p>
                   <p className="text-2xl font-bold text-red-600 dark:text-red-400">
@@ -877,7 +926,7 @@ const GestionIncidents: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.7 }}
         >
           <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
@@ -929,6 +978,7 @@ const GestionIncidents: React.FC = () => {
                   <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
                   <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
                   <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
+                  <SelectItem key="en_pause" value="en_pause">En pause</SelectItem>
                   <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
                 </Select>
 
@@ -1384,6 +1434,7 @@ const GestionIncidents: React.FC = () => {
                   <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
                   <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
                   <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
+                  <SelectItem key="en_pause" value="en_pause">En pause</SelectItem>
                   <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
                 </Select>
               </div>
@@ -1559,6 +1610,7 @@ const GestionIncidents: React.FC = () => {
                     <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
                     <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
                     <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
+                    <SelectItem key="en_pause" value="en_pause">En pause</SelectItem>
                     <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
                   </Select>
                 </div>
@@ -1700,6 +1752,7 @@ const GestionIncidents: React.FC = () => {
                   <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
                   <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
                   <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
+                  <SelectItem key="en_pause" value="en_pause">En pause</SelectItem>
                   <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
                 </Select>
 
