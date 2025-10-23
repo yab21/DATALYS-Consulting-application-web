@@ -1,10 +1,16 @@
 "use client";
 
 import React from "react";
-import SupportTechnique from "@/components/TableauDeBord/Messages/SupportTechnique";
+import SupportIncidents from "@/components/TableauDeBord/Support/SupportIncidents";
+import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 
 const SupportPage: React.FC = () => {
-  return <SupportTechnique />;
+  return (
+    <>
+      <Breadcrumb pageName="Support Technique" />
+      <SupportIncidents />
+    </>
+  );
 };
 
 export default SupportPage;

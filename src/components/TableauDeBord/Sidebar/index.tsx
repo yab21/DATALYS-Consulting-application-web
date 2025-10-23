@@ -141,8 +141,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             label: "Rôles",
             route: "/tableaudebord/parametres/roles",
           }] : []),
-          // Menu Incidents - pour les admins avec permissions
-          ...(isAdmin() && hasPermission(Permission.VIEW_ALL_INCIDENTS) ? [{
+          // Menu Incidents - pour les utilisateurs avec permissions
+          ...(hasPermission(Permission.VIEW_ALL_INCIDENTS) ? [{
             icon: (
               <svg
                 xmlns="http://www.w3.org/2000/svg"

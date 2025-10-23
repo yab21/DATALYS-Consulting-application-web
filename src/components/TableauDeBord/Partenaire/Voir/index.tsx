@@ -17,6 +17,8 @@ import { dashboardService } from "@/services/dashboard";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import CreateIncidentModal from "../Incidents/CreateIncidentModal";
 import { Building2, FolderOpen, Calendar, Users, TrendingUp, AlertTriangle, Mail, Phone, MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
+import { getContextualErrorMessage } from '@/lib/error-messages';
+import { apiInterceptor } from '@/lib/api-interceptor';
 
 // Types utilisant les vraies interfaces des services API
 interface Partner {
@@ -144,10 +146,21 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
         
       } catch (error) {
         console.error("❌ Erreur lors du chargement du partenaire:", error);
+        
+        // Vérifier d'abord si c'est une erreur de token expiré
+        apiInterceptor.handleApiError(error);
+        
+        // Générer le message d'erreur approprié
+        const errorMessage = getContextualErrorMessage(error, {
+          operation: 'load',
+          dataType: 'partners',
+          fallback: "Impossible de charger les données du partenaire"
+        });
+        
         showNotification({
           type: "error",
           title: "Erreur de chargement",
-          message: "Impossible de charger les données du partenaire",
+          message: errorMessage,
           duration: 5000,
         });
         

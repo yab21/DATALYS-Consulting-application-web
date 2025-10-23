@@ -153,6 +153,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.SEND_MESSAGES_TO_ADMINS,
     Permission.RECEIVE_OFFICIAL_COMMUNICATIONS,
     Permission.REQUEST_TECHNICAL_SUPPORT,
+    // Ajout de la permission pour voir les incidents
+    Permission.VIEW_ALL_INCIDENTS,
   ],
 };
 

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { getContextualErrorMessage } from '@/lib/error-messages';
+import { apiInterceptor } from '@/lib/api-interceptor';
 
 // Types
 interface CacheEntry<T> {
@@ -18,6 +20,7 @@ interface ApiCacheOptions {
   refetchOnReconnect?: boolean;
   retry?: number;
   retryDelay?: number;
+  dataType?: 'projects' | 'partners' | 'incidents' | 'users' | 'files' | 'folders' | 'dashboard' | 'analytics' | 'profile' | 'notifications';
   onError?: (error: Error) => void;
   onSuccess?: (data: any) => void;
 }
@@ -206,9 +209,19 @@ export const useApiCache = <T,>(
           fetchData(forceRefresh);
         }, retryDelay * Math.pow(2, retryCount.current - 1)); // Backoff exponentiel
       } else {
+        // Vérifier d'abord si c'est une erreur de token expiré
+        apiInterceptor.handleApiError(error);
+        
+        // Générer le message d'erreur approprié
+        const errorMessage = getContextualErrorMessage(error, {
+          operation: 'load',
+          dataType: options?.dataType,
+          fallback: `Impossible de charger les données: ${error.message}`
+        });
+        
         showNotification(simpleNotificationHelpers.error(
           "Erreur de chargement",
-          `Impossible de charger les données: ${error.message}`
+          errorMessage
         ));
         onError?.(error);
       }

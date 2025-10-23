@@ -1,5 +1,7 @@
 "use client";
 
+import { getContextualErrorMessage, ERROR_MESSAGES } from './error-messages';
+
 export interface ErrorContext {
   url?: string;
   method?: string;
@@ -66,6 +68,9 @@ export interface ErrorDetails {
   originalError?: Error;
   retryable: boolean;
   fallbackAvailable: boolean;
+  userMessage?: string; // Message formaté pour l'utilisateur
+  dataType?: 'projects' | 'partners' | 'incidents' | 'users' | 'files' | 'folders' | 'dashboard' | 'analytics' | 'profile' | 'notifications';
+  operation?: 'load' | 'save' | 'delete' | 'auth';
 }
 
 export interface RetryConfig {
@@ -192,7 +197,13 @@ export class ErrorHandler {
   /**
    * Analyser et classifier une erreur
    */
-  public analyzeError(error: any, context: Partial<ErrorContext> = {}): ErrorDetails {
+  public analyzeError(
+    error: any, 
+    context: Partial<ErrorContext> & {
+      dataType?: 'projects' | 'partners' | 'incidents' | 'users' | 'files' | 'folders' | 'dashboard' | 'analytics' | 'profile' | 'notifications';
+      operation?: 'load' | 'save' | 'delete' | 'auth';
+    } = {}
+  ): ErrorDetails {
     const errorDetails: ErrorDetails = {
       code: 'UNKNOWN_ERROR',
       message: 'Une erreur inattendue s\'est produite',
@@ -205,7 +216,9 @@ export class ErrorHandler {
       },
       originalError: error,
       retryable: false,
-      fallbackAvailable: false
+      fallbackAvailable: false,
+      dataType: context.dataType,
+      operation: context.operation || 'load'
     };
 
     // Extraire le vrai message du backend
@@ -343,6 +356,13 @@ export class ErrorHandler {
       }
     }
 
+    // Générer le message utilisateur approprié
+    errorDetails.userMessage = getContextualErrorMessage(error, {
+      operation: errorDetails.operation,
+      dataType: errorDetails.dataType,
+      fallback: errorDetails.message
+    });
+
     return errorDetails;
   }
 
@@ -445,11 +465,11 @@ export class ErrorHandler {
       await this.applyFallback(errorDetails);
     }
     
-    // Notifier l'utilisateur
+    // Notifier l'utilisateur avec le message approprié
     this.showUserNotification({
       type: 'error',
       title: 'Erreur',
-      message: errorDetails.message,
+      message: errorDetails.userMessage || errorDetails.message,
       persistent: false
     });
   }
@@ -465,11 +485,11 @@ export class ErrorHandler {
       await this.applyFallback(errorDetails);
     }
     
-    // Notification discrète
+    // Notification discrète avec message approprié
     this.showUserNotification({
       type: 'warning',
       title: 'Attention',
-      message: errorDetails.message,
+      message: errorDetails.userMessage || errorDetails.message,
       persistent: false
     });
   }

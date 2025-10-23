@@ -50,11 +50,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
-import messagesService, { 
-  Message, 
-  MessageFilters, 
-  CreateMessageRequest 
-} from "@/services/messages";
+import { IncidentsService, type Incident, type IncidentCriteria, type CreateIncidentData } from "@/services/incidents";
 import { projectsService } from "@/services/projects";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 
@@ -72,9 +68,9 @@ const SupportTechnique: React.FC = () => {
   const { showNotification } = useSimpleNotifications();
   const { isOpen, onOpen, onClose } = useDisclosure();
   
-  const [supportTickets, setSupportTickets] = useState<Message[]>([]);
-  const [filteredTickets, setFilteredTickets] = useState<Message[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<Message | null>(null);
+  const [supportTickets, setSupportTickets] = useState<Incident[]>([]);
+  const [filteredTickets, setFilteredTickets] = useState<Incident[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Incident | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -92,10 +88,10 @@ const SupportTechnique: React.FC = () => {
   });
 
   // État pour nouveau ticket
-  const [newTicket, setNewTicket] = useState<CreateMessageRequest>({
+  const [newTicket, setNewTicket] = useState<Partial<CreateIncidentData>>({
     title: "",
     description: "",
-    priority: "moyenne",
+    priority: "P3",
     type: "support",
     project_id: undefined
   });
@@ -153,11 +149,24 @@ const SupportTechnique: React.FC = () => {
       
       if (isAdmin()) {
         // Les admins voient tous les tickets via l'endpoint support/requests
-        const response = await messagesService.getSupportRequests(0, 50);
+        const criteria: IncidentCriteria = {
+          index: 0,
+          size: 50,
+          data: { type: 'support' }
+        };
+        const response = await IncidentsService.getIncidentsByCriteria(criteria);
         setSupportTickets(response.items || []);
       } else {
         // Les partenaires voient leurs propres tickets via l'endpoint support/requests
-        const response = await messagesService.getMySupportRequests(0, 50);
+        const criteria: IncidentCriteria = {
+          index: 0,
+          size: 50,
+          data: { 
+            type: 'support',
+            created_by: user?.id
+          }
+        };
+        const response = await IncidentsService.getIncidentsByCriteria(criteria);
         setSupportTickets(response.items || []);
       }
     } catch (error) {
@@ -186,7 +195,7 @@ const SupportTechnique: React.FC = () => {
 
     try {
       setSending(true);
-      const response = await messagesService.createSupportRequest(newTicket);
+      const response = await IncidentsService.createIncident(newTicket as CreateIncidentData);
       
       // Ajouter le nouveau ticket à la liste
       setSupportTickets(prev => [response.message, ...prev]);
@@ -254,7 +263,10 @@ const SupportTechnique: React.FC = () => {
 
   const handleUpdateTicketStatus = async (ticketId: string, newStatus: string) => {
     try {
-      await messagesService.updateMessageStatus(ticketId, newStatus as any);
+      await IncidentsService.updateIncident({
+        id: ticketId,
+        status: newStatus
+      });
       
       // Mettre à jour l'état local
       setSupportTickets(prev => prev.map(ticket => 

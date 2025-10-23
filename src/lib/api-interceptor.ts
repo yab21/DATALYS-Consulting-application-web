@@ -40,44 +40,67 @@ class ApiInterceptor {
     statusCode?: number,
     url?: string,
   ): boolean {
-    const expiredMessages = [
+    // Messages explicites d'expiration de token
+    const tokenExpiredMessages = [
       "token expiré",
       "token expired",
-    ];
-
-    // Messages spécifiques qui indiquent un vrai token expiré
-    const tokenExpiredMessages = [
       "token has expired",
       "jwt expired",
       "session expired",
+      "session expirée",
+      "authentification requise",
+      "authentication required",
+      "invalid token",
+      "token invalide",
+      "unauthorized access",
+      "accès non autorisé",
+      "please login again",
+      "veuillez vous reconnecter"
     ];
 
-    // Vérifier d'abord les messages explicites de token expiré
+    // Vérifier les messages d'erreur
     if (response?.message) {
       const message = response.message.toLowerCase();
       if (tokenExpiredMessages.some((msg) => message.includes(msg))) {
-        return true;
-      }
-      if (expiredMessages.some((msg) => message.includes(msg))) {
+        console.log('🔒 Token expiré détecté via message:', response.message);
         return true;
       }
     }
 
-    // Vérifier le statut avec message de token
-    if (response?.status === "error" && response?.message?.includes("Token")) {
+    // Vérifier le statut avec indicateurs de token
+    if (response?.status === "error" && response?.message) {
+      const message = response.message.toLowerCase();
+      if (message.includes("token") || message.includes("auth") || message.includes("session")) {
+        console.log('🔒 Token expiré détecté via statut error:', response.message);
+        return true;
+      }
+    }
+
+    // Analyse des codes HTTP avec contexte
+    if (statusCode === 401) {
+      // 401 = Unauthorized - généralement un token expiré
+      console.log('🔒 Token expiré détecté via code 401 sur:', url);
       return true;
     }
 
-    // Pour les erreurs 401/403, être plus sélectif
-    if (statusCode === 401 || statusCode === 403) {
-      // Si l'URL contient "projects" et qu'il n'y a pas de message explicite de token expiré,
-      // cela pourrait être un problème de permissions plutôt qu'un token expiré
-      if (url && url.includes('/projects/') && !response?.message?.toLowerCase().includes('token')) {
-        console.warn('Erreur 401/403 sur l\'API projects - possibleité de problème de permissions plutôt que token expiré');
-        return false;
+    if (statusCode === 403) {
+      // 403 peut être token expiré ou permissions insuffisantes
+      // Vérifier le contexte pour distinguer
+      if (response?.message) {
+        const message = response.message.toLowerCase();
+        // Si le message parle de token/auth = token expiré
+        if (message.includes('token') || message.includes('auth') || message.includes('session')) {
+          console.log('🔒 Token expiré détecté via code 403 avec message auth:', response.message);
+          return true;
+        }
+        // Si le message parle de permissions = vraie erreur de permissions
+        if (message.includes('permission') || message.includes('forbidden') || message.includes('access denied')) {
+          console.warn('⚠️ Erreur de permissions détectée (403):', response.message);
+          return false;
+        }
       }
-      
-      // Pour les autres endpoints, considérer comme token expiré
+      // Par défaut, traiter 403 comme token expiré si pas de contexte
+      console.log('🔒 Token expiré présumé via code 403 sur:', url);
       return true;
     }
 
@@ -89,22 +112,62 @@ class ApiInterceptor {
    */
   private handleTokenExpiration() {
     console.warn(
-      "Token expiré détecté, nettoyage des données d'authentification",
+      "🔒 Token expiré détecté - Nettoyage et redirection en cours...",
     );
 
-    // Nettoyer le SecureStorage
-    SecureStorage.removeItem("authToken");
-    SecureStorage.removeItem("userInfo");
-
-    // Appeler le callback de redirection si défini
-    if (this.redirectCallback) {
-      this.redirectCallback();
-    } else {
-      // Redirection par défaut
-      if (typeof window !== "undefined") {
-        window.location.href = "/connexion";
-      }
+    // Émettre un événement global pour notifier tous les composants
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent('token-expired', {
+        detail: {
+          timestamp: new Date().toISOString(),
+          reason: 'Token expiration detected by API interceptor'
+        }
+      }));
     }
+
+    // Nettoyer toutes les données d'authentification
+    SecureStorage.removeItem("authToken");
+    SecureStorage.removeItem("refreshToken");
+    SecureStorage.removeItem("userInfo");
+    SecureStorage.removeItem("userProfile");
+    SecureStorage.removeItem("permissions");
+    
+    // Nettoyer également le localStorage si des données y sont stockées
+    if (typeof window !== "undefined") {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('auth') || key.includes('token') || key.includes('user'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+    }
+
+    // Afficher une notification à l'utilisateur
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent('global-error-notification', {
+        detail: {
+          type: 'warning',
+          title: 'Session expirée',
+          message: 'Votre session a expiré. Vous allez être redirigé vers la page de connexion.',
+          persistent: true
+        }
+      }));
+    }
+
+    // Délai court pour permettre à la notification de s'afficher
+    setTimeout(() => {
+      // Appeler le callback de redirection si défini
+      if (this.redirectCallback) {
+        this.redirectCallback();
+      } else {
+        // Redirection par défaut
+        if (typeof window !== "undefined") {
+          window.location.href = "/connexion";
+        }
+      }
+    }, 1000);
   }
 
   /**
@@ -112,9 +175,29 @@ class ApiInterceptor {
    */
   public async interceptResponse(response: Response): Promise<Response> {
     if (!response.ok) {
+      let errorData: any = {};
+      let isJsonError = false;
+      
       try {
-        const errorData = await response.clone().json();
+        errorData = await response.clone().json();
+        isJsonError = true;
+      } catch (error) {
+        // Pas de JSON valide, utiliser les infos de base
+        errorData = {
+          message: response.statusText || `HTTP ${response.status}`,
+          status: response.status
+        };
+      }
 
+      // PRIORITÉ 1: Vérifier l'expiration de token AVANT tout
+      if (this.isTokenExpired(errorData, response.status, response.url)) {
+        this.handleTokenExpiration();
+        // Retourner immédiatement pour éviter d'autres traitements
+        return response;
+      }
+
+      // PRIORITÉ 2: Traitement des autres erreurs seulement si ce n'est pas un token expiré
+      if (isJsonError) {
         // Analyser l'erreur avec le système de gestion d'erreurs
         const errorDetails = errorHandler.analyzeError(errorData, {
           url: response.url,
@@ -126,22 +209,13 @@ class ApiInterceptor {
         if (response.status !== 404 || !response.url.includes("/api/")) {
           await errorHandler.handleError(errorDetails);
         }
-
-        if (this.isTokenExpired(errorData, response.status, response.url)) {
-          this.handleTokenExpiration();
-        }
-      } catch (error) {
-        // Si ce n'est pas du JSON valide, vérifier le statut HTTP
-        if (this.isTokenExpired({}, response.status, response.url)) {
-          this.handleTokenExpiration();
-        }
-
+      } else {
         // Analyser l'erreur réseau seulement pour les vraies erreurs API
         if (
           response.url.includes("/api/") ||
           response.url.includes("dashboard")
         ) {
-          const errorDetails = errorHandler.analyzeError(error, {
+          const errorDetails = errorHandler.analyzeError(errorData, {
             url: response.url,
             status: response.status,
           });
@@ -169,11 +243,17 @@ class ApiInterceptor {
         } catch (error) {
           console.error("Erreur lors de la requête interceptée:", error);
 
-          // Analyser l'erreur réseau avec le gestionnaire d'erreurs
-          // Éviter les alertes pour les erreurs de navigation normale
           const url = typeof input === "string" ? input : input.toString();
           const isApiCall = url.includes("/api/") || url.includes("dashboard");
 
+          // Vérifier si l'erreur réseau pourrait indiquer un token expiré
+          if (isApiCall && this.isNetworkErrorRelatedToAuth(error)) {
+            console.log('🔒 Erreur réseau pouvant indiquer un token expiré');
+            this.handleTokenExpiration();
+            return Promise.reject(error);
+          }
+
+          // Analyser l'erreur réseau avec le gestionnaire d'erreurs
           if (isApiCall) {
             const errorDetails = errorHandler.analyzeError(error, {
               url: url,
@@ -226,11 +306,33 @@ class ApiInterceptor {
   }
 
   /**
+   * Vérifier si une erreur réseau pourrait être liée à l'authentification
+   */
+  private isNetworkErrorRelatedToAuth(error: any): boolean {
+    const message = error?.message?.toLowerCase() || '';
+    
+    // Erreurs réseau qui peuvent cacher un token expiré
+    return (
+      message.includes('unauthorized') ||
+      message.includes('forbidden') ||
+      message.includes('authentication') ||
+      message.includes('token') ||
+      message.includes('session') ||
+      (error?.status === 401) ||
+      (error?.status === 403)
+    );
+  }
+
+  /**
    * Gérer les erreurs d'API manuellement
    */
   public handleApiError(error: any): void {
     if (error && typeof error === "object") {
-      if (this.isTokenExpired(error)) {
+      // Extraire le statut depuis différentes structures possibles
+      const status = error?.status || error?.response?.status || error?.statusCode;
+      const url = error?.config?.url || error?.url || 'unknown';
+      
+      if (this.isTokenExpired(error, status, url)) {
         this.handleTokenExpiration();
       }
     }
