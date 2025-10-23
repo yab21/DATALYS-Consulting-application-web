@@ -99,9 +99,37 @@ class ApiInterceptor {
           return false;
         }
       }
-      // Par défaut, traiter 403 comme token expiré si pas de contexte
-      console.log('🔒 Token expiré présumé via code 403 sur:', url);
-      return true;
+      
+      // Vérifier l'URL pour des endpoints spécifiques qui peuvent légitimement retourner 403
+      if (url) {
+        const urlLower = url.toLowerCase();
+        // Endpoints qui peuvent légitimement retourner 403 pour des raisons de permissions
+        const permissionEndpoints = [
+          '/users/getbycriteria',
+          '/users/list',
+          '/roles/',
+          '/permissions/',
+          '/admin/',
+          '/partners/all',
+          '/projects/all'
+        ];
+        
+        // Si l'URL contient un de ces endpoints, c'est probablement une vraie erreur de permissions
+        if (permissionEndpoints.some(endpoint => urlLower.includes(endpoint))) {
+          console.warn('⚠️ Erreur 403 sur un endpoint protégé, permissions insuffisantes:', url);
+          return false;
+        }
+        
+        // Si l'URL contient des mots-clés d'authentification, c'est probablement un token expiré
+        if (urlLower.includes('/auth/') || urlLower.includes('/login') || urlLower.includes('/token')) {
+          console.log('🔒 Token expiré détecté via code 403 sur endpoint auth:', url);
+          return true;
+        }
+      }
+      
+      // Par défaut, ne pas traiter 403 comme token expiré sans contexte clair
+      console.warn('⚠️ Erreur 403 détectée, mais pas considérée comme token expiré:', url);
+      return false;
     }
 
     return false;
