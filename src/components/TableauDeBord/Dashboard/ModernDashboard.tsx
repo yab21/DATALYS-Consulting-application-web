@@ -19,12 +19,30 @@ import {
   Clock,
   ExternalLink,
   XCircle,
+  Eye,
+  MoreVertical,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { dashboardService } from "@/services/dashboard";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { ProfessionalButton, ProfessionalCard } from "@/components/UI/Professional";
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+  Chip,
+  Button,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Avatar,
+  Pagination,
+} from "@nextui-org/react";
 
 // Types pour les données du dashboard
 interface DashboardStats {
@@ -90,6 +108,13 @@ const ModernDashboard: React.FC = () => {
   const [partnerData, setPartnerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [adminData, setAdminData] = useState<any>(null);
+  
+  // États pour la pagination des tables
+  const [partnersPage, setPartnersPage] = useState(1);
+  const [activitiesPage, setActivitiesPage] = useState(1);
+  const partnersPerPage = 8;
+  const activitiesPerPage = 10;
   
 
 
@@ -163,87 +188,105 @@ const ModernDashboard: React.FC = () => {
       
       
       if (isAdmin()) {
-        // 🚧 TEMPORAIRE: Endpoint dashboard admin non disponible sur le backend (404)
+        // ✅ Nouvelle API admin disponible sur /dashboard/admin (POST)
         
-        // Utiliser des données par défaut pour les admins
-        setStats({
-          projects: { total: 0, active: 0, completed: 0, pending: 0, growth: 0 },
-          partners: { total: 0, active: 0, new_this_month: 0, growth: 0 },
-          files: { total: 0, size_gb: 0, recent_uploads: 0, growth: 0 },
-          messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
-          incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
-        });
-        ([]);
-        
-        /* COMMENTÉ - À réactiver quand l'endpoint backend sera implémenté
         try {
           const adminDashboard = await dashboardService.getDashboardAdmin();
-        if (adminDashboard && ((adminDashboard as any).code === 200 || (adminDashboard as any).success === true || adminDashboard.data)) {
-          const data = adminDashboard.data || adminDashboard;
           
-          // Extraire les données de l'API
-          const globalSummary = (data as any).global_summary || {};
-          const partnerStatsData = (data as any).partner_stats || [];
-          const recentIncidents = (data as any).recent_incidents || [];
-          const incidentPriorityData = (data as any).incident_priority_stats || {};
-          
+          if (adminDashboard && adminDashboard.code === 200 && adminDashboard.data) {
+            const data = adminDashboard.data;
+            
+            // Extraire les données de la nouvelle API
+            const partnerStatsData = data.partner_stats || [];
+            const recentIncidents = data.recent_incidents || [];
+            const recentActivity = data.recent_activity || [];
+            const incidentPriorityData = data.incident_priority_stats || {};
+            const globalActivityStats = data.global_activity_stats || {};
+            
+            // Calculer les totaux à partir des données partenaires
+            const totalProjects = partnerStatsData.reduce((sum: number, p: any) => sum + (p.total_projects || 0), 0);
+            const activeProjects = partnerStatsData.reduce((sum: number, p: any) => sum + (p.active_projects || 0), 0);
+            const completedProjects = totalProjects - activeProjects;
+            
+            // Calculer les totaux incidents par priorité
+            const totalIncidents = Object.values(incidentPriorityData).reduce((sum: number, count: any) => sum + (count || 0), 0);
+            const criticalIncidents = incidentPriorityData.critique || 0;
+            const openIncidents = recentIncidents.filter((i: any) => ['nouveau', 'ouvert', 'en_cours'].includes(i.status)).length;
+            const resolvedIncidents = recentIncidents.filter((i: any) => ['resolu', 'ferme'].includes(i.status)).length;
+            
+            // Convertir pour le format local
+            setStats({
+              projects: {
+                total: totalProjects,
+                active: activeProjects,
+                completed: completedProjects,
+                pending: 0,
+                growth: 0,
+              },
+              partners: {
+                total: partnerStatsData.length,
+                active: partnerStatsData.filter((p: any) => p.active_projects > 0).length,
+                new_this_month: 0,
+                growth: 0,
+              },
+              files: {
+                total: globalActivityStats.total_actions || 0,
+                size_gb: 0,
+                recent_uploads: recentActivity.filter((a: any) => a.action_type === 'CREATE' && a.entity_type === 'file').length,
+                growth: 0,
+              },
+              messages: {
+                total: recentActivity.filter((a: any) => ['message', 'notification'].includes(a.entity_type)).length,
+                unread: recentIncidents.filter((i: any) => !i.is_read).length,
+                support_tickets: recentIncidents.filter((i: any) => i.type === 'support').length,
+                growth: 0,
+              },
+              incidents: {
+                total: totalIncidents,
+                open: openIncidents,
+                critical: criticalIncidents,
+                resolved: resolvedIncidents,
+                growth: 0,
+              },
+            });
 
-          // Stocker les données détaillées
+            // Stocker toutes les données admin pour usage ultérieur
+            const adminDataToStore = {
+              partnerStats: partnerStatsData,
+              recentIncidents: recentIncidents,
+              recentActivity: recentActivity,
+              incidentPriorityStats: incidentPriorityData,
+              globalActivityStats: globalActivityStats
+            };
+            
+            console.log('📊 Données admin stockées:', adminDataToStore);
+            setAdminData(adminDataToStore);
+            
+          } else {
+            console.warn('⚠️ Réponse API admin invalide ou vide');
+            // Fallback sur des données par défaut
+            setStats({
+              projects: { total: 0, active: 0, completed: 0, pending: 0, growth: 0 },
+              partners: { total: 0, active: 0, new_this_month: 0, growth: 0 },
+              files: { total: 0, size_gb: 0, recent_uploads: 0, growth: 0 },
+              messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
+              incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
+            });
+            setAdminData(null);
+          }
           
-          // Convertir pour le format local
-          setStats({
-            projects: {
-              total: globalSummary.total_projects || 0,
-              active: globalSummary.active_projects || 0,
-              completed: (globalSummary.total_projects || 0) - (globalSummary.active_projects || 0),
-              pending: 0,
-              growth: 0,
-            },
-            partners: {
-              total: partnerStatsData.length || 0,
-              active: partnerStatsData.filter((p: any) => p.active_projects > 0).length || 0,
-              new_this_month: 0,
-              growth: 0,
-            },
-            files: {
-              total: globalSummary.total_files || 0,
-              size_gb: 0,
-              recent_uploads: 0,
-              growth: 0,
-            },
-            messages: {
-              total: recentIncidents.length || 0,
-              unread: recentIncidents.filter((i: any) => !i.is_read).length || 0,
-              support_tickets: recentIncidents.filter((i: any) => i.type === 'support').length || 0,
-              growth: 0,
-            },
-            incidents: {
-              total: globalSummary.total_incidents || 0,
-              open: globalSummary.open_incidents || 0,
-              critical: globalSummary.critical_incidents || 0,
-              resolved: (globalSummary.total_incidents || 0) - (globalSummary.open_incidents || 0),
-              growth: 0,
-            },
-          });
-
-          // Convertir les incidents récents en activités
-          const convertedActivities = recentIncidents.slice(0, 10).map((incident: any) => ({
-            id: incident.id.toString(),
-            type: incident.type,
-            title: incident.title,
-            description: incident.description,
-            time: formatTimeAgo(incident.created_at),
-            user: { name: `Utilisateur ${incident.created_by}` },
-            status: incident.priority === 'critique' ? 'danger' : 
-                   incident.priority === 'haute' ? 'warning' : 'info',
-          }));
-          (convertedActivities);
-          
-        } else {
-        }
         } catch (error) {
+          console.error('❌ Erreur lors du chargement du dashboard admin:', error);
+          // Fallback sur des données par défaut en cas d'erreur
+          setStats({
+            projects: { total: 0, active: 0, completed: 0, pending: 0, growth: 0 },
+            partners: { total: 0, active: 0, new_this_month: 0, growth: 0 },
+            files: { total: 0, size_gb: 0, recent_uploads: 0, growth: 0 },
+            messages: { total: 0, unread: 0, support_tickets: 0, growth: 0 },
+            incidents: { total: 0, open: 0, critical: 0, resolved: 0, growth: 0 },
+          });
+          setAdminData(null);
         }
-        */
       } else if (isPartner()) {
         
         // Debug: afficher toutes les données utilisateur disponibles
@@ -937,6 +980,390 @@ const ModernDashboard: React.FC = () => {
                 </motion.div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Dashboard Admin avec données API réelles */}
+        {isAdmin() && adminData && (
+          <div className="space-y-8">
+            {/* 1. Métriques Exécutives Admin */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+            >
+              {/* Carte Projets */}
+              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-blue-200 hover:border-[#4ba9b7] transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-[#4ba9b7]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-blue-100 border border-blue-200">
+                      <FolderOpen className="w-6 h-6 text-[#4ba9b7]" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-800">{stats.projects.total}</div>
+                      <div className="text-xs text-[#4ba9b7] font-medium">PROJETS</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Actifs</span>
+                      <span className="text-green-600 font-semibold">{stats.projects.active}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Terminés</span>
+                      <span className="text-blue-600 font-semibold">{stats.projects.completed}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carte Partenaires */}
+              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-green-200 hover:border-green-400 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-green-100 border border-green-200">
+                      <Users className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-800">{stats.partners.total}</div>
+                      <div className="text-xs text-green-600 font-medium">PARTENAIRES</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Actifs</span>
+                      <span className="text-green-600 font-semibold">{stats.partners.active}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carte Incidents */}
+              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-red-200 hover:border-red-400 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-red-100 border border-red-200">
+                      <AlertTriangle className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-800">{stats.incidents?.total || 0}</div>
+                      <div className="text-xs text-red-600 font-medium">INCIDENTS</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Ouverts</span>
+                      <span className="text-red-600 font-semibold">{stats.incidents?.open || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Critiques</span>
+                      <span className="text-red-600 font-semibold">{stats.incidents?.critical || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carte Messages */}
+              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-purple-200 hover:border-purple-400 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-purple-100 border border-purple-200">
+                      <MessageCircle className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-800">{stats.messages.total}</div>
+                      <div className="text-xs text-purple-600 font-medium">MESSAGES</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Non lus</span>
+                      <span className="text-purple-600 font-semibold">{stats.messages.unread}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 2. Vue d'ensemble des Partenaires - Table Responsive */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-xl border border-[#4ba9b7]/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#4ba9b7]/5 to-purple-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-[#4ba9b7]/10 border border-[#4ba9b7]/20">
+                        <Building2 className="w-8 h-8 text-[#4ba9b7]" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-800">Partenaires & Projets</h3>
+                        <p className="text-gray-600">Vue d'ensemble de tous les partenaires</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Table aria-label="Table des partenaires" className="min-h-[400px]">
+                    <TableHeader>
+                      <TableColumn>PARTENAIRE</TableColumn>
+                      <TableColumn>STATUT</TableColumn>
+                      <TableColumn>PROJETS TOTAL</TableColumn>
+                      <TableColumn>PROJETS ACTIFS</TableColumn>
+                      <TableColumn>TAUX D'ACTIVITÉ</TableColumn>
+                      <TableColumn align="center">ACTIONS</TableColumn>
+                    </TableHeader>
+                    <TableBody emptyContent="Aucun partenaire trouvé">
+                      {adminData.partnerStats
+                        .slice((partnersPage - 1) * partnersPerPage, partnersPage * partnersPerPage)
+                        .map((partner: any) => (
+                        <TableRow key={partner.partner_id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar
+                                name={partner.partner_name}
+                                size="sm"
+                                className="bg-[#4ba9b7] text-white"
+                              />
+                              <div>
+                                <p className="font-semibold text-gray-900">{partner.partner_name}</p>
+                                <p className="text-xs text-gray-500">ID: {partner.partner_id}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color={partner.active_projects > 0 ? "success" : "default"}
+                              startContent={
+                                partner.active_projects > 0 ? 
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div> :
+                                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                              }
+                            >
+                              {partner.active_projects > 0 ? 'Actif' : 'Inactif'}
+                            </Chip>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <FolderOpen className="w-4 h-4 text-blue-500" />
+                              <span className="font-medium text-blue-600">{partner.total_projects}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Activity className="w-4 h-4 text-green-500" />
+                              <span className="font-medium text-green-600">{partner.active_projects}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-[#4ba9b7] h-2 rounded-full" 
+                                  style={{ 
+                                    width: `${partner.total_projects > 0 ? (partner.active_projects / partner.total_projects) * 100 : 0}%` 
+                                  }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-600">
+                                {partner.total_projects > 0 ? Math.round((partner.active_projects / partner.total_projects) * 100) : 0}%
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Dropdown>
+                              <DropdownTrigger>
+                                <Button
+                                  isIconOnly
+                                  variant="light"
+                                  size="sm"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownTrigger>
+                              <DropdownMenu aria-label="Actions partenaire">
+                                <DropdownItem
+                                  key="view"
+                                  startContent={<Eye className="h-4 w-4" />}
+                                >
+                                  Voir détails
+                                </DropdownItem>
+                                <DropdownItem
+                                  key="projects"
+                                  startContent={<FolderOpen className="h-4 w-4" />}
+                                >
+                                  Voir projets
+                                </DropdownItem>
+                              </DropdownMenu>
+                            </Dropdown>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  
+                  {/* Pagination des partenaires */}
+                  {adminData.partnerStats.length > partnersPerPage && (
+                    <div className="flex justify-center mt-6">
+                      <Pagination
+                        total={Math.ceil(adminData.partnerStats.length / partnersPerPage)}
+                        page={partnersPage}
+                        onChange={setPartnersPage}
+                        showControls
+                        showShadow
+                        color="primary"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 3. Journal d'Activité - Table Responsive */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-xl border border-[#4ba9b7]/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-[#4ba9b7]/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-purple-100 border border-purple-200">
+                        <Activity className="w-8 h-8 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-800">Journal d'Activité</h3>
+                        <p className="text-gray-600">Activités récentes du système</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Table aria-label="Table des activités" className="min-h-[400px]">
+                    <TableHeader>
+                      <TableColumn>ACTION</TableColumn>
+                      <TableColumn>UTILISATEUR</TableColumn>
+                      <TableColumn>DESCRIPTION</TableColumn>
+                      <TableColumn>TYPE</TableColumn>
+                      <TableColumn>DATE</TableColumn>
+                      <TableColumn align="center">ACTIONS</TableColumn>
+                    </TableHeader>
+                    <TableBody emptyContent="Aucune activité trouvée">
+                      {adminData.recentActivity
+                        .slice((activitiesPage - 1) * activitiesPerPage, activitiesPage * activitiesPerPage)
+                        .map((activity: any) => (
+                        <TableRow key={activity.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                activity.action_type === 'CREATE' ? 'bg-green-100 text-green-600' :
+                                activity.action_type === 'UPDATE' ? 'bg-blue-100 text-blue-600' :
+                                'bg-purple-100 text-purple-600'
+                              }`}>
+                                {activity.action_type === 'CREATE' ? <Plus className="w-5 h-5" /> :
+                                 activity.action_type === 'UPDATE' ? <RefreshCw className="w-5 h-5" /> :
+                                 <MessageCircle className="w-5 h-5" />}
+                              </div>
+                              <div>
+                                <Chip
+                                  size="sm"
+                                  variant="flat"
+                                  color={activity.action_type === 'CREATE' ? 'success' :
+                                        activity.action_type === 'UPDATE' ? 'primary' : 'secondary'}
+                                >
+                                  {activity.action_type}
+                                </Chip>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar
+                                name={activity.user_name}
+                                size="sm"
+                                className="bg-[#4ba9b7] text-white"
+                              />
+                              <span className="font-medium text-gray-800">{activity.user_name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm text-gray-800 line-clamp-2">{activity.description}</p>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color="default"
+                            >
+                              {activity.entity_type}
+                            </Chip>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                {new Date(activity.created_at).toLocaleDateString('fr-FR')}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(activity.created_at).toLocaleTimeString('fr-FR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Dropdown>
+                              <DropdownTrigger>
+                                <Button
+                                  isIconOnly
+                                  variant="light"
+                                  size="sm"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownTrigger>
+                              <DropdownMenu aria-label="Actions activité">
+                                <DropdownItem
+                                  key="view"
+                                  startContent={<Eye className="h-4 w-4" />}
+                                >
+                                  Voir détails
+                                </DropdownItem>
+                              </DropdownMenu>
+                            </Dropdown>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  
+                  {/* Pagination des activités */}
+                  {adminData.recentActivity.length > activitiesPerPage && (
+                    <div className="flex justify-center mt-6">
+                      <Pagination
+                        total={Math.ceil(adminData.recentActivity.length / activitiesPerPage)}
+                        page={activitiesPage}
+                        onChange={setActivitiesPage}
+                        showControls
+                        showShadow
+                        color="primary"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
           </div>
         )}
       </div>

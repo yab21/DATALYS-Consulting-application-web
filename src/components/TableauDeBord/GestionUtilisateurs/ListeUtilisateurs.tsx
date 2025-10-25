@@ -45,6 +45,7 @@ import { UsersService, User as UserType } from "@/services/users";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import Link from "next/link";
 import UserModals from "./UserModals";
+import CreateUserModal from "./CreateUserModal";
 
 // Types pour la gestion des utilisateurs (utilise le type du service)
 type User = UserType;
@@ -103,6 +104,9 @@ const ListeUtilisateurs: React.FC = () => {
     type: null,
     user: null
   });
+  
+  // État pour le modal de création
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Vérification des permissions d'accès
   useEffect(() => {
@@ -317,16 +321,15 @@ const ListeUtilisateurs: React.FC = () => {
           </div>
 
           {canCreate() && hasPermission(Permission.CREATE_USERS) && (
-            <Link href="/tableaudebord/gestion-utilisateurs/ajouter">
-              <Button
-                color="primary"
-                size="lg"
-                startContent={<Plus className="h-5 w-5" />}
-                className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
-              >
-                Nouvel Utilisateur
-              </Button>
-            </Link>
+            <Button
+              color="primary"
+              size="lg"
+              startContent={<Plus className="h-5 w-5" />}
+              className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
+              onPress={() => setShowCreateModal(true)}
+            >
+              Nouvel Utilisateur
+            </Button>
           )}
         </div>
       </motion.div>
@@ -664,6 +667,16 @@ const ListeUtilisateurs: React.FC = () => {
         onRefresh={loadUsers}
         onSuccess={handleModalSuccess}
         onError={handleModalError}
+      />
+      
+      {/* Modal de création d'utilisateur */}
+      <CreateUserModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onUserCreated={() => {
+          loadUsers();
+          setShowCreateModal(false);
+        }}
       />
     </div>
   );

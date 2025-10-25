@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
+import { notificationDeduplicator } from '@/utils/notification-deduplicator';
 
 export interface Notification {
   id: string;
@@ -81,10 +82,33 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     setNotifications([]);
   }, []);
 
-  // Écouter les événements globaux d'erreur
+  // État pour le throttling supplémentaire
+  const lastNotificationTime = useRef<{ [key: string]: number }>({});
+  const THROTTLE_DELAY = 2000; // 2 secondes de délai minimum entre notifications similaires
+  
+  // Écouter les événements globaux d'erreur avec déduplication
   useEffect(() => {
     const handleGlobalError = (event: CustomEvent) => {
       const { type, title, message, persistent } = event.detail;
+      
+      // Première couche : déduplication globale
+      const notificationKey = `${title}: ${message}`;
+      if (!notificationDeduplicator.shouldShowNotification(notificationKey, type)) {
+        return; // Notification dupliquée, ignorer
+      }
+      
+      // Deuxième couche : throttling local pour les notifications de type réseau
+      const now = Date.now();
+      const throttleKey = type.includes('error') || title.includes('Connexion') || title.includes('Mode') ? 'network' : notificationKey;
+      
+      if (lastNotificationTime.current[throttleKey] && 
+          (now - lastNotificationTime.current[throttleKey]) < THROTTLE_DELAY) {
+        console.log(`⏱️ Notification throttlée: ${title}`);
+        return; // Trop récent, ignorer
+      }
+      
+      lastNotificationTime.current[throttleKey] = now;
+      
       addNotification({
         type,
         title,

@@ -33,31 +33,87 @@ export interface DashboardPartnerResponse {
   message?: string;
 }
 
+// Nouvelle structure pour l'API admin dashboard
 export interface DashboardAdminResponse {
-  success: boolean;
+  code: number;
   data: {
-    global_statistics: {
-      total_partners: number;
-      active_partners: number;
-      total_projects: number;
+    global_activity_stats: {
+      actions_by_type: Array<{
+        count: number;
+        type: string;
+      }>;
+      daily_actions: Array<{
+        count: number;
+        date: string;
+      }>;
+      top_users: Array<{
+        count: number;
+        user_id: number;
+      }>;
+      total_actions: number;
+    };
+    incident_priority_stats: {
+      basse: number;
+      critique: number;
+      haute: number;
+      moyenne: number;
+    };
+    partner_stats: Array<{
       active_projects: number;
-      total_incidents: number;
-      open_incidents: number;
-    };
-    recent_activities: Array<{
-      id: number;
-      type: string;
-      description: string;
-      date: string;
-      partner_name?: string;
+      partner_id: number;
+      partner_name: string;
+      total_projects: number;
     }>;
-    performance_metrics: {
-      partner_satisfaction: number;
-      average_resolution_time: number;
-      project_success_rate: number;
-    };
+    recent_activity: Array<{
+      action_type: string;
+      created_at: string;
+      description: string;
+      entity_id: number;
+      entity_type: string;
+      id: number;
+      ip_address: string;
+      user_id: number;
+      user_name: string;
+    }>;
+    recent_incidents: Array<{
+      assigned_to?: number;
+      category: string;
+      created_at: string;
+      created_by: number;
+      declarant_name?: string;
+      description: string;
+      domain?: string;
+      id: number;
+      impact?: string;
+      impact_label?: string;
+      incident_number: string;
+      is_active: boolean;
+      is_deleted: boolean;
+      is_read: boolean;
+      priority: string;
+      priority_label: string;
+      project_id?: number;
+      refusal_count: number;
+      resolution_notes?: string;
+      sla_prise_en_charge_deadline?: string;
+      sla_prise_en_charge_status: string;
+      sla_resolution_deadline?: string;
+      sla_resolution_status: string;
+      status: string;
+      status_color: string;
+      temps_restant_prise_en_charge?: any;
+      temps_restant_resolution?: any;
+      title: string;
+      type: string;
+      updated_at: string;
+      updated_by: number;
+      user_id?: number;
+    }>;
   };
-  message?: string;
+  message: {
+    code: number;
+    message: string;
+  };
 }
 
 export interface ProjectFilters {
@@ -231,18 +287,19 @@ class DashboardService {
   }
 
   /**
-   * Récupérer le dashboard admin overview
+   * Récupérer le dashboard admin (nouvelle API)
    */
   async getDashboardAdmin(): Promise<DashboardAdminResponse> {
     try {
-      const url = `${API_CONFIG.BASE_URL}/dashboard/admin/overview`;
-      console.log("🔗 Appel API admin dashboard:", url);
+      const url = `${API_CONFIG.BASE_URL}/dashboard/admin`;
+      console.log("🔗 Appel nouvelle API admin dashboard:", url);
       
       const response = await securedFetch(url, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({})
       });
 
       console.log("📡 Réponse HTTP:", response.status, response.statusText);
@@ -255,24 +312,11 @@ class DashboardService {
           error: errorText
         });
         
-        // Gestion spécifique des erreurs 404
-        if (response.status === 404) {
-          throw new Error(`Endpoint non trouvé: /dashboard/admin/overview n'existe pas sur le backend`);
-        }
-        
         throw new Error(`Erreur HTTP: ${response.status} - ${errorText}`);
       }
 
-      // Vérifier que la réponse est bien du JSON avant de parser
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const textResponse = await response.text();
-        console.error("❌ Réponse non-JSON reçue:", textResponse.substring(0, 200));
-        throw new Error(`Réponse invalide: attendu JSON, reçu ${contentType}`);
-      }
-
       const data = await response.json();
-      console.log("✅ Données API admin reçues:", data);
+      console.log("✅ Données nouvelle API admin reçues:", data);
       return data;
     } catch (error) {
       console.error('❌ Erreur lors de la récupération du dashboard admin:', error);

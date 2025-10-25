@@ -123,17 +123,20 @@ export function useNetworkStatus(): NetworkStatusHook {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Vérification initiale après un délai
+    // Vérification initiale après un délai plus long pour laisser le temps à la page de se charger
     const initialCheck = setTimeout(() => {
-      checkConnection();
-    }, 1000);
-
-    // Vérification périodique (toutes les 30 secondes)
-    const periodicCheck = setInterval(() => {
-      if (!status.isOnline) {
+      // Seulement si on n'est pas en ligne selon le navigateur
+      if (!navigator.onLine) {
         checkConnection();
       }
-    }, 30000);
+    }, 3000);
+
+    // Vérification périodique moins fréquente (toutes les 60 secondes au lieu de 30)
+    const periodicCheck = setInterval(() => {
+      if (!status.isOnline && !navigator.onLine) {
+        checkConnection();
+      }
+    }, 60000);
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -151,9 +154,15 @@ export function useNetworkStatus(): NetworkStatusHook {
     }
 
     const handleVisibilityChange = () => {
-      if (!document.hidden && !status.isOnline) {
+      // Ajouter un délai et vérifier aussi le statut du navigateur
+      if (!document.hidden && !status.isOnline && !navigator.onLine) {
         console.log('🔄 Page visible, vérification de la connexion...');
-        checkConnection();
+        // Délai pour éviter les vérifications immédiates lors du changement d'onglet
+        setTimeout(() => {
+          if (!document.hidden) { // Re-vérifier si la page est toujours visible
+            checkConnection();
+          }
+        }, 2000);
       }
     };
 

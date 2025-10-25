@@ -5,6 +5,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useNetworkSync } from '@/hooks/useNetworkSync';
 import { useRequestQueue } from '@/lib/request-queue';
 import { errorHandler } from '@/lib/error-handler';
+import { notificationDeduplicator } from '@/utils/notification-deduplicator';
 import NetworkStatusIndicator from './NetworkStatusIndicator';
 // Remplacement temporaire de Sonner par le système de notification existant
 // Toast simple qui ne déclenche pas d'événements pour éviter les boucles infinies
@@ -23,30 +24,58 @@ const toast = {
   }
 };
 
-// API publique pour déclencher des notifications depuis l'extérieur
+// API publique pour déclencher des notifications depuis l'extérieur avec déduplication
 export const networkNotifications = {
   error: (title: string, options?: { description?: string; duration?: number }) => {
-    console.error(`❌ ${title}`, options?.description);
+    const message = options?.description || '';
+    const notificationKey = `${title}: ${message}`;
+    
+    if (!notificationDeduplicator.shouldShowNotification(notificationKey, 'error')) {
+      return; // Notification dupliquée, ignorer
+    }
+    
+    console.error(`❌ ${title}`, message);
     window.dispatchEvent(new CustomEvent('global-error-notification', {
-      detail: { type: 'error', title, message: options?.description || '', persistent: false }
+      detail: { type: 'error', title, message, persistent: false }
     }));
   },
   success: (title: string, options?: { description?: string; duration?: number }) => {
-    console.log(`✅ ${title}`, options?.description);
+    const message = options?.description || '';
+    const notificationKey = `${title}: ${message}`;
+    
+    if (!notificationDeduplicator.shouldShowNotification(notificationKey, 'success')) {
+      return; // Notification dupliquée, ignorer
+    }
+    
+    console.log(`✅ ${title}`, message);
     window.dispatchEvent(new CustomEvent('global-error-notification', {
-      detail: { type: 'info', title, message: options?.description || '', persistent: false }
+      detail: { type: 'info', title, message, persistent: false }
     }));
   },
   warning: (title: string, options?: { description?: string; duration?: number }) => {
-    console.warn(`⚠️ ${title}`, options?.description);
+    const message = options?.description || '';
+    const notificationKey = `${title}: ${message}`;
+    
+    if (!notificationDeduplicator.shouldShowNotification(notificationKey, 'warning')) {
+      return; // Notification dupliquée, ignorer
+    }
+    
+    console.warn(`⚠️ ${title}`, message);
     window.dispatchEvent(new CustomEvent('global-error-notification', {
-      detail: { type: 'warning', title, message: options?.description || '', persistent: false }
+      detail: { type: 'warning', title, message, persistent: false }
     }));
   },
   info: (title: string, options?: { description?: string; duration?: number }) => {
-    console.info(`ℹ️ ${title}`, options?.description);
+    const message = options?.description || '';
+    const notificationKey = `${title}: ${message}`;
+    
+    if (!notificationDeduplicator.shouldShowNotification(notificationKey, 'info')) {
+      return; // Notification dupliquée, ignorer
+    }
+    
+    console.info(`ℹ️ ${title}`, message);
     window.dispatchEvent(new CustomEvent('global-error-notification', {
-      detail: { type: 'info', title, message: options?.description || '', persistent: false }
+      detail: { type: 'info', title, message, persistent: false }
     }));
   }
 };
