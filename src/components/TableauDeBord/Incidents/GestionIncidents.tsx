@@ -56,6 +56,7 @@ import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/
 import { IncidentsService, type Incident as ApiIncident, type IncidentCriteria, type CreateIncidentData, type UpdateIncidentData } from "@/services/incidents";
 import { projectsService, type Project } from "@/services/projects";
 import { UsersService, type User as UserType } from "@/services/users";
+import { partnersService, type Partner } from "@/services/partners";
 
 // Types locaux pour l'interface
 interface Incident {
@@ -91,37 +92,49 @@ interface Incident {
 }
 
 // Fonction de conversion API vers interface locale
-const convertApiIncidentToLocal = (apiIncident: ApiIncident): Incident => ({
-  id: apiIncident.id.toString(),
-  titre: apiIncident.title,
-  description: apiIncident.description,
-  incident_number: apiIncident.incident_number,
-  type: apiIncident.type,
-  priorite: apiIncident.priority,
-  priorite_label: apiIncident.priority_label,
-  statut: apiIncident.status,
-  statut_color: apiIncident.status_color,
-  category: apiIncident.category,
-  impact: apiIncident.impact,
-  impact_label: apiIncident.impact_label,
-  domain: apiIncident.domain,
-  declarant_name: apiIncident.declarant_name,
-  user_id: apiIncident.user_id,
-  project_id: apiIncident.project_id,
-  projectNom: `Projet ${apiIncident.project_id}`,
-  partnerNom: apiIncident.declarant_name || "Utilisateur",
-  partnerLogo: undefined,
-  dateCreation: new Date(apiIncident.created_at),
-  dateResolution: undefined, // Plus de statut résolu dans le nouveau système
-  assigneA: "Support Technique",
-  commentaires: Math.floor(Math.random() * 10) + 1,
-  tempsMoyenResolution: undefined, // Plus de statut résolu dans le nouveau système
-  sla_prise_en_charge_status: apiIncident.sla_prise_en_charge_status,
-  sla_resolution_status: apiIncident.sla_resolution_status,
-  is_read: apiIncident.is_read,
-  refusal_count: apiIncident.refusal_count,
-  resolution_notes: apiIncident.resolution_notes,
-});
+const convertApiIncidentToLocal = (apiIncident: ApiIncident, projects: Project[], users: UserType[] = []): Incident => {
+  // Trouver le projet associé
+  const project = projects.find(p => p.id === apiIncident.project_id);
+  const projectName = project?.title || `Projet ${apiIncident.project_id}`;
+  const partnerName = project?.partner_name || apiIncident.declarant_name || "Client";
+  
+  // Trouver l'utilisateur assigné pour récupérer son vrai nom
+  const assignedUser = users.find(u => u.id === apiIncident.user_id);
+  const assignedName = assignedUser ? assignedUser.name : 
+                       (apiIncident.user_id ? `Expert ${apiIncident.user_id}` : "Non assigné");
+  
+  return {
+    id: apiIncident.id.toString(),
+    titre: apiIncident.title,
+    description: apiIncident.description,
+    incident_number: apiIncident.incident_number,
+    type: apiIncident.type,
+    priorite: apiIncident.priority,
+    priorite_label: apiIncident.priority_label,
+    statut: apiIncident.status,
+    statut_color: apiIncident.status_color,
+    category: apiIncident.category,
+    impact: apiIncident.impact,
+    impact_label: apiIncident.impact_label,
+    domain: apiIncident.domain,
+    declarant_name: apiIncident.declarant_name,
+    user_id: apiIncident.user_id,
+    project_id: apiIncident.project_id,
+    projectNom: projectName,
+    partnerNom: partnerName,
+    partnerLogo: undefined,
+    dateCreation: new Date(apiIncident.created_at + (apiIncident.created_at.includes('Z') ? '' : 'Z')),
+    dateResolution: undefined,
+    assigneA: assignedName,
+    commentaires: Math.floor(Math.random() * 10) + 1,
+    tempsMoyenResolution: undefined,
+    sla_prise_en_charge_status: apiIncident.sla_prise_en_charge_status,
+    sla_resolution_status: apiIncident.sla_resolution_status,
+    is_read: apiIncident.is_read,
+    refusal_count: apiIncident.refusal_count,
+    resolution_notes: apiIncident.resolution_notes,
+  };
+};
 
 interface IncidentStats {
   total: number;
@@ -171,7 +184,7 @@ const GestionIncidents: React.FC = () => {
     category: "",
     impact: "",
     domain: "",
-    declarant_name: "",
+    declarant_name: user?.name || "",
     user_id: 0,
     project_id: 0,
     is_active: true,
@@ -193,7 +206,7 @@ const GestionIncidents: React.FC = () => {
     category: "",
     impact: "",
     domain: "",
-    declarant_name: "",
+    declarant_name: user?.name || "",
     user_id: 0,
     project_id: 0,
     is_active: true,
@@ -230,8 +243,9 @@ const GestionIncidents: React.FC = () => {
           console.log("🤝 Chargement des projets du partner:", user.partner_id);
           const allProjects = await projectsService.getActiveProjects();
           projectsList = allProjects.filter(project => project.partner_id === user.partner_id);
-        } else if (isAdmin()) {
-          // Pour les admins, charger tous les projets
+        } else {
+          // Pour les admins et autres utilisateurs, charger tous les projets
+          console.log("👨‍💼 Chargement de tous les projets...");
           projectsList = await projectsService.getActiveProjects();
         }
         
@@ -254,11 +268,13 @@ const GestionIncidents: React.FC = () => {
         setLoadingProjects(false);
       }
       
-      // Charger les utilisateurs SEULEMENT pour les admins
-      if (isAdmin()) {
-        setLoadingUsers(true);
+      // Charger TOUS les utilisateurs (admins ET partenaires) pour l'affichage des noms d'experts
+      setLoadingUsers(true);
+      try {
+        let allUsers: UserType[] = [];
+        
+        // Charger les utilisateurs normaux (admins, experts, etc.)
         try {
-          console.log("🔄 Chargement des utilisateurs...");
           const response = await UsersService.getUsersByCriteria({
             index: 0,
             size: 100,
@@ -272,29 +288,52 @@ const GestionIncidents: React.FC = () => {
             usersList = response;
           }
           
-          // Filtrer les utilisateurs pour éviter les doublons de noms
-          // Utiliser une Map pour garder le premier utilisateur de chaque nom
-          const uniqueUsersMap = new Map();
-          usersList.forEach(user => {
-            if (!uniqueUsersMap.has(user.name)) {
-              uniqueUsersMap.set(user.name, user);
-            }
-          });
-          const uniqueUsers = Array.from(uniqueUsersMap.values());
-          
-          setUsers(uniqueUsers);
-          console.log("✅ Utilisateurs chargés:", uniqueUsers);
-          console.log("📊 Utilisateurs originaux:", usersList.length, "Utilisateurs uniques:", uniqueUsers.length);
+          allUsers = [...usersList];
         } catch (error) {
-          console.error("❌ Erreur lors du chargement des utilisateurs:", error);
-          setUsers([]);
-        } finally {
-          setLoadingUsers(false);
+          console.error("Erreur chargement utilisateurs:", error);
         }
-      } else {
-        // Pour les partners, pas de chargement d'utilisateurs
-        console.log("🚫 Chargement des utilisateurs désactivé pour les partners");
+        
+        // Charger AUSSI les partenaires (car un incident peut être assigné à un partenaire)
+        try {
+          const response = await partnersService.getPartners();
+          
+          let partnersList: Partner[] = [];
+          if (Array.isArray(response)) {
+            partnersList = response;
+          } else if (response.code === 200 && response.items) {
+            partnersList = response.items;
+          }
+          
+          // Convertir les partenaires en format UserType
+          const partnersAsUsers: UserType[] = partnersList.map(partner => ({
+            id: partner.id,
+            name: partner.name,
+            email: partner.email || '',
+            role_id: 3, // Role partenaire
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }));
+          
+          allUsers = [...allUsers, ...partnersAsUsers];
+        } catch (error) {
+          console.error("Erreur chargement partenaires:", error);
+        }
+        
+        // Filtrer les utilisateurs pour éviter les doublons de noms
+        const uniqueUsersMap = new Map();
+        allUsers.forEach(user => {
+          if (!uniqueUsersMap.has(user.name)) {
+            uniqueUsersMap.set(user.name, user);
+          }
+        });
+        const uniqueUsers = Array.from(uniqueUsersMap.values());
+        
+        setUsers(uniqueUsers);
+      } catch (error) {
+        console.error("Erreur lors du chargement des utilisateurs:", error);
         setUsers([]);
+      } finally {
         setLoadingUsers(false);
       }
     };
@@ -327,13 +366,17 @@ const GestionIncidents: React.FC = () => {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
-  // Chargement des données via l'API incidents
+  // Chargement des données via l'API incidents - SEULEMENT APRÈS que les utilisateurs soient chargés
   useEffect(() => {
+    // Attendre que les utilisateurs soient chargés avant de charger les incidents
+    if (users.length === 0 && !loadingUsers) {
+      return;
+    }
+    
     const loadData = async () => {
       setLoading(true);
       
       try {
-        console.log("🔄 Chargement incidents via API incidents");
         
         // Préparer les critères de recherche
         const criteria: IncidentCriteria = {
@@ -344,8 +387,8 @@ const GestionIncidents: React.FC = () => {
             type: 'incident', // Filtrer seulement les incidents (pas les supports)
             ...(statusFilter !== "tous" && { status: statusFilter as any }),
             ...(priorityFilter !== "tous" && { priority: priorityFilter as any }),
-            // Pour les partners, filtrer uniquement leurs incidents
-            ...(isPartner() && user?.id && { user_id: user.id }),
+            // Pour les partners, filtrer par created_by (qui les a créés) au lieu de user_id (expert assigné)
+            ...(isPartner() && user && { created_by: user.id }),
           }
         };
         
@@ -363,8 +406,11 @@ const GestionIncidents: React.FC = () => {
           apiIncidents = response.data;
         }
         
+        
         // Conversion vers le format local
-        const convertedIncidents: Incident[] = apiIncidents.map(convertApiIncidentToLocal);
+        const convertedIncidents: Incident[] = apiIncidents.map(incident => 
+          convertApiIncidentToLocal(incident, projects, users)
+        );
         
         setIncidents(convertedIncidents);
         setFilteredIncidents(convertedIncidents);
@@ -387,10 +433,9 @@ const GestionIncidents: React.FC = () => {
         };
         
         setStats(newStats);
-        console.log("✅ Incidents chargés via API incidents:", convertedIncidents);
         
       } catch (error) {
-        console.error("❌ Erreur lors du chargement des incidents:", error);
+        console.error("Erreur lors du chargement des incidents:", error);
         
         // Afficher un message d'erreur à l'utilisateur
         showNotification(simpleNotificationHelpers.error(
@@ -423,7 +468,9 @@ const GestionIncidents: React.FC = () => {
     currentPage,
     pageSize,
     statusFilter,
-    priorityFilter
+    priorityFilter,
+    users, // Ajouter users pour relancer le chargement quand ils sont disponibles
+    loadingUsers
   ]);
 
   // Filtrage des incidents
@@ -573,19 +620,19 @@ const GestionIncidents: React.FC = () => {
     }
 
     // Validation des champs obligatoires
-    if (!createForm.type.trim()) {
+    if (!createForm.type || !createForm.type.trim()) {
       errors.type = "Le type est obligatoire";
     }
 
-    if (!createForm.category.trim()) {
+    if (!createForm.category || !createForm.category.trim()) {
       errors.category = "La catégorie est obligatoire";
     }
 
-    if (!createForm.domain.trim()) {
+    if (!createForm.domain || !createForm.domain.trim()) {
       errors.domain = "Le domaine est obligatoire";
     }
 
-    if (!createForm.impact.trim()) {
+    if (!createForm.impact || !createForm.impact.trim()) {
       errors.impact = "L'impact est obligatoire";
     }
 
@@ -766,7 +813,8 @@ const GestionIncidents: React.FC = () => {
         data: { 
           is_active: true,
           type: 'incident',
-          ...(isPartner() && user?.id && { user_id: user.id }),
+          // Pour les partners, filtrer par created_by
+          ...(isPartner() && user && { created_by: user.id }),
         }
       };
       
@@ -779,7 +827,9 @@ const GestionIncidents: React.FC = () => {
         apiIncidents = refreshResponse;
       }
       
-      const convertedIncidents = apiIncidents.map(convertApiIncidentToLocal);
+      const convertedIncidents = apiIncidents.map(incident => 
+        convertApiIncidentToLocal(incident, projects, users)
+      );
       setIncidents(convertedIncidents);
       setFilteredIncidents(convertedIncidents);
       
@@ -827,6 +877,9 @@ const GestionIncidents: React.FC = () => {
       };
       
       console.log("📝 Statut final assigné:", finalStatus, createForm.user_id > 0 ? '(expert assigné)' : '(pas d\'expert assigné)');
+      console.log("📝 User ID final:", finalCreateForm.user_id, "Partner ID:", user?.partner_id);
+      console.log("📝 Données finales de création:", finalCreateForm);
+      console.log("📝 User complet:", user);
       
       await IncidentsService.createIncident(finalCreateForm, user.id, user.email);
       
@@ -838,7 +891,8 @@ const GestionIncidents: React.FC = () => {
           is_active: true,
           type: 'incident', // Filtrer seulement les incidents
           // Pour les partners, filtrer uniquement leurs incidents
-          ...(isPartner() && user?.id && { user_id: user.id }),
+          // Pour les partners, filtrer par created_by
+          ...(isPartner() && user && { created_by: user.id }),
         }
       };
       
@@ -851,7 +905,9 @@ const GestionIncidents: React.FC = () => {
         apiIncidents = refreshResponse;
       }
       
-      const convertedIncidents = apiIncidents.map(convertApiIncidentToLocal);
+      const convertedIncidents = apiIncidents.map(incident => 
+        convertApiIncidentToLocal(incident, projects, users)
+      );
       setIncidents(convertedIncidents);
       setFilteredIncidents(convertedIncidents);
       
@@ -1042,9 +1098,11 @@ const GestionIncidents: React.FC = () => {
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
+    const minutes = diff / (1000 * 60);
     const hours = diff / (1000 * 60 * 60);
     
-    if (hours < 1) return "Il y a moins d'1h";
+    if (minutes < 5) return "À l'instant";
+    if (minutes < 60) return `Il y a ${Math.round(minutes)}min`;
     if (hours < 24) return `Il y a ${Math.round(hours)}h`;
     if (hours < 48) return "Hier";
     return `Il y a ${Math.round(hours / 24)} jours`;
@@ -1324,6 +1382,9 @@ const GestionIncidents: React.FC = () => {
                   <TableColumn>INCIDENT</TableColumn>
                   <TableColumn>PRIORITÉ</TableColumn>
                   <TableColumn>STATUT</TableColumn>
+                  <TableColumn>CATÉGORIE</TableColumn>
+                  <TableColumn>IMPACT</TableColumn>
+                  <TableColumn>DOMAINE</TableColumn>
                   <TableColumn>ASSIGNÉ À</TableColumn>
                   <TableColumn>PARTENAIRE</TableColumn>
                   <TableColumn>DÉLAIS DE TRAITEMENT</TableColumn>
@@ -1370,6 +1431,15 @@ const GestionIncidents: React.FC = () => {
                         >
                           {incident.statut.replace("_", " ")}
                         </Chip>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{incident.category || "N/A"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{incident.impact || "N/A"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{incident.domain || "N/A"}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -1448,10 +1518,23 @@ const GestionIncidents: React.FC = () => {
                             <DropdownItem
                               key="chat"
                               startContent={<MessageCircle className="h-4 w-4" />}
-                              onPress={() => window.location.href = "/tableaudebord/messages"}
+                              onPress={() => {
+                                if (isAdmin()) {
+                                  // Admin: Passer les informations du partenaire au système de messages
+                                  const messageParams = new URLSearchParams({
+                                    partner_name: incident.partnerNom,
+                                    project_name: incident.projectNom,
+                                    incident_number: incident.incident_number
+                                  });
+                                  window.location.href = `/tableaudebord/messages?${messageParams.toString()}`;
+                                } else {
+                                  // Partner: Juste rediriger vers messages
+                                  window.location.href = "/tableaudebord/messages";
+                                }
+                              }}
                               className="text-primary"
                             >
-                              Chat avec client
+                              {isAdmin() ? `Chat avec client (${incident.partnerNom})` : "Chat avec support"}
                             </DropdownItem>
                             <DropdownItem
                               key="edit"
@@ -1459,20 +1542,6 @@ const GestionIncidents: React.FC = () => {
                               onPress={() => handleIncidentAction(incident, "edit")}
                             >
                               Modifier
-                            </DropdownItem>
-                            <DropdownItem
-                              key="assign"
-                              startContent={<UserCheck className="h-4 w-4" />}
-                              onPress={() => handleIncidentAction(incident, "edit")}
-                            >
-                              Assigner/Réassigner
-                            </DropdownItem>
-                            <DropdownItem
-                              key="status"
-                              startContent={<Clock className="h-4 w-4" />}
-                              onPress={() => handleIncidentAction(incident, "edit")}
-                            >
-                              Changer statut
                             </DropdownItem>
                             <DropdownItem
                               key="delete"
@@ -1496,6 +1565,9 @@ const GestionIncidents: React.FC = () => {
                   <TableColumn>INCIDENT</TableColumn>
                   <TableColumn>PRIORITÉ</TableColumn>
                   <TableColumn>STATUT</TableColumn>
+                  <TableColumn>CATÉGORIE</TableColumn>
+                  <TableColumn>IMPACT</TableColumn>
+                  <TableColumn>DOMAINE</TableColumn>
                   <TableColumn>DÉLAIS DE TRAITEMENT</TableColumn>
                   <TableColumn>CRÉÉ</TableColumn>
                   <TableColumn align="center">ACTIONS</TableColumn>
@@ -1540,6 +1612,15 @@ const GestionIncidents: React.FC = () => {
                         >
                           {incident.statut.replace("_", " ")}
                         </Chip>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{incident.category || "N/A"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{incident.impact || "N/A"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{incident.domain || "N/A"}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
@@ -1829,25 +1910,17 @@ const GestionIncidents: React.FC = () => {
                 errorMessage={createFormErrors.description}
               />
               
-              <Select
+              <Input
                 label="Déclarant de l'incident"
-                placeholder="Sélectionnez la personne qui déclare l'incident"
-                selectedKeys={createForm.declarant_name ? [createForm.declarant_name] : []}
-                onSelectionChange={(keys) => {
-                  setCreateForm(prev => ({ ...prev, declarant_name: Array.from(keys)[0] as string }));
-                  clearCreateFormError('declarant_name');
+                value={createForm.declarant_name}
+                isReadOnly
+                description="Déclarant automatiquement défini (utilisateur connecté)"
+                variant="bordered"
+                classNames={{
+                  input: "text-gray-700 dark:text-gray-300",
+                  inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                 }}
-                isLoading={loadingUsers}
-                isRequired
-                isInvalid={!!createFormErrors.declarant_name}
-                errorMessage={createFormErrors.declarant_name}
-              >
-                {users.map((user) => (
-                  <SelectItem key={user.name} value={user.name}>
-                    {user.name}
-                  </SelectItem>
-                ))}
-              </Select>
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <Select
@@ -1860,7 +1933,7 @@ const GestionIncidents: React.FC = () => {
                   }}
                   isLoading={loadingUsers}
                   isRequired={isAdmin()} // Obligatoire seulement pour les admins
-                  isDisabled={isPartner() && users.length === 0} // Désactiver si partner et pas d'utilisateurs
+                  isDisabled={loadingUsers || users.length === 0} // Désactiver si chargement ou pas d'utilisateurs
                   isInvalid={!!createFormErrors.user_id}
                   errorMessage={createFormErrors.user_id}
                 >
@@ -1893,18 +1966,21 @@ const GestionIncidents: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <Input
+                <Select
                   label="Type"
-                  placeholder="Ex: Incident, Demande, Problème..."
-                  value={createForm.type}
-                  onChange={(e) => {
-                    setCreateForm(prev => ({ ...prev, type: e.target.value as any }));
+                  placeholder="Sélectionnez le type"
+                  selectedKeys={createForm.type ? [createForm.type] : []}
+                  onSelectionChange={(keys) => {
+                    setCreateForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }));
                     clearCreateFormError('type');
                   }}
                   isRequired
                   isInvalid={!!createFormErrors.type}
                   errorMessage={createFormErrors.type}
-                />
+                >
+                  <SelectItem key="incident" value="incident">Incident</SelectItem>
+                  <SelectItem key="support" value="support">Support</SelectItem>
+                </Select>
 
                 <Input
                   label="Catégorie"
@@ -1974,7 +2050,7 @@ const GestionIncidents: React.FC = () => {
                 placeholder="Sélectionnez l'impact de l'incident"
                 selectedKeys={createForm.impact ? [createForm.impact] : []}
                 onSelectionChange={(keys) => {
-                  const impact = Array.from(keys)[0] as string;
+                  const impact = Array.from(keys)[0] as string || "";
                   let priority = createForm.priority;
                   
                   // Déterminer automatiquement la criticité selon l'impact
@@ -2095,6 +2171,7 @@ const GestionIncidents: React.FC = () => {
               <div className="space-y-4">
                 <Input
                   label="Titre de l'incident"
+                  placeholder="Ex: Problème de connectivité..."
                   value={editForm.title}
                   onChange={(e) => {
                     setEditForm(prev => ({ ...prev, title: e.target.value }));
@@ -2107,6 +2184,7 @@ const GestionIncidents: React.FC = () => {
                 
                 <Textarea
                   label="Description"
+                  placeholder="Décrivez le problème en détail..."
                   value={editForm.description}
                   onChange={(e) => {
                     setEditForm(prev => ({ ...prev, description: e.target.value }));
@@ -2118,29 +2196,22 @@ const GestionIncidents: React.FC = () => {
                   errorMessage={editFormErrors.description}
                 />
                 
-                <Select
+                <Input
                   label="Déclarant de l'incident"
-                  placeholder="Sélectionnez la personne qui déclare l'incident"
-                  selectedKeys={editForm.declarant_name ? [editForm.declarant_name] : []}
-                  onSelectionChange={(keys) => {
-                    setEditForm(prev => ({ ...prev, declarant_name: Array.from(keys)[0] as string }));
-                    clearEditFormError('declarant_name');
+                  value={editForm.declarant_name}
+                  isReadOnly
+                  description="Déclarant ne peut pas être modifié"
+                  variant="bordered"
+                  classNames={{
+                    input: "text-gray-700 dark:text-gray-300",
+                    inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                   }}
-                  isLoading={loadingUsers}
-                  isRequired
-                  isInvalid={!!editFormErrors.declarant_name}
-                  errorMessage={editFormErrors.declarant_name}
-                >
-                  {users.map((user) => (
-                    <SelectItem key={user.name} value={user.name}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </Select>
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <Select
                     label="Assigné à (Responsable)"
+                    placeholder="Sélectionnez l'utilisateur responsable"
                     selectedKeys={editForm.user_id ? [editForm.user_id.toString()] : []}
                     onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, user_id: parseInt(Array.from(keys)[0] as string) }))}
                     isLoading={loadingUsers}
@@ -2155,6 +2226,7 @@ const GestionIncidents: React.FC = () => {
                   
                   <Select
                     label="Projet"
+                    placeholder="Sélectionnez le projet"
                     selectedKeys={editForm.project_id ? [editForm.project_id.toString()] : []}
                     onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, project_id: parseInt(Array.from(keys)[0] as string) }))}
                     isLoading={loadingProjects}
@@ -2169,45 +2241,131 @@ const GestionIncidents: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
-                  <Input
+                  <Select
                     label="Type"
-                    placeholder="Ex: Incident, Demande, Problème..."
-                    value={editForm.type}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, type: e.target.value as any }))}
+                    placeholder="Sélectionnez le type"
+                    selectedKeys={editForm.type ? [editForm.type] : []}
+                    onSelectionChange={(keys) => {
+                      setEditForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }));
+                      clearEditFormError('type');
+                    }}
                     isRequired
-                  />
+                    isInvalid={!!editFormErrors.type}
+                    errorMessage={editFormErrors.type}
+                  >
+                    <SelectItem key="incident" value="incident">Incident</SelectItem>
+                    <SelectItem key="support" value="support">Support</SelectItem>
+                  </Select>
 
                   <Input
                     label="Catégorie"
                     placeholder="Ex: Technique, Fonctionnel..."
                     value={editForm.category}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value as any }))}
+                    onChange={(e) => {
+                      setEditForm(prev => ({ ...prev, category: e.target.value as any }));
+                      clearEditFormError('category');
+                    }}
                     isRequired
+                    isInvalid={!!editFormErrors.category}
+                    errorMessage={editFormErrors.category}
                   />
 
-                  <Input
-                    label="Domaine"
-                    placeholder="Ex: Réseau, Application..."
-                    value={editForm.domain}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, domain: e.target.value as any }))}
+                  <Select
+                    label="Domaine concerné"
+                    placeholder="Sélectionnez le domaine"
+                    selectedKeys={editForm.domain ? [editForm.domain] : []}
+                    onSelectionChange={(keys) => {
+                      const domain = Array.from(keys)[0] as string;
+                      
+                      // Pré-remplir l'expert selon le domaine si des experts sont disponibles
+                      let suggestedExpertId = editForm.user_id; // Garder l'expert actuel par défaut
+                      if (users.length > 0) {
+                        // Logique pour suggérer un expert selon le domaine
+                        const expertMapping: Record<string, string[]> = {
+                          'reseau': ['expert réseau', 'network admin', 'réseau'],
+                          'infrastructure': ['expert infrastructure', 'system admin', 'infrastructure'],
+                          'cloud': ['expert cloud', 'cloud engineer', 'devops'],
+                          'energie': ['expert énergie', 'energy specialist', 'energie']
+                        };
+                        
+                        const domainKeywords = expertMapping[domain] || [];
+                        const suggestedExpert = users.find(user => 
+                          domainKeywords.some(keyword => 
+                            user.name.toLowerCase().includes(keyword.toLowerCase()) ||
+                            user.email.toLowerCase().includes(keyword.toLowerCase())
+                          )
+                        );
+                        
+                        if (suggestedExpert) {
+                          suggestedExpertId = suggestedExpert.id;
+                        }
+                      }
+                      
+                      setEditForm(prev => ({ 
+                        ...prev, 
+                        domain,
+                        // Suggérer un expert seulement si aucun n'est assigné
+                        ...(prev.user_id === 0 && suggestedExpertId && suggestedExpertId > 0 && { user_id: suggestedExpertId })
+                      }));
+                      clearEditFormError('domain');
+                    }}
                     isRequired
-                  />
+                    isInvalid={!!editFormErrors.domain}
+                    errorMessage={editFormErrors.domain}
+                  >
+                    <SelectItem key="reseau" value="reseau">Réseau</SelectItem>
+                    <SelectItem key="infrastructure" value="infrastructure">Infrastructure système</SelectItem>
+                    <SelectItem key="cloud" value="cloud">Cloud</SelectItem>
+                    <SelectItem key="energie" value="energie">Energie</SelectItem>
+                  </Select>
                 </div>
 
-                <Input
+                <Select
                   label="Impact"
-                  placeholder="Ex: Arrêt de service, Ralentissement..."
-                  value={editForm.impact}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, impact: e.target.value as any }))}
+                  placeholder="Sélectionnez l'impact de l'incident"
+                  selectedKeys={editForm.impact ? [editForm.impact] : []}
+                  onSelectionChange={(keys) => {
+                    const impact = Array.from(keys)[0] as string || "";
+                    let priority = editForm.priority;
+                    
+                    // Suggérer automatiquement la criticité selon l'impact (mais laisser éditable)
+                    switch(impact) {
+                      case 'arret_service':
+                        priority = 'P0';
+                        break;
+                      case 'service_fortement_degrade':
+                        priority = 'P1';
+                        break;
+                      case 'majeur':
+                        priority = 'P2';
+                        break;
+                      case 'mineur':
+                        priority = 'P4';
+                        break;
+                      default:
+                        priority = 'P3';
+                    }
+                    
+                    setEditForm(prev => ({ ...prev, impact, priority }));
+                    clearEditFormError('impact');
+                  }}
                   isRequired
-                />
+                  isInvalid={!!editFormErrors.impact}
+                  errorMessage={editFormErrors.impact}
+                >
+                  <SelectItem key="arret_service" value="arret_service">Arrêt de service</SelectItem>
+                  <SelectItem key="service_fortement_degrade" value="service_fortement_degrade">Service fortement dégradé</SelectItem>
+                  <SelectItem key="majeur" value="majeur">Majeur</SelectItem>
+                  <SelectItem key="mineur" value="mineur">Mineur</SelectItem>
+                </Select>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <Select
-                    label="Priorité"
+                    label="Priorité (suggérée automatiquement par l'impact)"
                     selectedKeys={editForm.priority ? [editForm.priority] : []}
                     onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
                     isRequired
+                    description="Modifiable manuellement si nécessaire"
                   >
                     <SelectItem key="P0" value="P0">P0 - Arrêt de service (immédiat)</SelectItem>
                     <SelectItem key="P1" value="P1">P1 - Haute (dégradation)</SelectItem>

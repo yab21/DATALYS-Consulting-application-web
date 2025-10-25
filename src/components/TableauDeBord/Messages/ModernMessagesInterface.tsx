@@ -15,11 +15,9 @@ import {
   Select,
   SelectItem,
   Textarea,
-  Avatar,
-  Divider,
   ScrollShadow,
 } from "@nextui-org/react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
   Search, 
   Send, 
@@ -27,18 +25,18 @@ import {
   AlertTriangle, 
   Clock,
   CheckCircle,
-  XCircle,
   Plus,
-  ArrowLeft
+  ArrowLeft,
+  Bug
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import messagesService, { 
   Message, 
   CreateMessageRequest,
-  CreateNotificationRequest,
-  ReplyMessageRequest 
+  CreateNotificationRequest
 } from "@/services/messages";
 import { UsersService, User } from "@/services/users";
+import { ProjectsService, Project } from "@/services/projects";
 
 // Types pour les conversations groupées
 interface Conversation {
@@ -49,10 +47,14 @@ interface Conversation {
   participants: string[];
   messages: Message[];
   updatedAt: string;
+  // Support pour les incidents
+  incident_id?: string;
+  expert_id?: string;
+  isIncidentChat?: boolean;
 }
 
 const ModernMessagesInterface: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   
   // États principaux
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -72,13 +74,20 @@ const ModernMessagesInterface: React.FC = () => {
     priority: "moyenne" as "faible" | "moyenne" | "haute" | "critique",
     project_id: "",
     recipient_type: "normal" as "normal" | "specific_partner" | "all_partners",
-    recipient_id: ""
+    recipient_id: "",
+    // Support incidents
+    incident_id: "",
+    expert_id: ""
   });
   const [sendingNewMessage, setSendingNewMessage] = useState(false);
   
   // États pour les utilisateurs (admins seulement)
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  
+  // États pour les projets
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
   
   // État pour réponse
   const [replyText, setReplyText] = useState("");
@@ -96,30 +105,86 @@ const ModernMessagesInterface: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Récupérer les paramètres de l'URL pour le contexte de l'incident
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const partnerName = urlParams.get('partner_name');
+    const projectName = urlParams.get('project_name');
+    const incidentNumber = urlParams.get('incident_number');
+    
+    if (partnerName && incidentNumber && isAdmin()) {
+      // Pré-remplir le nouveau message avec le contexte de l'incident
+      setNewMessage(prev => ({
+        ...prev,
+        title: `Re: Incident ${incidentNumber} - ${projectName || 'Projet'}`,
+        description: `Concernant votre incident ${incidentNumber}`,
+        recipient_type: "specific_partner" as const
+      }));
+      
+      // Ouvrir automatiquement le modal de nouveau message
+      setShowNewMessageModal(true);
+      
+    }
+  }, [isAdmin]);
+
   // Charger et organiser les messages en conversations
   useEffect(() => {
     loadMessages();
   }, []);
 
+  // Charger les projets
+  const loadProjects = async () => {
+    try {
+      setLoadingProjects(true);
+      const projectsService = new ProjectsService();
+      const projectsResult = await projectsService.getActiveProjects();
+      if (projectsResult && projectsResult.length > 0) {
+        setProjects(projectsResult);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des projets:', error);
+      setProjects([]);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
   // Charger les utilisateurs quand un admin ouvre le modal
   const loadUsers = async () => {
-    if (user?.role_id !== 1 && String(user?.role_id) !== "1") return; // Seulement pour les admins
+    if (user?.role_id !== 1 && String(user?.role_id) !== "1") {
+      return; // Seulement pour les admins
+    }
     
     try {
       setLoadingUsers(true);
       
-      // Récupérer tous les utilisateurs actifs
-      const result = await UsersService.getUsersByCriteria({
-        index: 0,
-        size: 100,
-        data: { is_active: true }
-      });
+      // Récupérer SEULEMENT les utilisateurs normaux pour éviter l'erreur 401 sur partners
+      let allUsers: any[] = [];
       
-      if (result && result.items && result.items.length > 0) {
-        setUsers(result.items);
+      try {
+        const usersResult = await UsersService.getUsersByCriteria({
+          index: 0,
+          size: 100,
+          data: { is_active: true }
+        });
+        
+        // Ajouter les utilisateurs normaux
+        if (usersResult && usersResult.items && usersResult.items.length > 0) {
+          allUsers = [...usersResult.items];
+        }
+      } catch (usersError) {
+        console.error('Erreur getUsersByCriteria:', usersError);
+        allUsers = [];
       }
+      
+      // NE PLUS essayer de récupérer les partenaires car cela cause l'erreur 401
+      // Les admins peuvent envoyer des messages aux utilisateurs disponibles
+      
+      setUsers(allUsers);
+      
     } catch (error) {
       console.error('Erreur lors du chargement des utilisateurs:', error);
+      setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
@@ -137,17 +202,49 @@ const ModernMessagesInterface: React.FC = () => {
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const response = await messagesService.getMyMessages(0, 100);
-      const messages = response.items || [];
+      
+      if (!user?.id) {
+        console.error('User ID not available');
+        return;
+      }
+      
+      // Récupérer les messages normaux avec gestion d'erreur robuste
+      let messages: any[] = [];
+      try {
+        const messagesResponse = await messagesService.getMyMessages(user.id, 0, 100);
+        messages = messagesResponse.items || [];
+      } catch (msgError) {
+        console.error('❌ Erreur récupération messages:', msgError);
+        // Ne pas propager l'erreur, juste continuer avec un tableau vide
+        messages = [];
+      }
+      
+      // Essayer de récupérer les notifications via l'API dédiée
+      try {
+        const notificationsResponse = await messagesService.getUnreadNotifications(0, 100);
+        const notifications = notificationsResponse.items || [];
+        
+        if (notifications.length > 0) {
+          // Combiner messages et notifications
+          messages = [...messages, ...notifications];
+        }
+      } catch (notifError) {
+        console.warn('⚠️ Impossible de récupérer les notifications:', notifError);
+      }
       
       // Organiser les messages en conversations
       const conversationsMap = new Map<string, Conversation>();
       
-      messages.forEach(message => {
+      messages.forEach((message: any) => {
         // Grouper par titre de conversation (parent_id pour les réponses, sinon par title)
         const conversationKey = message.parent_id || message.id;
         const conversationTitle = message.title || 'Sans titre';
-        const senderName = message.sender_name || 'Utilisateur inconnu';
+        // Essayer plusieurs champs pour récupérer le nom de l'utilisateur
+        const senderName = message.sender_name || 
+                          message.user?.name || 
+                          message.created_by_name ||
+                          (message.created_by === user?.id ? user?.name : null) ||
+                          (message.created_by ? `Utilisateur ${message.created_by}` : 'Utilisateur inconnu');
         
         if (!conversationsMap.has(conversationKey)) {
           conversationsMap.set(conversationKey, {
@@ -157,7 +254,11 @@ const ModernMessagesInterface: React.FC = () => {
             unreadCount: 0,
             participants: [senderName],
             messages: [],
-            updatedAt: message.updated_at || new Date().toISOString()
+            updatedAt: message.updated_at || new Date().toISOString(),
+            // Support incidents
+            incident_id: message.incident_id,
+            expert_id: message.expert_id,
+            isIncidentChat: !!message.incident_id
           });
         }
         
@@ -219,12 +320,27 @@ const ModernMessagesInterface: React.FC = () => {
     try {
       setSending(true);
       
-      const replyData: ReplyMessageRequest = {
-        parent_id: selectedConversation.id,
-        description: replyText.trim()
-      };
-      
-      await messagesService.replyToMessage(replyData);
+      // Utiliser sendMessage avec parent_id pour toutes les réponses
+      if (selectedConversation.isIncidentChat && selectedConversation.incident_id) {
+        // Chat d'incident - utiliser replyToIncidentMessage avec les bons types
+        const incidentReplyData = {
+          parent_id: parseInt(selectedConversation.id),
+          incident_id: parseInt(selectedConversation.incident_id),
+          description: replyText.trim(),
+          title: `Réponse incident #${selectedConversation.incident_id}`
+        };
+        
+        await messagesService.replyToIncidentMessage(incidentReplyData);
+      } else {
+        // Message normal - utiliser sendMessage avec parent_id
+        const replyData: CreateMessageRequest = {
+          title: `Réponse: ${selectedConversation.title}`,
+          description: replyText.trim(),
+          parent_id: parseInt(selectedConversation.id)
+        };
+        
+        await messagesService.sendMessage(replyData);
+      }
       
       setReplyText("");
       await loadMessages(); // Recharger pour voir la nouvelle réponse
@@ -243,32 +359,22 @@ const ModernMessagesInterface: React.FC = () => {
       setSendingNewMessage(true);
       
       const isAdmin = user?.role_id === 1 || String(user?.role_id) === "1";
-      const isTargetingPartners = isAdmin && newMessage.recipient_type !== "normal";
       
-      if (isTargetingPartners) {
-        // Admin envoie vers utilisateurs → utiliser l'API notifications
-        const notificationData: CreateNotificationRequest = {
-          title: newMessage.title.trim(),
-          description: newMessage.description.trim(),
-          priority: newMessage.priority,
-          // Si utilisateur spécifique, utiliser assigned_to avec l'ID utilisateur
-          ...(newMessage.recipient_type === "specific_partner" && newMessage.recipient_id && {
-            assigned_to: parseInt(newMessage.recipient_id)
-          })
-        };
-        
-        await messagesService.sendNotification(notificationData);
-      } else {
-        // Message normal → utiliser l'API messages classique
-        const messageData: CreateMessageRequest = {
-          title: newMessage.title.trim(),
-          description: newMessage.description.trim(),
-          priority: newMessage.priority,
-          project_id: newMessage.project_id ? parseInt(newMessage.project_id) : undefined
-        };
-        
-        await messagesService.sendMessage(messageData);
-      }
+      // Toujours utiliser sendMessage pour que les messages apparaissent dans la liste
+      const messageData: CreateMessageRequest = {
+        title: newMessage.title.trim(),
+        description: newMessage.description.trim(),
+        priority: newMessage.priority,
+        type: "message", // Forcer le type message
+        category: "communication", // Forcer la catégorie communication
+        project_id: newMessage.project_id ? parseInt(newMessage.project_id) : undefined,
+        // Si utilisateur spécifique, inclure l'ID
+        ...(newMessage.recipient_type === "specific_partner" && newMessage.recipient_id && {
+          recipient_id: parseInt(newMessage.recipient_id)
+        })
+      };
+      
+      const response = await messagesService.sendMessage(messageData);
       
       // Réinitialiser le formulaire
       setNewMessage({
@@ -277,11 +383,16 @@ const ModernMessagesInterface: React.FC = () => {
         priority: "moyenne",
         project_id: "",
         recipient_type: "normal",
-        recipient_id: ""
+        recipient_id: "",
+        incident_id: "",
+        expert_id: ""
       });
       
       setShowNewMessageModal(false);
-      await loadMessages();
+      // Rechargement avec un petit délai pour s'assurer que le backend a traité
+      setTimeout(async () => {
+        await loadMessages();
+      }, 500);
       
     } catch (error) {
       console.error('Erreur envoi nouveau message:', error);
@@ -290,7 +401,11 @@ const ModernMessagesInterface: React.FC = () => {
     }
   };
 
-  const getTypeIcon = (type: string) => {
+  const getTypeIcon = (type: string, isIncidentChat?: boolean) => {
+    if (isIncidentChat) {
+      return <Bug className="h-4 w-4 text-orange-500" />;
+    }
+    
     switch (type) {
       case "message": return <MessageCircle className="h-4 w-4" />;
       case "support": return <AlertTriangle className="h-4 w-4" />;
@@ -360,11 +475,13 @@ const ModernMessagesInterface: React.FC = () => {
           <Button
             color="primary"
             startContent={<Plus className="h-4 w-4" />}
-            onPress={() => {
+            onPress={async () => {
               setShowNewMessageModal(true);
+              // Charger les projets pour tous
+              await loadProjects();
               // Charger les utilisateurs immédiatement pour les admins
               if (user?.role_id === 1 || String(user?.role_id) === "1") {
-                loadUsers();
+                await loadUsers();
               }
             }}
             className="bg-gradient-to-r from-blue-500 to-blue-600"
@@ -418,7 +535,7 @@ const ModernMessagesInterface: React.FC = () => {
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex-shrink-0 mt-1">
-                            {getTypeIcon(conversation.lastMessage.type)}
+                            {getTypeIcon(conversation.lastMessage.type, conversation.isIncidentChat)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
@@ -475,9 +592,21 @@ const ModernMessagesInterface: React.FC = () => {
                         </Button>
                       )}
                       <div>
-                        <h2 className="font-semibold text-gray-900 dark:text-white">
-                          {selectedConversation.title}
-                        </h2>
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-semibold text-gray-900 dark:text-white">
+                            {selectedConversation.title}
+                          </h2>
+                          {selectedConversation.isIncidentChat && (
+                            <Chip 
+                              size="sm" 
+                              color="warning" 
+                              variant="flat"
+                              startContent={<Bug className="h-3 w-3" />}
+                            >
+                              Incident #{selectedConversation.incident_id}
+                            </Chip>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-500">
                           {selectedConversation.participants.join(', ')}
                         </p>
@@ -503,7 +632,11 @@ const ModernMessagesInterface: React.FC = () => {
                       } rounded-2xl px-4 py-3`}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-medium opacity-75">
-                            {message.sender_name}
+                            {(message as any).sender_name || 
+                             (message as any).user?.name || 
+                             (message as any).created_by_name ||
+                             ((message as any).created_by === user?.id ? user?.name : null) ||
+                             ((message as any).created_by ? `Utilisateur ${(message as any).created_by}` : 'Utilisateur inconnu')}
                           </span>
                           <div className={`w-1.5 h-1.5 rounded-full ${getPriorityColor(message.priority)}`} />
                         </div>
@@ -591,65 +724,52 @@ const ModernMessagesInterface: React.FC = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                  <MessageCircle className="h-5 w-5" />
-                </div>
-                <div>
+              <ModalHeader>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                  </div>
                   <h3 className="text-xl font-bold">Nouveau Message</h3>
-                  <p className="text-sm text-gray-500">Créer une nouvelle conversation</p>
                 </div>
               </ModalHeader>
               
-              <ModalBody className="py-6">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      Sujet <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      placeholder="Entrez le sujet de votre message..."
-                      value={newMessage.title}
-                      onChange={(e) => setNewMessage({...newMessage, title: e.target.value})}
-                      variant="bordered"
-                      size="lg"
-                    />
-                  </div>
+              <ModalBody>
+                <div className="space-y-4">
+                  <Input
+                    label="Sujet"
+                    placeholder="Entrez le sujet de votre message..."
+                    value={newMessage.title}
+                    onChange={(e) => setNewMessage({...newMessage, title: e.target.value})}
+                    isRequired
+                  />
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Priorité</label>
-                    <Select
-                      placeholder="Sélectionner la priorité"
-                      selectedKeys={[newMessage.priority]}
-                      onSelectionChange={(keys) => {
-                        const priority = Array.from(keys)[0] as "faible" | "moyenne" | "haute" | "critique";
-                        setNewMessage({...newMessage, priority});
-                      }}
-                      variant="bordered"
-                      size="lg"
-                    >
-                      <SelectItem key="faible" value="faible">🟢 Faible</SelectItem>
-                      <SelectItem key="moyenne" value="moyenne">🟡 Moyenne</SelectItem>
-                      <SelectItem key="haute" value="haute">🟠 Haute</SelectItem>
-                      <SelectItem key="critique" value="critique">🔴 Critique</SelectItem>
-                    </Select>
-                  </div>
+                  <Select
+                    label="Priorité"
+                    placeholder="Sélectionner la priorité"
+                    selectedKeys={[newMessage.priority]}
+                    onSelectionChange={(keys) => {
+                      const priority = Array.from(keys)[0] as "faible" | "moyenne" | "haute" | "critique";
+                      setNewMessage({...newMessage, priority});
+                    }}
+                    isRequired
+                  >
+                    <SelectItem key="faible" value="faible">🟢 Faible</SelectItem>
+                    <SelectItem key="moyenne" value="moyenne">🟡 Moyenne</SelectItem>
+                    <SelectItem key="haute" value="haute">🟠 Haute</SelectItem>
+                    <SelectItem key="critique" value="critique">🔴 Critique</SelectItem>
+                  </Select>
 
                   {/* Section Destinataires - seulement pour les admins */}
                   {(user?.role_id === 1 || String(user?.role_id) === "1") && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Destinataires
-                      </label>
+                    <div className="space-y-4">
                       <Select
+                        label="Destinataires"
                         placeholder="Sélectionner le type de destinataire"
                         selectedKeys={[newMessage.recipient_type]}
                         onSelectionChange={(keys) => {
                           const recipientType = Array.from(keys)[0] as "normal" | "specific_partner" | "all_partners";
                           setNewMessage({...newMessage, recipient_type: recipientType, recipient_id: ""});
                         }}
-                        variant="bordered"
-                        size="lg"
                       >
                         <SelectItem key="normal" value="normal">Message normal</SelectItem>
                         <SelectItem key="specific_partner" value="specific_partner">Utilisateur spécifique</SelectItem>
@@ -658,29 +778,32 @@ const ModernMessagesInterface: React.FC = () => {
                       
                       {/* Sélection de l'utilisateur spécifique */}
                       {newMessage.recipient_type === "specific_partner" && (
-                        <div className="mt-3">
-                          <Select
-                            placeholder="Sélectionner un utilisateur"
-                            selectionMode="single"
-                            selectedKeys={newMessage.recipient_id ? new Set([newMessage.recipient_id]) : new Set()}
-                            onSelectionChange={(keys) => {
-                              const keysArray = Array.from(keys);
-                              const recipientId = keysArray[0] as string;
-                              if (recipientId && recipientId !== 'undefined') {
-                                setNewMessage({...newMessage, recipient_id: recipientId});
-                              }
-                            }}
-                            variant="bordered"
-                            size="lg"
-                            isLoading={loadingUsers}
-                            aria-label="Sélectionner un utilisateur"
-                            onOpenChange={(isOpen) => {
-                              if (isOpen && users.length === 0) {
-                                loadUsers();
-                              }
-                            }}
-                          >
-                            {users.map((user) => (
+                        <Select
+                          label="Sélectionner un utilisateur"
+                          placeholder="Choisir un utilisateur"
+                          selectionMode="single"
+                          selectedKeys={newMessage.recipient_id ? new Set([newMessage.recipient_id]) : new Set()}
+                          onSelectionChange={(keys) => {
+                            const keysArray = Array.from(keys);
+                            const recipientId = keysArray[0] as string;
+                            if (recipientId && recipientId !== 'undefined') {
+                              setNewMessage({...newMessage, recipient_id: recipientId});
+                            }
+                          }}
+                          isLoading={loadingUsers}
+                          aria-label="Sélectionner un utilisateur"
+                          onOpenChange={(isOpen) => {
+                            if (isOpen && users.length === 0) {
+                              loadUsers();
+                            }
+                          }}
+                        >
+                          {users.length === 0 ? (
+                            <SelectItem key="loading" value="loading" isDisabled>
+                              {loadingUsers ? "Chargement..." : "Aucun utilisateur"}
+                            </SelectItem>
+                          ) : (
+                            users.map((user) => (
                               <SelectItem 
                                 key={user.id.toString()} 
                                 value={user.id.toString()}
@@ -688,38 +811,38 @@ const ModernMessagesInterface: React.FC = () => {
                               >
                                 {user.name} ({user.email})
                               </SelectItem>
-                            ))}
-                          </Select>
-                        </div>
+                            ))
+                          )}
+                        </Select>
                       )}
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">ID du Projet</label>
-                    <Input
-                      placeholder="ID du projet (optionnel)"
-                      value={newMessage.project_id}
-                      onChange={(e) => setNewMessage({...newMessage, project_id: e.target.value})}
-                      variant="bordered"
-                      size="lg"
-                      type="number"
-                    />
-                  </div>
+                  <Select
+                    label="Projet"
+                    placeholder="Sélectionner un projet (optionnel)"
+                    selectedKeys={newMessage.project_id ? [newMessage.project_id] : []}
+                    onSelectionChange={(keys) => {
+                      const projectId = Array.from(keys)[0] as string;
+                      setNewMessage({...newMessage, project_id: projectId || ""});
+                    }}
+                    isLoading={loadingProjects}
+                  >
+                    {projects.map((project) => (
+                      <SelectItem key={project.id.toString()} value={project.id.toString()} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
+                        {project.title} {project.partner_name ? `(${project.partner_name})` : ''}
+                      </SelectItem>
+                    ))}
+                  </Select>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      Message <span className="text-red-500">*</span>
-                    </label>
-                    <Textarea
-                      placeholder="Décrivez votre message..."
-                      value={newMessage.description}
-                      onChange={(e) => setNewMessage({...newMessage, description: e.target.value})}
-                      variant="bordered"
-                      size="lg"
-                      minRows={4}
-                    />
-                  </div>
+                  <Textarea
+                    label="Message"
+                    placeholder="Décrivez votre message..."
+                    value={newMessage.description}
+                    onChange={(e) => setNewMessage({...newMessage, description: e.target.value})}
+                    minRows={3}
+                    isRequired
+                  />
                 </div>
               </ModalBody>
               

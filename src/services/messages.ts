@@ -26,6 +26,15 @@ export interface Message {
   assigned_to?: string;
   resolution_notes?: string;
   attachments?: MessageAttachment[];
+  // Nouvelles propriétés pour l'intégration incidents
+  incident_id?: string; // Lien vers un incident
+  expert_id?: string;   // Expert assigné pour le support
+  user?: {              // Objet utilisateur selon la nouvelle API
+    id: number;
+    name: string;
+    email: string;
+    role?: string;
+  };
 }
 
 export interface MessageAttachment {
@@ -56,11 +65,15 @@ export interface Participant {
 export interface CreateMessageRequest {
   title: string;
   description: string;
+  recipient_id?: number;
+  parent_id?: number;
   project_id?: number;
   priority?: "faible" | "moyenne" | "haute" | "critique";
   category?: "communication" | "technique" | "officiel";
   type?: "message" | "support" | "notification";
-  recipient_id?: number;
+  // Nouvelles propriétés pour l'intégration incidents
+  incident_id?: string;
+  expert_id?: string;
 }
 
 export interface CreateNotificationRequest {
@@ -70,13 +83,10 @@ export interface CreateNotificationRequest {
   priority?: "faible" | "moyenne" | "haute" | "critique";
 }
 
-export interface ReplyMessageRequest {
-  parent_id: string;
-  description: string;
-}
 
 export interface MessageFilters {
   type?: "message" | "support" | "notification";
+  category?: "communication" | "technique" | "officiel";
   status?: "ouvert" | "en_cours" | "resolu" | "ferme";
   priority?: "faible" | "moyenne" | "haute" | "critique";
   is_read?: boolean;
@@ -84,6 +94,23 @@ export interface MessageFilters {
   sender_id?: number;
   date_from?: string;
   date_to?: string;
+}
+
+export interface GetMyMessagesRequest {
+  user: {
+    id: number;
+  };
+  index: number;
+  size: number;
+  filters?: MessageFilters;
+}
+
+export interface GetConversationThreadRequest {
+  user: {
+    id: number;
+  };
+  incident_id?: number;
+  parent_id?: number;
 }
 
 export interface MessagesResponse {
@@ -117,10 +144,26 @@ class MessagesService {
    */
   async sendMessage(data: CreateMessageRequest): Promise<{ message: Message; code: number }> {
     try {
+      // Construire le body selon le format API requis
+      const requestBody: any = {
+        title: data.title,
+        description: data.description
+      };
+
+      // Ajouter recipient_id si fourni
+      if (data.recipient_id) {
+        requestBody.recipient_id = data.recipient_id;
+      }
+
+      // Ajouter parent_id si fourni (pour les réponses)
+      if (data.parent_id) {
+        requestBody.parent_id = data.parent_id;
+      }
+
       const response = await fetch(`${this.baseUrl}/messages/send`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify(data)
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -226,22 +269,31 @@ class MessagesService {
   }
 
   /**
-   * Récupérer mes messages avec pagination et filtres
+   * Récupérer mes messages avec pagination
    */
   async getMyMessages(
+    userId: number,
     index: number = 0, 
-    size: number = 20, 
-    filters: MessageFilters = {}
+    size: number = 20
   ): Promise<MessagesResponse> {
     try {
+      const requestBody: GetMyMessagesRequest = {
+        user: {
+          id: userId
+        },
+        index,
+        size,
+        // Inclure tous les types de messages : messages et notifications
+        filters: {
+          type: undefined, // Pas de filtre sur le type pour récupérer tout
+          category: undefined // Pas de filtre sur la catégorie
+        }
+      };
+
       const response = await fetch(`${this.baseUrl}/messages/my-messages`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({
-          index,
-          size,
-          data: filters
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -257,51 +309,36 @@ class MessagesService {
     }
   }
 
-  /**
-   * Répondre à un message
-   */
-  async replyToMessage(data: ReplyMessageRequest): Promise<{ message: Message; code: number }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/messages/reply`, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la réponse');
-      }
-
-      const result = await response.json();
-      return {
-        message: result.items[0],
-        code: result.code
-      };
-    } catch (error) {
-      console.error('Erreur réponse message:', error);
-      const message = extractBackendMessage(error);
-      throw new Error(message);
-    }
-  }
 
   /**
    * Récupérer un fil de conversation
    */
   async getConversationThread(
-    parentId: string, 
-    index: number = 0, 
-    size: number = 50
+    userId: number,
+    parentId?: number,
+    incidentId?: number
   ): Promise<ConversationResponse> {
     try {
+      const requestBody: GetConversationThreadRequest = {
+        user: {
+          id: userId
+        }
+      };
+
+      // Ajouter incident_id si fourni
+      if (incidentId) {
+        requestBody.incident_id = incidentId;
+      }
+
+      // Ajouter parent_id si fourni
+      if (parentId) {
+        requestBody.parent_id = parentId;
+      }
+
       const response = await fetch(`${this.baseUrl}/conversations/thread`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({
-          parent_id: parentId,
-          index,
-          size
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -317,35 +354,6 @@ class MessagesService {
     }
   }
 
-  /**
-   * Marquer un message comme lu
-   */
-  async markAsRead(messageId: string): Promise<{ success: boolean; code: number }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/messages/mark-read`, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify({
-          id: messageId
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors du marquage');
-      }
-
-      const result = await response.json();
-      return {
-        success: true,
-        code: result.code
-      };
-    } catch (error) {
-      console.error('Erreur marquage lu:', error);
-      const message = extractBackendMessage(error);
-      throw new Error(message);
-    }
-  }
 
   /**
    * Créer une demande de support
@@ -523,6 +531,147 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur mise à jour statut:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  // ========================
+  // NOUVELLES MÉTHODES POUR COMMUNICATION EXPERT-CLIENT
+  // ========================
+
+  /**
+   * Envoyer un message lié à un incident (communication expert-client)
+   */
+  async sendIncidentMessage(data: {
+    incident_id: string;
+    description: string;
+    title?: string;
+    priority?: "faible" | "moyenne" | "haute" | "critique";
+  }): Promise<{ message: Message; code: number }> {
+    try {
+      const messageData = {
+        title: data.title || `Message incident #${data.incident_id}`,
+        description: data.description,
+        incident_id: data.incident_id,
+        priority: data.priority || 'moyenne',
+        type: 'support' as const
+      };
+
+      const response = await fetch(`${this.baseUrl}/messages/send`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(messageData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de l\'envoi du message incident');
+      }
+
+      const result = await response.json();
+      return {
+        message: result.items[0],
+        code: result.code
+      };
+    } catch (error) {
+      console.error('Erreur envoi message incident:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Récupérer les messages liés à un incident spécifique
+   */
+  async getIncidentMessages(
+    incidentId: string,
+    index: number = 0,
+    size: number = 50
+  ): Promise<MessagesResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/messages/my-messages`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          index,
+          size,
+          data: {
+            incident_id: incidentId,
+            type: 'support'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la récupération des messages de l\'incident');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur récupération messages incident:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Récupérer toutes les conversations avec des experts assignés
+   */
+  async getExpertConversations(
+    index: number = 0,
+    size: number = 20
+  ): Promise<MessagesResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/messages/my-messages`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          index,
+          size,
+          data: {
+            type: 'support',
+            // Filtrer les messages qui ont un expert assigné
+            has_expert: true
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la récupération des conversations expert');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur récupération conversations expert:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Répondre dans le contexte d'un incident
+   */
+  async replyToIncidentMessage(data: {
+    parent_id: number;
+    incident_id: number;
+    description: string;
+    title?: string;
+  }): Promise<{ message: Message; code: number }> {
+    try {
+      // Utiliser sendMessage avec parent_id pour les réponses
+      const messageData: CreateMessageRequest = {
+        title: data.title || `Réponse incident #${data.incident_id}`,
+        description: data.description,
+        parent_id: data.parent_id,
+        incident_id: data.incident_id.toString()
+      };
+
+      return await this.sendMessage(messageData);
+    } catch (error) {
+      console.error('Erreur réponse incident:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

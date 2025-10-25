@@ -187,25 +187,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     const autresMenu = {
       name: "AUTRES",
       menuItems: [
-        // Menu Mon Espace - pour les partenaires uniquement
-        ...(isPartner() ? [{
-          icon: (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="fill-current transition-all duration-300 group-hover:scale-110"
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-            >
-              <path
-                fill="fill-current"
-                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
-              />
-            </svg>
-          ),
-          label: "Mon Espace",
-          route: "/tableaudebord/mon-espace",
-        }] : []),
 
         // Menu Profil - pour tous les utilisateurs
         {
@@ -227,10 +208,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           route: "#",
           children: [
             { label: "Voir", route: "/tableaudebord/profil/voir" },
-            {
+            // Changer mot de passe uniquement pour les admins
+            ...(isAdmin() ? [{
               label: "Changer le mot de passe",
               route: "/tableaudebord/profil/changermotdepasse",
-            },
+            }] : []),
           ],
         },
       ],
@@ -254,7 +236,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       ),
       label: "Recherche",
       route: "/tableaudebord/recherche",
-    });
+      children: []
+    } as any);
 
     // Menu Messages (pour tous les utilisateurs)
     autresMenu.menuItems.unshift({
@@ -274,7 +257,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       ),
       label: "Messages",
       route: "/tableaudebord/messages",
-    });
+      children: []
+    } as any);
 
     // Menu Support supprimé - maintenant dans la section GESTION
 

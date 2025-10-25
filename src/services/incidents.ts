@@ -82,6 +82,7 @@ export interface IncidentCriteria {
     domain?: string;
     user_id?: number;
     project_id?: number;
+    created_by?: number;
     is_active?: boolean;
     is_read?: boolean;
   };

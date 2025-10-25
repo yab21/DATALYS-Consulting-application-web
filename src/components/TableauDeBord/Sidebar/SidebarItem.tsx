@@ -12,7 +12,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
   };
 
   // Vérifier si c'est un menu parent actif (pour les dropdowns)
-  const isActive = item.children ? 
+  const isActive = item.children && item.children.length > 0 ? 
     (pageName === item.label.toLowerCase() || item.children.some((child: any) => pathname === child.route)) :
     pathname === item.route;
 
@@ -64,7 +64,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           )}
 
           {/* Flèche pour les sous-menus */}
-          {item.children && (
+          {item.children && item.children.length > 0 && (
             <svg
               className={`h-4 w-4 transition-transform duration-200 ${
                 isActive ? "rotate-0 text-primary" : "rotate-180 text-gray-400"
@@ -79,7 +79,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
         </Link>
 
         {/* Sous-menus avec animation */}
-        {item.children && (
+        {item.children && item.children.length > 0 && (
           <div
             className={`overflow-hidden transition-all duration-200 ease-out ${
               isActive ? "max-h-96 opacity-100" : "max-h-0 opacity-0"

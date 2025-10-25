@@ -17,6 +17,7 @@ import {
 import { AlertTriangle, Plus } from "lucide-react";
 import { IncidentsService, type CreateIncidentData } from "@/services/incidents";
 import { type Project } from "@/services/projects";
+import { UsersService, type User } from "@/services/users";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 interface CreateIncidentModalProps {
@@ -36,6 +37,10 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
   const { showNotification } = useSimpleNotifications();
   const [loading, setLoading] = useState(false);
   
+  // États pour charger les utilisateurs
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  
   const [formData, setFormData] = useState<CreateIncidentData>({
     title: "",
     description: "",
@@ -53,7 +58,27 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
     resolution_notes: ""
   });
 
-  // Réinitialiser le formulaire quand le modal s'ouvre
+  // Charger les utilisateurs
+  const loadUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await UsersService.getUsersByCriteria({
+        index: 0,
+        size: 100,
+        data: { is_active: true }
+      });
+      
+      if (response && response.items) {
+        setUsers(response.items);
+      }
+    } catch (error) {
+      console.error('Erreur chargement utilisateurs:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Réinitialiser le formulaire et charger les données quand le modal s'ouvre
   useEffect(() => {
     if (isOpen) {
       console.log("🔧 Modal ouvert, projets disponibles:", projects);
@@ -73,6 +98,9 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
         is_read: false,
         resolution_notes: ""
       });
+      
+      // Charger les utilisateurs
+      loadUsers();
     }
   }, [isOpen, partnerName, projects]);
 
@@ -182,10 +210,11 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
                 selectedKeys={formData.project_id > 0 ? new Set([formData.project_id.toString()]) : new Set()}
                 onSelectionChange={(keys) => {
                   const selectedKey = Array.from(keys)[0] as string;
-                  console.log("🎯 Projet sélectionné:", selectedKey);
+                  const selectedProject = projects.find(p => p.id.toString() === selectedKey);
+                  console.log("🎯 Projet sélectionné:", selectedKey, selectedProject);
                   setFormData(prev => ({ 
                     ...prev, 
-                    project_id: parseInt(selectedKey) || 0
+                    project_id: selectedProject ? selectedProject.id : 0
                   }));
                 }}
                 isRequired

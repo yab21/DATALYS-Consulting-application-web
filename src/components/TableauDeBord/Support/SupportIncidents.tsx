@@ -1071,6 +1071,9 @@ const SupportIncidents: React.FC = () => {
               <TableColumn>CLIENT</TableColumn>
               <TableColumn>PRIORITÉ</TableColumn>
               <TableColumn>STATUT</TableColumn>
+              <TableColumn>CATÉGORIE</TableColumn>
+              <TableColumn>IMPACT</TableColumn>
+              <TableColumn>DOMAINE</TableColumn>
               <TableColumn>DÉLAIS DE TRAITEMENT</TableColumn>
               <TableColumn>CRÉÉ LE</TableColumn>
               <TableColumn>ACTIONS</TableColumn>
@@ -1123,6 +1126,15 @@ const SupportIncidents: React.FC = () => {
                     >
                       {ticket.statut.replace("_", " ")}
                     </Chip>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{ticket.category || "N/A"}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{ticket.impact || "N/A"}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{ticket.domain || "N/A"}</span>
                   </TableCell>
                   <TableCell>
                     <SLACountdown ticket={ticket} />
@@ -1263,6 +1275,17 @@ const SupportIncidents: React.FC = () => {
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4">
+                    <Select
+                      label="Type"
+                      placeholder="Sélectionnez le type"
+                      selectedKeys={createForm.type ? [createForm.type] : []}
+                      onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }))}
+                      isRequired
+                    >
+                      <SelectItem key="incident" value="incident">Incident</SelectItem>
+                      <SelectItem key="support" value="support">Support</SelectItem>
+                    </Select>
+                    
                     <Input
                       label="Catégorie"
                       placeholder="Ex: Technique, Fonctionnel..."
@@ -1270,21 +1293,56 @@ const SupportIncidents: React.FC = () => {
                       onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value }))}
                       isRequired
                     />
-                    <Input
-                      label="Impact"
-                      placeholder="Ex: Arrêt de service, Ralentissement..."
-                      value={createForm.impact}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, impact: e.target.value }))}
+                    
+                    <Select
+                      label="Domaine concerné"
+                      placeholder="Sélectionnez le domaine"
+                      selectedKeys={createForm.domain ? [createForm.domain] : []}
+                      onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }))}
                       isRequired
-                    />
-                    <Input
-                      label="Domaine"
-                      placeholder="Ex: Réseau, Application..."
-                      value={createForm.domain}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, domain: e.target.value }))}
-                      isRequired
-                    />
+                    >
+                      <SelectItem key="reseau" value="reseau">Réseau</SelectItem>
+                      <SelectItem key="infrastructure" value="infrastructure">Infrastructure système</SelectItem>
+                      <SelectItem key="cloud" value="cloud">Cloud</SelectItem>
+                      <SelectItem key="energie" value="energie">Energie</SelectItem>
+                    </Select>
                   </div>
+                  
+                  <Select
+                    label="Impact"
+                    placeholder="Sélectionnez l'impact de l'incident"
+                    selectedKeys={createForm.impact ? [createForm.impact] : []}
+                    onSelectionChange={(keys) => {
+                      const impact = Array.from(keys)[0] as string || "";
+                      let priority = createForm.priority;
+                      
+                      // Déterminer automatiquement la criticité selon l'impact
+                      switch(impact) {
+                        case 'arret_service':
+                          priority = 'P0';
+                          break;
+                        case 'service_fortement_degrade':
+                          priority = 'P1';
+                          break;
+                        case 'majeur':
+                          priority = 'P2';
+                          break;
+                        case 'mineur':
+                          priority = 'P4';
+                          break;
+                        default:
+                          priority = 'P3';
+                      }
+                      
+                      setCreateForm(prev => ({ ...prev, impact, priority }));
+                    }}
+                    isRequired
+                  >
+                    <SelectItem key="arret_service" value="arret_service">Arrêt de service</SelectItem>
+                    <SelectItem key="service_fortement_degrade" value="service_fortement_degrade">Service fortement dégradé</SelectItem>
+                    <SelectItem key="majeur" value="majeur">Majeur</SelectItem>
+                    <SelectItem key="mineur" value="mineur">Mineur</SelectItem>
+                  </Select>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <Select
@@ -1506,25 +1564,73 @@ const SupportIncidents: React.FC = () => {
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4">
+                    <Select
+                      label="Type"
+                      placeholder="Sélectionnez le type"
+                      selectedKeys={editForm.type ? [editForm.type] : []}
+                      onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }))}
+                      isRequired
+                    >
+                      <SelectItem key="incident" value="incident">Incident</SelectItem>
+                      <SelectItem key="support" value="support">Support</SelectItem>
+                    </Select>
+                    
                     <Input
                       label="Catégorie"
                       value={editForm.category}
                       onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
                       isRequired
                     />
-                    <Input
-                      label="Impact"
-                      value={editForm.impact}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, impact: e.target.value }))}
+                    
+                    <Select
+                      label="Domaine concerné"
+                      placeholder="Sélectionnez le domaine"
+                      selectedKeys={editForm.domain ? [editForm.domain] : []}
+                      onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }))}
                       isRequired
-                    />
-                    <Input
-                      label="Domaine"
-                      value={editForm.domain}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, domain: e.target.value }))}
-                      isRequired
-                    />
+                    >
+                      <SelectItem key="reseau" value="reseau">Réseau</SelectItem>
+                      <SelectItem key="infrastructure" value="infrastructure">Infrastructure système</SelectItem>
+                      <SelectItem key="cloud" value="cloud">Cloud</SelectItem>
+                      <SelectItem key="energie" value="energie">Energie</SelectItem>
+                    </Select>
                   </div>
+                  
+                  <Select
+                    label="Impact"
+                    placeholder="Sélectionnez l'impact de l'incident"
+                    selectedKeys={editForm.impact ? [editForm.impact] : []}
+                    onSelectionChange={(keys) => {
+                      const impact = Array.from(keys)[0] as string || "";
+                      let priority = editForm.priority;
+                      
+                      // Suggérer automatiquement la criticité selon l'impact (mais laisser éditable)
+                      switch(impact) {
+                        case 'arret_service':
+                          priority = 'P0';
+                          break;
+                        case 'service_fortement_degrade':
+                          priority = 'P1';
+                          break;
+                        case 'majeur':
+                          priority = 'P2';
+                          break;
+                        case 'mineur':
+                          priority = 'P4';
+                          break;
+                        default:
+                          priority = 'P3';
+                      }
+                      
+                      setEditForm(prev => ({ ...prev, impact, priority }));
+                    }}
+                    isRequired
+                  >
+                    <SelectItem key="arret_service" value="arret_service">Arrêt de service</SelectItem>
+                    <SelectItem key="service_fortement_degrade" value="service_fortement_degrade">Service fortement dégradé</SelectItem>
+                    <SelectItem key="majeur" value="majeur">Majeur</SelectItem>
+                    <SelectItem key="mineur" value="mineur">Mineur</SelectItem>
+                  </Select>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <Select
