@@ -75,6 +75,15 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+  
+  // 🔍 DEBUG: Observer les changements de currentFolderId
+  useEffect(() => {
+    console.log('🔍 [DEBUG STATE] - currentFolderId changé:', {
+      newValue: currentFolderId,
+      timestamp: new Date().toISOString(),
+      stackTrace: new Error().stack?.split('\n').slice(1, 5).join('\n')
+    });
+  }, [currentFolderId]);
   const [breadcrumbPath, setBreadcrumbPath] = useState<BreadcrumbPath[]>([
     { id: null, name: project.title }
   ]);
@@ -220,11 +229,12 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   }, [loadCurrentFolder]);
 
   // Recharger les données quand le dossier courant change (pour breadcrumb navigation)
-  useEffect(() => {
-    if (isOpen && currentFolderId !== null) {
-      loadCurrentFolder();
-    }
-  }, [currentFolderId, isOpen, loadCurrentFolder]);
+  // DÉSACTIVÉ temporairement pour éviter les rechargements parasites après création
+  // useEffect(() => {
+  //   if (isOpen && currentFolderId !== null) {
+  //     loadCurrentFolder();
+  //   }
+  // }, [currentFolderId, isOpen, loadCurrentFolder]);
 
   // Navigation vers un dossier (avec logs de debug)
   const navigateToFolder = useCallback((folder: ProjectFolder) => {
@@ -338,12 +348,19 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         setNewFolderDescription('');
         setCreateFolderModal(false);
         
-        // 🔍 LOG 3: Avant rechargement
-        console.log('🔍 [DEBUG CREATION DOSSIER] - Avant rechargement des données...');
+        // 🔍 LOG 3: Avant rechargement (en s'assurant de rester dans le dossier parent)
+        console.log('🔍 [DEBUG CREATION DOSSIER] - Avant rechargement des données...', {
+          currentFolderIdAvantReload: currentFolderId,
+          shouldStayInSameFolder: true
+        });
+        
+        // Recharger sans changer de dossier courant
         await loadCurrentFolder();
         
         // 🔍 LOG 4: Après rechargement
-        console.log('🔍 [DEBUG CREATION DOSSIER] - Rechargement terminé');
+        console.log('🔍 [DEBUG CREATION DOSSIER] - Rechargement terminé', {
+          currentFolderIdApresReload: currentFolderId
+        });
       } else {
         console.error('🔍 [DEBUG CREATION DOSSIER] - Échec: newFolder est null/undefined');
         throw new Error('Erreur lors de la création');
