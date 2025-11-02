@@ -139,14 +139,33 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     return 'grid-cols-5';                       // Augmenté de 4 à 5
   }, [folders.length, files.length, isFullscreen, getModalSize]);
 
-  // Charger les données du dossier courant
+  // Charger les données du dossier courant (avec logs de debug)
   const loadCurrentFolder = useCallback(async () => {
     if (!isOpen) return;
+    
+    // 🔍 LOG: Début du chargement
+    console.log('🔍 [DEBUG LOAD FOLDER] - Début chargement:', {
+      currentFolderId,
+      projectId: project.id,
+      isOpen
+    });
     
     setLoading(true);
     try {
       // Charger les dossiers
       const foldersData = await projectFilesService.getFolders(currentFolderId, project.id);
+      
+      // 🔍 LOG: Dossiers récupérés
+      console.log('🔍 [DEBUG LOAD FOLDER] - Dossiers récupérés:', {
+        count: foldersData.length,
+        folders: foldersData.map(f => ({
+          id: f.id,
+          name: f.name,
+          parent_folder_id: f.parent_folder_id,
+          project_id: f.project_id
+        }))
+      });
+      
       const foldersWithStats: FolderWithStats[] = foldersData.map(folder => ({
         ...folder,
         loadingStats: true,
@@ -207,11 +226,21 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     }
   }, [currentFolderId, isOpen, loadCurrentFolder]);
 
-  // Navigation vers un dossier
+  // Navigation vers un dossier (avec logs de debug)
   const navigateToFolder = useCallback((folder: ProjectFolder) => {
+    console.log('🔍 [DEBUG NAVIGATION] - Entrée dans dossier:', {
+      folder: {
+        id: folder.id,
+        name: folder.name,
+        parent_folder_id: folder.parent_folder_id
+      },
+      previousCurrentFolderId: currentFolderId,
+      currentBreadcrumbPath: breadcrumbPath
+    });
+    
     setCurrentFolderId(folder.id);
     setBreadcrumbPath(prev => [...prev, { id: folder.id, name: folder.name }]);
-  }, []);
+  }, [currentFolderId, breadcrumbPath]);
 
   // Navigation par breadcrumb (amélioré)
   const navigateToBreadcrumb = useCallback((index: number) => {
@@ -256,7 +285,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     }
   }, [breadcrumbPath, currentFolderId]);
 
-  // Créer un nouveau dossier
+  // Créer un nouveau dossier (avec logs de debug)
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
       showNotification({
@@ -268,6 +297,18 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     }
 
     setCreatingFolder(true);
+    
+    // 🔍 LOG 1: État avant création
+    console.log('🔍 [DEBUG CREATION DOSSIER] - État avant création:', {
+      newFolderName,
+      newFolderDescription,
+      currentFolderId,
+      projectId: project.id,
+      userId: user?.id || 1,
+      breadcrumbPath,
+      currentPath: breadcrumbPath.map(b => b.name).join(' > ')
+    });
+
     try {
       const newFolder = await projectFilesService.createFolder(
         newFolderName,
@@ -276,6 +317,15 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         project.id,
         user?.id || 1
       );
+
+      // 🔍 LOG 2: Réponse de l'API
+      console.log('🔍 [DEBUG CREATION DOSSIER] - Réponse de l\'API:', {
+        newFolder,
+        success: !!newFolder,
+        folderId: newFolder?.id,
+        parentFolderId: newFolder?.parent_folder_id,
+        projectId: newFolder?.project_id
+      });
 
       if (newFolder) {
         showNotification({
@@ -287,11 +337,19 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         setNewFolderName('');
         setNewFolderDescription('');
         setCreateFolderModal(false);
-        loadCurrentFolder();
+        
+        // 🔍 LOG 3: Avant rechargement
+        console.log('🔍 [DEBUG CREATION DOSSIER] - Avant rechargement des données...');
+        await loadCurrentFolder();
+        
+        // 🔍 LOG 4: Après rechargement
+        console.log('🔍 [DEBUG CREATION DOSSIER] - Rechargement terminé');
       } else {
+        console.error('🔍 [DEBUG CREATION DOSSIER] - Échec: newFolder est null/undefined');
         throw new Error('Erreur lors de la création');
       }
     } catch (error) {
+      console.error('🔍 [DEBUG CREATION DOSSIER] - Exception:', error);
       showNotification({
         type: 'error',
         title: 'Erreur',
