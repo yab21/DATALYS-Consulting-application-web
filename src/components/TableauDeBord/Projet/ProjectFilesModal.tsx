@@ -189,27 +189,37 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         setFiles([]);
       }
 
-      // Charger les statistiques des dossiers en arrière-plan
-      foldersWithStats.forEach(async (folder, index) => {
-        try {
-          const stats = await projectFilesService.getFolderStats(folder.id, project.id);
-          setFolders(prev => 
-            prev.map((f, i) => 
-              i === index 
-                ? { ...f, stats, loadingStats: false }
-                : f
-            )
-          );
-        } catch (error) {
-          setFolders(prev => 
-            prev.map((f, i) => 
-              i === index 
-                ? { ...f, loadingStats: false }
-                : f
-            )
-          );
-        }
-      });
+      // Charger les statistiques des dossiers en arrière-plan (avec délai pour éviter les conflits)
+      setTimeout(() => {
+        foldersWithStats.forEach(async (folder, index) => {
+          try {
+            // 🔍 LOG: Chargement des stats
+            console.log('🔍 [DEBUG STATS] - Chargement stats pour dossier:', {
+              folderId: folder.id,
+              folderName: folder.name,
+              projectId: project.id
+            });
+            
+            const stats = await projectFilesService.getFolderStats(folder.id, project.id);
+            setFolders(prev => 
+              prev.map((f, i) => 
+                i === index 
+                  ? { ...f, stats, loadingStats: false }
+                  : f
+              )
+            );
+          } catch (error) {
+            console.error('🔍 [DEBUG STATS] - Erreur stats dossier:', folder.name, error);
+            setFolders(prev => 
+              prev.map((f, i) => 
+                i === index 
+                  ? { ...f, loadingStats: false }
+                  : f
+              )
+            );
+          }
+        });
+      }, 1000); // Délai de 1 seconde pour éviter les conflits avec la création
 
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
