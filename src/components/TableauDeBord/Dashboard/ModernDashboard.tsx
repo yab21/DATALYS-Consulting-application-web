@@ -26,7 +26,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { dashboardService } from "@/services/dashboard";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
-import { ProfessionalButton, ProfessionalCard } from "@/components/UI/Professional";
+import { ProfessionalCard } from "@/components/UI/Professional";
 import {
   Table,
   TableHeader,
@@ -118,8 +118,8 @@ const ModernDashboard: React.FC = () => {
   
 
 
-  // Actions rapides configurables selon le rôle
-  const quickActions: QuickAction[] = [
+  // Actions rapides configurables selon le rôle (non utilisées pour le moment)
+  /* const quickActions: QuickAction[] = [
     {
       id: "new-project",
       title: "Nouveau Projet",
@@ -162,12 +162,12 @@ const ModernDashboard: React.FC = () => {
       variant: "danger",
       action: () => window.location.href = "/tableaudebord/support",
     },
-  ];
+  ]; */
 
-  // Filtrer les actions selon les permissions
-  const availableActions = quickActions.filter(action => 
+  // Filtrer les actions selon les permissions (non utilisé pour le moment)
+  /* const availableActions = quickActions.filter(action => 
     !action.permission || hasPermission(action.permission)
-  );
+  ); */
 
   useEffect(() => {
     // Attendre que les données d'authentification soient chargées
@@ -465,13 +465,79 @@ const ModernDashboard: React.FC = () => {
 
   if (authLoading || !user || loading) {
     return (
-      <div className="space-y-8 p-6">
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Stats skeleton */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <ProfessionalCard key={i} className="animate-pulse">
-              <div className="h-20 bg-gray-200 rounded dark:bg-gray-700"></div>
-            </ProfessionalCard>
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+                </div>
+                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
           ))}
+        </div>
+
+        {/* Actions rapides skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Activity skeleton */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="h-6 bg-gray-200 rounded w-48 mb-4 animate-pulse"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="h-6 bg-gray-200 rounded w-48 mb-4 animate-pulse"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="space-y-1">
+                      <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -484,29 +550,20 @@ const ModernDashboard: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#4ba9b7] via-blue-600 to-cyan-600 p-8 mb-8 shadow-2xl"
+          className="relative overflow-hidden rounded-lg bg-white p-6 mb-6 shadow-sm border border-gray-200"
         >
-          <div className="absolute inset-0 bg-black/20"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-48 translate-x-48"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-32 -translate-x-32"></div>
-          
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div className="mb-6 lg:mb-0">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30">
-                  <Building2 className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold text-white">
-                    DATALYS Dashboard
-                  </h1>
-                  <p className="text-indigo-100 text-lg">
-                    Bonjour, <span className="font-semibold">{user?.name}</span> • {isAdmin() ? 'Administrateur' : 'Partenaire'}
-                  </p>
-                </div>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="mb-4 lg:mb-0">
+              <div className="flex items-center gap-4 mb-2">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  DATALYS Dashboard
+                </h1>
               </div>
-              <div className="flex items-center gap-2 text-indigo-100">
-                <Clock className="w-5 h-5" />
+              <p className="text-gray-600">
+                Bonjour, <span className="font-medium">{user?.name}</span> • {isAdmin() ? 'Administrateur' : 'Partenaire'}
+              </p>
+              <div className="flex items-center gap-2 text-gray-500 text-sm mt-1">
+                <Clock className="w-4 h-4" />
                 <span>{new Date().toLocaleDateString('fr-FR', { 
                   weekday: 'long', 
                   year: 'numeric', 
@@ -516,20 +573,19 @@ const ModernDashboard: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4">
-              <ProfessionalButton
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
                 onClick={handleRefresh}
-                isLoading={refreshing}
-                variant="outline"
-                startContent={<RefreshCw className="h-4 w-4" />}
-                className="text-white border-white/30 hover:border-white/50"
+                disabled={refreshing}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Actualiser
-              </ProfessionalButton>
+              </button>
               
-              <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-white font-medium">Système Opérationnel</span>
+              <div className="flex items-center gap-2 px-4 py-2 text-sm bg-green-50 text-green-700 rounded-md border border-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="font-medium">Système Opérationnel</span>
               </div>
             </div>
           </div>
@@ -544,45 +600,42 @@ const ModernDashboard: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-xl border border-[#4ba9b7]/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#4ba9b7]/5 to-blue-500/5"></div>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#4ba9b7]/10 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
-                
-                <div className="relative z-10 flex items-center gap-6">
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+                <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
-                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#4ba9b7] to-blue-600 flex items-center justify-center shadow-2xl border border-white/20">
-                      <Building2 className="w-12 h-12 text-white" />
+                    <div className="w-16 h-16 rounded-lg bg-[#4ba9b7] flex items-center justify-center">
+                      <Building2 className="w-8 h-8 text-white" />
                     </div>
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-4">
-                      <h2 className="text-3xl font-bold text-gray-800">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-xl font-bold text-gray-900">
                         {partnerData.partner.name}
                       </h2>
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${
                         partnerData.partner.is_active 
-                          ? 'bg-green-500/20 text-green-600 border border-green-500/30' 
-                          : 'bg-red-500/20 text-red-600 border border-red-500/30'
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-red-100 text-red-700'
                       }`}>
-                        {partnerData.partner.is_active ? "✓ Actif" : "✗ Inactif"}
-                      </div>
+                        {partnerData.partner.is_active ? "Actif" : "Inactif"}
+                      </span>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-gray-600">
-                      <div className="flex items-center gap-3">
-                        <MessageCircle className="w-5 h-5 text-[#4ba9b7]" />
-                        <span className="font-medium">{partnerData.partner.email}</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-gray-400" />
+                        <span>{partnerData.partner.email}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="w-5 h-5 flex items-center justify-center text-[#4ba9b7]">📱</span>
-                        <span className="font-medium">{partnerData.partner.phone_formatted}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400">Tél:</span>
+                        <span>{partnerData.partner.phone_formatted}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="w-5 h-5 flex items-center justify-center text-[#4ba9b7]">🌍</span>
-                        <span className="font-medium">{partnerData.partner.country_name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400">Pays:</span>
+                        <span>{partnerData.partner.country_name}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Shield className="w-5 h-5 text-[#4ba9b7]" />
-                        <span className="font-medium">ID #{partnerData.partner.id}</span>
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-gray-400" />
+                        <span>ID #{partnerData.partner.id}</span>
                       </div>
                     </div>
                   </div>
@@ -598,107 +651,95 @@ const ModernDashboard: React.FC = () => {
               className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             >
               {/* Carte Projets */}
-              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-blue-200 hover:border-[#4ba9b7] transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-[#4ba9b7]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-xl bg-blue-100 border border-blue-200">
-                      <FolderOpen className="w-6 h-6 text-[#4ba9b7]" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-800">{partnerData.projectStats.total}</div>
-                      <div className="text-xs text-[#4ba9b7] font-medium">PROJETS</div>
-                    </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-md bg-[#4ba9b7]/10">
+                    <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Actifs</span>
-                      <span className="text-green-600 font-semibold">{partnerData.projectStats.active}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Terminés</span>
-                      <span className="text-blue-600 font-semibold">{partnerData.projectStats.completed}</span>
-                    </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">{partnerData.projectStats.total}</div>
+                    <div className="text-xs text-gray-500 uppercase">Projets</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Actifs</span>
+                    <span className="text-gray-900 font-medium">{partnerData.projectStats.active}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Terminés</span>
+                    <span className="text-gray-900 font-medium">{partnerData.projectStats.completed}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Incidents */}
-              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-red-200 hover:border-red-400 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-xl bg-red-100 border border-red-200">
-                      <AlertTriangle className="w-6 h-6 text-red-600" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-800">{partnerData.incidentStats.total}</div>
-                      <div className="text-xs text-red-600 font-medium">INCIDENTS</div>
-                    </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-md bg-red-50">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Ouverts</span>
-                      <span className="text-orange-600 font-semibold">
-                        {(partnerData.incidentStats.by_status?.nouveau || 0) + (partnerData.incidentStats.by_status?.en_cours || 0)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Critiques</span>
-                      <span className="text-red-600 font-semibold">{partnerData.incidentStats.by_priority?.P0 || 0}</span>
-                    </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">{partnerData.incidentStats.total}</div>
+                    <div className="text-xs text-gray-500 uppercase">Incidents</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Ouverts</span>
+                    <span className="text-gray-900 font-medium">
+                      {(partnerData.incidentStats.by_status?.nouveau || 0) + (partnerData.incidentStats.by_status?.en_cours || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Critiques</span>
+                    <span className="text-red-600 font-medium">{partnerData.incidentStats.by_priority?.P0 || 0}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Performance */}
-              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-green-200 hover:border-green-400 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-xl bg-green-100 border border-green-200">
-                      <Zap className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-800">98.5%</div>
-                      <div className="text-xs text-green-600 font-medium">UPTIME</div>
-                    </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-md bg-green-50">
+                    <Zap className="w-5 h-5 text-green-600" />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Ce mois</span>
-                      <span className="text-green-600 font-semibold">99.2%</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">SLA</span>
-                      <span className="text-emerald-600 font-semibold">Respecté</span>
-                    </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">98.5%</div>
+                    <div className="text-xs text-gray-500 uppercase">Uptime</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Ce mois</span>
+                    <span className="text-gray-900 font-medium">99.2%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">SLA</span>
+                    <span className="text-green-600 font-medium">Respecté</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Activité */}
-              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-purple-200 hover:border-purple-400 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-xl bg-purple-100 border border-purple-200">
-                      <Activity className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-800">{partnerData.activitySummary.active_sessions || 12}</div>
-                      <div className="text-xs text-purple-600 font-medium">SESSIONS</div>
-                    </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-md bg-purple-50">
+                    <Activity className="w-5 h-5 text-purple-600" />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Utilisateurs</span>
-                      <span className="text-purple-600 font-semibold">{partnerData.activitySummary.active_users || 8}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Pics</span>
-                      <span className="text-pink-600 font-semibold">15</span>
-                    </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">{partnerData.activitySummary.active_sessions || 12}</div>
+                    <div className="text-xs text-gray-500 uppercase">Sessions</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Utilisateurs</span>
+                    <span className="text-gray-900 font-medium">{partnerData.activitySummary.active_users || 8}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Pics</span>
+                    <span className="text-gray-900 font-medium">15</span>
                   </div>
                 </div>
               </div>
@@ -994,97 +1035,85 @@ const ModernDashboard: React.FC = () => {
               className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             >
               {/* Carte Projets */}
-              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-blue-200 hover:border-[#4ba9b7] transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-[#4ba9b7]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-xl bg-blue-100 border border-blue-200">
-                      <FolderOpen className="w-6 h-6 text-[#4ba9b7]" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-800">{stats.projects.total}</div>
-                      <div className="text-xs text-[#4ba9b7] font-medium">PROJETS</div>
-                    </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-md bg-[#4ba9b7]/10">
+                    <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Actifs</span>
-                      <span className="text-green-600 font-semibold">{stats.projects.active}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Terminés</span>
-                      <span className="text-blue-600 font-semibold">{stats.projects.completed}</span>
-                    </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">{stats.projects.total}</div>
+                    <div className="text-xs text-gray-500 uppercase">Projets</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Actifs</span>
+                    <span className="text-gray-900 font-medium">{stats.projects.active}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Terminés</span>
+                    <span className="text-gray-900 font-medium">{stats.projects.completed}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Partenaires */}
-              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-green-200 hover:border-green-400 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-xl bg-green-100 border border-green-200">
-                      <Users className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-800">{stats.partners.total}</div>
-                      <div className="text-xs text-green-600 font-medium">PARTENAIRES</div>
-                    </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-md bg-green-50">
+                    <Users className="w-5 h-5 text-green-600" />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Actifs</span>
-                      <span className="text-green-600 font-semibold">{stats.partners.active}</span>
-                    </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">{stats.partners.total}</div>
+                    <div className="text-xs text-gray-500 uppercase">Partenaires</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Actifs</span>
+                    <span className="text-gray-900 font-medium">{stats.partners.active}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Incidents */}
-              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-red-200 hover:border-red-400 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-xl bg-red-100 border border-red-200">
-                      <AlertTriangle className="w-6 h-6 text-red-600" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-800">{stats.incidents?.total || 0}</div>
-                      <div className="text-xs text-red-600 font-medium">INCIDENTS</div>
-                    </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-md bg-red-50">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Ouverts</span>
-                      <span className="text-red-600 font-semibold">{stats.incidents?.open || 0}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Critiques</span>
-                      <span className="text-red-600 font-semibold">{stats.incidents?.critical || 0}</span>
-                    </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">{stats.incidents?.total || 0}</div>
+                    <div className="text-xs text-gray-500 uppercase">Incidents</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Ouverts</span>
+                    <span className="text-gray-900 font-medium">{stats.incidents?.open || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Critiques</span>
+                    <span className="text-red-600 font-medium">{stats.incidents?.critical || 0}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Messages */}
-              <div className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-purple-200 hover:border-purple-400 transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-xl bg-purple-100 border border-purple-200">
-                      <MessageCircle className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-800">{stats.messages.total}</div>
-                      <div className="text-xs text-purple-600 font-medium">MESSAGES</div>
-                    </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-md bg-purple-50">
+                    <MessageCircle className="w-5 h-5 text-purple-600" />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Non lus</span>
-                      <span className="text-purple-600 font-semibold">{stats.messages.unread}</span>
-                    </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">{stats.messages.total}</div>
+                    <div className="text-xs text-gray-500 uppercase">Messages</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Non lus</span>
+                    <span className="text-gray-900 font-medium">{stats.messages.unread}</span>
                   </div>
                 </div>
               </div>
@@ -1096,20 +1125,18 @@ const ModernDashboard: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-xl border border-[#4ba9b7]/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#4ba9b7]/5 to-purple-500/5"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-[#4ba9b7]/10 border border-[#4ba9b7]/20">
-                        <Building2 className="w-8 h-8 text-[#4ba9b7]" />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-800">Partenaires & Projets</h3>
-                        <p className="text-gray-600">Vue d'ensemble de tous les partenaires</p>
-                      </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+                <div className="mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-md bg-[#4ba9b7]/10">
+                      <Building2 className="w-6 h-6 text-[#4ba9b7]" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">Partenaires & Projets</h3>
+                      <p className="text-sm text-gray-600">Vue d'ensemble de tous les partenaires</p>
                     </div>
                   </div>
+                </div>
                   
                   <Table aria-label="Table des partenaires" className="min-h-[400px]">
                     <TableHeader>
@@ -1224,7 +1251,6 @@ const ModernDashboard: React.FC = () => {
                       />
                     </div>
                   )}
-                </div>
               </div>
             </motion.div>
 
@@ -1234,20 +1260,18 @@ const ModernDashboard: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-xl border border-[#4ba9b7]/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-[#4ba9b7]/5"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-purple-100 border border-purple-200">
-                        <Activity className="w-8 h-8 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-800">Journal d'Activité</h3>
-                        <p className="text-gray-600">Activités récentes du système</p>
-                      </div>
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+                <div className="mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-md bg-purple-50">
+                      <Activity className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">Journal d'Activité</h3>
+                      <p className="text-sm text-gray-600">Activités récentes du système</p>
                     </div>
                   </div>
+                </div>
                   
                   <Table aria-label="Table des activités" className="min-h-[400px]">
                     <TableHeader>
@@ -1265,14 +1289,14 @@ const ModernDashboard: React.FC = () => {
                         <TableRow key={activity.id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                activity.action_type === 'CREATE' ? 'bg-green-100 text-green-600' :
-                                activity.action_type === 'UPDATE' ? 'bg-blue-100 text-blue-600' :
-                                'bg-purple-100 text-purple-600'
+                              <div className={`w-8 h-8 rounded-md flex items-center justify-center ${
+                                activity.action_type === 'CREATE' ? 'bg-green-50 text-green-600' :
+                                activity.action_type === 'UPDATE' ? 'bg-blue-50 text-blue-600' :
+                                'bg-purple-50 text-purple-600'
                               }`}>
-                                {activity.action_type === 'CREATE' ? <Plus className="w-5 h-5" /> :
-                                 activity.action_type === 'UPDATE' ? <RefreshCw className="w-5 h-5" /> :
-                                 <MessageCircle className="w-5 h-5" />}
+                                {activity.action_type === 'CREATE' ? <Plus className="w-4 h-4" /> :
+                                 activity.action_type === 'UPDATE' ? <RefreshCw className="w-4 h-4" /> :
+                                 <MessageCircle className="w-4 h-4" />}
                               </div>
                               <div>
                                 <Chip
@@ -1360,7 +1384,6 @@ const ModernDashboard: React.FC = () => {
                       />
                     </div>
                   )}
-                </div>
               </div>
             </motion.div>
 

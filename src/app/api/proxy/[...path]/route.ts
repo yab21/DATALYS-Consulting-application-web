@@ -83,12 +83,20 @@ async function handleProxyRequest(
     });
 
     // Préparer le body pour les méthodes qui l'acceptent
-    let body: string | undefined;
+    let body: string | ReadableStream | null | undefined;
     if (['POST', 'PUT', 'PATCH'].includes(method)) {
       try {
-        const text = await request.text();
-        if (text) {
-          body = text;
+        const contentType = request.headers.get('content-type') || '';
+        
+        if (contentType.includes('multipart/form-data')) {
+          // Pour multipart/form-data, passer directement le stream pour préserver les données binaires
+          body = request.body;
+        } else {
+          // Pour JSON/text, utiliser text()
+          const text = await request.text();
+          if (text) {
+            body = text;
+          }
         }
       } catch (error) {
         console.warn('Erreur lors de la lecture du body:', error);
@@ -103,21 +111,37 @@ async function handleProxyRequest(
       console.log(`🔄 Proxy ${method} vers: ${method} /${apiPath}`);
     }
     
-    const response = await fetch(url.toString(), {
+    const fetchOptions: RequestInit = {
       method,
       headers,
       body,
-    });
+    };
 
-    // Récupérer la réponse
-    const responseText = await response.text();
+    // Ajouter l'option duplex pour les streams (requis pour ReadableStream)
+    if (body instanceof ReadableStream) {
+      (fetchOptions as any).duplex = 'half';
+    }
+
+    const response = await fetch(url.toString(), fetchOptions);
+
+    // Récupérer la réponse selon le type de contenu
+    const contentType = response.headers.get('content-type') || '';
+    let responseData;
+    
+    if (contentType.includes('image/') || contentType.includes('application/octet-stream')) {
+      // Pour les images et fichiers binaires, utiliser arrayBuffer
+      responseData = await response.arrayBuffer();
+    } else {
+      // Pour JSON/text, utiliser text
+      responseData = await response.text();
+    }
     
     // Créer la réponse Next.js avec CORS sécurisé
-    return new NextResponse(responseText, {
+    return new NextResponse(responseData, {
       status: response.status,
       statusText: response.statusText,
       headers: {
-        'Content-Type': response.headers.get('content-type') || 'application/json',
+        'Content-Type': contentType || 'application/json',
         'Access-Control-Allow-Origin': isDevelopment ? '*' : CORS_ORIGIN,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',

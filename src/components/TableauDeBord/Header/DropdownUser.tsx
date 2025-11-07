@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import ClickOutside from "@/components/ClickOutside";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, LogOut, Settings, Bell } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import LoadingSpinner from "@/components/UI/Loading/LoadingSpinner";
 
@@ -104,7 +104,7 @@ const DropdownUser = () => {
               </motion.svg>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {user.role_id === 1 ? "Administrateur" : user.role_id === 2 ? "Utilisateur" : "Invité"}
+              {user.role_id === 1 ? "Administrateur" : user.role_id === 5 ? "Partenaire" : user.role_id === 2 ? "Utilisateur" : "Invité"}
             </p>
           </div>
         </Link>
@@ -149,7 +149,7 @@ const DropdownUser = () => {
                   </p>
                   <div className="mt-1 flex items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                      {user.role_id === 1 ? "Administrateur" : user.role_id === 2 ? "Utilisateur" : "Invité"}
+                      {user.role_id === 1 ? "Administrateur" : user.role_id === 5 ? "Partenaire" : user.role_id === 2 ? "Utilisateur" : "Invité"}
                     </span>
                     {user.is_active && (
                       <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
@@ -161,50 +161,8 @@ const DropdownUser = () => {
               </div>
             </div>
 
-            {/* Menu items */}
-            <ul className="p-2">
-              <motion.li
-                whileHover={{ x: 4 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <Link
-                  href="/tableaudebord/profil/voir"
-                  className="flex w-full items-center gap-3 rounded-xl p-3 text-sm font-medium text-gray-700 transition-all duration-300 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
-                >
-                  <User className="h-4 w-4" />
-                  Mon Profil
-                </Link>
-              </motion.li>
-
-              <motion.li
-                whileHover={{ x: 4 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <Link
-                  href="/tableaudebord/profil/modifier"
-                  className="flex w-full items-center gap-3 rounded-xl p-3 text-sm font-medium text-gray-700 transition-all duration-300 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-white"
-                >
-                  <Settings className="h-4 w-4" />
-                  Paramètres
-                </Link>
-              </motion.li>
-
-              <motion.li
-                whileHover={{ x: 4 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <Link
-                  href="/tableaudebord/notifications"
-                  className="flex w-full items-center gap-3 rounded-xl p-3 text-sm font-medium text-gray-700 transition-all duration-300 hover:bg-orange-50 hover:text-orange-700 dark:text-gray-300 dark:hover:bg-orange-900/20 dark:hover:text-orange-300"
-                >
-                  <Bell className="h-4 w-4" />
-                  Notifications
-                </Link>
-              </motion.li>
-            </ul>
-
-            {/* Séparateur */}
-            <div className="border-t border-gray-100 p-2 dark:border-gray-700">
+            {/* Bouton de déconnexion seulement */}
+            <div className="p-2">
               <motion.button
                 onClick={handleSignOut}
                 disabled={isLoggingOut}

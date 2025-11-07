@@ -23,6 +23,7 @@ import {
 import { useForm } from "react-hook-form";
 import { AuthService } from "@/services/auth";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 interface ResetPasswordForm {
   newPassword: string;
@@ -75,7 +76,7 @@ const ResetMotDePasse: React.FC = () => {
         showNotification(
           simpleNotificationHelpers.success(
             "Mot de passe mis à jour !",
-            "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe."
+            extractBackendMessage(result) || result?.message || "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe."
           )
         );
 
@@ -87,7 +88,7 @@ const ResetMotDePasse: React.FC = () => {
         showNotification(
           simpleNotificationHelpers.error(
             "Erreur de réinitialisation",
-            result.message || "Impossible de mettre à jour le mot de passe."
+            extractBackendMessage(result) || result.message || "Impossible de mettre à jour le mot de passe."
           )
         );
       }
@@ -96,7 +97,7 @@ const ResetMotDePasse: React.FC = () => {
       showNotification(
         simpleNotificationHelpers.error(
           "Erreur",
-          "Une erreur s'est produite lors de la réinitialisation."
+          extractBackendMessage(error) || "Une erreur s'est produite lors de la réinitialisation."
         )
       );
     } finally {

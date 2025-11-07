@@ -189,37 +189,44 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         setFiles([]);
       }
 
-      // Charger les statistiques des dossiers en arrière-plan (avec délai pour éviter les conflits)
-      setTimeout(() => {
-        foldersWithStats.forEach(async (folder, index) => {
-          try {
-            // 🔍 LOG: Chargement des stats
-            console.log('🔍 [DEBUG STATS] - Chargement stats pour dossier:', {
-              folderId: folder.id,
-              folderName: folder.name,
-              projectId: project.id
-            });
-            
-            const stats = await projectFilesService.getFolderStats(folder.id, project.id);
-            setFolders(prev => 
-              prev.map((f, i) => 
-                i === index 
-                  ? { ...f, stats, loadingStats: false }
-                  : f
-              )
-            );
-          } catch (error) {
-            console.error('🔍 [DEBUG STATS] - Erreur stats dossier:', folder.name, error);
-            setFolders(prev => 
-              prev.map((f, i) => 
-                i === index 
-                  ? { ...f, loadingStats: false }
-                  : f
-              )
-            );
-          }
-        });
-      }, 1000); // Délai de 1 seconde pour éviter les conflits avec la création
+      // 🔄 RÉACTIVATION DES STATISTIQUES avec correction de hiérarchie
+      console.log('🔄 [DEBUG] - Chargement des statistiques avec hiérarchie corrigée');
+      
+      // Charger les statistiques de manière séquentielle pour éviter les conflits
+      const foldersWithStatsPromises = foldersWithStats.map(async (folder) => {
+        try {
+          // ⚡ IMPORTANT: On utilise l'ID du dossier (pas currentFolderId) pour ses propres stats
+          const stats = await projectFilesService.getFolderStats(folder.id, project.id);
+          return {
+            ...folder,
+            loadingStats: false,
+            stats
+          };
+        } catch (error) {
+          console.error(`Erreur stats pour dossier ${folder.name}:`, error);
+          return {
+            ...folder,
+            loadingStats: false,
+            stats: { subfolders: 0, files: 0, timestamp: Date.now() }
+          };
+        }
+      });
+      
+      // Traiter les stats en parallèle mais de manière contrôlée
+      Promise.all(foldersWithStatsPromises).then(foldersWithCompleteStats => {
+        setFolders(foldersWithCompleteStats);
+        console.log('✅ [DEBUG] - Statistiques chargées avec succès');
+      }).catch(error => {
+        console.error('❌ [DEBUG] - Erreur lors du chargement des statistiques:', error);
+        // Fallback avec stats vides en cas d'erreur
+        setFolders(prev => 
+          prev.map(f => ({ 
+            ...f, 
+            loadingStats: false,
+            stats: { subfolders: 0, files: 0, timestamp: Date.now() }
+          }))
+        );
+      });
 
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
@@ -926,7 +933,10 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
               
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  <strong>Emplacement :</strong> {breadcrumbPath.map(b => b.name).join(' > ')}
+                  <strong>Emplacement :</strong> {breadcrumbPath.length > 1 ? breadcrumbPath.map(b => b.name).join(' > ') : `${project.title} (Racine)`}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  Le nouveau dossier sera créé dans {breadcrumbPath.length > 1 ? `le dossier "${breadcrumbPath[breadcrumbPath.length - 1].name}"` : 'la racine du projet'}
                 </p>
               </div>
             </div>

@@ -27,8 +27,8 @@ function extractBackendMessage(error: any): string {
     return error.response.data.message;
   }
   
-  // 3. Format imbriqué {message: {message: "..."}}
-  if (error?.message?.message && typeof error.message.message === 'string') {
+  // 3. Format imbriqué {message: {message: "..."}} - CORRIGÉ POUR BACKEND
+  if (error?.message && typeof error.message === 'object' && error.message.message && typeof error.message.message === 'string') {
     return error.message.message;
   }
   
@@ -42,10 +42,11 @@ function extractBackendMessage(error: any): string {
     return error.message;
   }
   
-  // 6. Message direct simple
+  // 6. Message direct simple - CORRIGÉ
   if (error?.message && typeof error.message === 'string' && 
       !error.message.startsWith('HTTP ') && 
-      !error.message.includes('fetch')) {
+      !error.message.includes('fetch') &&
+      !error.message.includes('toLowerCase')) {
     return error.message;
   }
   
@@ -204,6 +205,24 @@ export class ErrorHandler {
       operation?: 'load' | 'save' | 'delete' | 'auth';
     } = {}
   ): ErrorDetails {
+    // Ignorer les erreurs déjà gérées par les services pour éviter les doubles notifications
+    if (error?.handled) {
+      console.log('🔇 Erreur déjà gérée, ignorée par l\'error handler global');
+      return {
+        code: 'ALREADY_HANDLED',
+        message: 'Erreur déjà gérée',
+        type: 'unknown',
+        severity: 'low',
+        context: {
+          timestamp: new Date().toISOString(),
+          userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'server',
+          ...context
+        },
+        originalError: error,
+        retryable: false,
+        fallbackAvailable: false
+      };
+    }
     const errorDetails: ErrorDetails = {
       code: 'UNKNOWN_ERROR',
       message: 'Une erreur inattendue s\'est produite',
@@ -224,9 +243,10 @@ export class ErrorHandler {
     // Extraire le vrai message du backend
     const backendMessage = extractBackendMessage(error);
 
-    // Analyser les erreurs HTTP
-    if (error?.status || error?.statusCode) {
-      const status = error.status || error.statusCode;
+    // PRIORITÉ 1: Analyser les erreurs HTTP EN PREMIER - utiliser le status du contexte si pas dans l'erreur
+    const httpStatus = error?.status || error?.statusCode || context?.status;
+    if (httpStatus) {
+      const status = httpStatus;
       errorDetails.context.status = status;
       
       switch (true) {
@@ -290,6 +310,10 @@ export class ErrorHandler {
           errorDetails.type = 'validation';
           errorDetails.severity = 'medium';
           errorDetails.retryable = false;
+          // Pour les erreurs de validation, utiliser directement le message backend
+          errorDetails.userMessage = backendMessage !== 'Une erreur inattendue s\'est produite' 
+            ? backendMessage 
+            : 'Données invalides';
           break;
       }
     }
@@ -349,19 +373,21 @@ export class ErrorHandler {
     // Analyser les erreurs API personnalisées
     else {
       errorDetails.message = backendMessage;
-      if (backendMessage.toLowerCase().includes('token')) {
+      if (typeof backendMessage === 'string' && backendMessage.toLowerCase().includes('token')) {
         errorDetails.type = 'auth';
         errorDetails.code = 'TOKEN_ERROR';
         errorDetails.severity = 'high';
       }
     }
 
-    // Générer le message utilisateur approprié
-    errorDetails.userMessage = getContextualErrorMessage(error, {
-      operation: errorDetails.operation,
-      dataType: errorDetails.dataType,
-      fallback: errorDetails.message
-    });
+    // Générer le message utilisateur approprié seulement si pas déjà défini
+    if (!errorDetails.userMessage) {
+      errorDetails.userMessage = getContextualErrorMessage(error, {
+        operation: errorDetails.operation,
+        dataType: errorDetails.dataType,
+        fallback: errorDetails.message
+      });
+    }
 
     return errorDetails;
   }
@@ -668,15 +694,35 @@ export class ErrorHandler {
    * Détecter si c'est une erreur réseau
    */
   private isNetworkError(error: any): boolean {
+    // Si l'erreur a un status HTTP, ce n'est PAS une erreur réseau
+    const httpStatus = error?.status || error?.statusCode;
+    if (httpStatus) {
+      return false;
+    }
+
+    // Extraire le message en toute sécurité
+    const errorMessage = typeof error?.message === 'string' 
+      ? error.message 
+      : typeof error?.message === 'object' && error.message?.message 
+        ? error.message.message 
+        : '';
+
     return (
       error?.name === 'NetworkError' ||
-      error?.name === 'TypeError' ||
-      error?.message?.includes('fetch') ||
-      error?.message?.includes('network') ||
-      error?.message?.includes('Failed to fetch') ||
-      error?.message?.includes('NetworkError') ||
-      error?.message?.includes('ERR_NETWORK') ||
-      error?.message?.includes('ERR_INTERNET_DISCONNECTED') ||
+      (error?.name === 'TypeError' && (
+        // TypeError seulement si c'est lié au réseau, pas à la manipulation d'objets
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('Failed to fetch')
+      )) ||
+      (typeof errorMessage === 'string' && (
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('NetworkError') ||
+        errorMessage.includes('ERR_NETWORK') ||
+        errorMessage.includes('ERR_INTERNET_DISCONNECTED')
+      )) ||
       (typeof window !== 'undefined' && !navigator.onLine)
     );
   }

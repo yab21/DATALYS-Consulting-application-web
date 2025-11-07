@@ -5,7 +5,7 @@ import { SecureStorage } from "./secure-storage";
 
 // Types pour les réponses d'erreur
 interface ApiErrorResponse {
-  message?: string;
+  message?: string | { code: number; message: string };
   status?: string;
   code?: number;
 }
@@ -60,19 +60,37 @@ class ApiInterceptor {
 
     // Vérifier les messages d'erreur
     if (response?.message) {
-      const message = response.message.toLowerCase();
-      if (tokenExpiredMessages.some((msg) => message.includes(msg))) {
-        console.log('🔒 Token expiré détecté via message:', response.message);
-        return true;
+      // Gérer le cas où message est un objet ou une string
+      const messageText = typeof response.message === 'string' 
+        ? response.message 
+        : typeof response.message === 'object' && response.message.message 
+          ? response.message.message 
+          : '';
+      
+      if (messageText && typeof messageText === 'string') {
+        const message = messageText.toLowerCase();
+        if (tokenExpiredMessages.some((msg) => message.includes(msg))) {
+          console.log('🔒 Token expiré détecté via message:', messageText);
+          return true;
+        }
       }
     }
 
     // Vérifier le statut avec indicateurs de token
     if (response?.status === "error" && response?.message) {
-      const message = response.message.toLowerCase();
-      if (message.includes("token") || message.includes("auth") || message.includes("session")) {
-        console.log('🔒 Token expiré détecté via statut error:', response.message);
-        return true;
+      // Gérer le cas où message est un objet ou une string
+      const messageText = typeof response.message === 'string' 
+        ? response.message 
+        : typeof response.message === 'object' && response.message.message 
+          ? response.message.message 
+          : '';
+      
+      if (messageText && typeof messageText === 'string') {
+        const message = messageText.toLowerCase();
+        if (message.includes("token") || message.includes("auth") || message.includes("session")) {
+          console.log('🔒 Token expiré détecté via statut error:', messageText);
+          return true;
+        }
       }
     }
 
@@ -87,16 +105,25 @@ class ApiInterceptor {
       // 403 peut être token expiré ou permissions insuffisantes
       // Vérifier le contexte pour distinguer
       if (response?.message) {
-        const message = response.message.toLowerCase();
-        // Si le message parle de token/auth = token expiré
-        if (message.includes('token') || message.includes('auth') || message.includes('session')) {
-          console.log('🔒 Token expiré détecté via code 403 avec message auth:', response.message);
-          return true;
-        }
-        // Si le message parle de permissions = vraie erreur de permissions
-        if (message.includes('permission') || message.includes('forbidden') || message.includes('access denied')) {
-          console.warn('⚠️ Erreur de permissions détectée (403):', response.message);
-          return false;
+        // Gérer le cas où message est un objet ou une string
+        const messageText = typeof response.message === 'string' 
+          ? response.message 
+          : typeof response.message === 'object' && response.message.message 
+            ? response.message.message 
+            : '';
+        
+        if (messageText && typeof messageText === 'string') {
+          const message = messageText.toLowerCase();
+          // Si le message parle de token/auth = token expiré
+          if (message.includes('token') || message.includes('auth') || message.includes('session')) {
+            console.log('🔒 Token expiré détecté via code 403 avec message auth:', messageText);
+            return true;
+          }
+          // Si le message parle de permissions = vraie erreur de permissions
+          if (message.includes('permission') || message.includes('forbidden') || message.includes('access denied')) {
+            console.warn('⚠️ Erreur de permissions détectée (403):', messageText);
+            return false;
+          }
         }
       }
       
@@ -220,8 +247,12 @@ class ApiInterceptor {
       // PRIORITÉ 1: Vérifier l'expiration de token AVANT tout
       if (this.isTokenExpired(errorData, response.status, response.url)) {
         this.handleTokenExpiration();
-        // Retourner immédiatement pour éviter d'autres traitements
-        return response;
+        // Marquer les données d'erreur comme gérées pour éviter la double notification
+        errorData.handled = true;
+        // Créer une nouvelle réponse qui sera traitée comme handled
+        const handledResponse = response.clone();
+        (handledResponse as any).errorHandled = true;
+        return handledResponse;
       }
 
       // PRIORITÉ 2: Traitement des autres erreurs seulement si ce n'est pas un token expiré

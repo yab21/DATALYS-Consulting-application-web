@@ -63,7 +63,7 @@ export default function RootLayout({
       <body suppressHydrationWarning={true}>
         <AuthProvider>
           <NetworkProvider 
-            showIndicator={true}
+            showIndicator={false}
             indicatorPosition="top-right"
             enableAutoSync={true}
             enableToasts={true}

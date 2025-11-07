@@ -118,8 +118,15 @@ export function getContextualErrorMessage(
 ): string {
   const { operation = 'load', dataType, fallback } = context || {};
 
-  // Analyser le type d'erreur
-  const errorMessage = error?.message?.toLowerCase() || '';
+  // Analyser le type d'erreur - sécuriser l'extraction du message
+  const rawMessage = error?.message;
+  const errorMessage = (typeof rawMessage === 'string' 
+    ? rawMessage 
+    : typeof rawMessage === 'object' && rawMessage?.message 
+      ? rawMessage.message 
+      : ''
+  ).toLowerCase();
+  
   const statusCode = error?.status || error?.statusCode || error?.response?.status;
 
   // Erreurs d'authentification

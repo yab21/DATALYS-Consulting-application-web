@@ -1,5 +1,6 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders, ApiResponse } from '@/lib/api-config';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { SecureStorage } from '@/lib/secure-storage';
 
 export interface SearchFilters {
   query?: string;
@@ -58,6 +59,30 @@ export interface SearchOptions {
 class SearchService {
   private baseUrl = API_CONFIG.BASE_URL;
 
+  // Vérifier si l'utilisateur peut accéder à un type d'entité
+  private canAccessEntity(entityType: string): boolean {
+    try {
+      const storedUser = SecureStorage.getItem('userInfo');
+      if (!storedUser) return false;
+      
+      const user = JSON.parse(storedUser);
+      const roleId = parseInt(user.role_id);
+      
+      // Administrateurs peuvent accéder à tout
+      if (roleId === 1) return true;
+      
+      // Partenaires (role_id = 5) ne peuvent pas accéder aux utilisateurs et partenaires
+      if (roleId === 5) {
+        return !['users', 'partners'].includes(entityType);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la vérification des permissions:', error);
+      return false;
+    }
+  }
+
   // Utilise les APIs existantes pour la recherche unifiée
   async globalSearch(
     filters: SearchFilters,
@@ -70,17 +95,26 @@ class SearchService {
 
       // Si entityType est spécifié, rechercher seulement dans ce type
       if (filters.entityType && filters.entityType !== 'all') {
-        const entityResults = await this.searchByEntity(filters.entityType, filters, options);
-        if (entityResults.items) {
-          const formatted = this.formatSearchResults(entityResults.items, filters.entityType);
-          results.push(...formatted);
-          byType[filters.entityType] = entityResults.count || 0;
+        if (this.canAccessEntity(filters.entityType)) {
+          const entityResults = await this.searchByEntity(filters.entityType, filters, options);
+          if (entityResults.items) {
+            const formatted = this.formatSearchResults(entityResults.items, filters.entityType);
+            results.push(...formatted);
+            byType[filters.entityType] = entityResults.count || 0;
+          }
         }
       } else {
-        // Recherche dans tous les types d'entités
+        // Recherche dans tous les types d'entités (filtrer selon les permissions)
         const entityTypes = ['projects', 'files', 'folders', 'partners', 'users', 'incidents'] as const;
         
         for (const entityType of entityTypes) {
+          // Vérifier les permissions avant d'essayer d'accéder à l'entité
+          if (!this.canAccessEntity(entityType)) {
+            console.log(`Accès refusé pour l'entité: ${entityType}`);
+            byType[entityType] = 0;
+            continue;
+          }
+
           try {
             const entityResults = await this.searchByEntity(entityType, filters, { 
               ...options, 

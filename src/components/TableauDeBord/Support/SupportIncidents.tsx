@@ -56,6 +56,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { extractBackendMessage } from "@/lib/error-handler";
 import { IncidentsService, type Incident as ApiIncident, type IncidentCriteria, type CreateIncidentData, type UpdateIncidentData } from "@/services/incidents";
 import { projectsService, type Project } from "@/services/projects";
 import { UsersService, type User as UserType } from "@/services/users";
@@ -439,7 +440,7 @@ const SkeletonLoader: React.FC = () => (
 );
 
 const SupportIncidents: React.FC = () => {
-  const { hasPermission, user } = useAuth();
+  const { hasPermission, user, isPartner } = useAuth();
   const { showNotification } = useSimpleNotifications();
   
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -555,22 +556,25 @@ const SupportIncidents: React.FC = () => {
   }, [showNotification]);
 
   const loadUsers = useCallback(async () => {
-    try {
-      setLoadingUsers(true);
-      const response = await UsersService.getUsersByCriteria({ size: 1000 });
-      const allUsers = response.items || [];
-      setUsers(allUsers);
-      console.log('📋 Utilisateurs chargés:', allUsers.length);
-    } catch (error) {
-      console.error('❌ Erreur lors du chargement des utilisateurs:', error);
-      showNotification(simpleNotificationHelpers.error(
-        "Erreur",
-        "Impossible de charger la liste des utilisateurs"
-      ));
-    } finally {
-      setLoadingUsers(false);
+    // Ne charger les utilisateurs que pour les admins
+    if (!isPartner()) {
+      try {
+        setLoadingUsers(true);
+        const response = await UsersService.getUsersByCriteria({ size: 1000 });
+        const allUsers = response.items || [];
+        setUsers(allUsers);
+        console.log('📋 Utilisateurs chargés:', allUsers.length);
+      } catch (error) {
+        console.error('❌ Erreur lors du chargement des utilisateurs:', error);
+        showNotification(simpleNotificationHelpers.error(
+          "Erreur",
+          "Impossible de charger la liste des utilisateurs"
+        ));
+      } finally {
+        setLoadingUsers(false);
+      }
     }
-  }, [showNotification]);
+  }, [showNotification, isPartner]);
 
   const loadData = useCallback(async () => {
     try {
@@ -580,7 +584,9 @@ const SupportIncidents: React.FC = () => {
         index: 0,
         size: 100,
         data: {
-          type: 'support'
+          type: 'support',
+          // Pour les partners, filtrer par user_id (tickets qui leur sont assignés)
+          ...(isPartner() && user && { user_id: user.id }),
         }
       };
 
@@ -677,11 +683,11 @@ const SupportIncidents: React.FC = () => {
     try {
       setIsCreating(true);
       // Passer l'ID et l'email de l'utilisateur connecté depuis le contexte Auth
-      await IncidentsService.createIncident(createForm, user.id, user.email);
+      const result = await IncidentsService.createIncident(createForm, user.id, user.email);
       
       showNotification(simpleNotificationHelpers.success(
         "Succès",
-        "Ticket de support créé avec succès"
+        extractBackendMessage(result) || result?.message || "Ticket de support créé avec succès"
       ));
       
       setShowCreateModal(false);
@@ -691,7 +697,7 @@ const SupportIncidents: React.FC = () => {
       console.error("Erreur lors de la création:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
-        "Impossible de créer le ticket de support"
+        extractBackendMessage(error) || "Impossible de créer le ticket de support"
       ));
     } finally {
       setIsCreating(false);
@@ -709,11 +715,11 @@ const SupportIncidents: React.FC = () => {
 
     try {
       setIsUpdating(true);
-      await IncidentsService.updateIncident(editForm);
+      const result = await IncidentsService.updateIncident(editForm);
       
       showNotification(simpleNotificationHelpers.success(
         "Succès",
-        "Ticket modifié avec succès"
+        extractBackendMessage(result) || result?.message || "Ticket modifié avec succès"
       ));
       
       setShowEditModal(false);
@@ -723,7 +729,7 @@ const SupportIncidents: React.FC = () => {
       console.error("Erreur lors de la modification:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
-        "Impossible de modifier le ticket"
+        extractBackendMessage(error) || "Impossible de modifier le ticket"
       ));
     } finally {
       setIsUpdating(false);
@@ -741,11 +747,11 @@ const SupportIncidents: React.FC = () => {
 
     try {
       setIsDeleting(true);
-      await IncidentsService.deleteIncident(parseInt(selectedTicket!.id));
+      const result = await IncidentsService.deleteIncident(parseInt(selectedTicket!.id));
       
       showNotification(simpleNotificationHelpers.success(
         "Succès",
-        "Ticket supprimé avec succès"
+        extractBackendMessage(result) || result?.message || "Ticket supprimé avec succès"
       ));
       
       setShowDeleteModal(false);
@@ -755,7 +761,7 @@ const SupportIncidents: React.FC = () => {
       console.error("Erreur lors de la suppression:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
-        "Impossible de supprimer le ticket"
+        extractBackendMessage(error) || "Impossible de supprimer le ticket"
       ));
     } finally {
       setIsDeleting(false);
@@ -1143,42 +1149,37 @@ const SupportIncidents: React.FC = () => {
                     {formatDate(ticket.dateCreation)}
                   </TableCell>
                   <TableCell>
-                    <Dropdown>
-                      <DropdownTrigger>
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="light"
-                        >
-                          <MoreVertical size={16} />
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownMenu>
-                        <DropdownItem
-                          key="view"
-                          startContent={<Eye size={14} />}
-                          onClick={() => openViewModal(ticket)}
-                        >
-                          Voir
-                        </DropdownItem>
-                        <DropdownItem
-                          key="edit"
-                          startContent={<Edit size={14} />}
-                          onClick={() => openEditModal(ticket)}
-                        >
-                          Modifier
-                        </DropdownItem>
-                        <DropdownItem
-                          key="delete"
-                          className="text-danger"
-                          color="danger"
-                          startContent={<Trash2 size={14} />}
-                          onClick={() => openDeleteModal(ticket)}
-                        >
-                          Supprimer
-                        </DropdownItem>
-                      </DropdownMenu>
-                    </Dropdown>
+                    {!isPartner() && (
+                      <Dropdown>
+                        <DropdownTrigger>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                          >
+                            <MoreVertical size={16} />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu>
+                          <DropdownItem
+                            key="edit"
+                            startContent={<Edit size={14} />}
+                            onClick={() => openEditModal(ticket)}
+                          >
+                            Modifier
+                          </DropdownItem>
+                          <DropdownItem
+                            key="delete"
+                            className="text-danger"
+                            color="danger"
+                            startContent={<Trash2 size={14} />}
+                            onClick={() => openDeleteModal(ticket)}
+                          >
+                            Supprimer
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

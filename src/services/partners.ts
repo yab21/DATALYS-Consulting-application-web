@@ -156,48 +156,71 @@ class PartnersService {
   // Créer un nouveau partenaire
   async createPartner(partnerData: CreatePartnerFormData, userId?: number): Promise<PartnerApiResponse<Partner[]> & { logoUploadError?: string }> {
     try {
-      console.log('🚀 Création du partenaire démarrée:', {
-        baseUrl: this.baseUrl,
-        hasToken: !!this.token,
-        token: this.token ? `${this.token.substring(0, 20)}...` : null,
-        userId: userId,
-        hasLogo: !!partnerData.logo
-      });
 
       if (!this.token) {
         throw new Error('Token d\'authentification manquant dans le service');
       }
 
       // Étape 1: Créer le partenaire sans logo (toujours avec JSON selon les nouvelles APIs)
-      console.log('📝 Étape 1: Création du partenaire sans logo...');
       const partnerResult = await this.createPartnerWithJSON(partnerData);
       
-      if (partnerResult.code !== 200) {
-        throw new Error(partnerResult.message?.message || 'Erreur lors de la création du partenaire');
+      // Vérifier si c'est une erreur
+      if ((partnerResult as any).error || (partnerResult.code !== 200 && partnerResult.code !== 201)) {
+        const errorMessage = typeof partnerResult.message === 'string' 
+          ? partnerResult.message 
+          : partnerResult.message?.message || 'Erreur inconnue';
+        const error = new Error(errorMessage);
+        (error as any).handled = true; // Marquer comme gérée
+        throw error;
       }
       
       let logoUploadError: string | undefined = undefined;
       
+      
+      // Récupérer le partenaire créé (peut être dans items, data ou data.data selon la structure de la réponse)
+      const createdPartner = partnerResult.items?.[0] || 
+                           ((partnerResult as any).data?.data as Partner | undefined) || 
+                           ((partnerResult as any).data as Partner | undefined);
+      
+      
       // Étape 2: Upload du logo si présent (optionnel)
-      if (partnerData.logo && partnerData.logo instanceof File && partnerResult.items?.[0]) {
-        console.log('🖼️ Étape 2: Upload du logo...');
-        const partnerId = partnerResult.items[0].id;
+      if (partnerData.logo && partnerData.logo instanceof File && createdPartner) {
+        const partnerId = createdPartner.id;
         
         try {
-          await this.uploadPartnerLogo(partnerId, partnerData.logo);
-          console.log('✅ Logo uploadé avec succès');
+          const logoResult = await this.uploadPartnerLogo(partnerId, partnerData.logo);
+          
+          // Étape 3: Mettre à jour le partenaire avec la vraie URL du logo
+          try {
+            await this.updatePartnerLogoUrl(partnerId, logoResult.file_url);
+            
+            // Mettre à jour l'objet dans la réponse pour refléter la vraie URL
+            if (createdPartner) {
+              createdPartner.logo_url = logoResult.file_url;
+            }
+          } catch (updateError) {
+            logoUploadError = `Logo uploadé mais URL non mise à jour: ${updateError instanceof Error ? updateError.message : 'Erreur inconnue'}`;
+          }
         } catch (logoError) {
-          console.warn('⚠️ Partenaire créé mais échec upload logo:', logoError);
           logoUploadError = logoError instanceof Error ? logoError.message : 'Erreur inconnue lors de l\'upload du logo';
           // Ne pas faire échouer toute l'opération si seulement le logo échoue
           // Le partenaire est déjà créé, on continue
         }
+      } else {
       }
       
-      return {
+      // S'assurer que le partenaire retourné contient bien l'URL du logo mise à jour
+      const finalResult = {
         ...partnerResult,
         logoUploadError
       };
+      
+      // Si le partenaire était dans data, s'assurer qu'il a bien l'URL mise à jour
+      if ((partnerResult as any).data && createdPartner) {
+        (finalResult as any).data = createdPartner;
+      }
+      
+      return finalResult;
     } catch (error) {
       console.error('❌ Erreur lors de la création du partenaire:', error);
       const message = extractBackendMessage(error);
@@ -206,14 +229,14 @@ class PartnersService {
   }
 
   // Nouvelle méthode pour uploader le logo séparément
-  async uploadPartnerLogo(partnerId: number, logo: File): Promise<void> {
+  async uploadPartnerLogo(partnerId: number, logo: File): Promise<{ file_url: string; filename: string; file_path: string }> {
     try {
       const formData = new FormData();
       formData.append('logo', logo);
+      formData.append('partner_id', partnerId.toString());
       
-      console.log('📤 Upload logo pour partenaire ID:', partnerId);
       
-      const response = await fetch(`${this.baseUrl}/partners/upload-logo/${partnerId}`, {
+      const response = await fetch(`${this.baseUrl}/files/upload/logo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -229,7 +252,19 @@ class PartnersService {
       }
       
       const result = await response.json();
-      console.log('✅ Logo uploadé:', result);
+      console.log('✅ Logo uploadé avec succès:', result);
+      
+      // Retourner les données de l'API selon la nouvelle structure
+      if (result.status === 'success' && result.data) {
+        return {
+          file_url: result.data.file_url,
+          filename: result.data.filename,
+          file_path: result.data.file_path
+        };
+      } else {
+        throw new Error(result.message || 'Erreur inconnue lors de l\'upload');
+      }
+      
     } catch (error) {
       console.error('❌ Erreur lors de l\'upload du logo:', error);
       const message = extractBackendMessage(error);
@@ -237,40 +272,41 @@ class PartnersService {
     }
   }
 
-  // Création avec FormData (pour les logos)
-  private async createPartnerWithFormData(partnerData: CreatePartnerFormData, userId: number): Promise<PartnerApiResponse<Partner[]>> {
-    const formData = new FormData();
-    
-    // Ajouter les données du partenaire
-    const data = {
-      name: partnerData.name,
-      email: partnerData.email,
-      phone: partnerData.phone,
-      address: partnerData.address,
-      is_active: partnerData.is_active,
-    };
-    
-    formData.append('data', JSON.stringify(data));
-    formData.append('user', JSON.stringify({ id: userId }));
-    
-    if (partnerData.logo) {
-      formData.append('logo', partnerData.logo);
+  // Mettre à jour l'URL du logo d'un partenaire
+  async updatePartnerLogoUrl(partnerId: number, logoUrl: string): Promise<void> {
+    try {
+      
+      const response = await fetch(`${this.baseUrl}/partners/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.token}`,
+        },
+        body: JSON.stringify({
+          id: partnerId,
+          logo_url: logoUrl
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erreur mise à jour URL logo:', errorText);
+        throw new Error(`Erreur mise à jour URL logo: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      
+      // Codes de succès : 200 (OK) et 201 (Created)
+      if (result.code !== 200 && result.code !== 201) {
+        throw new Error(result.message?.message || 'Erreur lors de la mise à jour de l\'URL du logo');
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la mise à jour de l\'URL du logo:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
     }
-
-    console.log('📤 Envoi FormData:', {
-      data: JSON.stringify(data),
-      user: JSON.stringify({ id: userId }),
-      logo: partnerData.logo ? partnerData.logo.name : 'aucun'
-    });
-
-    const response = await fetch(`${this.baseUrl}/partners/create`, {
-      method: 'POST',
-      headers: this.getHeaders(true),
-      body: formData,
-    });
-
-    return await this.handleResponse(response);
   }
+
 
   // Création avec JSON - format direct selon l'API
   private async createPartnerWithJSON(partnerData: CreatePartnerFormData): Promise<PartnerApiResponse<Partner[]>> {
@@ -283,7 +319,6 @@ class PartnersService {
       ...(partnerData.logo_url && { logo_url: partnerData.logo_url })
     };
 
-    console.log('📤 Envoi JSON création (format direct):', requestBody);
 
     const response = await fetch(`${this.baseUrl}/partners/create`, {
       method: 'POST',
@@ -296,14 +331,19 @@ class PartnersService {
 
   // Gestionnaire de réponse commun
   private async handleResponse(response: Response): Promise<PartnerApiResponse<Partner[]>> {
-    console.log('📨 Statut de la réponse:', response.status);
+
+    // Vérifier si l'erreur a déjà été gérée par l'intercepteur
+    if ((response as any).errorHandled) {
+      const error = new Error('Token expiré');
+      (error as any).handled = true;
+      throw error;
+    }
 
     if (!response.ok) {
       let errorMessage = `Erreur ${response.status}`;
       
       try {
         const errorText = await response.text();
-        console.error('❌ Erreur API brute:', errorText);
         
         // Essayer de parser le JSON d'erreur pour extraire le message exact du backend
         try {
@@ -325,36 +365,42 @@ class PartnersService {
         errorMessage = `Erreur HTTP ${response.status}`;
       }
       
-      console.error('❌ Message d\'erreur final:', errorMessage);
-      throw new Error(errorMessage);
+      // Ne pas lancer d'erreur, retourner un objet d'erreur à la place
+      return {
+        code: response.status,
+        message: { message: errorMessage },
+        items: [],
+        count: 0,
+        error: true
+      } as any;
     }
 
     const result = await response.json();
-    console.log('✅ Réponse API complète:', result);
     
     // Pour les codes d'erreur 400+, extraire directement le message backend
     if (result.code >= 400) {
       const errorMessage = result.message?.message || result.message || `Erreur ${result.code}`;
       console.error('❌ Erreur backend:', errorMessage);
-      throw new Error(errorMessage);
+      // Marquer comme erreur et retourner au lieu de lancer une exception
+      return {
+        ...result,
+        error: true
+      };
     }
     
     return {
       code: result.code,
       message: result.message,
       items: result.items,
-      count: result.items?.length || 0
+      count: result.items?.length || 0,
+      // Préserver les données additionnelles de la réponse (comme data pour la création)
+      ...(result.data && { data: result.data })
     };
   }
 
   // Récupérer la liste des partenaires avec getByCriteria
   async getPartners(params: GetPartnersParams = {}): Promise<PartnerApiResponse<Partner[]>> {
     try {
-      console.log('🔧 Debug getPartners - État du service:', {
-        baseUrl: this.baseUrl,
-        hasToken: !!this.token,
-        token: this.token ? `${this.token.substring(0, 20)}...` : null,
-      });
 
       if (!this.token) {
         throw new Error('Token d\'authentification manquant dans le service');
@@ -369,13 +415,10 @@ class PartnersService {
         },
       };
 
-      console.log('📤 Requête getByCriteria:', requestBody);
 
       const headers = this.getHeaders();
-      console.log('📋 Headers de la requête getByCriteria:', Object.keys(headers));
 
       const fullUrl = `${this.baseUrl}/partners/getByCriteria`;
-      console.log('🌐 URL complète getByCriteria:', fullUrl);
 
       const response = await fetch(fullUrl, {
         method: 'POST',
@@ -383,8 +426,7 @@ class PartnersService {
         body: JSON.stringify(requestBody),
       });
 
-      console.log('📨 Statut de la réponse:', response.status);
-
+  
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Erreur API getByCriteria:', errorText);
@@ -392,7 +434,6 @@ class PartnersService {
       }
 
       const result = await response.json();
-      console.log('✅ Réponse getByCriteria complète:', result);
 
       // Adapter la réponse au format attendu
       return {
@@ -457,12 +498,6 @@ class PartnersService {
   // Modifier un partenaire
   async updatePartner(partnerId: number, partnerData: UpdatePartnerFormData, userId?: number): Promise<PartnerApiResponse<Partner[]> & { logoUploadError?: string }> {
     try {
-      console.log('🔄 Modification du partenaire démarrée:', {
-        partnerId,
-        hasToken: !!this.token,
-        userId: userId,
-        hasLogo: !!partnerData.logo
-      });
 
       if (!this.token) {
         throw new Error('Token d\'authentification manquant dans le service');
@@ -471,22 +506,35 @@ class PartnersService {
       // Note: userId n'est plus utilisé car l'API utilise maintenant le format direct
       
       // Étape 1: Modifier le partenaire sans logo
-      console.log('📝 Étape 1: Modification du partenaire sans logo...');
       const partnerResult = await this.updatePartnerWithJSON(partnerId, partnerData);
       
-      if (partnerResult.code !== 200) {
+      // Codes de succès : 200 (OK) et 201 (Created)
+      if (partnerResult.code !== 200 && partnerResult.code !== 201) {
         throw new Error(partnerResult.message?.message || 'Erreur lors de la modification du partenaire');
       }
       
       let logoUploadError: string | undefined = undefined;
       
+      // Récupérer le partenaire mis à jour
+      const updatedPartner = partnerResult.items?.[0] || (partnerResult as any).data;
+      
       // Étape 2: Upload du logo si présent (optionnel)
       if (partnerData.logo && partnerData.logo instanceof File) {
-        console.log('🖼️ Étape 2: Upload du nouveau logo...');
         
         try {
-          await this.uploadPartnerLogo(partnerId, partnerData.logo);
-          console.log('✅ Logo modifié avec succès');
+          const logoResult = await this.uploadPartnerLogo(partnerId, partnerData.logo);
+          
+          // Étape 3: Mettre à jour le partenaire avec la vraie URL du logo
+          try {
+            await this.updatePartnerLogoUrl(partnerId, logoResult.file_url);
+            
+            // Mettre à jour l'objet dans la réponse pour refléter la vraie URL
+            if (updatedPartner) {
+              updatedPartner.logo_url = logoResult.file_url;
+            }
+          } catch (updateError) {
+            logoUploadError = `Logo uploadé mais URL non mise à jour: ${updateError instanceof Error ? updateError.message : 'Erreur inconnue'}`;
+          }
         } catch (logoError) {
           console.warn('⚠️ Partenaire modifié mais échec upload logo:', logoError);
           logoUploadError = logoError instanceof Error ? logoError.message : 'Erreur inconnue lors de l\'upload du logo';
@@ -571,7 +619,8 @@ class PartnersService {
 
       const result = await this.handleResponse(response);
       
-      if (result.code !== 200) {
+      // Codes de succès : 200 (OK) et 201 (Created)
+      if (result.code !== 200 && result.code !== 201) {
         throw new Error(result.message?.message || 'Erreur lors de la suppression du partenaire');
       }
 

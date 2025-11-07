@@ -205,15 +205,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             </svg>
           ),
           label: "Profil",
-          route: "#",
-          children: [
-            { label: "Voir", route: "/tableaudebord/profil/voir" },
-            // Changer mot de passe uniquement pour les admins
-            ...(isAdmin() ? [{
-              label: "Changer le mot de passe",
-              route: "/tableaudebord/profil/changermotdepasse",
-            }] : []),
-          ],
+          route: "/tableaudebord/profil/voir",
         },
       ],
     };

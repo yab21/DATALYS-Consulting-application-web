@@ -24,7 +24,6 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  Switch,
 } from "@nextui-org/react";
 import {
   Plus,
@@ -42,6 +41,7 @@ import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { RolesService, Role } from "@/services/roles";
 import LoadingState from "@/components/UI/Loading/LoadingState";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 interface RoleStats {
   totalRoles: number;
@@ -131,10 +131,11 @@ const GestionRoles: React.FC = () => {
         }
       } catch (error) {
         console.error("Erreur lors du chargement des rôles:", error);
+        const message = extractBackendMessage(error);
         showNotification({
           type: "error",
           title: "Erreur de chargement",
-          message: "Impossible de charger la liste des rôles",
+          message,
           duration: 5000,
         });
       } finally {
@@ -302,10 +303,11 @@ const GestionRoles: React.FC = () => {
       }
     } catch (error) {
       console.error('Erreur lors de l\'action sur le rôle:', error);
+      const message = extractBackendMessage(error);
       showNotification({
         type: "error",
         title: "Erreur",
-        message: error instanceof Error ? error.message : "Une erreur s'est produite",
+        message,
         duration: 5000,
       });
     } finally {
@@ -319,12 +321,63 @@ const GestionRoles: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Gestion des Rôles
-          </h1>
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+          </div>
         </div>
-        <LoadingState type="skeleton" skeletonVariant="card" skeletonCount={4} />
+
+        {/* Stats skeleton - 3 cartes pour les rôles */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                </div>
+                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="h-10 bg-gray-200 rounded animate-pulse flex-1 max-w-md"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse w-40"></div>
+          </div>
+        </div>
+
+        {/* Roles cards skeleton */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -568,18 +621,6 @@ const GestionRoles: React.FC = () => {
                       variant="bordered"
                       size="lg"
                     />
-                    <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
-                      <div>
-                        <h5 className="font-semibold text-gray-900">Rôle actif</h5>
-                        <p className="text-sm text-gray-600">Le rôle sera utilisable immédiatement</p>
-                      </div>
-                      <Switch
-                        isSelected={formData.is_active}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, is_active: value }))}
-                        color="success"
-                        size="lg"
-                      />
-                    </div>
                   </div>
                 )}
 

@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { Partner, UpdatePartnerFormData, CreatePartnerData, CreatePartnerFormData, partnersService } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 interface PartnerModalsProps {
   isOpen: boolean;
@@ -209,8 +210,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
       const result = await partnersService.updatePartner(partner.id, updateData, user.id);
       
       if (result.code === 200 || result.code === 201) {
-        // Utiliser le message du backend s'il existe, sinon message par défaut
-        const successMessage = result.message?.message || 'Partenaire modifié avec succès';
+        const successMessage = extractBackendMessage(result) || result.message?.message;
         onSuccess?.(successMessage);
         if (result.logoUploadError) {
           // Log warning au lieu d'une notification d'erreur pour les problèmes de logo
@@ -219,19 +219,12 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         onRefresh();
         onClose();
       } else {
-        onError?.(result.message?.message || 'Erreur lors de la modification');
+        onError?.(extractBackendMessage(result) || result.message?.message);
       }
     } catch (error) {
       console.error('Erreur modification:', error);
       
-      // Afficher directement le message de l'API
-      let errorMessage = 'Erreur lors de la modification';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      onError?.(extractBackendMessage(error));
     } finally {
       setEditLoading(false);
     }
@@ -246,25 +239,17 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
       const result = await partnersService.deletePartner(partner.id, user.id);
       
       if (result.code === 200 || result.code === 201) {
-        // Utiliser le message du backend s'il existe, sinon message par défaut
-        const successMessage = result.message?.message || 'Partenaire supprimé avec succès';
+        const successMessage = extractBackendMessage(result) || result.message?.message;
         onSuccess?.(successMessage);
         onRefresh();
         onClose();
       } else {
-        onError?.(result.message?.message || 'Erreur lors de la suppression');
+        onError?.(extractBackendMessage(result) || result.message?.message);
       }
     } catch (error) {
       console.error('Erreur suppression:', error);
       
-      // Afficher directement le message de l'API
-      let errorMessage = 'Erreur lors de la suppression';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      onError?.(extractBackendMessage(error));
     } finally {
       setDeleteLoading(false);
     }
@@ -294,8 +279,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
       const result = await partnersService.createPartner(partnerData, user.id);
       
       if (result.code === 200 || result.code === 201) {
-        // Utiliser le message du backend s'il existe, sinon message par défaut
-        const successMessage = result.message?.message || 'Partenaire créé avec succès';
+        const successMessage = extractBackendMessage(result) || result.message?.message;
         onSuccess?.(successMessage);
         if (result.logoUploadError) {
           // Utiliser warning au lieu d'error pour les problèmes de logo
@@ -314,18 +298,13 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         });
         setCreateLogoPreview(null);
       } else {
-        onError?.(result.message?.message || 'Erreur lors de la création');
+        onError?.(extractBackendMessage(result) || result.message?.message);
       }
     } catch (error) {
       console.error('Erreur création:', error);
       
-      let errorMessage = 'Erreur lors de la création';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      // Supprimer la notification ici car elle sera gérée par l'error handler global
+      console.log('🔇 Erreur catchée dans PartnerModals, mais notification ignorée pour éviter les doublons');
     } finally {
       setCreateLoading(false);
     }

@@ -169,11 +169,13 @@ class IncidentFilesService {
             console.log(`📊 Status HTTP: ${xhr.status}`);
             
             if (xhr.status >= 200 && xhr.status < 300) {
-              console.log(`✅ Upload réussi pour ${file.name}:`, response.file || response.data);
+              // Adapter la structure de réponse selon le format fourni par l'utilisateur
+              const fileData = response.data?.db_record || response.file || response.data;
+              console.log(`✅ Upload réussi pour ${file.name}:`, fileData);
               resolve({
                 success: true,
                 message: response.message || 'Fichier uploadé avec succès',
-                file: response.file || response.data
+                file: fileData
               });
             } else {
               console.log(`❌ Upload échoué pour ${file.name}:`, response);
@@ -219,7 +221,7 @@ class IncidentFilesService {
 
   /**
    * Récupérer la liste des fichiers d'un incident
-   * GET /incidents/{incident_id}/files
+   * POST /files/getByCriteria (utilise l'API mentionnée par l'utilisateur)
    */
   async getIncidentFiles(
     incidentId: number,
@@ -227,43 +229,51 @@ class IncidentFilesService {
     perPage: number = 20
   ): Promise<IncidentFilesListResponse> {
     try {
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        per_page: perPage.toString()
-      });
-
-      console.log(`🌐 Appel API: GET /incidents/${incidentId}/files?${queryParams}`);
+      console.log(`🌐 Appel API: POST /files/getByCriteria pour incident ${incidentId}`);
 
       const response = await this.makeRequest<any>(
-        `/incidents/${incidentId}/files?${queryParams}`,
+        `/files/getByCriteria`,
         {
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-          }
+          },
+          body: JSON.stringify({
+            index: (page - 1) * perPage,
+            size: perPage,
+            data: {
+              incident_id: incidentId,
+              is_active: true
+            }
+          })
         }
       );
 
-      console.log("🔄 Réponse brute de l'API:", response);
+      console.log("🔄 Réponse brute de l'API files/getByCriteria:", response);
 
-      // Adapter la réponse selon le format attendu
-      if (response.success !== undefined) {
-        return response;
-      }
-
-      // Si la réponse a le format { status: "success", data: {...} }
-      if (response.status === "success" && response.data) {
-        const rawFiles = response.data.files || [];
+      // Adapter la réponse de l'API files/getByCriteria
+      if (response.code === 200 && response.items) {
+        const rawFiles = response.items || [];
         const safeRawFiles = Array.isArray(rawFiles) ? rawFiles : [];
         
-        // Mapper les fichiers bruts vers l'interface attendue
-        const mappedFiles: IncidentFile[] = safeRawFiles.map((rawFile: RawIncidentFile) => 
-          mapRawFileToIncidentFile(rawFile)
+        // Mapper les fichiers bruts vers l'interface attendue avec récupération de la taille
+        const mappedFiles: IncidentFile[] = await Promise.all(
+          safeRawFiles.map(async (rawFile: RawIncidentFile) => {
+            const mappedFile = mapRawFileToIncidentFile(rawFile);
+            
+            // Ne pas récupérer la taille automatiquement pour éviter les erreurs CORS
+            // La taille sera récupérée à la demande si nécessaire
+            if (mappedFile.file_size === 0) {
+              mappedFile.file_size = 0; // Garder 0 si pas disponible
+            }
+            
+            return mappedFile;
+          })
         );
         
-        const total = response.data.count || mappedFiles.length;
+        const total = response.count || mappedFiles.length;
         
-        console.log("🔧 Adaptation de la réponse API:", {
+        console.log("🔧 Adaptation de la réponse API files/getByCriteria:", {
           rawFiles: safeRawFiles.length,
           mappedFiles: mappedFiles.length,
           total
@@ -281,18 +291,15 @@ class IncidentFilesService {
         };
       }
 
-      // Si la réponse n'a pas le format attendu, l'adapter (fallback)
-      const filesData = response.files || response.data || [];
-      const safeFiles = Array.isArray(filesData) ? filesData : [];
-      
+      // Fallback si format différent
       return {
         success: true,
         data: {
-          files: safeFiles,
-          total: response.total || 0,
-          current_page: response.current_page || page,
-          per_page: response.per_page || perPage,
-          total_pages: response.total_pages || Math.ceil((response.total || 0) / perPage)
+          files: [],
+          total: 0,
+          current_page: page,
+          per_page: perPage,
+          total_pages: 0
         }
       };
 
@@ -319,7 +326,7 @@ class IncidentFilesService {
    */
   async downloadIncidentFile(fileUrl: string, fileName?: string): Promise<void> {
     try {
-      // Nettoyer l'URL du fichier
+      // Utiliser le proxy pour éviter les problèmes CORS
       const cleanFileUrl = fileUrl.replace(/^\/+/, '');
       const downloadUrl = `${this.baseUrl}/files/serve/${cleanFileUrl}`;
       
@@ -398,8 +405,13 @@ class IncidentFilesService {
    */
   async createPreviewBlob(fileUrl: string): Promise<string> {
     try {
+      // Utiliser le proxy pour éviter les problèmes CORS
       const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      const response = await fetch(`${this.baseUrl}/files/serve/${cleanFileUrl}`, {
+      const previewUrl = `${this.baseUrl}/files/serve/${cleanFileUrl}`;
+      
+      console.log('🔗 URL de prévisualisation:', previewUrl);
+      
+      const response = await fetch(previewUrl, {
         headers: this.getAuthHeaders()
       });
 
@@ -423,8 +435,11 @@ class IncidentFilesService {
    */
   async getFileSize(fileUrl: string): Promise<number> {
     try {
+      // Utiliser le proxy pour éviter les problèmes CORS
       const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      const response = await fetch(`${this.baseUrl}/files/serve/${cleanFileUrl}`, {
+      const headUrl = `${this.baseUrl}/files/serve/${cleanFileUrl}`;
+      
+      const response = await fetch(headUrl, {
         method: 'HEAD',
         headers: this.getAuthHeaders()
       });
@@ -491,6 +506,59 @@ class IncidentFilesService {
     ];
     
     return previewableTypes.includes((fileType || "").toLowerCase());
+  }
+
+
+  /**
+   * Supprimer un fichier d'incident
+   * POST /files/delete
+   */
+  async deleteIncidentFile(fileId: number): Promise<{ success: boolean; message: string; error?: string }> {
+    try {
+      console.log(`🗑️ Suppression du fichier ID: ${fileId}`);
+
+      const response = await this.makeRequest<any>(
+        `/files/delete`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            datas: [
+              {
+                id: fileId
+              }
+            ]
+          })
+        }
+      );
+
+      console.log("🔄 Réponse de suppression:", response);
+
+      // Gérer la structure de réponse { code: 200, message: { code: 200, message: "OPERATION SUCCESSFULLY" } }
+      if (response.code === 200) {
+        return {
+          success: true,
+          message: response.message?.message || 'Fichier supprimé avec succès'
+        };
+      }
+
+      // Fallback si format différent
+      return {
+        success: false,
+        message: response.message?.message || 'Erreur lors de la suppression du fichier'
+      };
+
+    } catch (error) {
+      console.error(`❌ Erreur lors de la suppression du fichier ${fileId}:`, error);
+      const message = extractBackendMessage(error);
+      return {
+        success: false,
+        message: 'Erreur lors de la suppression du fichier',
+        error: message
+      };
+    }
   }
 
   /**

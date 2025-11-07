@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { searchService, SearchFilters, SearchResult, SearchOptions } from '@/services/search';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from '@/context/AuthContext';
 
 interface AdvancedSearchProps {
   onResults?: (results: SearchResult[], total: number) => void;
@@ -75,6 +76,7 @@ export default function AdvancedSearch({
   initialFilters = {},
   className = ''
 }: AdvancedSearchProps) {
+  const { isPartner } = useAuth();
   const [filters, setFilters] = useState<SearchFilters>(initialFilters);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
@@ -172,6 +174,13 @@ export default function AdvancedSearch({
     }
   };
 
+  // Filtrer les types d'entités selon les permissions
+  const availableEntityTypes = ENTITY_TYPES.filter(type => {
+    if (type.key === 'all') return true;
+    if (isPartner() && ['partners', 'users'].includes(type.key)) return false;
+    return true;
+  });
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Barre de recherche principale */}
@@ -239,7 +248,7 @@ export default function AdvancedSearch({
                 value={filters.entityType || 'all'}
                 onChange={(e) => updateFilter('entityType', e.target.value)}
               >
-                {ENTITY_TYPES.map((type) => (
+                {availableEntityTypes.map((type) => (
                   <SelectItem key={type.key} value={type.key}>
                     <div className="flex items-center gap-2">
                       <type.icon className="w-4 h-4" />

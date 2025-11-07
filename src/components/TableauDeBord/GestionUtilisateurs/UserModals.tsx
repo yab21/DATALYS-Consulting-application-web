@@ -35,6 +35,7 @@ import {
 import { UsersService, User as UserType } from "@/services/users";
 import { UserRole } from "@/lib/permissions";
 import { useAuth } from "@/context/AuthContext";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 interface UserModalsProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ interface EditFormData {
   name: string;
   email: string;
   role_name: string;
+  password?: string;
 }
 
 const UserModals: React.FC<UserModalsProps> = ({
@@ -67,7 +69,8 @@ const UserModals: React.FC<UserModalsProps> = ({
   const [editForm, setEditForm] = useState<EditFormData>({
     name: '',
     email: '',
-    role_name: ''
+    role_name: '',
+    password: ''
   });
   
   const [editLoading, setEditLoading] = useState(false);
@@ -80,7 +83,8 @@ const UserModals: React.FC<UserModalsProps> = ({
       setEditForm({
         name: user.name,
         email: user.email,
-        role_name: user.role_id === UserRole.ADMIN ? 'admin' : 'partner'
+        role_name: user.role_id === UserRole.ADMIN ? 'admin' : 'partner',
+        password: ''
       });
     }
   }, [user, type]);
@@ -96,30 +100,29 @@ const UserModals: React.FC<UserModalsProps> = ({
 
     setEditLoading(true);
     try {
-      const result = await UsersService.updateUser({
+      const updateData: any = {
         id: user.id,
         name: editForm.name,
         email: editForm.email,
         role_name: editForm.role_name,
-      });
+      };
+
+      // Ajouter le mot de passe seulement s'il est fourni
+      if (editForm.password && editForm.password.trim()) {
+        updateData.password = editForm.password;
+      }
+
+      const result = await UsersService.updateUser(updateData);
       
       if (result.code === 200 || result.status === 'success') {
-        onSuccess?.('Utilisateur modifié avec succès');
+        onSuccess?.(extractBackendMessage(result) || result?.message || 'Opération réussie');
         onRefresh();
         onClose();
       } else {
-        onError?.(result.message || 'Erreur lors de la modification');
+        onError?.(extractBackendMessage(result) || result.message);
       }
     } catch (error) {
-      console.error('Erreur modification:', error);
-      
-      let errorMessage = 'Erreur lors de la modification';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      onError?.(extractBackendMessage(error));
     } finally {
       setEditLoading(false);
     }
@@ -134,22 +137,14 @@ const UserModals: React.FC<UserModalsProps> = ({
       const result = await UsersService.deleteUser(user.id);
       
       if (result.code === 200 || result.status === 'success') {
-        onSuccess?.('Utilisateur supprimé avec succès');
+        onSuccess?.(extractBackendMessage(result) || result?.message || 'Opération réussie');
         onRefresh();
         onClose();
       } else {
-        onError?.(result.message || 'Erreur lors de la suppression');
+        onError?.(extractBackendMessage(result) || result.message);
       }
     } catch (error) {
-      console.error('Erreur suppression:', error);
-      
-      let errorMessage = 'Erreur lors de la suppression';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      onError?.(extractBackendMessage(error));
     } finally {
       setDeleteLoading(false);
     }
@@ -164,22 +159,14 @@ const UserModals: React.FC<UserModalsProps> = ({
       const result = await UsersService.toggleUserStatus(user.id, !user.is_active);
       
       if (result.code === 200 || result.status === 'success') {
-        onSuccess?.(`Utilisateur ${user.is_active ? 'désactivé' : 'activé'} avec succès`);
+        onSuccess?.(extractBackendMessage(result) || result?.message || 'Opération réussie');
         onRefresh();
         onClose();
       } else {
-        onError?.(result.message || 'Erreur lors de la mise à jour du statut');
+        onError?.(extractBackendMessage(result) || result.message);
       }
     } catch (error) {
-      console.error('Erreur toggle status:', error);
-      
-      let errorMessage = 'Erreur lors de la mise à jour du statut';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      onError?.(extractBackendMessage(error));
     } finally {
       setToggleLoading(false);
     }
@@ -393,6 +380,17 @@ const UserModals: React.FC<UserModalsProps> = ({
                     value={editForm.email}
                     onValueChange={(value) => handleEditFormChange('email', value)}
                     isRequired
+                  />
+                </div>
+                
+                <div className="mt-4">
+                  <Input
+                    label="Nouveau mot de passe"
+                    placeholder="Laisser vide pour conserver l'ancien mot de passe"
+                    type="password"
+                    value={editForm.password || ''}
+                    onValueChange={(value) => handleEditFormChange('password', value)}
+                    description="Optionnel - Laisser vide pour ne pas modifier le mot de passe"
                   />
                 </div>
               </div>

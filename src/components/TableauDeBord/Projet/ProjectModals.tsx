@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { projectsService, Project, CreateProjectFormData } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 interface ProjectModalsProps {
   isOpen: boolean;
@@ -152,22 +153,16 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
       );
       
       if (result) {
-        onSuccess?.('Projet modifié avec succès');
+        onSuccess?.(extractBackendMessage(result));
         onRefresh();
         onClose();
       } else {
-        onError?.('Erreur lors de la modification');
+        onError?.(extractBackendMessage(result));
       }
     } catch (error) {
       console.error('Erreur modification:', error);
       
-      let errorMessage = 'Erreur lors de la modification';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      onError?.(extractBackendMessage(error));
     } finally {
       setEditLoading(false);
     }
@@ -182,22 +177,16 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
       const result = await projectsService.deleteProject(project.id, project.title, user.id, user.email);
       
       if (result) {
-        onSuccess?.('Projet supprimé avec succès');
+        onSuccess?.(extractBackendMessage(result));
         onRefresh();
         onClose();
       } else {
-        onError?.('Erreur lors de la suppression');
+        onError?.(extractBackendMessage(result));
       }
     } catch (error) {
       console.error('Erreur suppression:', error);
       
-      let errorMessage = 'Erreur lors de la suppression';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      onError?.(extractBackendMessage(error));
     } finally {
       setDeleteLoading(false);
     }
@@ -231,7 +220,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
       );
       
       if (result) {
-        onSuccess?.('Projet créé avec succès');
+        onSuccess?.(extractBackendMessage(result));
         onRefresh();
         onClose();
         // Réinitialiser le formulaire
@@ -241,18 +230,12 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
           is_active: true
         });
       } else {
-        onError?.('Erreur lors de la création');
+        onError?.(extractBackendMessage(result));
       }
     } catch (error) {
       console.error('Erreur création:', error);
       
-      let errorMessage = 'Erreur lors de la création';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      onError?.(errorMessage);
+      onError?.(extractBackendMessage(error));
     } finally {
       setCreateLoading(false);
     }

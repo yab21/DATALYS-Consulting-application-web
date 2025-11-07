@@ -97,12 +97,6 @@ const Header = (props: {
             <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white lg:text-3xl">
               Tableau de bord
             </h1>
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-              <p className="font-medium text-gray-600 dark:text-gray-300">
-                Bienvenue, {userName.firstName} {userName.lastName}
-              </p>
-            </div>
           </div>
         </motion.div>
 

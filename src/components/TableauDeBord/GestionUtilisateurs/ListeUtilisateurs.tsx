@@ -33,7 +33,6 @@ import {
   Shield,
   Users,
   Filter,
-  Eye,
   Clock,
   MoreVertical,
   RefreshCw
@@ -46,6 +45,7 @@ import LoadingState from "@/components/UI/Loading/LoadingState";
 import Link from "next/link";
 import UserModals from "./UserModals";
 import CreateUserModal from "./CreateUserModal";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 // Types pour la gestion des utilisateurs (utilise le type du service)
 type User = UserType;
@@ -244,10 +244,11 @@ const ListeUtilisateurs: React.FC = () => {
       }
     } catch (error) {
       console.error("Erreur lors du chargement des utilisateurs:", error);
+      const message = extractBackendMessage(error);
       showNotification({
         type: "error",
         title: "Erreur de chargement",
-        message: "Impossible de charger la liste des utilisateurs",
+        message,
         duration: 5000,
       });
     } finally {
@@ -277,12 +278,71 @@ const ListeUtilisateurs: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Gestion des Utilisateurs
-          </h1>
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+          </div>
         </div>
-        <LoadingState type="skeleton" skeletonVariant="card" skeletonCount={6} />
+
+        {/* Stats skeleton - 4 cartes pour les utilisateurs */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                </div>
+                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="h-10 bg-gray-200 rounded animate-pulse flex-1 max-w-md"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse w-40"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse w-32"></div>
+          </div>
+        </div>
+
+        {/* Table skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+              <div className="h-5 bg-gray-200 rounded w-20 animate-pulse"></div>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-32 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -612,13 +672,6 @@ const ListeUtilisateurs: React.FC = () => {
                     </DropdownTrigger>
                     <DropdownMenu aria-label="Actions de l'utilisateur">
                       {[
-                        <DropdownItem
-                          key="view"
-                          startContent={<Eye className="h-4 w-4" />}
-                          onPress={() => handleUserAction(user, "view")}
-                        >
-                          Voir détails
-                        </DropdownItem>,
                         ...(canModify() && hasPermission(Permission.MODIFY_ALL_PROFILES) ? [
                           <DropdownItem
                             key="edit"
@@ -626,16 +679,6 @@ const ListeUtilisateurs: React.FC = () => {
                             onPress={() => handleUserAction(user, "edit")}
                           >
                             Modifier
-                          </DropdownItem>
-                        ] : []),
-                        ...(canModify() ? [
-                          <DropdownItem
-                            key="toggle"
-                            startContent={user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                            color={user.is_active ? "warning" : "success"}
-                            onPress={() => handleUserAction(user, "toggle")}
-                          >
-                            {user.is_active ? "Désactiver" : "Activer"}
                           </DropdownItem>
                         ] : []),
                         ...(canDelete() && hasPermission(Permission.DELETE_USERS) ? [

@@ -126,8 +126,9 @@ export class ProjectFilesService {
         data: {}
       };
 
-      if (parentFolderId !== undefined && parentFolderId !== null) {
-        requestData.data.parent_folder_id = parentFolderId;
+      // 🔧 CORRECTION: Toujours inclure parent_folder_id pour un filtrage précis
+      if (parentFolderId !== undefined) {
+        requestData.data.parent_folder_id = parentFolderId; // null = dossier racine, number = sous-dossiers
       }
 
       if (projectId !== undefined) {
@@ -135,10 +136,11 @@ export class ProjectFilesService {
       }
 
       // 🔍 LOG: Requête getFolders
-      console.log('🔍 [DEBUG SERVICE] - Requête getFolders:', {
+      console.log('🔍 [DEBUG SERVICE] - Requête getFolders CORRIGÉE:', {
         parentFolderId,
         projectId,
-        requestData: JSON.stringify(requestData, null, 2)
+        requestData: JSON.stringify(requestData, null, 2),
+        expliciteParentFilter: parentFolderId !== undefined ? `parent_folder_id = ${parentFolderId}` : 'Pas de filtre parent'
       });
 
       const response = await securedFetch('/api/proxy/folders/getByCriteria', {
@@ -159,12 +161,38 @@ export class ProjectFilesService {
           id: f.id,
           name: f.name,
           parent_folder_id: f.parent_folder_id,
-          project_id: f.project_id
-        })) || []
+          project_id: f.project_id,
+          expectedParent: parentFolderId,
+          matchesFilter: f.parent_folder_id === parentFolderId
+        })) || [],
+        rawResponse: data
       });
 
       if (data.code === 200) {
-        return data.items || [];
+        const folders = data.items || [];
+        
+        // 🔧 VALIDATION: Vérifier que tous les dossiers retournés correspondent au filtrage demandé
+        const filteredFolders = folders.filter(folder => {
+          const isCorrectParent = folder.parent_folder_id === parentFolderId;
+          if (!isCorrectParent) {
+            console.warn('🚨 [HIERARCHY ERROR] - Dossier avec mauvais parent_folder_id détecté:', {
+              folder: {
+                id: folder.id,
+                name: folder.name,
+                parent_folder_id: folder.parent_folder_id
+              },
+              expectedParentId: parentFolderId,
+              shouldBeFiltered: true
+            });
+          }
+          return isCorrectParent;
+        });
+        
+        if (filteredFolders.length !== folders.length) {
+          console.warn(`🔧 [HIERARCHY FIX] - Filtrage appliqué côté frontend: ${folders.length} → ${filteredFolders.length} dossiers`);
+        }
+        
+        return filteredFolders;
       } else {
         console.warn('Erreur lors de la récupération des dossiers:', data.message);
         return [];

@@ -224,14 +224,16 @@ export class UsersService {
   // Nouvelle méthode pour récupérer l'utilisateur complet
   static getCurrentUser(): { id: number; email: string } | null {
     if (typeof window !== 'undefined') {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
+      try {
+        // Utiliser SecureStorage comme dans AuthContext
+        const { SecureStorage } = require('@/lib/secure-storage');
+        const userStr = SecureStorage.getItem('userInfo');
+        if (userStr) {
           const user = JSON.parse(userStr);
           return { id: user.id, email: user.email };
-        } catch (error) {
-          console.error('Erreur lors de la lecture des données utilisateur:', error);
         }
+      } catch (error) {
+        console.error('Erreur lors de la lecture des données utilisateur:', error);
       }
     }
     return null;

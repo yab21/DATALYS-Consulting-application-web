@@ -275,8 +275,73 @@ const GestionMessages: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 rounded-2xl bg-gray-200 animate-pulse" />
-        <div className="h-96 rounded-2xl bg-gray-200 animate-pulse" />
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Stats skeleton - 4 cartes pour les messages */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="border border-gray-200 bg-white">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  </div>
+                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+
+        {/* Filters skeleton */}
+        <Card className="border border-gray-200 bg-white">
+          <CardBody className="p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-1 gap-4">
+                <div className="h-10 bg-gray-200 rounded animate-pulse max-w-md flex-1"></div>
+                <div className="h-10 bg-gray-200 rounded animate-pulse w-32"></div>
+                <div className="h-10 bg-gray-200 rounded animate-pulse w-32"></div>
+              </div>
+              <div className="h-10 bg-gray-200 rounded animate-pulse w-40"></div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Messages list skeleton */}
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="border border-gray-200 bg-white">
+              <CardBody className="p-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 rounded w-full animate-pulse"></div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                      <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

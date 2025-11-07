@@ -229,7 +229,7 @@ export class AuthService {
         this.clearAuthData();
         return {
           success: false,
-          message: result.message || "Erreur lors de la déconnexion",
+          message: result.message,
         };
       }
     } catch (error) {
@@ -269,7 +269,7 @@ export class AuthService {
   static getUser(): User | null {
     if (typeof window === "undefined") return null;
 
-    const userInfo = localStorage.getItem("userInfo");
+    const userInfo = SecureStorage.getItem("userInfo");
     if (!userInfo) return null;
 
     try {

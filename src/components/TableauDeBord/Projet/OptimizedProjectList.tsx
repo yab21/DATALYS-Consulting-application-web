@@ -7,7 +7,6 @@ import {
   FolderOpen, 
   Calendar, 
   Users, 
-  Eye, 
   Edit, 
   Trash2, 
   Filter, 
@@ -38,7 +37,6 @@ import {
   Card,
   CardBody
 } from "@nextui-org/react";
-import { useRouter } from "next/navigation";
 import { projectsService, Project } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import LoadingState from "@/components/UI/Loading/LoadingState";
@@ -46,9 +44,9 @@ import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/
 import { getContextualErrorMessage } from '@/lib/error-messages';
 import { apiInterceptor } from '@/lib/api-interceptor';
 import ProjectModals from "./ProjectModals";
+import ProjectFilesModal from "./ProjectFilesModal";
 
 const OptimizedProjectList: React.FC = () => {
-  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const { showNotification } = useSimpleNotifications();
   
@@ -73,6 +71,15 @@ const OptimizedProjectList: React.FC = () => {
   }>({
     isOpen: false,
     type: null,
+    project: null
+  });
+
+  // État pour le modal de gestion des fichiers
+  const [filesModalState, setFilesModalState] = useState<{
+    isOpen: boolean;
+    project: Project | null;
+  }>({
+    isOpen: false,
     project: null
   });
 
@@ -459,12 +466,70 @@ const OptimizedProjectList: React.FC = () => {
   if (loading && projects.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {user?.role_id === 1 ? "Gestion des Projets" : "Mes Projets"}
-          </h1>
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+          </div>
         </div>
-        <LoadingState type="skeleton" skeletonVariant="table" skeletonCount={8} />
+
+        {/* Stats skeleton - 4 cartes pour les projets */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                </div>
+                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="h-10 bg-gray-200 rounded animate-pulse flex-1 max-w-md"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse w-40"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse w-32"></div>
+          </div>
+        </div>
+
+        {/* Table skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+              <div className="h-5 bg-gray-200 rounded w-20 animate-pulse"></div>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-32 animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -740,11 +805,11 @@ const OptimizedProjectList: React.FC = () => {
                     <DropdownMenu aria-label="Actions du projet">
                       {[
                         <DropdownItem
-                          key="view"
-                          startContent={<Eye className="h-4 w-4" />}
-                          onPress={() => router.push(`/tableaudebord/projet/pageprojet/${project.id}`)}
+                          key="files"
+                          startContent={<FolderOpen className="h-4 w-4" />}
+                          onPress={() => setFilesModalState({ isOpen: true, project })}
                         >
-                          Voir détails
+                          Gérer fichiers
                         </DropdownItem>,
                         ...(user?.role_id === 1 ? [
                           <DropdownItem
@@ -783,6 +848,15 @@ const OptimizedProjectList: React.FC = () => {
         onSuccess={handleModalSuccess}
         onError={handleModalError}
       />
+
+      {/* Modal de gestion des fichiers */}
+      {filesModalState.project && (
+        <ProjectFilesModal
+          project={filesModalState.project}
+          isOpen={filesModalState.isOpen}
+          onClose={() => setFilesModalState({ isOpen: false, project: null })}
+        />
+      )}
     </div>
   );
 };

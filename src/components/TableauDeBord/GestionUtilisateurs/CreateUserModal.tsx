@@ -27,7 +27,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { UsersService, CreateUserData } from "@/services/users";
-import { partnersService, Partner as PartnerType } from "@/services/partners";
+import { extractBackendMessage } from "@/lib/error-handler";
 
 // Types pour le formulaire
 interface UserFormData {
@@ -36,7 +36,6 @@ interface UserFormData {
   password: string;
   confirmPassword: string;
   role_name: string;
-  partner_id?: number;
 }
 
 interface FormErrors {
@@ -45,7 +44,6 @@ interface FormErrors {
   password?: string;
   confirmPassword?: string;
   role_name?: string;
-  partner_id?: string;
 }
 
 interface CreateUserModalProps {
@@ -59,7 +57,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
   onClose,
   onUserCreated,
 }) => {
-  const { hasPermission } = useAuth();
+  const { user } = useAuth();
   const { showNotification } = useSimpleNotifications();
 
   // États du formulaire
@@ -69,43 +67,13 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
     password: "",
     confirmPassword: "",
     role_name: "",
-    partner_id: undefined,
   });
 
-  const [partners, setPartners] = useState<PartnerType[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingPartners, setLoadingPartners] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Charger les partenaires
-  useEffect(() => {
-    if (isOpen) {
-      loadPartners();
-    }
-  }, [isOpen]);
-
-  const loadPartners = async () => {
-    try {
-      setLoadingPartners(true);
-      const partnersData = await partnersService.getAllPartners();
-      if (Array.isArray(partnersData)) {
-        setPartners(partnersData);
-      } else if (partnersData && 'items' in partnersData) {
-        setPartners((partnersData as any).items);
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des partenaires:", error);
-      showNotification({
-        type: "error",
-        title: "Erreur",
-        message: "Impossible de charger la liste des partenaires"
-      });
-    } finally {
-      setLoadingPartners(false);
-    }
-  };
 
   // Validation du formulaire
   const validateForm = (): boolean => {
@@ -135,9 +103,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
       newErrors.role_name = "Le rôle est requis";
     }
 
-    if (formData.role_name === "partner" && !formData.partner_id) {
-      newErrors.partner_id = "Le partenaire est requis pour le rôle partner";
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -149,6 +114,15 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
       return;
     }
 
+    if (!user) {
+      showNotification({
+        type: "error",
+        title: "Erreur",
+        message: "Utilisateur non connecté"
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -157,16 +131,15 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
         email: formData.email.trim(),
         password: formData.password,
         role_name: formData.role_name,
-        partner_id: formData.role_name === "partner" ? formData.partner_id : undefined,
         is_active: true,
       };
 
-      await UsersService.createUser(userData);
+      const result = await UsersService.createUser(userData, user.id);
 
       showNotification({
         type: "success",
         title: "Succès",
-        message: "Utilisateur créé avec succès"
+        message: extractBackendMessage(result) || result?.message || "Opération réussie"
       });
 
       // Réinitialiser le formulaire
@@ -176,7 +149,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
         password: "",
         confirmPassword: "",
         role_name: "",
-        partner_id: undefined,
       });
       setErrors({});
 
@@ -185,19 +157,11 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
       onUserCreated();
 
     } catch (error: any) {
-      console.error("Erreur lors de la création de l'utilisateur:", error);
-      
-      let errorMessage = "Une erreur est survenue lors de la création de l'utilisateur";
-      
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (typeof error === "string") {
-        errorMessage = error;
-      }
+      const errorMessage = extractBackendMessage(error);
 
       showNotification({
         type: "error",
-        title: "Erreur de création",
+        title: "Erreur",
         message: errorMessage
       });
     } finally {
@@ -361,10 +325,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                       onSelectionChange={(keys) => {
                         const role = Array.from(keys)[0] as string;
                         handleInputChange("role_name", role);
-                        // Réinitialiser partner_id si on change de rôle
-                        if (role !== "partner") {
-                          handleInputChange("partner_id", "");
-                        }
                       }}
                       isRequired
                       isInvalid={!!errors.role_name}
@@ -377,27 +337,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                       ))}
                     </Select>
                     
-                    {formData.role_name === "partner" && (
-                      <Select
-                        label="Partenaire associé"
-                        placeholder="Sélectionner un partenaire"
-                        selectedKeys={formData.partner_id ? [formData.partner_id.toString()] : []}
-                        onSelectionChange={(keys) => {
-                          const partnerId = Array.from(keys)[0] as string;
-                          handleInputChange("partner_id", partnerId ? parseInt(partnerId) : undefined);
-                        }}
-                        isLoading={loadingPartners}
-                        isRequired
-                        isInvalid={!!errors.partner_id}
-                        errorMessage={errors.partner_id}
-                      >
-                        {partners.map((partner) => (
-                          <SelectItem key={partner.id.toString()}>
-                            {partner.name}
-                          </SelectItem>
-                        ))}
-                      </Select>
-                    )}
                   </div>
                 </div>
               </div>

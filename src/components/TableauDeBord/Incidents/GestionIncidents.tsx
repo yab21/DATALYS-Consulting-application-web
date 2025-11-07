@@ -12,8 +12,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Tabs,
-  Tab,
   Select,
   SelectItem,
   Textarea,
@@ -28,7 +26,6 @@ import {
   DropdownMenu,
   DropdownItem,
   Avatar,
-  Progress,
 } from "@nextui-org/react";
 import { motion } from "framer-motion";
 import { 
@@ -43,10 +40,8 @@ import {
   CheckCircle,
   XCircle,
   ArrowUpRight,
-  Calendar,
   User as UserIcon,
   Timer,
-  TrendingUp,
   Download,
   MessageCircle
 } from "lucide-react";
@@ -54,8 +49,10 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { IncidentsService, type Incident as ApiIncident, type IncidentCriteria, type CreateIncidentData, type UpdateIncidentData } from "@/services/incidents";
+import { extractBackendMessage } from "@/lib/error-handler";
 import { projectsService, type Project } from "@/services/projects";
 import { UsersService, type User as UserType } from "@/services/users";
+import IncidentFilesModal from "./IncidentFilesModal";
 import { partnersService, type Partner } from "@/services/partners";
 
 // Types locaux pour l'interface
@@ -167,6 +164,7 @@ const GestionIncidents: React.FC = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [reopenReason, setReopenReason] = useState("");
+  const [showFilesModal, setShowFilesModal] = useState(false);
   
   // États de loading pour les boutons
   const [isCreating, setIsCreating] = useState(false);
@@ -273,24 +271,26 @@ const GestionIncidents: React.FC = () => {
       try {
         let allUsers: UserType[] = [];
         
-        // Charger les utilisateurs normaux (admins, experts, etc.)
-        try {
-          const response = await UsersService.getUsersByCriteria({
-            index: 0,
-            size: 100,
-            data: { is_active: true }
-          });
-          
-          let usersList: UserType[] = [];
-          if (response.code === 200 && response.items) {
-            usersList = response.items;
-          } else if (Array.isArray(response)) {
-            usersList = response;
+        // Charger les utilisateurs normaux (admins, experts, etc.) - seulement pour les admins
+        if (isAdmin()) {
+          try {
+            const response = await UsersService.getUsersByCriteria({
+              index: 0,
+              size: 100,
+              data: { is_active: true }
+            });
+            
+            let usersList: UserType[] = [];
+            if (response.code === 200 && response.items) {
+              usersList = response.items;
+            } else if (Array.isArray(response)) {
+              usersList = response;
+            }
+            
+            allUsers = [...usersList];
+          } catch (error) {
+            console.error("Erreur chargement utilisateurs:", error);
           }
-          
-          allUsers = [...usersList];
-        } catch (error) {
-          console.error("Erreur chargement utilisateurs:", error);
         }
         
         // Charger AUSSI les partenaires (car un incident peut être assigné à un partenaire)
@@ -354,10 +354,10 @@ const GestionIncidents: React.FC = () => {
   });
 
   // État pour les filtres et pagination
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
-  const [statusFilter, setStatusFilter] = useState<string>("tous");
-  const [priorityFilter, setPriorityFilter] = useState<string>("tous");
+  const [currentPage] = useState(0);
+  const [pageSize] = useState(20);
+  const [statusFilter] = useState<string>("tous");
+  const [priorityFilter] = useState<string>("tous");
   // const [typeFilter, setTypeFilter] = useState<string>("tous"); // Pas utilisé pour l'instant
   
   // État pour les projets et utilisateurs
@@ -469,8 +469,7 @@ const GestionIncidents: React.FC = () => {
     pageSize,
     statusFilter,
     priorityFilter,
-    users, // Ajouter users pour relancer le chargement quand ils sont disponibles
-    loadingUsers
+    users.length // Utiliser users.length au lieu de users pour éviter le double chargement
   ]);
 
   // Filtrage des incidents
@@ -614,7 +613,7 @@ const GestionIncidents: React.FC = () => {
       }
     }
 
-    // Validation de l'expert (obligatoire pour les admins)
+    // Validation de l'expert (obligatoire pour les admins seulement)
     if (isAdmin() && (!createForm.user_id || createForm.user_id === 0)) {
       errors.user_id = "L'assignation d'un expert est obligatoire";
     }
@@ -671,8 +670,8 @@ const GestionIncidents: React.FC = () => {
       errors.project_id = "Le projet est obligatoire";
     }
 
-    // Validation de l'expert
-    if (!editForm.user_id || editForm.user_id === 0) {
+    // Validation de l'expert (obligatoire pour les admins seulement)
+    if (isAdmin() && (!editForm.user_id || editForm.user_id === 0)) {
       errors.user_id = "L'assignation d'un expert est obligatoire";
     }
 
@@ -720,8 +719,8 @@ const GestionIncidents: React.FC = () => {
     
     switch (action) {
       case "view":
-        // Rediriger vers la page de détail de l'incident
-        window.location.href = `/tableaudebord/incidents/${incident.id}`;
+        // Ouvrir le modal de fichiers
+        setShowFilesModal(true);
         break;
       case "edit":
         // Pré-remplir le formulaire d'édition
@@ -881,7 +880,7 @@ const GestionIncidents: React.FC = () => {
       console.log("📝 Données finales de création:", finalCreateForm);
       console.log("📝 User complet:", user);
       
-      await IncidentsService.createIncident(finalCreateForm, user.id, user.email);
+      const result = await IncidentsService.createIncident(finalCreateForm, user.id, user.email);
       
       // Recharger les données
       const criteria: IncidentCriteria = {
@@ -931,15 +930,13 @@ const GestionIncidents: React.FC = () => {
       });
       
       setShowCreateModal(false);
-      showNotification(simpleNotificationHelpers.success("Succès", "Incident créé avec succès"));
-      console.log("✅ Incident créé avec succès");
+      const successMessage = extractBackendMessage(result) || result?.message || 'Opération réussie';
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
       
     } catch (error: any) {
       console.error("❌ Erreur lors de la création de l'incident:", error);
       
-      // Le service incidents va maintenant bien capturer les erreurs API
-      let errorMessage = error.message || "Une erreur inattendue s'est produite";
-      
+      const errorMessage = extractBackendMessage(error);
       showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
     } finally {
       setIsCreating(false);
@@ -969,7 +966,7 @@ const GestionIncidents: React.FC = () => {
         throw new Error('Utilisateur non connecté');
       }
       
-      await IncidentsService.updateIncident(editForm, user.id, user.email);
+      const result = await IncidentsService.updateIncident(editForm, user.id, user.email);
       
       // Mettre à jour l'état local
       setIncidents(prev => prev.map(i => 
@@ -987,15 +984,13 @@ const GestionIncidents: React.FC = () => {
       setShowEditModal(false);
       setSelectedIncident(null);
       setEditFormErrors({});
-      showNotification(simpleNotificationHelpers.success("Succès", "Incident modifié avec succès"));
-      console.log("✅ Incident modifié avec succès");
+      const successMessage = extractBackendMessage(result) || result?.message || 'Opération réussie';
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
       
     } catch (error: any) {
       console.error("❌ Erreur lors de la modification de l'incident:", error);
       
-      // Le service incidents va maintenant bien capturer les erreurs API
-      let errorMessage = error.message || "Une erreur inattendue s'est produite";
-      
+      const errorMessage = extractBackendMessage(error);
       showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
     } finally {
       setIsUpdating(false);
@@ -1010,7 +1005,7 @@ const GestionIncidents: React.FC = () => {
     try {
       console.log("🔄 Suppression de l'incident:", selectedIncident.id);
       
-      await IncidentsService.deleteIncident(parseInt(selectedIncident.id));
+      const result = await IncidentsService.deleteIncident(parseInt(selectedIncident.id));
       
       // Retirer de l'état local
       setIncidents(prev => prev.filter(i => i.id !== selectedIncident.id));
@@ -1018,15 +1013,13 @@ const GestionIncidents: React.FC = () => {
       
       setShowDeleteModal(false);
       setSelectedIncident(null);
-      showNotification(simpleNotificationHelpers.success("Succès", "Incident supprimé avec succès"));
-      console.log("✅ Incident supprimé avec succès");
+      const successMessage = extractBackendMessage(result) || result?.message || 'Opération réussie';
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
       
     } catch (error: any) {
       console.error("❌ Erreur lors de la suppression de l'incident:", error);
       
-      // Le service incidents va maintenant bien capturer les erreurs API
-      let errorMessage = error.message || "Une erreur inattendue s'est produite";
-      
+      const errorMessage = extractBackendMessage(error);
       showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
     } finally {
       setIsDeleting(false);
@@ -1082,7 +1075,7 @@ const GestionIncidents: React.FC = () => {
       
     } catch (error: any) {
       console.error("❌ Erreur lors de l'export:", error);
-      let errorMessage = error.message || "Une erreur inattendue s'est produite lors de l'export";
+      const errorMessage = extractBackendMessage(error);
       showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
     } finally {
       setIsExporting(false);
@@ -1111,8 +1104,56 @@ const GestionIncidents: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 rounded-2xl bg-gray-200 animate-pulse" />
-        <div className="h-96 rounded-2xl bg-gray-200 animate-pulse" />
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Stats skeleton - 6 cartes pour les incidents */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="border border-gray-200 bg-white">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  </div>
+                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+
+        {/* Filters skeleton */}
+        <Card className="border border-gray-200 bg-white">
+          <CardBody className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-10 bg-gray-200 rounded animate-pulse"></div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Table skeleton */}
+        <Card className="border border-gray-200 bg-white">
+          <CardBody className="p-0">
+            <div className="space-y-4 p-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
       </div>
     );
   }
@@ -1513,7 +1554,7 @@ const GestionIncidents: React.FC = () => {
                               startContent={<Eye className="h-4 w-4" />}
                               onPress={() => handleIncidentAction(incident, "view")}
                             >
-                              Voir détails
+                              Voir fichiers
                             </DropdownItem>
                             <DropdownItem
                               key="chat"
@@ -1670,12 +1711,20 @@ const GestionIncidents: React.FC = () => {
                                 startContent={<Eye className="h-4 w-4" />}
                                 onPress={() => handleIncidentAction(incident, "view")}
                               >
-                                Voir détails
+                                Voir fichiers
                               </DropdownItem>
                               <DropdownItem
                                 key="chat"
                                 startContent={<MessageCircle className="h-4 w-4" />}
-                                onPress={() => window.location.href = "/tableaudebord/messages"}
+                                onPress={() => {
+                                  // Passer le contexte de l'incident pour un meilleur suivi
+                                  const messageParams = new URLSearchParams({
+                                    incident_number: incident.incident_number,
+                                    incident_title: incident.titre,
+                                    project_name: incident.projectNom
+                                  });
+                                  window.location.href = `/tableaudebord/messages?${messageParams.toString()}`;
+                                }}
                                 className="text-primary"
                               >
                                 Chat avec support
@@ -1707,12 +1756,20 @@ const GestionIncidents: React.FC = () => {
                                 startContent={<Eye className="h-4 w-4" />}
                                 onPress={() => handleIncidentAction(incident, "view")}
                               >
-                                Voir détails
+                                Voir fichiers
                               </DropdownItem>
                               <DropdownItem
                                 key="chat"
                                 startContent={<MessageCircle className="h-4 w-4" />}
-                                onPress={() => window.location.href = "/tableaudebord/messages"}
+                                onPress={() => {
+                                  // Passer le contexte de l'incident pour un meilleur suivi
+                                  const messageParams = new URLSearchParams({
+                                    incident_number: incident.incident_number,
+                                    incident_title: incident.titre,
+                                    project_name: incident.projectNom
+                                  });
+                                  window.location.href = `/tableaudebord/messages?${messageParams.toString()}`;
+                                }}
                                 className="text-primary"
                               >
                                 Chat avec support
@@ -1922,27 +1979,29 @@ const GestionIncidents: React.FC = () => {
                 }}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <Select
-                  label={isAdmin() ? "Assigné à (Responsable)" : "Assigné à (Facultatif)"}
-                  placeholder={isAdmin() ? "Sélectionnez l'utilisateur responsable" : "Laisser vide ou sélectionner un expert"}
-                  selectedKeys={createForm.user_id ? [createForm.user_id.toString()] : []}
-                  onSelectionChange={(keys) => {
-                    setCreateForm(prev => ({ ...prev, user_id: parseInt(Array.from(keys)[0] as string) || 0 }));
-                    clearCreateFormError('user_id');
-                  }}
-                  isLoading={loadingUsers}
-                  isRequired={isAdmin()} // Obligatoire seulement pour les admins
-                  isDisabled={loadingUsers || users.length === 0} // Désactiver si chargement ou pas d'utilisateurs
-                  isInvalid={!!createFormErrors.user_id}
-                  errorMessage={createFormErrors.user_id}
-                >
-                  {users.map((user) => (
-                    <SelectItem key={user.id.toString()} value={user.id.toString()} textValue={`${user.name} (${user.email})`}>
-                      {user.name} ({user.email})
-                    </SelectItem>
-                  ))}
-                </Select>
+              <div className={`grid gap-4 ${isAdmin() ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {isAdmin() && (
+                  <Select
+                    label="Assigné à (Responsable)"
+                    placeholder="Sélectionnez l'utilisateur responsable"
+                    selectedKeys={createForm.user_id ? [createForm.user_id.toString()] : []}
+                    onSelectionChange={(keys) => {
+                      setCreateForm(prev => ({ ...prev, user_id: parseInt(Array.from(keys)[0] as string) || 0 }));
+                      clearCreateFormError('user_id');
+                    }}
+                    isLoading={loadingUsers}
+                    isRequired
+                    isDisabled={loadingUsers || users.length === 0}
+                    isInvalid={!!createFormErrors.user_id}
+                    errorMessage={createFormErrors.user_id}
+                  >
+                    {users.map((user) => (
+                      <SelectItem key={user.id.toString()} value={user.id.toString()} textValue={`${user.name} (${user.email})`}>
+                        {user.name} ({user.email})
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
                 
                 <Select
                   label="Projet"
@@ -2208,21 +2267,23 @@ const GestionIncidents: React.FC = () => {
                   }}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Select
-                    label="Assigné à (Responsable)"
-                    placeholder="Sélectionnez l'utilisateur responsable"
-                    selectedKeys={editForm.user_id ? [editForm.user_id.toString()] : []}
-                    onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, user_id: parseInt(Array.from(keys)[0] as string) }))}
-                    isLoading={loadingUsers}
-                    isRequired
-                  >
-                    {users.map((user) => (
-                      <SelectItem key={user.id.toString()} value={user.id.toString()} textValue={`${user.name} (${user.email})`}>
-                        {user.name} ({user.email})
-                      </SelectItem>
-                    ))}
-                  </Select>
+                <div className={`grid gap-4 ${isAdmin() ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {isAdmin() && (
+                    <Select
+                      label="Assigné à (Responsable)"
+                      placeholder="Sélectionnez l'utilisateur responsable"
+                      selectedKeys={editForm.user_id ? [editForm.user_id.toString()] : []}
+                      onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, user_id: parseInt(Array.from(keys)[0] as string) }))}
+                      isLoading={loadingUsers}
+                      isRequired
+                    >
+                      {users.map((user) => (
+                        <SelectItem key={user.id.toString()} value={user.id.toString()} textValue={`${user.name} (${user.email})`}>
+                          {user.name} ({user.email})
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  )}
                   
                   <Select
                     label="Projet"
@@ -2689,6 +2750,19 @@ const GestionIncidents: React.FC = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Modal de gestion des fichiers */}
+      {selectedIncident && (
+        <IncidentFilesModal
+          isOpen={showFilesModal}
+          onClose={() => {
+            setShowFilesModal(false);
+            setSelectedIncident(null);
+          }}
+          incidentId={parseInt(selectedIncident.id)}
+          incidentTitle={`#${selectedIncident.incident_number} - ${selectedIncident.titre}`}
+        />
+      )}
     </div>
   );
 };

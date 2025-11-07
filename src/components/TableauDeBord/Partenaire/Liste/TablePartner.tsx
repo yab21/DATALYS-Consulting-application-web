@@ -26,19 +26,14 @@ import {
 import { 
   Search, 
   Edit, 
-  Eye, 
   Trash2,
   Plus,
   Phone,
   Filter,
-  Users,
   Shield,
-  CheckCircle,
-  Clock,
   Calendar,
   UserCheck,
   UserX,
-  FolderOpen,
   MoreVertical,
   RefreshCw
 } from "lucide-react";
@@ -58,6 +53,7 @@ interface ModalState {
   type: 'edit' | 'delete' | 'view' | 'create' | null;
   partner: Partner | null;
 }
+
 
 // Interface pour les filtres
 interface TableFilters {
@@ -123,6 +119,7 @@ const TablePartner: React.FC = () => {
   });
   
   
+  
   // Gestion des erreurs d'images
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   
@@ -142,9 +139,11 @@ const TablePartner: React.FC = () => {
   const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
     if (!url) return url;
     
+    
     // Les URLs passent par le proxy pour éviter les mixed content
     if (url.includes('82.112.253.137:8082/files/serve/')) {
-      return url.replace('http://82.112.253.137:8082', '/api/proxy');
+      const fixedUrl = url.replace('http://82.112.253.137:8082', '/api/proxy');
+      return fixedUrl;
     }
     
     // Pour les URLs avec localhost:8081
@@ -174,20 +173,38 @@ const TablePartner: React.FC = () => {
       return `/api/proxy/files/serve/logos/${filename}`;
     }
     
+    // Vérifier si l'URL pointe vers /files/serve/ (nouveau format d'upload)
+    if (url.includes('/files/serve/')) {
+      // Si c'est déjà un chemin /api/proxy/files/serve/, le garder tel quel
+      if (url.startsWith('/api/proxy/files/serve/')) {
+        return url;
+      }
+      // Sinon, ajouter le prefix /api/proxy
+      if (url.startsWith('/files/serve/')) {
+        return `/api/proxy${url}`;
+      }
+    }
+    
+    // Ignorer les URLs placeholder ou de test
+    if (url.includes('example.com') || url.includes('placeholder')) {
+      return undefined;
+    }
+    
     return url;
   }, []);
 
   // Gestion des erreurs d'images
-  const handleImageError = useCallback((partnerId: number, imageUrl?: string) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(`🖼️ Image indisponible pour le partenaire ${partnerId}:`, imageUrl);
-    }
+  const handleImageError = useCallback((partnerId: number) => {
     setImageErrors(prev => new Set(prev).add(partnerId.toString()));
   }, []);
 
   // Validation d'URL d'image
   const isValidImageUrl = useCallback((url: string | undefined): boolean => {
     if (!url) return false;
+    
+    // Accepter les URLs relatives (commençant par /)
+    if (url.startsWith('/')) return true;
+    
     try {
       const urlObj = new URL(url);
       return ['http:', 'https:'].includes(urlObj.protocol);
@@ -224,7 +241,6 @@ const TablePartner: React.FC = () => {
         avgProjectsPerPartner
       };
     } catch (error) {
-      console.error('Erreur calcul statistiques partenaires:', error);
       return {
         totalPartners: partners.length,
         activePartners: partners.filter(p => p.is_active).length,
@@ -240,19 +256,12 @@ const TablePartner: React.FC = () => {
   const loadPartners = useCallback(async () => {
     // Attendre que l'authentification soit chargée
     if (authLoading) {
-      console.log("🔄 Authentification en cours de chargement...");
       return;
     }
 
     const token = SecureStorage.getItem('authToken');
-    console.log("🔑 Debug état authentification table:", {
-      isAuthenticated,
-      authLoading,
-      token: token ? `${token.substring(0, 20)}...` : null,
-    });
 
     if (!isAuthenticated) {
-      console.log("❌ Utilisateur non authentifié");
       setError("Vous devez être connecté pour voir les partenaires");
       setLoading(false);
       return;
@@ -260,27 +269,23 @@ const TablePartner: React.FC = () => {
 
     // Vérification des permissions - Seuls les admins peuvent voir les partenaires
     if (!isAdmin()) {
-      console.log("❌ Accès refusé - Utilisateur non administrateur");
       setError("Accès refusé. Seuls les administrateurs peuvent gérer les partenaires.");
       setLoading(false);
       return;
     }
 
     if (!token) {
-      console.log("❌ Token manquant");
       setError("Token d'authentification manquant");
       setLoading(false);
       return;
     }
 
-    console.log("✅ Utilisateur authentifié, chargement des partenaires...");
     setLoading(true);
     setError(null);
     
     try {
       // S'assurer que le token est bien défini dans le service
       partnersService.setToken(token);
-      console.log("🔐 Token défini dans le service pour la table");
       
       // Préparer les paramètres de la requête
       const params: GetPartnersParams = {
@@ -301,9 +306,7 @@ const TablePartner: React.FC = () => {
         params.data!.is_active = false;
       }
 
-      console.log("📡 Appel API getPartners avec params:", params);
       const result = await partnersService.getPartners(params);
-      console.log("📋 Résultat getPartners:", result);
       
       if (result.items) {
         // Corriger les URLs d'images
@@ -342,7 +345,6 @@ const TablePartner: React.FC = () => {
         }));
       }
     } catch (err) {
-      console.error("❌ Erreur lors du chargement des partenaires:", err);
       setError(`Erreur lors du chargement des partenaires: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
     } finally {
       setLoading(false);
@@ -392,12 +394,71 @@ const TablePartner: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Gestion des Partenaires
-          </h1>
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+          </div>
         </div>
-        <LoadingState type="skeleton" skeletonVariant="card" skeletonCount={6} />
+
+        {/* Stats skeleton - 4 cartes pour les partenaires */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                </div>
+                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="h-10 bg-gray-200 rounded animate-pulse flex-1 max-w-md"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse w-40"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse w-32"></div>
+          </div>
+        </div>
+
+        {/* Table skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+              <div className="h-5 bg-gray-200 rounded w-20 animate-pulse"></div>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-32 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -496,7 +557,7 @@ const TablePartner: React.FC = () => {
           {
             title: "Total Partenaires",
             value: stats.totalPartners,
-            icon: <Users className="h-5 w-5" />,
+            icon: <UserCheck className="h-5 w-5" />,
             color: "bg-[#4ba9b7]",
             textColor: "text-[#4ba9b7]"
           },
@@ -524,7 +585,7 @@ const TablePartner: React.FC = () => {
           {
             title: "Avec Projets",
             value: stats.partnersWithProjects,
-            icon: <FolderOpen className="h-5 w-5" />,
+            icon: <Shield className="h-5 w-5" />,
             color: "bg-purple-500", 
             textColor: "text-purple-600"
           },
@@ -673,16 +734,17 @@ const TablePartner: React.FC = () => {
                 <TableCell>
                   <div className="flex items-center gap-3">
                     {isValidImageUrl(partner.logo_url) && !imageErrors.has(partner.id.toString()) ? (
-                      <Avatar
-                        size="sm"
-                        src={fixImageUrl(partner.logo_url)!}
-                        name={partner.name.charAt(0)}
-                        className="bg-blue-500 text-white"
-                        onError={() => handleImageError(partner.id, partner.logo_url)}
-                      />
+                      <div className="w-12 h-12 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                        <img
+                          src={fixImageUrl(partner.logo_url)!}
+                          alt={`Logo ${partner.name}`}
+                          className="w-full h-full object-contain"
+                          onError={() => handleImageError(partner.id)}
+                        />
+                      </div>
                     ) : (
                       <Avatar
-                        size="sm"
+                        size="md"
                         name={partner.name.charAt(0)}
                         className="bg-blue-500 text-white"
                       />
@@ -730,24 +792,6 @@ const TablePartner: React.FC = () => {
                     </DropdownTrigger>
                     <DropdownMenu aria-label="Actions du partenaire">
                       <DropdownItem
-                        key="view"
-                        startContent={<Eye className="h-4 w-4" />}
-                        onPress={() => setModalState({
-                          isOpen: true,
-                          type: 'view',
-                          partner
-                        })}
-                      >
-                        Voir détails
-                      </DropdownItem>
-                      <DropdownItem
-                        key="projects"
-                        startContent={<Users className="h-4 w-4" />}
-                        onPress={() => window.open(`/tableaudebord/partenaire/${partner.id}`, '_blank')}
-                      >
-                        Voir projets
-                      </DropdownItem>
-                      <DropdownItem
                         key="edit"
                         startContent={<Edit className="h-4 w-4" />}
                         onPress={() => setModalState({
@@ -789,6 +833,7 @@ const TablePartner: React.FC = () => {
         onSuccess={handleModalSuccess}
         onError={handleModalError}
       />
+      
     </div>
   );
 };
