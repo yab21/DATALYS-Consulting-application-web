@@ -543,12 +543,12 @@ const OptimizedProjectList: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="mb-2 sm:mb-3 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               {user?.role_id === 1 ? "Gestion des Projets" : "Mes Projets"}
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-sm sm:text-lg text-gray-600 dark:text-gray-300">
               Gestion et suivi de vos projets en cours
             </p>
           </div>
@@ -560,7 +560,7 @@ const OptimizedProjectList: React.FC = () => {
               size="lg"
               startContent={<Plus className="h-5 w-5" />}
               onPress={() => setModalState({ isOpen: true, type: 'create', project: null })}
-              className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-6 py-3 font-semibold shadow-lg"
+              className="bg-gradient-to-r from-[#4ba9b7] to-[#6bb6c7] px-4 py-2 sm:px-6 sm:py-3 font-semibold shadow-lg w-full sm:w-auto"
             >
               Nouveau Projet
             </Button>
@@ -569,7 +569,7 @@ const OptimizedProjectList: React.FC = () => {
       </motion.div>
 
       {/* Statistiques étendues */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 xl:grid-cols-6">
         {(() => {
           const stats = calculateProjectStats(projects);
           const projectStatsCards = [
@@ -625,18 +625,20 @@ const OptimizedProjectList: React.FC = () => {
               transition={{ delay: index * 0.1 }}
             >
               <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                <CardBody className="p-6">
+                <CardBody className="p-3 sm:p-4 md:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                         {stat.title}
                       </p>
-                      <p className={`text-2xl font-bold ${stat.textColor} dark:text-white`}>
+                      <p className={`text-lg sm:text-xl md:text-2xl font-bold ${stat.textColor} dark:text-white`}>
                         {stat.value}
                       </p>
                     </div>
-                    <div className={`${stat.color} rounded-lg p-3 text-white`}>
-                      {stat.icon}
+                    <div className={`${stat.color} rounded-lg p-2 sm:p-3 text-white flex-shrink-0`}>
+                      <div className="w-4 h-4 sm:w-5 sm:h-5">
+                        {stat.icon}
+                      </div>
                     </div>
                   </div>
                 </CardBody>
@@ -653,18 +655,16 @@ const OptimizedProjectList: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="flex-1">
-            <Input
-              placeholder="Rechercher un projet..."
-              value={searchTerm}
-              onValueChange={setSearchTerm}
-              startContent={<Search className="h-4 w-4 text-gray-400" />}
-              className="max-w-md"
-              size="lg"
-            />
-          </div>
-          <div className="flex items-center gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Input
+            placeholder="Rechercher un projet..."
+            value={searchTerm}
+            onValueChange={setSearchTerm}
+            startContent={<Search className="h-4 w-4 text-gray-400" />}
+            size="lg"
+            className="md:col-span-2"
+          />
+          <div className="flex items-center gap-4 md:col-span-2 justify-end">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Filtres:</span>
@@ -675,7 +675,7 @@ const OptimizedProjectList: React.FC = () => {
               <Select
                 selectedKeys={selectedPartner ? [selectedPartner] : []}
                 onSelectionChange={handlePartnerChange}
-                className="min-w-[180px]"
+                className="min-w-[160px] sm:min-w-[180px]"
                 size="sm"
                 placeholder="Partenaire"
                 items={[{ key: "tous", label: "Tous les partenaires" }, ...partnerNames.map(name => ({ key: name, label: name }))]}
@@ -694,6 +694,7 @@ const OptimizedProjectList: React.FC = () => {
               onPress={loadInitialData}
               isLoading={loading}
               size="sm"
+              className="min-h-[40px] min-w-[40px]"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -708,23 +709,129 @@ const OptimizedProjectList: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Table 
-          aria-label="Table des projets"
-          selectionMode="none"
-          className="w-full"
-          classNames={{
-            wrapper: "min-h-[400px] shadow-none border border-gray-200 dark:border-gray-700 w-full",
-            table: "min-h-[200px] w-full table-fixed",
-            th: "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-sm",
-            td: "py-4 px-3",
-          }}
-          bottomContent={
-            filteredProjects.length > 0 ? (
-              <div className="flex w-full justify-between items-center px-2 py-4">
-                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                  Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, filteredProjects.length)} sur {filteredProjects.length} projets
+        {/* Vue mobile - Cards */}
+        <div className="block lg:hidden">
+          <div className="space-y-4">
+            {paginatedProjects.map((project) => (
+              <Card key={project.id} className="border border-gray-200 dark:border-gray-700">
+                <CardBody className="p-4">
+                  <div className="space-y-3">
+                    {/* Header avec titre et statut */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Avatar
+                          size="sm"
+                          name={project.title.charAt(0)}
+                          className="bg-blue-500 text-white flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                            {project.title}
+                          </p>
+                        </div>
+                      </div>
+                      <Chip
+                        className="capitalize ml-2 flex-shrink-0"
+                        color={project.is_active ? "success" : "warning"}
+                        size="sm"
+                        variant="flat"
+                      >
+                        {project.is_active ? "Actif" : "Inactif"}
+                      </Chip>
+                    </div>
+                    
+                    {/* Informations secondaires */}
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-500" />
+                        <span className="text-gray-600 dark:text-gray-400 truncate max-w-[140px]">
+                          {project.partner_name || "Non assigné"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-gray-500 flex-shrink-0">
+                        <Calendar className="h-3 w-3" />
+                        <span className="text-xs">{formatDate(project.created_at)}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Actions avec cibles tactiles optimisées */}
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        startContent={<FolderOpen className="h-4 w-4" />}
+                        onPress={() => setFilesModalState({ isOpen: true, project })}
+                        className="flex-1 min-h-[44px]"
+                      >
+                        Fichiers
+                      </Button>
+                      {user?.role_id === 1 && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            startContent={<Edit className="h-4 w-4" />}
+                            onPress={() => handleProjectAction(project, 'edit')}
+                            className="flex-1 min-h-[44px]"
+                          >
+                            Modifier
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            color="danger"
+                            startContent={<Trash2 className="h-4 w-4" />}
+                            onPress={() => handleProjectAction(project, 'delete')}
+                            className="min-h-[44px] px-3"
+                            isIconOnly
+                          >
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+          
+          {/* Pagination mobile responsive */}
+          {filteredProjects.length > itemsPerPage && (
+            <div className="mt-6 space-y-3">
+              <div className="text-center">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredProjects.length)} sur {filteredProjects.length}
                 </span>
-                {filteredProjects.length > 10 && (
+              </div>
+              <div className="flex justify-center">
+                <Pagination
+                  isCompact
+                  showControls={totalPages > 5}
+                  showShadow
+                  color="primary"
+                  page={currentPage}
+                  total={totalPages}
+                  onChange={setCurrentPage}
+                  size="sm"
+                  className="gap-1"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Vue desktop - Table améliorée */}
+        <div className="hidden lg:block">
+          <Table 
+            aria-label="Table des projets"
+            selectionMode="none"
+            className="w-full"
+            bottomContent={
+              filteredProjects.length > itemsPerPage ? (
+                <div className="flex w-full justify-between items-center px-4 py-4">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, filteredProjects.length)} sur {filteredProjects.length} projets
+                  </span>
                   <Pagination
                     isCompact
                     showControls
@@ -734,18 +841,17 @@ const OptimizedProjectList: React.FC = () => {
                     total={totalPages}
                     onChange={setCurrentPage}
                   />
-                )}
-              </div>
-            ) : null
-          }
+                </div>
+              ) : null
+            }
         >
-          <TableHeader>
-            <TableColumn key="project" width="35%">PROJET</TableColumn>
-            <TableColumn key="partner" width="20%">PARTENAIRE</TableColumn>
-            <TableColumn key="status" width="15%">STATUT</TableColumn>
-            <TableColumn key="created" width="15%">CRÉÉ LE</TableColumn>
-            <TableColumn key="actions" width="15%">ACTIONS</TableColumn>
-          </TableHeader>
+            <TableHeader>
+              <TableColumn key="project">PROJET</TableColumn>
+              <TableColumn key="partner">PARTENAIRE</TableColumn>
+              <TableColumn key="status">STATUT</TableColumn>
+              <TableColumn key="created">CRÉÉ LE</TableColumn>
+              <TableColumn key="actions">ACTIONS</TableColumn>
+            </TableHeader>
           <TableBody 
             items={paginatedProjects}
             emptyContent={
@@ -834,8 +940,9 @@ const OptimizedProjectList: React.FC = () => {
                 </TableCell>
               </TableRow>
             )}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </motion.div>
 
       {/* Modals */}
