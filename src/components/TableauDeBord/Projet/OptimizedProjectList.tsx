@@ -709,137 +709,27 @@ const OptimizedProjectList: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        {/* Vue mobile - Cards */}
-        <div className="block lg:hidden">
-          <div className="space-y-4">
-            {paginatedProjects.map((project) => (
-              <Card key={project.id} className="border border-gray-200 dark:border-gray-700">
-                <CardBody className="p-4">
-                  <div className="space-y-3">
-                    {/* Header avec titre et statut */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <Avatar
-                          size="sm"
-                          name={project.title.charAt(0)}
-                          className="bg-blue-500 text-white flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                            {project.title}
-                          </p>
-                        </div>
-                      </div>
-                      <Chip
-                        className="capitalize ml-2 flex-shrink-0"
-                        color={project.is_active ? "success" : "warning"}
-                        size="sm"
-                        variant="flat"
-                      >
-                        {project.is_active ? "Actif" : "Inactif"}
-                      </Chip>
-                    </div>
-                    
-                    {/* Informations secondaires */}
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-600 dark:text-gray-400 truncate max-w-[140px]">
-                          {project.partner_name || "Non assigné"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-500 flex-shrink-0">
-                        <Calendar className="h-3 w-3" />
-                        <span className="text-xs">{formatDate(project.created_at)}</span>
-                      </div>
-                    </div>
-                    
-                    {/* Actions avec cibles tactiles optimisées */}
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        variant="flat"
-                        startContent={<FolderOpen className="h-4 w-4" />}
-                        onPress={() => setFilesModalState({ isOpen: true, project })}
-                        className="flex-1 min-h-[44px]"
-                      >
-                        Fichiers
-                      </Button>
-                      {user?.role_id === 1 && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            startContent={<Edit className="h-4 w-4" />}
-                            onPress={() => handleProjectAction(project, 'edit')}
-                            className="flex-1 min-h-[44px]"
-                          >
-                            Modifier
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="flat"
-                            color="danger"
-                            startContent={<Trash2 className="h-4 w-4" />}
-                            onPress={() => handleProjectAction(project, 'delete')}
-                            className="min-h-[44px] px-3"
-                            isIconOnly
-                          >
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-          
-          {/* Pagination mobile responsive */}
-          {filteredProjects.length > itemsPerPage && (
-            <div className="mt-6 space-y-3">
-              <div className="text-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredProjects.length)} sur {filteredProjects.length}
-                </span>
-              </div>
-              <div className="flex justify-center">
-                <Pagination
-                  isCompact
-                  showControls={totalPages > 5}
-                  showShadow
-                  color="primary"
-                  page={currentPage}
-                  total={totalPages}
-                  onChange={setCurrentPage}
-                  size="sm"
-                  className="gap-1"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Vue desktop - Table améliorée */}
-        <div className="hidden lg:block">
+        {/* Table responsive unique pour tous les écrans */}
           <Table 
             aria-label="Table des projets"
             selectionMode="none"
             className="w-full"
             bottomContent={
               filteredProjects.length > itemsPerPage ? (
-                <div className="flex w-full justify-between items-center px-4 py-4">
-                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                    Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, filteredProjects.length)} sur {filteredProjects.length} projets
+                <div className="flex flex-col sm:flex-row w-full justify-between items-center px-2 sm:px-4 py-3 sm:py-4 gap-3 sm:gap-0">
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium text-center sm:text-left">
+                    {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredProjects.length)} sur {filteredProjects.length}
                   </span>
                   <Pagination
                     isCompact
-                    showControls
+                    showControls={totalPages > 3}
                     showShadow
                     color="primary"
                     page={currentPage}
                     total={totalPages}
                     onChange={setCurrentPage}
+                    size="sm"
+                    className="flex justify-center"
                   />
                 </div>
               ) : null
@@ -847,9 +737,9 @@ const OptimizedProjectList: React.FC = () => {
         >
             <TableHeader>
               <TableColumn key="project">PROJET</TableColumn>
-              <TableColumn key="partner">PARTENAIRE</TableColumn>
+              <TableColumn key="partner" className="hidden sm:table-cell">PARTENAIRE</TableColumn>
               <TableColumn key="status">STATUT</TableColumn>
-              <TableColumn key="created">CRÉÉ LE</TableColumn>
+              <TableColumn key="created" className="hidden md:table-cell">CRÉÉ LE</TableColumn>
               <TableColumn key="actions">ACTIONS</TableColumn>
             </TableHeader>
           <TableBody 
@@ -864,67 +754,86 @@ const OptimizedProjectList: React.FC = () => {
             {(project) => (
               <TableRow key={project.id}>
                 <TableCell>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <Avatar
                       size="sm"
                       name={project.title.charAt(0)}
-                      className="bg-blue-500 text-white"
+                      className="bg-blue-500 text-white flex-shrink-0"
                     />
-                    <div className="flex flex-col">
-                      <p className="font-semibold text-sm text-gray-900 dark:text-white">{project.title}</p>
+                    <div className="flex flex-col min-w-0">
+                      <p className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-none">
+                        {project.title}
+                      </p>
+                      {/* Afficher le partenaire sur mobile quand la colonne est masquée */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 sm:hidden truncate max-w-[120px]">
+                        {project.partner_name || "Non assigné"}
+                      </p>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{project.partner_name || "Non assigné"}</span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[140px]">
+                      {project.partner_name || "Non assigné"}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Chip
-                    className="capitalize"
-                    color={project.is_active ? "success" : "warning"}
-                    size="sm"
-                    variant="flat"
-                  >
-                    {project.is_active ? "Actif" : "Inactif"}
-                  </Chip>
+                  <div className="flex flex-col gap-1">
+                    <Chip
+                      className="capitalize"
+                      color={project.is_active ? "success" : "warning"}
+                      size="sm"
+                      variant="flat"
+                    >
+                      {project.is_active ? "Actif" : "Inactif"}
+                    </Chip>
+                    {/* Afficher la date sur mobile quand la colonne est masquée */}
+                    <span className="text-xs text-gray-500 dark:text-gray-400 md:hidden">
+                      {formatDate(project.created_at)}
+                    </span>
+                  </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {formatDate(project.created_at)}
                   </span>
                 </TableCell>
                 <TableCell>
-                  <Dropdown>
-                    <DropdownTrigger>
-                      <Button
-                        isIconOnly
-                        variant="light" 
-                        size="sm"
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="Actions du projet">
-                      {[
-                        <DropdownItem
-                          key="files"
-                          startContent={<FolderOpen className="h-4 w-4" />}
-                          onPress={() => setFilesModalState({ isOpen: true, project })}
-                        >
-                          Gérer fichiers
-                        </DropdownItem>,
-                        ...(user?.role_id === 1 ? [
+                  <div className="flex items-center gap-1">
+                    {/* Action principale toujours visible */}
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      isIconOnly
+                      onPress={() => setFilesModalState({ isOpen: true, project })}
+                      className="min-h-[36px] min-w-[36px]"
+                    >
+                      <FolderOpen className="h-4 w-4" />
+                    </Button>
+                    
+                    {/* Actions admin via dropdown */}
+                    {user?.role_id === 1 && (
+                      <Dropdown>
+                        <DropdownTrigger>
+                          <Button
+                            isIconOnly
+                            variant="light" 
+                            size="sm"
+                            className="text-gray-500 hover:text-gray-700 min-h-[36px] min-w-[36px]"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu aria-label="Actions du projet">
                           <DropdownItem
                             key="edit"
                             startContent={<Edit className="h-4 w-4" />}
                             onPress={() => handleProjectAction(project, 'edit')}
                           >
                             Modifier
-                          </DropdownItem>,
+                          </DropdownItem>
                           <DropdownItem
                             key="delete"
                             startContent={<Trash2 className="h-4 w-4" />}
@@ -933,16 +842,15 @@ const OptimizedProjectList: React.FC = () => {
                           >
                             Supprimer
                           </DropdownItem>
-                        ] : [])
-                      ]}
-                    </DropdownMenu>
-                  </Dropdown>
+                        </DropdownMenu>
+                      </Dropdown>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             )}
             </TableBody>
           </Table>
-        </div>
       </motion.div>
 
       {/* Modals */}
