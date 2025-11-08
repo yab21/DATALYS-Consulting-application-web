@@ -53,7 +53,7 @@ class ApiInterceptor {
       "invalid token",
       "token invalide",
       "unauthorized access",
-      "accès non autorisé",
+      // "accès non autorisé", // Retiré car peut être une vraie erreur de permissions pour les partenaires
       "please login again",
       "veuillez vous reconnecter"
     ];
@@ -115,12 +115,12 @@ class ApiInterceptor {
         if (messageText && typeof messageText === 'string') {
           const message = messageText.toLowerCase();
           // Si le message parle de token/auth = token expiré
-          if (message.includes('token') || message.includes('auth') || message.includes('session')) {
+          if (message.includes('token') || message.includes('authentification') || message.includes('session')) {
             console.log('🔒 Token expiré détecté via code 403 avec message auth:', messageText);
             return true;
           }
-          // Si le message parle de permissions = vraie erreur de permissions
-          if (message.includes('permission') || message.includes('forbidden') || message.includes('access denied')) {
+          // Si le message parle de permissions ou d'accès partenaire = vraie erreur de permissions
+          if (message.includes('permission') || message.includes('forbidden') || message.includes('access denied') || message.includes('accès non autorisé')) {
             console.warn('⚠️ Erreur de permissions détectée (403):', messageText);
             return false;
           }
@@ -138,7 +138,8 @@ class ApiInterceptor {
           '/permissions/',
           '/admin/',
           '/partners/all',
-          '/projects/all'
+          '/projects/all',
+          '/dashboard/partner/' // Ajout pour éviter de traiter les erreurs 403 des partenaires comme des expirations
         ];
         
         // Si l'URL contient un de ces endpoints, c'est probablement une vraie erreur de permissions

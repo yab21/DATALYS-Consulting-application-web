@@ -307,9 +307,9 @@ export class AuthService {
       fcm_token: safeUserData.fcm_token,
     };
 
-    // Stocker dans localStorage pour cohérence avec AuthContext
-    localStorage.setItem("authToken", data.token || "");
-    localStorage.setItem("userInfo", JSON.stringify(userInfo));
+    // Utiliser SecureStorage pour une gestion unifiée des tokens
+    SecureStorage.setItem("authToken", data.token || "");
+    SecureStorage.setItem("userInfo", JSON.stringify(userInfo));
 
     // Stocker aussi dans les cookies sécurisés pour l'accès côté serveur (middleware)
     const isProduction = process.env.NODE_ENV === 'production';
@@ -325,7 +325,10 @@ export class AuthService {
   static clearAuthData(): void {
     if (typeof window === "undefined") return;
 
-    // Supprimer du localStorage
+    // Supprimer du SecureStorage et localStorage (pour compatibilité)
+    SecureStorage.removeItem("authToken");
+    SecureStorage.removeItem("userInfo");
+    // Nettoyer aussi localStorage au cas où
     localStorage.removeItem("authToken");
     localStorage.removeItem("userInfo");
     
