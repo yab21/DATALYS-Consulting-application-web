@@ -1925,8 +1925,8 @@ const GestionIncidents: React.FC = () => {
         size="2xl"
         scrollBehavior="inside"
         classNames={{
-          wrapper: "z-[60]",
-          backdrop: "z-[59]"
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
         }}
       >
         <ModalContent>

@@ -368,26 +368,46 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         // 🔍 LOG 3: Avant rechargement (en s'assurant de rester dans le dossier parent)
         console.log('🔍 [DEBUG CREATION DOSSIER] - Avant rechargement des données...', {
           currentFolderIdAvantReload: currentFolderId,
-          shouldStayInSameFolder: true
+          shouldStayInSameFolder: true,
+          newFolderInfo: {
+            id: newFolder.id,
+            name: newFolder.name,
+            parent_folder_id: newFolder.parent_folder_id,
+            project_id: newFolder.project_id
+          }
         });
         
-        // Recharger sans changer de dossier courant
-        await loadCurrentFolder();
+        // Vider le cache des statistiques pour forcer le rechargement
+        projectFilesService.clearStatsCache();
         
-        // 🔍 LOG 4: Après rechargement
-        console.log('🔍 [DEBUG CREATION DOSSIER] - Rechargement terminé', {
-          currentFolderIdApresReload: currentFolderId
-        });
+        // Recharger sans changer de dossier courant avec un délai pour s'assurer que le backend a bien sauvegardé
+        setTimeout(async () => {
+          await loadCurrentFolder();
+          
+          // 🔍 LOG 4: Après rechargement
+          console.log('🔍 [DEBUG CREATION DOSSIER] - Rechargement terminé', {
+            currentFolderIdApresReload: currentFolderId,
+            foldersCount: folders.length,
+            newFolderVisible: folders.some(f => f.id === newFolder.id)
+          });
+        }, 500);
       } else {
         console.error('🔍 [DEBUG CREATION DOSSIER] - Échec: newFolder est null/undefined');
         throw new Error('Erreur lors de la création');
       }
     } catch (error) {
       console.error('🔍 [DEBUG CREATION DOSSIER] - Exception:', error);
+      
+      // Analyser le type d'erreur pour afficher un message approprié
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      const isPermissionError = errorMessage.includes('permissions') || errorMessage.includes('Permission denied');
+      
       showNotification({
         type: 'error',
-        title: 'Erreur',
-        message: 'Impossible de créer le dossier'
+        title: isPermissionError ? 'Erreur de permissions' : 'Erreur',
+        message: isPermissionError 
+          ? 'Problème de permissions sur le serveur. Contactez l\'administrateur système pour corriger les droits d\'écriture du répertoire de fichiers.'
+          : 'Impossible de créer le dossier. Vérifiez que le dossier parent existe.'
       });
     } finally {
       setCreatingFolder(false);

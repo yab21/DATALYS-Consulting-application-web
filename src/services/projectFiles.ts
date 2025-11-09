@@ -172,6 +172,17 @@ export class ProjectFilesService {
         const folders = data.items || [];
         
         // 🔧 VALIDATION: Vérifier que tous les dossiers retournés correspondent au filtrage demandé
+        console.log('🔍 [DEBUG FILTRAGE] - Analyse avant filtrage:', {
+          totalFolders: folders.length,
+          expectedParentId: parentFolderId,
+          foldersDetails: folders.map(f => ({
+            id: f.id,
+            name: f.name,
+            parent_folder_id: f.parent_folder_id,
+            matches: f.parent_folder_id === parentFolderId
+          }))
+        });
+
         const filteredFolders = folders.filter(folder => {
           const isCorrectParent = folder.parent_folder_id === parentFolderId;
           if (!isCorrectParent) {
@@ -179,9 +190,14 @@ export class ProjectFilesService {
               folder: {
                 id: folder.id,
                 name: folder.name,
-                parent_folder_id: folder.parent_folder_id
+                parent_folder_id: folder.parent_folder_id,
+                expected: parentFolderId,
+                actualType: typeof folder.parent_folder_id,
+                expectedType: typeof parentFolderId,
+                comparison: `${folder.parent_folder_id} === ${parentFolderId}`,
+                strictEqual: folder.parent_folder_id === parentFolderId,
+                looseEqual: folder.parent_folder_id == parentFolderId
               },
-              expectedParentId: parentFolderId,
               shouldBeFiltered: true
             });
           }
@@ -269,7 +285,7 @@ export class ProjectFilesService {
   }
 
   /**
-   * Créer un nouveau dossier (avec logs de debug)
+   * Créer un nouveau dossier (avec logs de debug et fallback)
    */
   async createFolder(
     name: string,
@@ -289,7 +305,25 @@ export class ProjectFilesService {
         }]
       };
 
+      // 🔍 VALIDATION: Vérifier que le dossier parent existe avant création
       if (parentFolderId !== undefined && parentFolderId !== null) {
+        // Vérifier l'existence du dossier parent
+        const parentFolders = await this.getFolders(null, projectId);
+        const parentExists = parentFolders.some(f => f.id === parentFolderId);
+        
+        if (!parentExists) {
+          console.error('🔍 [DEBUG SERVICE] - Dossier parent non trouvé:', {
+            parentFolderId,
+            availableFolders: parentFolders.map(f => ({ id: f.id, name: f.name }))
+          });
+          throw new Error(`Dossier parent avec ID ${parentFolderId} non trouvé`);
+        }
+        
+        console.log('🔍 [DEBUG SERVICE] - Dossier parent validé:', {
+          parentFolderId,
+          parentExists: true
+        });
+        
         requestData.datas[0].parent_folder_id = parentFolderId;
       }
 
@@ -297,13 +331,129 @@ export class ProjectFilesService {
         requestData.datas[0].project_id = projectId;
       }
 
-      // 🔍 LOG: Requête envoyée
-      console.log('🔍 [DEBUG SERVICE] - Requête createFolder:', {
-        name: name.trim(),
-        description: description.trim(),
+      // 🔍 LOG: Requête complète envoyée au backend
+      console.log('🔍 [DEBUG SERVICE] - Requête complète envoyée au backend:', {
+        url: '/api/proxy/folders/create',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData, null, 2),
+        parameters: {
+          name: name.trim(),
+          description: description.trim(),
+          parentFolderId,
+          projectId,
+          userId
+        },
+        backendExpectedFormat: {
+          explanation: "Backend attend selon doc: parent_folder_id (ID du parent) + project_id",
+          option1: "parent_folder_id + project_id",
+          option2: "parent_folder_name + project_name"
+        }
+      });
+
+      const response = await securedFetch('/api/proxy/folders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const data: any = await response.json();
+
+      // 🔍 LOG: Réponse complète du backend
+      console.log('🔍 [DEBUG SERVICE] - Réponse complète du backend createFolder:', {
+        httpStatus: response.status,
+        httpStatusText: response.statusText,
+        responseHeaders: Object.fromEntries(response.headers.entries()),
+        responseBody: data,
+        success: data.code === 200,
+        hasItems: !!(data.items && data.items.length > 0),
+        createdFolder: data.items?.[0],
+        fullResponse: JSON.stringify(data, null, 2)
+      });
+
+      if (data.code === 200 && data.items && data.items.length > 0) {
+        return data.items[0];
+      } else {
+        // 🔍 Analyser le type d'erreur
+        const errorMessage = data.message || '';
+        const isPermissionError = errorMessage.includes('Permission denied') || errorMessage.includes('Errno 13');
+        const isBadRequest = errorMessage.includes('Dossier parent non trouvé') || errorMessage.includes('parent not found');
+        
+        console.error('🔍 [DEBUG SERVICE] - Analyse de l\'erreur:', {
+          errorMessage,
+          isPermissionError,
+          isBadRequest,
+          shouldTryFallback: !isPermissionError && parentFolderId !== null && parentFolderId !== undefined
+        });
+        
+        // 🔄 FALLBACK: Essayer avec parent_folder_name seulement si ce n'est pas une erreur de permissions
+        if (!isPermissionError && parentFolderId !== null && parentFolderId !== undefined) {
+          console.warn('🔄 [DEBUG SERVICE] - Tentative de fallback avec parent_folder_name...');
+          return await this.createFolderWithParentName(name, description, parentFolderId, projectId, userId);
+        }
+        
+        // ⚠️ Erreur de permissions : ne pas essayer le fallback
+        if (isPermissionError) {
+          console.error('🚨 [DEBUG SERVICE] - Erreur de permissions détectée, aucun fallback possible');
+          throw new Error('Erreur de permissions sur le serveur. Le backend n\'a pas les droits d\'écriture dans le répertoire ./static/files/projects/. Contactez l\'administrateur système.');
+        }
+        
+        console.error('🔍 [DEBUG SERVICE] - Erreur lors de la création du dossier:', data.message);
+        return null;
+      }
+    } catch (error) {
+      console.error('🔍 [DEBUG SERVICE] - Exception lors de la création du dossier:', error);
+      // Re-lancer les erreurs de permissions pour qu'elles soient gérées par l'interface
+      if (error instanceof Error && error.message.includes('permissions')) {
+        throw error;
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Créer un dossier avec parent_folder_name (fallback selon documentation backend)
+   */
+  private async createFolderWithParentName(
+    name: string,
+    description: string = '',
+    parentFolderId: number,
+    projectId?: number,
+    userId: number = 1
+  ): Promise<ProjectFolder | null> {
+    try {
+      // D'abord, récupérer le nom du dossier parent
+      const parentFolders = await this.getFolders(null, projectId); // Récupérer tous les dossiers pour trouver le parent
+      const parentFolder = parentFolders.find(f => f.id === parentFolderId);
+      
+      if (!parentFolder) {
+        console.error('🔍 [DEBUG FALLBACK] - Dossier parent introuvable pour ID:', parentFolderId);
+        return null;
+      }
+
+      const requestData: any = {
+        user: {
+          id: userId
+        },
+        datas: [{
+          name: name.trim(),
+          description: description.trim(),
+          parent_folder_name: parentFolder.name, // Utiliser parent_folder_name au lieu de parent_folder_id
+        }]
+      };
+
+      if (projectId !== undefined) {
+        requestData.datas[0].project_id = projectId;
+      }
+
+      // 🔍 LOG: Requête fallback envoyée
+      console.log('🔍 [DEBUG FALLBACK] - Requête createFolder avec parent_folder_name:', {
+        parentFolderName: parentFolder.name,
         parentFolderId,
-        projectId,
-        userId,
         requestData: JSON.stringify(requestData, null, 2)
       });
 
@@ -317,8 +467,8 @@ export class ProjectFilesService {
 
       const data: any = await response.json();
 
-      // 🔍 LOG: Réponse reçue
-      console.log('🔍 [DEBUG SERVICE] - Réponse createFolder:', {
+      // 🔍 LOG: Réponse fallback reçue
+      console.log('🔍 [DEBUG FALLBACK] - Réponse createFolder avec parent_folder_name:', {
         responseData: data,
         success: data.code === 200,
         hasItems: !!(data.items && data.items.length > 0),
@@ -328,11 +478,11 @@ export class ProjectFilesService {
       if (data.code === 200 && data.items && data.items.length > 0) {
         return data.items[0];
       } else {
-        console.error('🔍 [DEBUG SERVICE] - Erreur lors de la création du dossier:', data.message);
+        console.error('🔍 [DEBUG FALLBACK] - Échec du fallback aussi:', data.message);
         return null;
       }
     } catch (error) {
-      console.error('🔍 [DEBUG SERVICE] - Exception lors de la création du dossier:', error);
+      console.error('🔍 [DEBUG FALLBACK] - Exception lors du fallback:', error);
       return null;
     }
   }

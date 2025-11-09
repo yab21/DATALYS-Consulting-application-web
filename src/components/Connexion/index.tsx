@@ -93,7 +93,7 @@ const Connexion: React.FC = () => {
           return;
         }
 
-        // Connexion normale : utiliser le contexte AuthContext
+        // Connexion normale : utiliser le contexte d'authentification
         await login(data.identifier, data.password);
         
         if (data.rememberMe) {

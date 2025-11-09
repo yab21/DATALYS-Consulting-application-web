@@ -13,6 +13,7 @@ interface ApiErrorResponse {
 class ApiInterceptor {
   private static instance: ApiInterceptor;
   private redirectCallback: (() => void) | null = null;
+  
 
   private constructor() {
     this.setupGlobalErrorHandler();
