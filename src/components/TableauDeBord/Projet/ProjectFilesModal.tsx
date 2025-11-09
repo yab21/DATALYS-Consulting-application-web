@@ -620,7 +620,8 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       hideCloseButton={true}
       classNames={{
         base: isFullscreen ? "m-0 rounded-none" : "",
-        wrapper: isFullscreen ? "items-stretch justify-stretch" : "",
+        wrapper: isFullscreen ? "items-stretch justify-stretch z-[100000]" : "z-[100000]",
+        backdrop: "z-[99998]"
       }}
     >
       <ModalContent className={isFullscreen ? "h-screen max-h-screen" : ""}>
@@ -925,7 +926,15 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       </ModalContent>
 
       {/* Modal de création de dossier */}
-      <Modal isOpen={createFolderModal} onClose={() => setCreateFolderModal(false)} size="md">
+      <Modal 
+        isOpen={createFolderModal} 
+        onClose={() => setCreateFolderModal(false)} 
+        size="md"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
+      >
         <ModalContent>
           <ModalHeader>
             <div className="flex items-center gap-3">
@@ -978,7 +987,15 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       </Modal>
 
       {/* Modal de modification de dossier */}
-      <Modal isOpen={editFolderModal} onClose={() => setEditFolderModal(false)} size="md">
+      <Modal 
+        isOpen={editFolderModal} 
+        onClose={() => setEditFolderModal(false)} 
+        size="md"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
+      >
         <ModalContent>
           <ModalHeader>
             <div className="flex items-center gap-3">
@@ -1030,7 +1047,15 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       </Modal>
 
       {/* Modal de suppression de dossier */}
-      <Modal isOpen={deleteFolderModal} onClose={() => setDeleteFolderModal(false)} size="md">
+      <Modal 
+        isOpen={deleteFolderModal} 
+        onClose={() => setDeleteFolderModal(false)} 
+        size="md"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
+      >
         <ModalContent>
           <ModalHeader>
             <div className="flex items-center gap-3">

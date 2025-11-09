@@ -293,7 +293,9 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
         scrollBehavior="inside"
         classNames={{
           base: isFullscreen ? "" : "max-h-[90vh]",
-          body: "p-0"
+          body: "p-0",
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
         }}
       >
         <ModalContent>
@@ -436,7 +438,15 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
       </Modal>
 
       {/* Modal d'upload */}
-      <Modal isOpen={uploadModal} onClose={() => setUploadModal(false)} size="lg">
+      <Modal 
+        isOpen={uploadModal} 
+        onClose={() => setUploadModal(false)} 
+        size="lg"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
+      >
         <ModalContent>
           <ModalHeader className="border-b border-gray-200 px-6 py-4">
             <h3 className="text-lg font-semibold text-gray-900">Upload de fichiers</h3>
@@ -499,7 +509,15 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
       </Modal>
 
       {/* Modal de prévisualisation */}
-      <Modal isOpen={previewModal} onClose={() => setPreviewModal(false)} size="4xl">
+      <Modal 
+        isOpen={previewModal} 
+        onClose={() => setPreviewModal(false)} 
+        size="4xl"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
+      >
         <ModalContent>
           <ModalHeader className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center gap-3">
@@ -560,7 +578,15 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
       </Modal>
 
       {/* Modal de suppression */}
-      <Modal isOpen={deleteModal} onClose={() => setDeleteModal(false)} size="md">
+      <Modal 
+        isOpen={deleteModal} 
+        onClose={() => setDeleteModal(false)} 
+        size="md"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
+      >
         <ModalContent>
           <ModalHeader className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center gap-3">
