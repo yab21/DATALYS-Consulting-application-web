@@ -7,6 +7,7 @@ import { Chip, Avatar, Divider } from "@nextui-org/react";
 import { motion } from "framer-motion";
 import { User, Mail, Building, Users, Calendar, Shield, Edit3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuth as useAuthContext } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import LoadingSpinner from "@/components/UI/Loading/LoadingSpinner";
 import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
@@ -14,6 +15,7 @@ import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/component
 const VoirProfil = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { user, isLoading } = useAuth();
+  const { isPartner } = useAuthContext();
 
   // Fonction pour extraire prénom et nom
   const getNameParts = (fullName: string) => {
@@ -114,13 +116,15 @@ const VoirProfil = () => {
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-lg hover:bg-white/30 transition-colors font-medium"
-                    >
-                      <Edit3 className="h-4 w-4" />
-                      Modifier le profil
-                    </button>
+                    {!isPartner() && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-lg hover:bg-white/30 transition-colors font-medium"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                        Modifier le profil
+                      </button>
+                    )}
                   </div>
                 </div>
                 
