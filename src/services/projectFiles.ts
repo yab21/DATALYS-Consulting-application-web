@@ -161,8 +161,11 @@ export class ProjectFilesService {
           id: f.id,
           name: f.name,
           parent_folder_id: f.parent_folder_id,
+          parent_folder_type: typeof f.parent_folder_id,
+          parent_folder_value: String(f.parent_folder_id),
           project_id: f.project_id,
           expectedParent: parentFolderId,
+          expectedType: typeof parentFolderId,
           matchesFilter: f.parent_folder_id === parentFolderId
         })) || [],
         rawResponse: data
@@ -184,21 +187,35 @@ export class ProjectFilesService {
         });
 
         const filteredFolders = folders.filter(folder => {
-          const isCorrectParent = folder.parent_folder_id === parentFolderId;
+          // Normaliser les valeurs pour la comparaison
+          // null, 0, "" sont tous considérés comme "racine"
+          const normalizedParentId = !folder.parent_folder_id || 
+            Number(folder.parent_folder_id) === 0 ||
+            String(folder.parent_folder_id) === '0' ||
+            String(folder.parent_folder_id) === ''
+            ? null 
+            : folder.parent_folder_id;
+          
+          const normalizedExpectedId = !parentFolderId || 
+            Number(parentFolderId) === 0 ||
+            String(parentFolderId) === '0' ||
+            String(parentFolderId) === ''
+            ? null
+            : parentFolderId;
+          
+          const isCorrectParent = normalizedParentId === normalizedExpectedId;
+          
           if (!isCorrectParent) {
             console.warn('🚨 [HIERARCHY ERROR] - Dossier avec mauvais parent_folder_id détecté:', {
               folder: {
                 id: folder.id,
                 name: folder.name,
-                parent_folder_id: folder.parent_folder_id,
-                expected: parentFolderId,
-                actualType: typeof folder.parent_folder_id,
-                expectedType: typeof parentFolderId,
-                comparison: `${folder.parent_folder_id} === ${parentFolderId}`,
-                strictEqual: folder.parent_folder_id === parentFolderId,
-                looseEqual: folder.parent_folder_id == parentFolderId
-              },
-              shouldBeFiltered: true
+                original_parent_folder_id: folder.parent_folder_id,
+                normalized_parent_id: normalizedParentId,
+                expected_original: parentFolderId,
+                expected_normalized: normalizedExpectedId,
+                matches: isCorrectParent
+              }
             });
           }
           return isCorrectParent;
@@ -305,26 +322,18 @@ export class ProjectFilesService {
         }]
       };
 
-      // 🔍 VALIDATION: Vérifier que le dossier parent existe avant création
+      // 🔍 VALIDATION: Ajouter parent_folder_id si fourni
+      // Note: On ne vérifie plus l'existence car cela pose problème avec les sous-dossiers
+      // Le backend retournera une erreur si le parent n'existe pas
       if (parentFolderId !== undefined && parentFolderId !== null) {
-        // Vérifier l'existence du dossier parent
-        const parentFolders = await this.getFolders(null, projectId);
-        const parentExists = parentFolders.some(f => f.id === parentFolderId);
-        
-        if (!parentExists) {
-          console.error('🔍 [DEBUG SERVICE] - Dossier parent non trouvé:', {
-            parentFolderId,
-            availableFolders: parentFolders.map(f => ({ id: f.id, name: f.name }))
-          });
-          throw new Error(`Dossier parent avec ID ${parentFolderId} non trouvé`);
-        }
-        
-        console.log('🔍 [DEBUG SERVICE] - Dossier parent validé:', {
+        console.log('🔍 [DEBUG SERVICE] - Ajout du parent_folder_id:', {
           parentFolderId,
-          parentExists: true
+          type: typeof parentFolderId
         });
         
         requestData.datas[0].parent_folder_id = parentFolderId;
+      } else {
+        console.log('🔍 [DEBUG SERVICE] - Création dans le dossier racine (parent_folder_id non défini)');
       }
 
       if (projectId !== undefined) {
