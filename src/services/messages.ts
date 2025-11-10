@@ -226,8 +226,17 @@ class MessagesService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la récupération des notifications');
+        const contentType = response.headers.get('content-type');
+        let errorData: any;
+        
+        if (contentType?.includes('application/json')) {
+          errorData = await response.json();
+        } else {
+          const textResponse = await response.text();
+          errorData = { message: `Erreur ${response.status}: Service temporairement indisponible` };
+        }
+        
+        throw new Error(errorData.message || `Erreur HTTP ${response.status}`);
       }
 
       return await response.json();

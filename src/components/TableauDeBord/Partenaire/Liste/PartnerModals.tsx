@@ -126,24 +126,24 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
       const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
       if (pathMatch) {
         const filename = pathMatch[1];
-        return `/api/proxy/files/serve/logos/${filename}`;
+        return `/api/files/serve/logos/${filename}`;
       } else {
         return url.replace('localhost:8081', '')
-                  .replace('/uploads/', '/api/proxy/files/serve/');
+                  .replace('/uploads/', '/api/files/serve/');
       }
     }
     
-    if (url.includes('82.112.253.137:8081/uploads/')) {
+    if (url.includes('82.112.253.137:8081/uploads/') || url.includes('/uploads/')) {
       const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
       if (pathMatch) {
         const filename = pathMatch[1];
-        return `/api/proxy/files/serve/logos/${filename}`;
+        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
       }
     }
     
     if (url.startsWith('/uploads/logos/')) {
       const filename = url.replace('/uploads/logos/', '');
-      return `/api/proxy/files/serve/logos/${filename}`;
+      return `/api/files/serve/logos/${filename}`;
     }
     
     return url;

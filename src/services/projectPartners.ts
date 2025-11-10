@@ -100,7 +100,7 @@ class ProjectPartnersService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '/api/proxy';
+    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
   }
 
   private getAuthHeaders(): HeadersInit {

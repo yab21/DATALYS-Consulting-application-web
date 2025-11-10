@@ -151,32 +151,32 @@ const TablePartner: React.FC = () => {
       const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
       if (pathMatch) {
         const filename = pathMatch[1];
-        return `/api/proxy/files/serve/logos/${filename}`;
+        return `/api/files/serve/logos/${filename}`;
       } else {
         return url.replace('localhost:8081', '')
-                  .replace('/uploads/', '/api/proxy/files/serve/');
+                  .replace('/uploads/', '/api/files/serve/');
       }
     }
     
-    // Pour les URLs qui pointent déjà vers 82.112.253.137:8081
-    if (url.includes('82.112.253.137:8081/uploads/')) {
+    // Pour les URLs qui pointent déjà vers l'ancien serveur d'images
+    if (url.includes('82.112.253.137:8081/uploads/') || url.includes('/uploads/')) {
       const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
       if (pathMatch) {
         const filename = pathMatch[1];
-        return `/api/proxy/files/serve/logos/${filename}`;
+        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
       }
     }
     
     // Si l'URL est relative avec /uploads/
     if (url.startsWith('/uploads/logos/')) {
       const filename = url.replace('/uploads/logos/', '');
-      return `/api/proxy/files/serve/logos/${filename}`;
+      return `/api/files/serve/logos/${filename}`;
     }
     
     // Vérifier si l'URL pointe vers /files/serve/ (nouveau format d'upload)
     if (url.includes('/files/serve/')) {
-      // Si c'est déjà un chemin /api/proxy/files/serve/, le garder tel quel
-      if (url.startsWith('/api/proxy/files/serve/')) {
+      // Si c'est déjà un chemin /api/files/serve/, le garder tel quel
+      if (url.startsWith('/api/files/serve/')) {
         return url;
       }
       // Sinon, ajouter le prefix /api/proxy

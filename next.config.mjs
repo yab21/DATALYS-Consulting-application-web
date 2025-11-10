@@ -121,6 +121,15 @@ const nextConfig = {
       },
     ];
   },
+  // Proxy de développement pour rediriger /api/* vers la production
+  async rewrites() {
+    return process.env.NODE_ENV === 'development' ? [
+      {
+        source: '/api/:path*',
+        destination: 'https://applicationweb.datalysconsulting.com/api/:path*',
+      },
+    ] : [];
+  },
 };
 
 // Add webpack configuration for browser compatibility

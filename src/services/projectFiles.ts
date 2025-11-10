@@ -143,7 +143,7 @@ export class ProjectFilesService {
         expliciteParentFilter: parentFolderId !== undefined ? `parent_folder_id = ${parentFolderId}` : 'Pas de filtre parent'
       });
 
-      const response = await securedFetch('/api/proxy/folders/getByCriteria', {
+      const response = await securedFetch('/api/folders/getByCriteria', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +254,7 @@ export class ProjectFilesService {
         try {
           requestData.data.project_id = projectId;
           
-          const response = await securedFetch('/api/proxy/files/getByCriteria', {
+          const response = await securedFetch('/api/files/getByCriteria', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -276,7 +276,7 @@ export class ProjectFilesService {
           delete requestData.data.project_id;
           requestData.data.incident_id = projectId;
           
-          const response = await securedFetch('/api/proxy/files/getByCriteria', {
+          const response = await securedFetch('/api/files/getByCriteria', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -342,7 +342,7 @@ export class ProjectFilesService {
 
       // 🔍 LOG: Requête complète envoyée au backend
       console.log('🔍 [DEBUG SERVICE] - Requête complète envoyée au backend:', {
-        url: '/api/proxy/folders/create',
+        url: '/api/folders/create',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -362,7 +362,7 @@ export class ProjectFilesService {
         }
       });
 
-      const response = await securedFetch('/api/proxy/folders/create', {
+      const response = await securedFetch('/api/folders/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -466,7 +466,7 @@ export class ProjectFilesService {
         requestData: JSON.stringify(requestData, null, 2)
       });
 
-      const response = await securedFetch('/api/proxy/folders/create', {
+      const response = await securedFetch('/api/folders/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -520,7 +520,7 @@ export class ProjectFilesService {
         }]
       };
 
-      const response = await securedFetch('/api/proxy/folders/update', {
+      const response = await securedFetch('/api/folders/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -555,7 +555,7 @@ export class ProjectFilesService {
         }]
       };
 
-      const response = await securedFetch('/api/proxy/folders/delete', {
+      const response = await securedFetch('/api/folders/delete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -633,7 +633,7 @@ export class ProjectFilesService {
         formData.append('project_id', projectId.toString());
       }
 
-      const response = await securedFetch('/api/proxy/files/upload', {
+      const response = await securedFetch('/api/files/upload', {
         method: 'POST',
         body: formData,
       });
@@ -659,7 +659,7 @@ export class ProjectFilesService {
    */
   async deleteFile(fileId: number): Promise<boolean> {
     try {
-      const response = await securedFetch(`/api/proxy/files/delete`, {
+      const response = await securedFetch(`/api/files/delete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -688,7 +688,7 @@ export class ProjectFilesService {
    */
   async downloadFile(fileId: number, fileName: string): Promise<void> {
     try {
-      const response = await securedFetch(`/api/proxy/files/download/${fileId}`, {
+      const response = await securedFetch(`/api/files/download/${fileId}`, {
         method: 'GET',
       });
 
@@ -726,8 +726,8 @@ export class ProjectFilesService {
   async getPartnerFolders(parentFolderId: number | null, partnerId: number): Promise<ProjectFolder[]> {
     try {
       const endpoint = parentFolderId 
-        ? `/api/proxy/folders?parent_folder_id=${parentFolderId}&partner_id=${partnerId}`
-        : `/api/proxy/folders?partner_id=${partnerId}`;
+        ? `/api/folders?parent_folder_id=${parentFolderId}&partner_id=${partnerId}`
+        : `/api/folders?partner_id=${partnerId}`;
         
       const response = await securedFetch(endpoint);
       const data = await response.json();
@@ -756,7 +756,7 @@ export class ProjectFilesService {
    */
   async getPartnerFiles(folderId: number, partnerId: number): Promise<ProjectFile[]> {
     try {
-      const response = await securedFetch(`/api/proxy/files?folder_id=${folderId}&partner_id=${partnerId}`);
+      const response = await securedFetch(`/api/files?folder_id=${folderId}&partner_id=${partnerId}`);
       const data = await response.json();
 
       if (data.code === 200 && Array.isArray(data.datas)) {
@@ -808,7 +808,7 @@ export class ProjectFilesService {
 
       requestData.datas[0].partner_id = partnerId;
 
-      const response = await securedFetch('/api/proxy/folders/create', {
+      const response = await securedFetch('/api/folders/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -859,7 +859,7 @@ export class ProjectFilesService {
       formData.append('user', JSON.stringify({ id: userId }));
       formData.append('partner_id', partnerId.toString());
 
-      const response = await securedFetch('/api/proxy/files/upload', {
+      const response = await securedFetch('/api/files/upload', {
         method: 'POST',
         body: formData,
       });

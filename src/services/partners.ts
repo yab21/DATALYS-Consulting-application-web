@@ -80,7 +80,7 @@ export interface PartnerLoginResponse {
 }
 
 class PartnersService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '/api/proxy';
+  private baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
   private token: string | null = null;
 
   constructor() {

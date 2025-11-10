@@ -2,7 +2,7 @@
 import { SecureStorage } from '@/lib/secure-storage';
 
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api/proxy',
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',
   
   ENDPOINTS: {
     AUTH: {

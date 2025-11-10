@@ -6,6 +6,8 @@ import messagesService from "@/services/messages";
 const SimpleDropdownNotification = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [isLoadingApi, setIsLoadingApi] = useState(false);
   
   // Charger les notifications depuis localStorage ET l'API
   useEffect(() => {
@@ -15,15 +17,23 @@ const SimpleDropdownNotification = () => {
         const stored = localStorage.getItem('datalys-notifications');
         let localNotifications: any[] = [];
         if (stored) {
-          const parsed = JSON.parse(stored);
-          localNotifications = parsed.map((n: any) => ({
-            ...n,
-            timestamp: new Date(n.timestamp),
-            source: 'fcm'
-          }));
+          try {
+            const parsed = JSON.parse(stored);
+            localNotifications = parsed.map((n: any) => ({
+              ...n,
+              timestamp: new Date(n.timestamp),
+              source: 'fcm'
+            }));
+          } catch (parseError) {
+            console.warn('Erreur parsing localStorage notifications:', parseError);
+            localStorage.removeItem('datalys-notifications'); // Nettoyer les données corrompues
+          }
         }
 
         // 2. Charger depuis l'API (notifications backend)
+        setIsLoadingApi(true);
+        setApiError(null);
+        
         try {
           const apiResponse = await messagesService.getUnreadNotifications(0, 10);
           const apiNotifications = (apiResponse.items || []).map((n: any) => ({
@@ -40,12 +50,36 @@ const SimpleDropdownNotification = () => {
           // 3. Combiner les deux sources (éviter les doublons)
           const allNotifications = [...apiNotifications, ...localNotifications];
           setNotifications(allNotifications);
-        } catch (apiError) {
-          console.warn('Erreur API notifications, utilisation localStorage uniquement:', apiError);
+          setApiError(null); // Reset erreur si succès
+        } catch (apiError: any) {
+          // Gestion détaillée des erreurs API
+          const errorMessage = apiError?.message || 'Erreur API inconnue';
+          
+          if (apiError?.message?.includes('Failed to execute \'json\'')) {
+            setApiError('Service temporairement indisponible');
+          } else if (apiError?.message?.includes('Token d\'authentification')) {
+            setApiError('Session expirée - reconnectez-vous');
+          } else if (apiError?.message?.includes('fetch failed') || apiError?.message?.includes('NetworkError')) {
+            setApiError('Connexion réseau impossible');
+          } else {
+            setApiError('Service notifications indisponible');
+          }
+          
+          console.warn('Erreur API notifications, utilisation localStorage uniquement:', {
+            error: errorMessage,
+            type: apiError?.constructor?.name,
+            status: apiError?.status
+          });
+          
+          // Utiliser uniquement localStorage en cas d'erreur API
           setNotifications(localNotifications);
+        } finally {
+          setIsLoadingApi(false);
         }
       } catch (error) {
-        console.error('Erreur chargement notifications:', error);
+        console.error('Erreur générale chargement notifications:', error);
+        setApiError('Erreur de chargement');
+        setIsLoadingApi(false);
       }
     };
 
@@ -60,8 +94,8 @@ const SimpleDropdownNotification = () => {
 
     window.addEventListener('storage', handleStorageChange);
     
-    // Polling pour recharger depuis l'API toutes les 10 secondes
-    const interval = setInterval(loadNotifications, 10000);
+    // Polling pour recharger depuis l'API toutes les 30 secondes (réduit pour éviter le spam d'erreurs)
+    const interval = setInterval(loadNotifications, 30000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -86,16 +120,25 @@ const SimpleDropdownNotification = () => {
       // Si c'est une notification API, la marquer comme lue sur le backend
       if (id.startsWith('api-')) {
         const actualId = id.replace('api-', '');
-        await messagesService.markNotificationAsRead(actualId);
+        try {
+          await messagesService.markNotificationAsRead(actualId);
+        } catch (apiError) {
+          console.warn('Erreur marquage notification comme lue:', apiError);
+          // Continuer même si l'API échoue
+        }
       }
       
-      // Supprimer localement
+      // Supprimer localement (toujours fonctionnel)
       const updated = notifications.filter((n: any) => n.id !== id);
       setNotifications(updated);
       
       // Mettre à jour localStorage pour les notifications FCM uniquement
       const localNotifications = updated.filter((n: any) => n.source === 'fcm');
-      localStorage.setItem('datalys-notifications', JSON.stringify(localNotifications));
+      try {
+        localStorage.setItem('datalys-notifications', JSON.stringify(localNotifications));
+      } catch (storageError) {
+        console.warn('Erreur sauvegarde localStorage:', storageError);
+      }
     } catch (error) {
       console.error('Erreur suppression notification:', error);
     }
@@ -132,9 +175,14 @@ const SimpleDropdownNotification = () => {
           {/* Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Notifications ({notifications.length})
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Notifications ({notifications.length})
+                </h3>
+                {isLoadingApi && (
+                  <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <button
@@ -152,6 +200,14 @@ const SimpleDropdownNotification = () => {
                 </button>
               </div>
             </div>
+            {apiError && (
+              <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs text-yellow-700 dark:text-yellow-300">
+                <div className="flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {apiError}
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Notifications List */}
