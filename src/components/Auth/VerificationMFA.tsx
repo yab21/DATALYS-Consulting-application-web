@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -34,15 +34,24 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
   const { start, finish } = useTopBarProgress();
 
   const [mfaCode, setMfaCode] = useState("");
+  const [codeDigits, setCodeDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+
+  // Mettre à jour le mfaCode quand les digits changent
+  useEffect(() => {
+    const code = codeDigits.join("");
+    setMfaCode(code);
+  }, [codeDigits]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!mfaCode || mfaCode.length !== 6) {
+    const fullCode = codeDigits.join("");
+    if (!fullCode || fullCode.length !== 6) {
       setError("Veuillez entrer un code à 6 chiffres");
       return;
     }
@@ -54,7 +63,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
     try {
       const request: MFAVerificationRequest = {
         identifier,
-        mfa_code: mfaCode,
+        mfa_code: fullCode,
       };
 
       const result = await AuthService.verifyMFA(request);
@@ -97,14 +106,67 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
     }
   };
 
-  const handleCodeChange = (value: string) => {
+  const handleDigitChange = (index: number, value: string) => {
     // Nettoyer l'entrée (garder seulement les chiffres)
-    const cleanValue = value.replace(/[^0-9]/g, "").slice(0, 6);
-    setMfaCode(cleanValue);
+    const cleanValue = value.replace(/[^0-9]/g, "");
+    
+    if (cleanValue.length === 0) {
+      // Suppression
+      const newDigits = [...codeDigits];
+      newDigits[index] = "";
+      setCodeDigits(newDigits);
+      
+      // Retourner au champ précédent si on supprime
+      if (index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+    } else if (cleanValue.length === 1) {
+      // Saisie normale d'un chiffre
+      const newDigits = [...codeDigits];
+      newDigits[index] = cleanValue;
+      setCodeDigits(newDigits);
+      
+      // Passer au champ suivant
+      if (index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    } else {
+      // Collage de plusieurs chiffres
+      handlePaste(index, cleanValue);
+    }
     
     // Effacer l'erreur si l'utilisateur tape
     if (error) {
       setError("");
+    }
+  };
+
+  const handlePaste = (startIndex: number, pastedValue: string) => {
+    const digits = pastedValue.slice(0, 6).split("");
+    const newDigits = [...codeDigits];
+    
+    digits.forEach((digit, i) => {
+      if (startIndex + i < 6) {
+        newDigits[startIndex + i] = digit;
+      }
+    });
+    
+    setCodeDigits(newDigits);
+    
+    // Focus sur le dernier champ rempli ou le suivant
+    const lastFilledIndex = Math.min(startIndex + digits.length - 1, 5);
+    const nextIndex = lastFilledIndex < 5 ? lastFilledIndex + 1 : lastFilledIndex;
+    inputRefs.current[nextIndex]?.focus();
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && codeDigits[index] === "" && index > 0) {
+      // Si le champ est vide et qu'on appuie sur Backspace, revenir au champ précédent
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -342,30 +404,66 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                   animate="visible"
                   transition={{ delay: 0.5 }}
                 >
-                  <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
+                  <div className="mb-4">
+                    <label className="mb-4 block text-base font-semibold text-gray-800">
                       Code de vérification
                     </label>
                   </div>
-                  <Input
-                    type="text"
-                    variant="bordered"
-                    placeholder="123456"
-                    value={mfaCode}
-                    onChange={(e) => handleCodeChange(e.target.value)}
-                    maxLength={6}
-                    classNames={{
-                      input:
-                        "text-gray-900 placeholder:text-gray-500 text-center text-2xl font-mono tracking-widest dark:text-white dark:placeholder:text-gray-400",
-                      inputWrapper:
-                        "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
-                      base: "!text-gray-800 dark:!text-gray-200",
-                    }}
-                    size="lg"
-                    radius="lg"
-                    startContent={<Shield className="h-5 w-5 text-gray-500" />}
-                  />
-                  <p className="mt-2 text-xs text-gray-500 text-center">
+                  
+                  {/* 6 Individual Cards */}
+                  <div className="flex justify-center gap-2 sm:gap-3 mb-4">
+                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 * index, type: "spring", stiffness: 200 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="relative"
+                      >
+                        <input
+                          ref={(el) => (inputRefs.current[index] = el)}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]"
+                          maxLength={1}
+                          value={codeDigits[index]}
+                          onChange={(e) => handleDigitChange(index, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(index, e)}
+                          onPaste={(e) => {
+                            e.preventDefault();
+                            const pastedData = e.clipboardData.getData("text");
+                            handlePaste(index, pastedData);
+                          }}
+                          className={`
+                            w-12 h-14 sm:w-14 sm:h-16 
+                            text-2xl sm:text-3xl font-mono font-bold text-center
+                            rounded-xl border-2 
+                            transition-all duration-300
+                            ${
+                              codeDigits[index]
+                                ? "border-primary bg-primary/5 text-primary shadow-lg shadow-primary/20"
+                                : "border-gray-300 bg-gray-50 hover:border-gray-400"
+                            }
+                            focus:outline-none focus:ring-4 focus:ring-primary/30 focus:border-primary
+                            ${error ? "border-red-400 bg-red-50" : ""}
+                          `}
+                        />
+                        
+                        {/* Visual indicator for filled state */}
+                        {codeDigits[index] && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full"
+                          />
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                  
+                  <p className="text-xs text-gray-500 text-center">
                     Entrez les 6 chiffres reçus par email
                   </p>
                 </motion.div>
@@ -380,7 +478,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                   <Button
                     type="submit"
                     isLoading={isLoading}
-                    isDisabled={isLoading || mfaCode.length !== 6}
+                    isDisabled={isLoading || codeDigits.join("").length !== 6}
                     className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-800 py-6 text-lg font-semibold text-white shadow-lg shadow-primary-800/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary-800/40 disabled:opacity-70 disabled:cursor-not-allowed"
                     size="lg"
                   >
