@@ -543,8 +543,19 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   // Visualiser un fichier
   const handleViewFile = (file: ProjectFile) => {
     if (file.file_path) {
-      // Utiliser file_path qui correspond à file_url de l'API
-      window.open(file.file_path, '_blank');
+      // Construire l'URL complète pour le fichier
+      const baseUrl = process.env.NEXT_PUBLIC_IMAGES_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const fileUrl = file.file_path.startsWith('http') 
+        ? file.file_path 
+        : `${baseUrl}/${file.file_path}`;
+      
+      console.log('🔍 [DEBUG VIEW FILE] - Ouverture du fichier:', {
+        original_file_path: file.file_path,
+        base_url: baseUrl,
+        final_url: fileUrl
+      });
+      
+      window.open(fileUrl, '_blank');
     } else {
       showNotification({
         type: 'error',
@@ -558,9 +569,22 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   const handleDownloadFile = async (file: ProjectFile) => {
     try {
       if (file.file_path) {
-        // Créer un lien de téléchargement avec l'URL du fichier
+        // Construire l'URL complète pour le fichier
+        const baseUrl = process.env.NEXT_PUBLIC_IMAGES_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
+        const fileUrl = file.file_path.startsWith('http') 
+          ? file.file_path 
+          : `${baseUrl}/${file.file_path}`;
+        
+        console.log('🔍 [DEBUG DOWNLOAD FILE] - Téléchargement du fichier:', {
+          original_file_path: file.file_path,
+          base_url: baseUrl,
+          final_url: fileUrl,
+          file_name: file.original_name
+        });
+        
+        // Créer un lien de téléchargement avec l'URL complète
         const link = document.createElement('a');
-        link.href = file.file_path;
+        link.href = fileUrl;
         link.download = file.original_name || 'fichier';
         link.target = '_blank';
         document.body.appendChild(link);
