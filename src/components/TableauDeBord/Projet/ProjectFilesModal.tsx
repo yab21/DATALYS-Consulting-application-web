@@ -179,9 +179,27 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
 
       // Charger les fichiers
       if (currentFolderId !== null) {
+        console.log('🔍 [DEBUG LOAD FILES] - Chargement des fichiers pour le dossier:', {
+          currentFolderId,
+          projectId: project.id
+        });
+        
         const filesData = await projectFilesService.getFiles(currentFolderId, project.id);
+        
+        console.log('🔍 [DEBUG LOAD FILES] - Fichiers récupérés:', {
+          count: filesData.length,
+          files: filesData.map(f => ({
+            id: f.id,
+            name: f.original_name,
+            folder_id: f.folder_id,
+            project_id: f.project_id,
+            incident_id: f.incident_id
+          }))
+        });
+        
         setFiles(filesData);
       } else {
+        console.log('🔍 [DEBUG LOAD FILES] - Pas de fichiers à charger (dossier racine)');
         setFiles([]);
       }
 
@@ -622,53 +640,61 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     >
       <ModalContent className={isFullscreen ? "h-screen max-h-screen" : ""}>
         <ModalHeader className="border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-[#4ba9b7]/10">
-                <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-[#4ba9b7]/10">
+                  <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Gestionnaire de fichiers</h2>
+                  <p className="text-sm text-gray-600">
+                    {project.title} {project.partner_name && `• ${project.partner_name}`}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Gestionnaire de fichiers</h2>
-                <p className="text-sm text-gray-600">
-                  {project.title} {project.partner_name && `• ${project.partner_name}`}
-                </p>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  isIconOnly
+                  variant="light"
+                  size="sm"
+                  onPress={() => setIsFullscreen(!isFullscreen)}
+                >
+                  {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </Button>
+                
+                <Button
+                  isIconOnly
+                  variant="light"
+                  size="sm"
+                  onPress={onClose}
+                  isDisabled={uploading}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                isIconOnly
-                variant="light"
-                size="sm"
-                onPress={() => setIsFullscreen(!isFullscreen)}
+
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center gap-2 ml-11">
+              <Breadcrumbs 
+                size="sm" 
+                separator="/"
+                className="text-sm"
               >
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </Button>
-              
-              <Button
-                isIconOnly
-                variant="light"
-                size="sm"
-                onPress={onClose}
-                isDisabled={uploading}
-              >
-                <X className="w-4 h-4" />
-              </Button>
+                {breadcrumbPath.map((item, index) => (
+                  <BreadcrumbItem
+                    key={index}
+                    onPress={() => navigateToBreadcrumb(index)}
+                    className={`${index === breadcrumbPath.length - 1 ? "text-[#4ba9b7] font-medium" : "text-gray-600 hover:text-gray-900 cursor-pointer"}`}
+                  >
+                    {item.name}
+                  </BreadcrumbItem>
+                ))}
+              </Breadcrumbs>
             </div>
           </div>
-
-          {/* Breadcrumb Navigation */}
-          <Breadcrumbs size="sm" className="ml-11">
-            {breadcrumbPath.map((item, index) => (
-              <BreadcrumbItem
-                key={index}
-                onPress={() => navigateToBreadcrumb(index)}
-                className={index === breadcrumbPath.length - 1 ? "text-[#4ba9b7]" : "cursor-pointer"}
-              >
-                {item.name}
-              </BreadcrumbItem>
-            ))}
-          </Breadcrumbs>
         </ModalHeader>
 
         <ModalBody className="p-6">

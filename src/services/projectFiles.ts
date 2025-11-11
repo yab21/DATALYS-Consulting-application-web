@@ -249,7 +249,39 @@ export class ProjectFilesService {
         }
       };
 
-      // Logique adaptative : essayer project_id puis incident_id
+      // 🔍 LOG: Requête getFiles
+      console.log('🔍 [DEBUG SERVICE] - Requête getFiles:', {
+        folderId,
+        projectId,
+        requestData
+      });
+
+      // Essayer d'abord avec juste folder_id (cas le plus courant pour les sous-dossiers)
+      try {
+        const response = await securedFetch('/api/files/getByCriteria', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
+
+        const data: FilesResponse = await response.json();
+        
+        console.log('🔍 [DEBUG SERVICE] - Réponse getFiles (folder_id seul):', {
+          success: data.code === 200,
+          count: data.items?.length || 0,
+          items: data.items?.map(f => ({ id: f.id, name: f.original_name, folder_id: f.folder_id }))
+        });
+
+        if (data.code === 200 && data.items && data.items.length > 0) {
+          return data.items;
+        }
+      } catch (error) {
+        console.log('Tentative avec folder_id seul échouée:', error);
+      }
+
+      // Si on a un projectId, essayer avec project_id
       if (projectId !== undefined) {
         try {
           requestData.data.project_id = projectId;
@@ -263,6 +295,11 @@ export class ProjectFilesService {
           });
 
           const data: FilesResponse = await response.json();
+          
+          console.log('🔍 [DEBUG SERVICE] - Réponse getFiles (avec project_id):', {
+            success: data.code === 200,
+            count: data.items?.length || 0
+          });
 
           if (data.code === 200) {
             return data.items || [];
@@ -285,6 +322,11 @@ export class ProjectFilesService {
           });
 
           const data: FilesResponse = await response.json();
+          
+          console.log('🔍 [DEBUG SERVICE] - Réponse getFiles (avec incident_id):', {
+            success: data.code === 200,
+            count: data.items?.length || 0
+          });
 
           if (data.code === 200) {
             return data.items || [];
@@ -294,6 +336,8 @@ export class ProjectFilesService {
         }
       }
 
+      // Retourner un tableau vide si toutes les tentatives échouent
+      console.warn('🔍 [DEBUG SERVICE] - Aucun fichier trouvé pour le dossier:', folderId);
       return [];
     } catch (error) {
       console.error('Erreur lors de la récupération des fichiers:', error);
@@ -590,13 +634,29 @@ export class ProjectFilesService {
     }
 
     try {
+      // 🔍 LOG: Début du calcul des stats
+      console.log('🔍 [DEBUG STATS] - Calcul des statistiques pour le dossier:', {
+        folderId,
+        projectId
+      });
+
       // Récupérer les sous-dossiers
       const folders = await this.getFolders(folderId, projectId);
       const subfolders = folders.length;
+      
+      console.log('🔍 [DEBUG STATS] - Sous-dossiers trouvés:', {
+        count: subfolders,
+        folders: folders.map(f => ({ id: f.id, name: f.name }))
+      });
 
       // Récupérer les fichiers
       const files = await this.getFiles(folderId, projectId);
       const filesCount = files.length;
+      
+      console.log('🔍 [DEBUG STATS] - Fichiers trouvés:', {
+        count: filesCount,
+        files: files.map(f => ({ id: f.id, name: f.original_name, folder_id: f.folder_id }))
+      });
 
       const stats: FolderStats = {
         subfolders,
@@ -606,10 +666,12 @@ export class ProjectFilesService {
 
       // Mettre en cache
       statsCache[folderId] = stats;
+      
+      console.log('🔍 [DEBUG STATS] - Statistiques finales:', stats);
       return stats;
 
     } catch (error) {
-      console.error('Erreur lors du calcul des statistiques:', error);
+      console.error('❌ [DEBUG STATS] - Erreur lors du calcul des statistiques:', error);
       return { subfolders: 0, files: 0, timestamp: Date.now() };
     }
   }
