@@ -119,7 +119,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     if (!url) return url;
     
     if (url.includes('82.112.253.137:8082/files/serve/')) {
-      return url.replace('http://82.112.253.137:8082', '/api/proxy');
+      return url.replace('http://82.112.253.137:8082', '/api');
     }
     
     if (url.includes('localhost:8081')) {

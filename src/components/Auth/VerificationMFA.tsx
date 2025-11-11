@@ -423,7 +423,9 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                         className="relative"
                       >
                         <input
-                          ref={(el) => (inputRefs.current[index] = el)}
+                          ref={(el) => {
+                            inputRefs.current[index] = el;
+                          }}
                           type="text"
                           inputMode="numeric"
                           pattern="[0-9]"
@@ -451,14 +453,6 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                           `}
                         />
                         
-                        {/* Visual indicator for filled state */}
-                        {codeDigits[index] && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full"
-                          />
-                        )}
                       </motion.div>
                     ))}
                   </div>

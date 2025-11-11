@@ -125,7 +125,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
 
   // Calculer les colonnes de la grille (amélioré)
   const getGridColumns = useCallback(() => {
-    if (isFullscreen) return 'grid-cols-6';
+    if (isFullscreen) return 'grid-cols-7 xl:grid-cols-9';
     
     const totalItems = folders.length + files.length;
     const modalSize = getModalSize();
@@ -133,19 +133,15 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     // Adapter les colonnes selon la taille du modal
     if (modalSize === '4xl') {
       if (totalItems === 0) return 'grid-cols-1'; // Centrer le message "dossier vide"
-      if (totalItems <= 4) return 'grid-cols-3';  // Plus de colonnes pour 4xl
-      return 'grid-cols-4';
+      return 'grid-cols-4 lg:grid-cols-5';
     }
     
     if (modalSize === '5xl') {
-      if (totalItems <= 8) return 'grid-cols-4';
-      return 'grid-cols-5';
+      return 'grid-cols-5 lg:grid-cols-6';
     }
     
-    // Fallback pour les anciennes tailles
-    if (totalItems <= 6) return 'grid-cols-3';  // Augmenté de 2 à 3
-    if (totalItems <= 12) return 'grid-cols-4'; // Augmenté de 3 à 4
-    return 'grid-cols-5';                       // Augmenté de 4 à 5
+    // Full mode
+    return 'grid-cols-6 lg:grid-cols-7 xl:grid-cols-8';
   }, [folders.length, files.length, isFullscreen, getModalSize]);
 
   // Charger les données du dossier courant (avec logs de debug)
@@ -586,7 +582,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   );
 
   const filteredFiles = files.filter(file =>
-    file.original_name.toLowerCase().includes(searchTerm.toLowerCase())
+    file.original_name && file.original_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Obtenir l'icône d'un fichier selon son type
@@ -759,64 +755,79 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
               <Spinner size="lg" color="primary" />
             </div>
           ) : (
-            <div className={`grid gap-4 ${getGridColumns()}`}>
+            <div className={`grid gap-6 ${getGridColumns()}`}>
               {/* Dossiers */}
               {filteredFolders.map((folder) => (
                 <div
                   key={folder.id}
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+                  className="relative group flex flex-col items-center"
                 >
-                  <div className="flex flex-col items-center text-center space-y-3">
+                  {/* Folder Container */}
+                  <div className="relative">
+                    {/* Folder Icon Design */}
                     <div 
-                      className="p-3 rounded-lg bg-orange-50 cursor-pointer w-full flex justify-center"
+                      className="cursor-pointer relative w-[100px] h-[80px]"
                       onClick={() => navigateToFolder(folder)}
                     >
-                      <FolderOpen className="w-6 h-6 text-orange-600" />
-                    </div>
-                    
-                    <div className="w-full">
-                      <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">
-                        {folder.name}
-                      </h3>
-                      <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                        {folder.loadingStats ? (
-                          <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
-                        ) : folder.stats ? (
-                          <>
-                            <div className="flex items-center gap-1">
-                              <FolderOpen className="w-3 h-3" />
-                              <span>{folder.stats.subfolders}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              <span>{folder.stats.files}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <span className="text-gray-400">Erreur stats</span>
-                        )}
+                      {/* Folder Tab */}
+                      <div className="absolute top-0 left-0 w-[40px] h-[12px] bg-[#F59E0B] rounded-t-md" />
+                      {/* Folder Body */}
+                      <div className="absolute top-[8px] left-0 w-full h-[72px] bg-gradient-to-b from-[#FCD34D] to-[#F59E0B] rounded-lg shadow-sm" />
+                      
+                      {/* Inner content area */}
+                      <div className="absolute inset-0 top-[20px] flex items-center justify-center">
+                        <div className="flex items-center gap-1.5 text-[11px] text-gray-700/80 font-medium">
+                          {folder.loadingStats ? (
+                            <div className="w-3 h-3 border-2 border-gray-600/30 border-t-transparent rounded-full animate-spin"></div>
+                          ) : folder.stats ? (
+                            <>
+                              <div className="flex items-center gap-0.5">
+                                <FolderOpen className="w-3 h-3 opacity-70" />
+                                <span>{folder.stats.subfolders}</span>
+                              </div>
+                              <div className="flex items-center gap-0.5">
+                                <FileText className="w-3 h-3 opacity-70" />
+                                <span>{folder.stats.files}</span>
+                              </div>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                     
+                    {/* Action buttons - Only visible on hover for admins */}
                     {isAdmin() && (
-                      <div className="flex items-center gap-1 w-full justify-center">
-                        <button
-                          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                          onClick={() => handleEditFolder(folder)}
-                          title="Modifier"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                          onClick={() => handleDeleteFolder(folder)}
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <div className="flex items-center gap-0.5 bg-white rounded-md shadow-lg p-0.5">
+                          <button
+                            className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditFolder(folder);
+                            }}
+                            title="Modifier"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                          <button
+                            className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFolder(folder);
+                            }}
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
+                  
+                  {/* Folder name - Below the icon */}
+                  <h3 className="font-medium text-xs text-gray-800 line-clamp-2 text-center mt-1 max-w-[100px] px-1">
+                    {folder.name}
+                  </h3>
                 </div>
               ))}
 
@@ -828,18 +839,18 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
                     <div className="p-3 rounded-lg bg-gray-50">
-                      <span className="text-2xl">{getFileIcon(file.mime_type)}</span>
+                      <span className="text-2xl">{getFileIcon(file.mime_type || 'application/octet-stream')}</span>
                     </div>
                     
                     <div className="w-full">
                       <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">
-                        {file.original_name}
+                        {file.original_name || 'Fichier sans nom'}
                       </h3>
                       <p className="text-xs text-gray-500 mb-1">
                         {formatFileSize(file.file_size)}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {new Date(file.created_at).toLocaleDateString('fr-FR')}
+                        {file.created_at ? new Date(file.created_at).toLocaleDateString('fr-FR') : 'Date inconnue'}
                       </p>
                     </div>
                     

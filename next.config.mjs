@@ -121,12 +121,16 @@ const nextConfig = {
       },
     ];
   },
-  // Proxy de développement pour rediriger /api/* vers la production
+  // Proxy de développement pour rediriger vers la nouvelle architecture
   async rewrites() {
     return process.env.NODE_ENV === 'development' ? [
       {
         source: '/api/:path*',
         destination: 'https://applicationweb.datalysconsulting.com/api/:path*',
+      },
+      {
+        source: '/health',
+        destination: 'https://applicationweb.datalysconsulting.com/health',
       },
     ] : [];
   },

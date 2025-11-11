@@ -33,11 +33,11 @@ export function useNetworkStatus(): NetworkStatusHook {
     try {
       const startTime = Date.now();
       
-      // Test avec une petite requête vers notre API
+      // Test avec une petite requête vers notre API health endpoint
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch('/api/health', {
+      const response = await fetch('/health', {
         method: 'HEAD',
         cache: 'no-cache',
         signal: controller.signal

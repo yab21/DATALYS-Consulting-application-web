@@ -853,7 +853,7 @@ export class ErrorHandler {
       const startTime = performance.now();
       
       // Test avec une petite requête
-      const response = await fetch('/api/health', {
+      const response = await fetch('/health', {
         method: 'HEAD',
         cache: 'no-cache'
       });

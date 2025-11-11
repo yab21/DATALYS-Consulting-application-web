@@ -142,7 +142,7 @@ const TablePartner: React.FC = () => {
     
     // Les URLs passent par le proxy pour éviter les mixed content
     if (url.includes('82.112.253.137:8082/files/serve/')) {
-      const fixedUrl = url.replace('http://82.112.253.137:8082', '/api/proxy');
+      const fixedUrl = url.replace('http://82.112.253.137:8082', '/api');
       return fixedUrl;
     }
     
@@ -179,9 +179,9 @@ const TablePartner: React.FC = () => {
       if (url.startsWith('/api/files/serve/')) {
         return url;
       }
-      // Sinon, ajouter le prefix /api/proxy
+      // Sinon, ajouter le prefix /api
       if (url.startsWith('/files/serve/')) {
-        return `/api/proxy${url}`;
+        return `/api${url}`;
       }
     }
     
