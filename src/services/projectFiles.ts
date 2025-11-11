@@ -237,38 +237,13 @@ export class ProjectFilesService {
         return [];
       }
       
-      // 🔍 LOG: Réponse getFolders
-      console.log('🔍 [DEBUG SERVICE] - Réponse getFolders:', {
-        success: data.code === 200,
-        totalItems: data.items?.length || 0,
-        folders: data.items?.map(f => ({
-          id: f.id,
-          name: f.name,
-          parent_folder_id: f.parent_folder_id,
-          parent_folder_type: typeof f.parent_folder_id,
-          parent_folder_value: String(f.parent_folder_id),
-          project_id: f.project_id,
-          expectedParent: parentFolderId,
-          expectedType: typeof parentFolderId,
-          matchesFilter: f.parent_folder_id === parentFolderId
-        })) || [],
-        rawResponse: data
-      });
+      // Log simplifié
+      console.log(`📁 [getFolders] - ${data.items?.length || 0} dossier(s) retourné(s) pour parent: ${parentFolderId}`);
 
       if (data.code === 200) {
         const folders = data.items || [];
         
-        // 🔧 VALIDATION: Vérifier que tous les dossiers retournés correspondent au filtrage demandé
-        console.log('🔍 [DEBUG FILTRAGE] - Analyse avant filtrage:', {
-          totalFolders: folders.length,
-          expectedParentId: parentFolderId,
-          foldersDetails: folders.map(f => ({
-            id: f.id,
-            name: f.name,
-            parent_folder_id: f.parent_folder_id,
-            matches: f.parent_folder_id === parentFolderId
-          }))
-        });
+        // Validation du filtrage si nécessaire
 
         const filteredFolders = folders.filter(folder => {
           // Normaliser les valeurs pour la comparaison
@@ -290,23 +265,15 @@ export class ProjectFilesService {
           // Comparaison stricte avec conversion de type
           const isCorrectParent = normalizedParentId === normalizedExpectedId;
           
-          console.log('🔍 [DEBUG FOLDER FILTER] - Comparaison dossier:', {
-            folder: {
-              id: folder.id,
-              name: folder.name,
-              original_parent_folder_id: folder.parent_folder_id,
-              original_type: typeof folder.parent_folder_id,
-              normalized_parent_id: normalizedParentId,
-              normalized_type: typeof normalizedParentId
-            },
-            expected: {
-              original: parentFolderId,
-              original_type: typeof parentFolderId,
-              normalized: normalizedExpectedId,
-              normalized_type: typeof normalizedExpectedId
-            },
-            matches: isCorrectParent
-          });
+          // Log seulement si il y a une incohérence
+          if (!isCorrectParent) {
+            console.warn('🚨 [FOLDER FILTER] - Dossier exclu du filtrage:', {
+              folder: `${folder.name} (id: ${folder.id})`,
+              parent_folder_id: `${folder.parent_folder_id} (${typeof folder.parent_folder_id})`,
+              expected_parent: `${parentFolderId} (${typeof parentFolderId})`,
+              normalized: `${normalizedParentId} !== ${normalizedExpectedId}`
+            });
+          }
           
           return isCorrectParent;
         });
