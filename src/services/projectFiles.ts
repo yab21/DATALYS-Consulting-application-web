@@ -21,7 +21,7 @@ export interface ProjectFolder {
   partner_id?: number;
 }
 
-// Types pour les fichiers
+// Types pour les fichiers (interface frontend)
 export interface ProjectFile {
   id: number;
   name: string;
@@ -38,6 +38,24 @@ export interface ProjectFile {
   created_by: number;
   is_public: boolean;
   is_deleted: boolean;
+}
+
+// Types pour les fichiers (réponse API)
+export interface ApiProjectFile {
+  id: number;
+  name: string;
+  file_url: string;
+  folder_id: number;
+  project_id?: number;
+  incident_id?: number;
+  partner_id?: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number;
+  updated_by: number;
+  is_active: boolean;
+  is_deleted: boolean;
+  is_public: boolean;
 }
 
 // Types pour les statistiques
@@ -61,7 +79,7 @@ export interface FoldersResponse {
 export interface FilesResponse {
   code: number;
   count: number;
-  items: ProjectFile[];
+  items: ApiProjectFile[];
   message: {
     code: number;
     message: string;
@@ -113,6 +131,53 @@ export class ProjectFilesService {
       ProjectFilesService.instance = new ProjectFilesService();
     }
     return ProjectFilesService.instance;
+  }
+
+  /**
+   * Mapper les fichiers de l'API vers l'interface frontend
+   */
+  private mapApiFilesToProjectFiles(apiFiles: ApiProjectFile[]): ProjectFile[] {
+    return apiFiles.map(apiFile => ({
+      id: apiFile.id,
+      name: apiFile.name,
+      original_name: apiFile.name, // L'API utilise "name" pour le nom du fichier
+      file_path: apiFile.file_url, // L'API utilise "file_url" pour le chemin
+      file_size: 0, // L'API ne retourne pas la taille, on met 0 par défaut
+      mime_type: this.getMimeTypeFromFileName(apiFile.name), // Déduit du nom du fichier
+      folder_id: apiFile.folder_id,
+      project_id: apiFile.project_id,
+      incident_id: apiFile.incident_id,
+      partner_id: apiFile.partner_id,
+      created_at: apiFile.created_at,
+      updated_at: apiFile.updated_at,
+      created_by: apiFile.created_by,
+      is_public: apiFile.is_public,
+      is_deleted: apiFile.is_deleted
+    }));
+  }
+
+  /**
+   * Déterminer le type MIME à partir du nom du fichier
+   */
+  private getMimeTypeFromFileName(fileName: string): string {
+    const extension = fileName.toLowerCase().split('.').pop();
+    const mimeTypes: { [key: string]: string } = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'txt': 'text/plain',
+      'zip': 'application/zip',
+      'rar': 'application/x-rar-compressed'
+    };
+    return mimeTypes[extension || ''] || 'application/octet-stream';
   }
 
   /**
@@ -290,11 +355,12 @@ export class ProjectFilesService {
         console.log('🔍 [DEBUG SERVICE] - Réponse getFiles (folder_id seul):', {
           success: data.code === 200,
           count: data.items?.length || 0,
-          items: data.items?.map(f => ({ id: f.id, name: f.original_name, folder_id: f.folder_id }))
+          items: data.items?.map(f => ({ id: f.id, name: f.name, folder_id: f.folder_id }))
         });
 
         if (data.code === 200 && data.items && data.items.length > 0) {
-          return data.items;
+          console.log('🔄 [DEBUG SERVICE] - Mapping des fichiers API vers interface frontend (folder_id seul)');
+          return this.mapApiFilesToProjectFiles(data.items);
         }
       } catch (error) {
         console.log('Tentative avec folder_id seul échouée:', error);
@@ -321,7 +387,8 @@ export class ProjectFilesService {
           });
 
           if (data.code === 200) {
-            return data.items || [];
+            console.log('🔄 [DEBUG SERVICE] - Mapping des fichiers API vers interface frontend (avec project_id)');
+            return this.mapApiFilesToProjectFiles(data.items || []);
           }
         } catch (error) {
           console.log('project_id failed, trying incident_id');
@@ -348,7 +415,8 @@ export class ProjectFilesService {
           });
 
           if (data.code === 200) {
-            return data.items || [];
+            console.log('🔄 [DEBUG SERVICE] - Mapping des fichiers API vers interface frontend (avec incident_id)');
+            return this.mapApiFilesToProjectFiles(data.items || []);
           }
         } catch (error) {
           console.error('Erreur avec incident_id:', error);
