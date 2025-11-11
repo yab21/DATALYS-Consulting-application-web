@@ -541,25 +541,32 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   };
 
   // Visualiser un fichier
-  const handleViewFile = (file: ProjectFile) => {
-    if (file.id) {
-      // Utiliser l'endpoint de téléchargement de l'API avec l'ID du fichier
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const fileUrl = `${apiBaseUrl}/files/download/${file.id}`;
-      
-      console.log('🔍 [DEBUG VIEW FILE] - Ouverture du fichier via API:', {
-        file_id: file.id,
-        file_name: file.original_name,
-        api_base_url: apiBaseUrl,
-        download_endpoint: fileUrl
-      });
-      
-      window.open(fileUrl, '_blank');
-    } else {
+  const handleViewFile = async (file: ProjectFile) => {
+    if (!file.id) {
       showNotification({
         type: 'error',
         title: 'Erreur',
         message: 'ID du fichier non disponible'
+      });
+      return;
+    }
+
+    try {
+      console.log('🔍 [DEBUG VIEW FILE] - Ouverture du fichier pour visualisation:', {
+        file_id: file.id,
+        file_name: file.original_name
+      });
+
+      // Utiliser la nouvelle fonction viewFile qui ouvre le fichier au lieu de le télécharger
+      await projectFilesService.viewFile(file.id, file.original_name || 'fichier');
+      
+      console.log('✅ [DEBUG VIEW FILE] - Fichier ouvert avec succès');
+    } catch (error) {
+      console.error('❌ [DEBUG VIEW FILE] - Erreur:', error);
+      showNotification({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Impossible d\'ouvrir le fichier'
       });
     }
   };
@@ -567,36 +574,25 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   // Télécharger un fichier
   const handleDownloadFile = async (file: ProjectFile) => {
     try {
-      if (file.id) {
-        // Utiliser l'endpoint de téléchargement de l'API avec l'ID du fichier
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const downloadUrl = `${apiBaseUrl}/files/download/${file.id}`;
-        
-        console.log('🔍 [DEBUG DOWNLOAD FILE] - Téléchargement via API:', {
-          file_id: file.id,
-          file_name: file.original_name,
-          api_base_url: apiBaseUrl,
-          download_endpoint: downloadUrl
-        });
-        
-        // Créer un lien de téléchargement avec l'endpoint API
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = file.original_name || 'fichier';
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification({
-          type: 'success',
-          title: 'Succès',
-          message: 'Téléchargement démarré'
-        });
-      } else {
+      if (!file.id) {
         throw new Error('ID du fichier non disponible');
       }
+
+      console.log('🔍 [DEBUG DOWNLOAD FILE] - Téléchargement via service:', {
+        file_id: file.id,
+        file_name: file.original_name
+      });
+
+      // Utiliser le service existant qui gère l'authentification
+      await projectFilesService.downloadFile(file.id, file.original_name || 'fichier');
+      
+      showNotification({
+        type: 'success',
+        title: 'Succès',
+        message: 'Téléchargement démarré'
+      });
     } catch (error) {
+      console.error('❌ [DEBUG DOWNLOAD FILE] - Erreur:', error);
       showNotification({
         type: 'error',
         title: 'Erreur',

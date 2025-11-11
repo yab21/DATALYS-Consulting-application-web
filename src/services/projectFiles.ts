@@ -853,6 +853,37 @@ export class ProjectFilesService {
   }
 
   /**
+   * Visualiser un fichier (ouvre dans un nouvel onglet)
+   */
+  async viewFile(fileId: number, fileName: string): Promise<void> {
+    try {
+      console.log(`📖 [VIEW FILE] - Ouverture du fichier: ${fileName} (ID: ${fileId})`);
+      
+      const response = await securedFetch(`/api/files/download/${fileId}`, {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // Ouvrir dans un nouvel onglet au lieu de télécharger
+        window.open(url, '_blank');
+        
+        // Nettoyer l'URL après un délai pour permettre l'ouverture
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 1000);
+      } else {
+        throw new Error(`Erreur lors de l'ouverture du fichier ${fileName}`);
+      }
+    } catch (error) {
+      console.error(`Erreur lors de l'ouverture du fichier ${fileName}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Invalider tout le cache des statistiques
    */
   clearStatsCache(): void {
