@@ -543,16 +543,27 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   // Visualiser un fichier
   const handleViewFile = (file: ProjectFile) => {
     if (file.file_path) {
-      // Construire l'URL complète pour le fichier
-      const baseUrl = process.env.NEXT_PUBLIC_IMAGES_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
-      const fileUrl = file.file_path.startsWith('http') 
-        ? file.file_path 
-        : `${baseUrl}/${file.file_path}`;
+      // Construire l'URL complète pour le fichier via l'API
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      let fileUrl;
+      
+      if (file.file_path.startsWith('http')) {
+        fileUrl = file.file_path;
+      } else {
+        // Essayer différentes bases d'URL pour les fichiers
+        const staticUrl = `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || ''}/${file.file_path}`;
+        const apiUrl = `${apiBaseUrl}/${file.file_path}`;
+        
+        // Utiliser l'URL API par défaut car /static ne semble pas fonctionner
+        fileUrl = apiUrl;
+      }
       
       console.log('🔍 [DEBUG VIEW FILE] - Ouverture du fichier:', {
         original_file_path: file.file_path,
-        base_url: baseUrl,
-        final_url: fileUrl
+        api_base_url: apiBaseUrl,
+        static_base_url: process.env.NEXT_PUBLIC_IMAGES_BASE_URL,
+        final_url: fileUrl,
+        file_name: file.original_name
       });
       
       window.open(fileUrl, '_blank');
@@ -569,15 +580,20 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
   const handleDownloadFile = async (file: ProjectFile) => {
     try {
       if (file.file_path) {
-        // Construire l'URL complète pour le fichier
-        const baseUrl = process.env.NEXT_PUBLIC_IMAGES_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
-        const fileUrl = file.file_path.startsWith('http') 
-          ? file.file_path 
-          : `${baseUrl}/${file.file_path}`;
+        // Construire l'URL complète pour le fichier via l'API
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        let fileUrl;
+        
+        if (file.file_path.startsWith('http')) {
+          fileUrl = file.file_path;
+        } else {
+          // Utiliser l'URL API car /static ne semble pas fonctionner
+          fileUrl = `${apiBaseUrl}/${file.file_path}`;
+        }
         
         console.log('🔍 [DEBUG DOWNLOAD FILE] - Téléchargement du fichier:', {
           original_file_path: file.file_path,
-          base_url: baseUrl,
+          api_base_url: apiBaseUrl,
           final_url: fileUrl,
           file_name: file.original_name
         });
