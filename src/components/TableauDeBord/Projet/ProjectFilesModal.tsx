@@ -540,20 +540,70 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     }
   };
 
+  // Visualiser un fichier
+  const handleViewFile = (file: ProjectFile) => {
+    if (file.file_path) {
+      // Utiliser file_path qui correspond à file_url de l'API
+      window.open(file.file_path, '_blank');
+    } else {
+      showNotification({
+        type: 'error',
+        title: 'Erreur',
+        message: 'URL du fichier non disponible'
+      });
+    }
+  };
+
   // Télécharger un fichier
   const handleDownloadFile = async (file: ProjectFile) => {
     try {
-      await projectFilesService.downloadFile(file.id, file.original_name);
-      showNotification({
-        type: 'success',
-        title: 'Succès',
-        message: 'Téléchargement démarré'
-      });
+      if (file.file_path) {
+        // Créer un lien de téléchargement avec l'URL du fichier
+        const link = document.createElement('a');
+        link.href = file.file_path;
+        link.download = file.original_name || 'fichier';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification({
+          type: 'success',
+          title: 'Succès',
+          message: 'Téléchargement démarré'
+        });
+      } else {
+        throw new Error('URL du fichier non disponible');
+      }
     } catch (error) {
       showNotification({
         type: 'error',
         title: 'Erreur',
         message: 'Impossible de télécharger le fichier'
+      });
+    }
+  };
+
+  // Supprimer un fichier
+  const handleDeleteFile = async (file: ProjectFile) => {
+    try {
+      const success = await projectFilesService.deleteFile(file.id);
+      if (success) {
+        // Recharger la vue courante
+        loadCurrentFolder();
+        showNotification({
+          type: 'success',
+          title: 'Succès',
+          message: 'Fichier supprimé avec succès'
+        });
+      } else {
+        throw new Error('Échec de la suppression');
+      }
+    } catch (error) {
+      showNotification({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Impossible de supprimer le fichier'
       });
     }
   };
@@ -940,6 +990,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                     <div className="flex items-center gap-1 w-full justify-center">
                       <button
                         className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => handleViewFile(file)}
                         title="Aperçu"
                       >
                         <Eye className="w-4 h-4" />
@@ -954,6 +1005,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                       {isAdmin() && (
                         <button
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                          onClick={() => handleDeleteFile(file)}
                           title="Supprimer"
                         >
                           <Trash2 className="w-4 h-4" />

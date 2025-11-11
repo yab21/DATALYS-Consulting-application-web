@@ -278,30 +278,36 @@ export class ProjectFilesService {
             String(folder.parent_folder_id) === '0' ||
             String(folder.parent_folder_id) === ''
             ? null 
-            : folder.parent_folder_id;
+            : Number(folder.parent_folder_id); // Convertir en number pour comparaison
           
           const normalizedExpectedId = !parentFolderId || 
             Number(parentFolderId) === 0 ||
             String(parentFolderId) === '0' ||
             String(parentFolderId) === ''
             ? null
-            : parentFolderId;
+            : Number(parentFolderId); // Convertir en number pour comparaison
           
+          // Comparaison stricte avec conversion de type
           const isCorrectParent = normalizedParentId === normalizedExpectedId;
           
-          if (!isCorrectParent) {
-            console.warn('🚨 [HIERARCHY ERROR] - Dossier avec mauvais parent_folder_id détecté:', {
-              folder: {
-                id: folder.id,
-                name: folder.name,
-                original_parent_folder_id: folder.parent_folder_id,
-                normalized_parent_id: normalizedParentId,
-                expected_original: parentFolderId,
-                expected_normalized: normalizedExpectedId,
-                matches: isCorrectParent
-              }
-            });
-          }
+          console.log('🔍 [DEBUG FOLDER FILTER] - Comparaison dossier:', {
+            folder: {
+              id: folder.id,
+              name: folder.name,
+              original_parent_folder_id: folder.parent_folder_id,
+              original_type: typeof folder.parent_folder_id,
+              normalized_parent_id: normalizedParentId,
+              normalized_type: typeof normalizedParentId
+            },
+            expected: {
+              original: parentFolderId,
+              original_type: typeof parentFolderId,
+              normalized: normalizedExpectedId,
+              normalized_type: typeof normalizedExpectedId
+            },
+            matches: isCorrectParent
+          });
+          
           return isCorrectParent;
         });
         
