@@ -103,7 +103,7 @@ export interface DeleteFolderRequest {
 
 // Cache pour les statistiques des dossiers (5 minutes)
 const STATS_CACHE_DURATION = 5 * 60 * 1000;
-const statsCache: { [key: number]: FolderStats } = {};
+const statsCache: { [key: string]: FolderStats } = {};
 
 export class ProjectFilesService {
   private static instance: ProjectFilesService;
@@ -151,7 +151,26 @@ export class ProjectFilesService {
         body: JSON.stringify(requestData),
       });
 
-      const data: FoldersResponse = await response.json();
+      // Vérifier si la réponse est OK avant de parser le JSON
+      if (!response.ok) {
+        console.error('🔍 [DEBUG SERVICE] - Réponse HTTP non-OK:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        return [];
+      }
+
+      let data: FoldersResponse;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('🔍 [DEBUG SERVICE] - Erreur parsing JSON:', {
+          error: jsonError,
+          responseText: await response.text().catch(() => 'Impossible de lire le texte')
+        });
+        return [];
+      }
       
       // 🔍 LOG: Réponse getFolders
       console.log('🔍 [DEBUG SERVICE] - Réponse getFolders:', {
@@ -627,9 +646,11 @@ export class ProjectFilesService {
    * Obtenir les statistiques d'un dossier (avec cache)
    */
   async getFolderStats(folderId: number, projectId?: number): Promise<FolderStats> {
-    // Vérifier le cache
-    const cached = statsCache[folderId];
+    // Clé de cache unique pour éviter les conflits
+    const cacheKey = `${folderId}_${projectId || 'null'}`;
+    const cached = statsCache[cacheKey];
     if (cached && (Date.now() - cached.timestamp) < STATS_CACHE_DURATION) {
+      console.log('💾 [DEBUG STATS] - Utilisation du cache pour:', { folderId, projectId, stats: cached });
       return cached;
     }
 
@@ -637,7 +658,8 @@ export class ProjectFilesService {
       // 🔍 LOG: Début du calcul des stats
       console.log('🔍 [DEBUG STATS] - Calcul des statistiques pour le dossier:', {
         folderId,
-        projectId
+        projectId,
+        cacheKey
       });
 
       // Récupérer les sous-dossiers
@@ -646,7 +668,7 @@ export class ProjectFilesService {
       
       console.log('🔍 [DEBUG STATS] - Sous-dossiers trouvés:', {
         count: subfolders,
-        folders: folders.map(f => ({ id: f.id, name: f.name }))
+        folders: folders.map(f => ({ id: f.id, name: f.name, parent_folder_id: f.parent_folder_id }))
       });
 
       // Récupérer les fichiers
@@ -655,7 +677,13 @@ export class ProjectFilesService {
       
       console.log('🔍 [DEBUG STATS] - Fichiers trouvés:', {
         count: filesCount,
-        files: files.map(f => ({ id: f.id, name: f.original_name, folder_id: f.folder_id }))
+        files: files.map(f => ({ 
+          id: f.id, 
+          name: f.original_name, 
+          folder_id: f.folder_id,
+          project_id: f.project_id,
+          incident_id: f.incident_id
+        }))
       });
 
       const stats: FolderStats = {
@@ -664,14 +692,20 @@ export class ProjectFilesService {
         timestamp: Date.now()
       };
 
-      // Mettre en cache
-      statsCache[folderId] = stats;
+      // Mettre en cache avec la clé unique
+      statsCache[cacheKey] = stats;
       
-      console.log('🔍 [DEBUG STATS] - Statistiques finales:', stats);
+      console.log('🔍 [DEBUG STATS] - Statistiques finales:', { folderId, projectId, stats, cacheKey });
       return stats;
 
     } catch (error) {
-      console.error('❌ [DEBUG STATS] - Erreur lors du calcul des statistiques:', error);
+      console.error('❌ [DEBUG STATS] - Erreur lors du calcul des statistiques:', {
+        folderId,
+        projectId,
+        error: error instanceof Error ? error.message : error
+      });
+      
+      // Retourner des stats par défaut sans les mettre en cache en cas d'erreur
       return { subfolders: 0, files: 0, timestamp: Date.now() };
     }
   }
@@ -704,7 +738,11 @@ export class ProjectFilesService {
 
       if (data.code === 200 || response.ok) {
         // Invalider le cache des stats pour ce dossier
-        delete statsCache[folderId];
+        Object.keys(statsCache).forEach(key => {
+          if (key.startsWith(`${folderId}_`)) {
+            delete statsCache[key];
+          }
+        });
         return true;
       } else {
         console.error('Erreur lors de l\'upload du fichier:', data);
@@ -778,8 +816,18 @@ export class ProjectFilesService {
    */
   clearStatsCache(): void {
     Object.keys(statsCache).forEach(key => {
-      delete statsCache[parseInt(key)];
+      delete statsCache[key];
     });
+    console.log('🗑️ [DEBUG CACHE] - Cache des statistiques vidé');
+  }
+
+  /**
+   * Vider le cache pour un dossier spécifique
+   */
+  clearFolderStatsCache(folderId: number, projectId?: number): void {
+    const cacheKey = `${folderId}_${projectId || 'null'}`;
+    delete statsCache[cacheKey];
+    console.log('🗑️ [DEBUG CACHE] - Cache vidé pour:', { folderId, projectId, cacheKey });
   }
 
   /**
@@ -930,7 +978,11 @@ export class ProjectFilesService {
 
       if (data.code === 200 || response.ok) {
         // Invalider le cache des stats pour ce dossier
-        delete statsCache[folderId];
+        Object.keys(statsCache).forEach(key => {
+          if (key.startsWith(`${folderId}_`)) {
+            delete statsCache[key];
+          }
+        });
         return true;
       } else {
         console.error('Erreur lors de l\'upload du fichier partenaire:', data);

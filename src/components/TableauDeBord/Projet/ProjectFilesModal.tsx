@@ -209,15 +209,38 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       // Charger les statistiques de manière séquentielle pour éviter les conflits
       const foldersWithStatsPromises = foldersWithStats.map(async (folder) => {
         try {
+          console.log('📊 [DEBUG LOADING STATS] - Chargement stats pour:', {
+            folderId: folder.id,
+            folderName: folder.name,
+            parentFolderId: folder.parent_folder_id,
+            projectId: project.id
+          });
+          
           // ⚡ IMPORTANT: On utilise l'ID du dossier (pas currentFolderId) pour ses propres stats
           const stats = await projectFilesService.getFolderStats(folder.id, project.id);
+          
+          console.log('✅ [DEBUG LOADING STATS] - Stats chargées pour:', {
+            folderId: folder.id,
+            folderName: folder.name,
+            stats
+          });
+          
           return {
             ...folder,
             loadingStats: false,
             stats
           };
         } catch (error) {
-          console.error(`Erreur stats pour dossier ${folder.name}:`, error);
+          console.error(`❌ [DEBUG LOADING STATS] - Erreur stats pour dossier ${folder.name} (ID: ${folder.id}):`, {
+            error: error instanceof Error ? error.message : error,
+            stack: error instanceof Error ? error.stack : undefined,
+            folder: {
+              id: folder.id,
+              name: folder.name,
+              parent_folder_id: folder.parent_folder_id
+            }
+          });
+          
           return {
             ...folder,
             loadingStats: false,
@@ -227,12 +250,29 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       });
       
       // Traiter les stats en parallèle mais de manière contrôlée
-      Promise.all(foldersWithStatsPromises).then(foldersWithCompleteStats => {
+      Promise.allSettled(foldersWithStatsPromises).then(results => {
+        const foldersWithCompleteStats = results.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            console.error(`❌ [DEBUG PROMISE] - Échec du chargement des stats pour le dossier ${foldersWithStats[index].name}:`, result.reason);
+            return {
+              ...foldersWithStats[index],
+              loadingStats: false,
+              stats: { subfolders: 0, files: 0, timestamp: Date.now() }
+            };
+          }
+        });
+        
         setFolders(foldersWithCompleteStats);
-        console.log('✅ [DEBUG] - Statistiques chargées avec succès');
+        
+        const successCount = results.filter(r => r.status === 'fulfilled').length;
+        const failCount = results.filter(r => r.status === 'rejected').length;
+        
+        console.log(`✅ [DEBUG PROMISE] - Statistiques traitées: ${successCount} succès, ${failCount} échecs`);
       }).catch(error => {
-        console.error('❌ [DEBUG] - Erreur lors du chargement des statistiques:', error);
-        // Fallback avec stats vides en cas d'erreur
+        console.error('❌ [DEBUG PROMISE] - Erreur critique lors du chargement des statistiques:', error);
+        // Fallback avec stats vides en cas d'erreur critique
         setFolders(prev => 
           prev.map(f => ({ 
             ...f, 
@@ -243,11 +283,28 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       });
 
     } catch (error) {
-      console.error('Erreur lors du chargement:', error);
+      console.error('❌ [DEBUG LOAD FOLDER] - Erreur lors du chargement:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        currentFolderId,
+        projectId: project.id
+      });
+      
+      // Déterminer le type d'erreur pour un message plus précis
+      const isServerError = error instanceof Error && error.message.includes('500');
+      const isNetworkError = error instanceof Error && (error.message.includes('fetch') || error.message.includes('network'));
+      
+      let errorMessage = 'Impossible de charger les données du dossier';
+      if (isServerError) {
+        errorMessage = 'Erreur serveur temporaire. Veuillez réessayer dans quelques instants.';
+      } else if (isNetworkError) {
+        errorMessage = 'Problème de connexion. Vérifiez votre connexion internet.';
+      }
+      
       showNotification({
         type: 'error',
-        title: 'Erreur',
-        message: 'Impossible de charger les données du dossier'
+        title: 'Erreur de chargement',
+        message: errorMessage
       });
     } finally {
       setLoading(false);
