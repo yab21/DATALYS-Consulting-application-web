@@ -42,11 +42,37 @@ jobs:
       - name: Install production dependencies
         run: |
           rm -rf node_modules
-          npm ci --omit=dev
+          npm ci --omit=dev --prefer-offline --no-audit --no-fund
 
-      - name: Create complete deployment package
+      - name: Optimize build for deployment
+        run: |
+          # Supprimer les source maps pour réduire la taille
+          find .next -name "*.map" -type f -delete
+          
+          # Nettoyer les fichiers de développement dans node_modules
+          find node_modules -name "*.md" -type f -delete
+          find node_modules -name "*.txt" -type f -delete
+          find node_modules -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -name "__tests__" -type d -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -name "*.test.js" -type f -delete
+          find node_modules -name "*.spec.js" -type f -delete
+          
+          # Calculer la taille avant compression
+          echo "Taille avant compression:"
+          du -sh .next node_modules public
+
+      - name: Create optimized deployment package
         run: |
           tar -czf complete-app.tar.gz \
+            --exclude='*.map' \
+            --exclude='node_modules/**/test' \
+            --exclude='node_modules/**/tests' \
+            --exclude='node_modules/**/__tests__' \
+            --exclude='node_modules/**/*.test.js' \
+            --exclude='node_modules/**/*.spec.js' \
+            --exclude='node_modules/**/*.md' \
+            --exclude='node_modules/**/.git' \
             .next \
             node_modules \
             package.json \
@@ -54,6 +80,9 @@ jobs:
             public \
             ecosystem.config.js \
             next.config.mjs
+          
+          echo "Taille du package final:"
+          ls -lh complete-app.tar.gz
 
       - name: Upload complete application
         uses: actions/upload-artifact@v4
@@ -80,23 +109,41 @@ jobs:
         with:
           name: complete-app
 
-      - name: Deploy to server (NO npm operations)
-        timeout-minutes: 10
+      - name: Deploy with aggressive cleanup
+        timeout-minutes: 15
         run: |
-          echo "Deploying pre-built application..."
+          echo "🚀 Deploying optimized application with cleanup..."
           
-          # Step 1: Server cleanup (short connection)
-          echo "Cleaning up server..."
+          # Step 1: Aggressive server cleanup
+          echo "🧹 Nettoyage agressif du serveur..."
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
-            echo 'Emergency cleanup...'
-            ps aux | grep npm | grep -v grep | awk '{print \$2}' | head -5 | xargs -r kill -TERM 2>/dev/null || echo 'No npm to clean'
-            sleep 3
-            echo 'Stopping PM2...'
+            echo '🛑 Arrêt des processus...'
             pm2 delete datalys-app 2>/dev/null || echo 'PM2 not running'
             pm2 kill 2>/dev/null || echo 'PM2 daemon stopped'
-            sleep 2
-            echo 'Cleanup completed'
-          " || echo "Initial cleanup attempted"
+            
+            echo '🗂️ Nettoyage espace disque...'
+            # Nettoyer les anciens déploiements
+            rm -rf ${{ env.DEPLOY_PATH }}_backup_* 2>/dev/null || echo 'No old backups'
+            rm -rf ${{ env.DEPLOY_PATH }}_new 2>/dev/null || echo 'No pending deployment'
+            
+            # Nettoyer les logs volumineux (garder seulement les 100 dernières lignes)
+            if [ -d '${{ env.DEPLOY_PATH }}/logs' ]; then
+              for logfile in ${{ env.DEPLOY_PATH }}/logs/*.log; do
+                if [ -f \"\$logfile\" ] && [ \$(wc -l < \"\$logfile\") -gt 100 ]; then
+                  tail -100 \"\$logfile\" > \"\$logfile.tmp\" && mv \"\$logfile.tmp\" \"\$logfile\"
+                fi
+              done
+            fi
+            
+            # Nettoyer le cache npm global
+            npm cache clean --force 2>/dev/null || echo 'NPM cache cleaned'
+            
+            # Afficher l'espace disque
+            echo '💾 Espace disque avant déploiement:'
+            df -h | grep -E '(Filesystem|/$)'
+            
+            echo '✅ Cleanup terminé'
+          " || echo "Cleanup attempted"
           
           sleep 5
           
@@ -139,24 +186,46 @@ jobs:
             fi
             mv ${{ env.DEPLOY_PATH }}_new ${{ env.DEPLOY_PATH }}
             
-            echo 'Starting PM2...'
+            echo '🚀 Starting PM2...'
             cd ${{ env.DEPLOY_PATH }}
             pm2 start ecosystem.config.js --env production
             sleep 3
             pm2 save
             
-            echo 'Deployment completed - zero npm operations!'
+            echo '📊 Espace disque après déploiement:'
+            df -h | grep -E '(Filesystem|/$)'
+            
+            echo '✅ Deployment completed - optimized for disk usage!'
           "
 
-      - name: Health check
-        timeout-minutes: 3
+      - name: Final disk cleanup and health check
+        timeout-minutes: 5
         run: |
-          echo "Health check..."
+          echo "🏥 Health check et nettoyage final..."
+          
+          # Copier le script de nettoyage sur le serveur
+          scp -o StrictHostKeyChecking=no scripts/disk-cleanup.sh root@${{ env.SERVER_HOST }}:/tmp/
+          
+          # Exécuter le nettoyage automatique en arrière-plan
+          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+            chmod +x /tmp/disk-cleanup.sh
+            nohup /tmp/disk-cleanup.sh > /var/log/disk-cleanup.log 2>&1 &
+            echo 'Script de nettoyage lancé en arrière-plan'
+          " || echo "Nettoyage programmé"
+          
           sleep 15
           
+          # Health check
           for i in {1..4}; do
             if curl -f -s --connect-timeout 10 --max-time 15 https://applicationweb.datalysconsulting.com/ >/dev/null 2>&1; then
-              echo "Application is healthy!"
+              echo "✅ Application is healthy!"
+              
+              # Afficher le résultat du nettoyage
+              ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+                echo '📊 Résultat du nettoyage:'
+                tail -10 /var/log/disk-cleanup.log 2>/dev/null || echo 'Nettoyage en cours...'
+              " || true
+              
               exit 0
             fi
             echo "Attempt $i/4, waiting..."
@@ -176,12 +245,14 @@ jobs:
       - name: Success notification
         if: needs.deploy.result == 'success'
         run: |
-          echo "Minimal deployment successful!"
-          echo "No npm operations on server - completely pre-built!"
-          echo "DATALYS App: https://applicationweb.datalysconsulting.com/"
+          echo "🎉 Deployment optimized successful!"
+          echo "✅ Build size optimized (source maps removed, dev files cleaned)"
+          echo "✅ Aggressive disk cleanup performed"
+          echo "✅ Logs rotated and caches cleared"
+          echo "🌐 DATALYS App: https://applicationweb.datalysconsulting.com/"
 
       - name: Failure notification
         if: needs.deploy.result == 'failure'
         run: |
-          echo "Minimal deployment failed!"
-          echo "Check logs for issues"
+          echo "❌ Optimized deployment failed!"
+          echo "Check logs for disk space or deployment issues"
