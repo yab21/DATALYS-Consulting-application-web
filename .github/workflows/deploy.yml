@@ -78,6 +78,7 @@ jobs:
             package.json \
             package-lock.json \
             public \
+            scripts \
             ecosystem.config.js \
             next.config.mjs
           
@@ -203,14 +204,16 @@ jobs:
         run: |
           echo "🏥 Health check et nettoyage final..."
           
-          # Copier le script de nettoyage sur le serveur
-          scp -o StrictHostKeyChecking=no scripts/disk-cleanup.sh root@${{ env.SERVER_HOST }}:/tmp/
-          
-          # Exécuter le nettoyage automatique en arrière-plan
+          # Exécuter le nettoyage automatique depuis le répertoire déployé
           ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            chmod +x /tmp/disk-cleanup.sh
-            nohup /tmp/disk-cleanup.sh > /var/log/disk-cleanup.log 2>&1 &
-            echo 'Script de nettoyage lancé en arrière-plan'
+            cd ${{ env.DEPLOY_PATH }}
+            if [ -f scripts/disk-cleanup.sh ]; then
+              chmod +x scripts/disk-cleanup.sh
+              nohup scripts/disk-cleanup.sh > /var/log/disk-cleanup.log 2>&1 &
+              echo 'Script de nettoyage lancé en arrière-plan depuis le répertoire déployé'
+            else
+              echo 'Script disk-cleanup.sh non trouvé dans le déploiement'
+            fi
           " || echo "Nettoyage programmé"
           
           sleep 15
