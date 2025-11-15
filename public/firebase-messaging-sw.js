@@ -7,37 +7,31 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-comp
 
 // Configuration Firebase 
 // Note: Les variables d'environnement ne sont pas disponibles dans le service worker
-// La configuration doit être fournie par le client ou codée en dur
-const firebaseConfig = {
-  apiKey: "AIzaSyDmjct6e2ZuZhnhFeVRCFIoInuHSYMPoVg",
-  authDomain: "datalys-consulting-backend.firebaseapp.com",
-  projectId: "datalys-consulting-backend",
-  storageBucket: "datalys-consulting-backend.firebasestorage.app",
-  messagingSenderId: "838991252517",
-  appId: "1:838991252517:web:98558f13b6b88f60cc43cc"
-};
+// La configuration est injectée dynamiquement depuis l'application
+let firebaseConfig = null;
 
-// Vérifier si la configuration est définie
-const isConfigured = Object.values(firebaseConfig).every(value => 
-  value !== "your-api-key" && 
-  value !== "your-auth-domain" && 
-  value !== "your-storage-bucket" && 
-  value !== "your-sender-id" && 
-  value !== "your-app-id"
-);
+// Écouter les messages de configuration depuis l'application principale
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'FIREBASE_CONFIG') {
+    firebaseConfig = event.data.config;
+    initializeFirebaseIfReady();
+  }
+});
 
-// Initialiser Firebase seulement si configuré
-if (isConfigured) {
-  firebase.initializeApp(firebaseConfig);
+function initializeFirebaseIfReady() {
+  if (!firebaseConfig) return;
   
-  // Récupérer l'instance de messaging
-  const messaging = firebase.messaging();
-} else {
-  console.warn('Firebase non configuré dans le service worker');
+  try {
+    firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
+    setupMessageHandling(messaging);
+  } catch (error) {
+    console.warn('Erreur initialisation Firebase:', error);
+  }
 }
 
-// Gérer les messages en arrière-plan (seulement si Firebase est configuré)
-if (isConfigured && typeof messaging !== 'undefined') {
+function setupMessageHandling(messaging) {
+  // Gérer les messages en arrière-plan
   messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Message reçu en arrière-plan:', payload);
 
@@ -68,7 +62,7 @@ if (isConfigured && typeof messaging !== 'undefined') {
   };
 
   return self.registration.showNotification(notificationTitle, notificationOptions);
-});
+  });
 }
 
 // Gérer les clics sur les notifications

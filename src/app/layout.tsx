@@ -1,6 +1,7 @@
 "use client";
 // Import polyfills
 import "@/lib/polyfills";
+import "@/utils/console-cleaner";
 /*import "jsvectormap/dist/css/jsvectormap.css";*/
 import "flatpickr/dist/flatpickr.min.css";
 import "@/css/satoshi.css";

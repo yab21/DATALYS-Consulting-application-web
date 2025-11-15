@@ -145,6 +145,9 @@ const configWithWebpack = {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn'],
     } : false,
+    reactRemoveProperties: process.env.NODE_ENV === 'production' ? {
+      properties: ['^data-testid$', '^data-test$'],
+    } : false,
   },
   webpack: (config, { dev, isServer }) => {
     // Add polyfills and fallbacks for older browsers
