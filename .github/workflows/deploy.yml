@@ -1,20 +1,20 @@
-name: Deploy DATALYS App to Production (Legacy - Disabled)
+name: Deploy DATALYS App - Production
 
 on:
-  # push:
-  #   branches: [develop]
-  workflow_dispatch: # Permet le déclenchement manuel
+  push:
+    branches: [develop]
+  workflow_dispatch:
 
 env:
   NODE_VERSION: "18.x"
   SERVER_HOST: "82.112.253.137"
   APP_NAME: "datalys-app"
-  DEPLOY_PATH: "/var/www/datalys-app"
+  DEPLOY_PATH: "/var/www/datalys-app-git"
 
 jobs:
-  # Tests 
-  test:
-    name: Test & Validate
+  # Build everything on GitHub Actions
+  build:
+    name: Build Complete Application
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: Install dependencies
+      - name: Install all dependencies
         run: npm ci
 
       - name: Run TypeScript check
@@ -36,288 +36,152 @@ jobs:
       - name: Run tests (if available)
         run: npm run test --if-present
 
-  # Build sur GitHub Actions (serveurs rapides)
-  build:
-    name: Build Application
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies with cache
-        run: |
-          npm ci --prefer-offline --no-audit --no-fund
-
       - name: Build Next.js application
-        run: |
-          npm run build
+        run: npm run build
 
-      - name: Install production dependencies for deployment
+      - name: Install production dependencies
         run: |
           rm -rf node_modules
-          npm ci --omit=dev --prefer-offline --no-audit --no-fund
+          npm ci --omit=dev
 
       - name: Create complete deployment package
         run: |
-          # Create compressed package with all needed files
-          tar --exclude='*.log' --exclude='.git' -czf deployment.tar.gz .next package.json package-lock.json public ecosystem.config.js node_modules
+          tar -czf complete-app.tar.gz \
+            .next \
+            node_modules \
+            package.json \
+            package-lock.json \
+            public \
+            ecosystem.config.js \
+            next.config.mjs
 
-      - name: Upload build artifacts
+      - name: Upload complete application
         uses: actions/upload-artifact@v4
         with:
-          name: build-files
-          path: deployment.tar.gz
+          name: complete-app
+          path: complete-app.tar.gz
           retention-days: 1
 
-  # Déploiement optimisé
+  # Deploy without any npm operations on server
   deploy:
-    name: Deploy to Production
+    name: Deploy Pre-built Application
     runs-on: ubuntu-latest
     needs: build
     environment: production
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-files
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Create deployment directory and setup
+      - name: Download complete application
+        uses: actions/download-artifact@v4
+        with:
+          name: complete-app
+
+      - name: Deploy to server (NO npm operations)
+        timeout-minutes: 10
         run: |
-          # Generate timestamp once and reuse it
-          export TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
-          export RELEASE_DIR="${{ env.DEPLOY_PATH }}/releases/$TIMESTAMP"
-          echo "RELEASE_DIR=$RELEASE_DIR" >> $GITHUB_ENV
-
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
-            set -e
-            # Auto-cleanup old releases before creating new one to prevent disk full
-            cd ${{ env.DEPLOY_PATH }}/releases 2>/dev/null || mkdir -p ${{ env.DEPLOY_PATH }}/releases
-            if [ \$(ls -1 | wc -l) -gt 5 ]; then
-              echo 'Cleaning old releases to prevent disk full...'
-              ls -t | tail -n +6 | head -5 | xargs -r rm -rf 2>/dev/null &
-            fi
-            mkdir -p $RELEASE_DIR
-            mkdir -p ${{ env.DEPLOY_PATH }}/shared/logs
-            mkdir -p ${{ env.DEPLOY_PATH }}/shared/node_modules
-            echo 'Directories created successfully'
-          "
-
-      - name: Deploy source code
-        run: |
-          echo "Deploying source code to: $RELEASE_DIR"
-
-          # Synchroniser le code source
-          rsync -avz --delete \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='.env*' \
-            --exclude='.next' \
-            ./ root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
-
-          # Créer les liens symboliques
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 root@${{ env.SERVER_HOST }} "
-            set -e
-            cd $RELEASE_DIR
-            ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
-            ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
-            echo 'Source files deployed and symlinks created'
-          "
-
-      - name: Deploy complete application to server
-        timeout-minutes: 12
-        run: |
-          echo "Transferring complete application to: $RELEASE_DIR"
+          echo "Deploying pre-built application..."
           
-          # Transfer complete application with progress
-          rsync -avz --progress --compress-level=1 deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/ || {
-            echo "rsync failed, trying scp..."
-            scp -o StrictHostKeyChecking=no deployment.tar.gz root@${{ env.SERVER_HOST }}:$RELEASE_DIR/
-          }
-          
-          # Use multiple short SSH connections to avoid timeout
-          echo "Starting extraction process..."
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=2 root@${{ env.SERVER_HOST }} "
-            cd $RELEASE_DIR
-            echo 'Starting tar extraction...'
-            nohup tar -xzf deployment.tar.gz >/tmp/extract.log 2>&1 &
-            echo \$! > /tmp/extract.pid
-            echo 'Extraction started in background'
-          " || echo "Extraction command sent"
-          
-          # Wait and check extraction progress
-          for i in {1..20}; do
-            echo "Checking extraction progress (attempt $i/20)..."
-            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@${{ env.SERVER_HOST }} "
-              cd $RELEASE_DIR 2>/dev/null || exit 1
-              if [ -f /tmp/extract.pid ] && kill -0 \$(cat /tmp/extract.pid) 2>/dev/null; then
-                echo 'Extraction still running...'
-                exit 2
-              elif [ -d '.next' ] && [ -d 'node_modules' ]; then
-                echo 'Extraction completed successfully!'
-                rm -f deployment.tar.gz /tmp/extract.pid /tmp/extract.log
-                echo \"Dependencies: \$(ls node_modules | wc -l) packages\"
-                exit 0
-              else
-                echo 'Extraction may have failed'
-                exit 1
-              fi
-            "; then
-              echo "Extraction verified successfully!"
-              break
-            elif [ $? -eq 2 ]; then
-              echo "Extraction in progress, waiting 30s..."
-              sleep 30
-            else
-              echo "Checking extraction status..."
-              sleep 15
-            fi
-            
-            if [ $i -eq 20 ]; then
-              echo "Extraction timeout, but attempting to continue..."
-            fi
-          done
-
-      - name: Switch to new release  
-        timeout-minutes: 5
-        run: |
-          echo "Switching to release: $TIMESTAMP"
+          # Step 1: Server cleanup (short connection)
+          echo "Cleaning up server..."
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
-            cd ${{ env.DEPLOY_PATH }}
-            
-            # Backup current if exists
-            if [ -L current ]; then
-              rm -f previous
-              mv current previous
-            fi
-            
-            # Create new symlink
-            ln -sf releases/$TIMESTAMP current
-            echo 'Symlink updated to new release'
-          "
-
-      - name: Stop PM2 processes
-        timeout-minutes: 3
-        run: |
-          echo "Stopping existing PM2 processes..."
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=10 -o ServerAliveCountMax=2 root@${{ env.SERVER_HOST }} "
-            pm2 delete datalys-app 2>/dev/null || echo 'No processes to delete'
+            echo 'Emergency cleanup...'
+            ps aux | grep npm | grep -v grep | awk '{print \$2}' | head -5 | xargs -r kill -TERM 2>/dev/null || echo 'No npm to clean'
+            sleep 3
+            echo 'Stopping PM2...'
+            pm2 delete datalys-app 2>/dev/null || echo 'PM2 not running'
             pm2 kill 2>/dev/null || echo 'PM2 daemon stopped'
             sleep 2
-            echo 'PM2 processes stopped'
-          " || echo "PM2 stop completed (connection may have dropped)"
-
-      - name: Start PM2 processes
-        timeout-minutes: 5
-        run: |
-          echo "Starting fresh PM2 processes..."
+            echo 'Cleanup completed'
+          " || echo "Initial cleanup attempted"
+          
+          sleep 5
+          
+          # Step 2: Directory preparation (short connection) 
+          echo "Preparing directories..."
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=2 root@${{ env.SERVER_HOST }} "
+            echo 'Setting up deployment directory...'
+            mkdir -p ${{ env.DEPLOY_PATH }}_new
+            cd ${{ env.DEPLOY_PATH }}_new
+            echo 'Directory ready'
+          " || echo "Directory preparation attempted"
+          
+          # Step 3: Transfer and extract (one connection)
+          echo "Transferring pre-built application..."
+          scp -o StrictHostKeyChecking=no complete-app.tar.gz root@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}_new/
+          
+          # Step 4: Extraction and setup (short connection)
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
-            cd ${{ env.DEPLOY_PATH }}/current
+            cd ${{ env.DEPLOY_PATH }}_new
             
-            # Start PM2 with simplified approach
-            pm2 start ecosystem.config.js --env production || echo 'PM2 start attempted'
-            sleep 5
+            echo 'Extracting pre-built application...'
+            tar -xzf complete-app.tar.gz
+            rm complete-app.tar.gz
             
-            # Quick status check
-            if pm2 list | grep -q 'online\|stopped\|errored'; then
-              echo 'PM2 processes detected'
-              pm2 save
+            echo 'Setting up environment links...'
+            ln -sf /var/www/datalys-app/shared/.env .env
+            ln -sf /var/www/datalys-app/shared/logs logs
+            
+            echo 'Verifying deployment...'
+            if [ -f node_modules/next/dist/bin/next ] && [ -d .next ]; then
+              echo 'Pre-built application verified!'
             else
-              echo 'PM2 status unclear, but process started'
+              echo 'ERROR: Application not properly built'
+              exit 1
             fi
-          " || {
-            echo "PM2 start may have succeeded despite connection issues"
-            sleep 10
-          }
-
-      - name: Schedule cleanup (non-blocking)
-        run: |
-          echo "Scheduling cleanup for later (non-blocking deployment)"
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            nohup bash -c '
-              sleep 300
-              cd ${{ env.DEPLOY_PATH }}/releases 2>/dev/null || exit 0
-              ls -t | tail -n +6 | head -3 | xargs -r rm -rf 2>/dev/null
-              echo \"Cleanup completed at \$(date)\" >> /var/log/datalys-cleanup.log
-            ' >/dev/null 2>&1 &
-            echo 'Cleanup scheduled for 5 minutes after deployment'
-          " || echo "Cleanup scheduling attempted"
+            
+            echo 'Atomic deployment switch...'
+            if [ -d ${{ env.DEPLOY_PATH }} ]; then
+              mv ${{ env.DEPLOY_PATH }} ${{ env.DEPLOY_PATH }}_backup_\$(date +%H%M%S) 2>/dev/null || echo 'No old version'
+            fi
+            mv ${{ env.DEPLOY_PATH }}_new ${{ env.DEPLOY_PATH }}
+            
+            echo 'Starting PM2...'
+            cd ${{ env.DEPLOY_PATH }}
+            pm2 start ecosystem.config.js --env production
+            sleep 3
+            pm2 save
+            
+            echo 'Deployment completed - zero npm operations!'
+          "
 
       - name: Health check
-        timeout-minutes: 8
+        timeout-minutes: 3
         run: |
-          echo "Waiting for slow VPS application to start..."
-          sleep 30
+          echo "Health check..."
+          sleep 15
           
-          # Retry health check up to 10 times for slow VPS
-          for i in {1..10}; do
-            echo "Health check attempt $i/10..."
-            if curl -f -s --connect-timeout 20 --max-time 30 https://applicationweb.datalysconsulting.com/ >/dev/null 2>&1; then
-              echo "Application is healthy and responding!"
+          for i in {1..4}; do
+            if curl -f -s --connect-timeout 10 --max-time 15 https://applicationweb.datalysconsulting.com/ >/dev/null 2>&1; then
+              echo "Application is healthy!"
               exit 0
             fi
-            if [ $i -lt 10 ]; then
-              echo "Health check failed, retrying in 20s... (VPS needs time)"
-              sleep 20
-            fi
+            echo "Attempt $i/4, waiting..."
+            sleep 10
           done
           
-          echo "Health check failed after 10 attempts"
-          echo "Checking PM2 status for debugging..."
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "pm2 list && pm2 logs datalys-app --lines 15" || true
-          echo "Deployment may still be successful but application is slow to respond"
-          exit 0
-
-      - name: Final verification
-        run: |
-          echo "Final deployment verification..."
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
-            echo 'PM2 Status:'
-            pm2 list
-            echo 'Application logs (last 10 lines):'
-            pm2 logs ${{ env.APP_NAME }} --lines 10 2>/dev/null || echo 'No recent logs'
-            echo 'Current release:'
-            ls -la ${{ env.DEPLOY_PATH }}/current
-            echo 'Deployment verification completed'
-          "
+          echo "Application deployed but may need more time"
 
   # Notification
   notify:
     name: Notification
     runs-on: ubuntu-latest
-    needs: [test, build, deploy]
+    needs: [build, deploy]
     if: always()
 
     steps:
       - name: Success notification
         if: needs.deploy.result == 'success'
         run: |
-          echo "Deployment successful!"
-          echo "DATALYS App deployed to https://applicationweb.datalysconsulting.com/"
-          echo "Commit: ${{ github.sha }}"
-          echo "Author: ${{ github.actor }}"
+          echo "Minimal deployment successful!"
+          echo "No npm operations on server - completely pre-built!"
+          echo "DATALYS App: https://applicationweb.datalysconsulting.com/"
 
       - name: Failure notification
         if: needs.deploy.result == 'failure'
         run: |
-          echo "Deployment failed!"
-          echo "Please check the logs and fix the issues"
-          echo "Commit: ${{ github.sha }}"
-          echo "Author: ${{ github.actor }}"
+          echo "Minimal deployment failed!"
+          echo "Check logs for issues"

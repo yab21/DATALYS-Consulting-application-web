@@ -4,7 +4,7 @@ module.exports = {
       name: "datalys-app",
       port: "3000",
       exec_mode: "cluster",
-      instances: "max", // Utilise tous les CPU disponibles
+      instances: 2, // Limité à 2 instances pour éviter la saturation sur VPS
       script: "node_modules/next/dist/bin/next",
       args: "start",
       env: {
@@ -17,8 +17,8 @@ module.exports = {
       },
       // Surveillance et redémarrage automatique
       watch: false,
-      max_memory_restart: "1G",
-      restart_delay: 5000,
+      max_memory_restart: "512M", // Réduit pour VPS avec RAM limitée
+      restart_delay: 3000,
 
       // Logs
       log_file: "./logs/combined.log",
@@ -26,9 +26,13 @@ module.exports = {
       error_file: "./logs/error.log",
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
 
-      // Gestion des erreurs
-      min_uptime: "10s",
-      max_restarts: 10,
+      // Gestion des erreurs améliorée
+      min_uptime: "5s",
+      max_restarts: 15,
+      autorestart: true,
+      
+      // Optimisations Node.js pour VPS
+      node_args: "--max_old_space_size=512",
 
       // Variables d'environnement
       env_file: ".env",
