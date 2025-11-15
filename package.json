@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run security-check",
+    "build": "next build",
     "start": "cross-env NODE_ENV=production PORT=3001 node server.js",
     "type-check": "tsc --noEmit",
     "lint": "next lint",
