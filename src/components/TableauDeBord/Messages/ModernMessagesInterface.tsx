@@ -87,6 +87,32 @@ const ModernMessagesInterface: React.FC = () => {
   
   // Map pour stocker les noms d'utilisateurs par ID
   const [userNamesMap, setUserNamesMap] = useState<Map<number, string>>(new Map());
+
+  // Fonction utilitaire pour extraire le nom d'un utilisateur à partir d'un message
+  const extractUserName = (message: any, isCurrentUser: boolean = false): string => {
+    if (isCurrentUser && user?.name) {
+      return user.name;
+    }
+
+    // Priorité 1: Nom direct du message
+    if (message.sender_name) return message.sender_name;
+    if (message.user?.name) return message.user.name;
+    if (message.created_by_name) return message.created_by_name;
+    
+    // Priorité 2: Map des noms chargés
+    const userId = message.created_by || message.user_id || message.sender_id;
+    if (userId && userNamesMap.has(parseInt(userId))) {
+      return userNamesMap.get(parseInt(userId))!;
+    }
+    
+    // Priorité 3: Si c'est l'utilisateur connecté
+    if (userId && user?.id && (parseInt(userId) === user.id || String(userId) === String(user.id))) {
+      return user.name || 'Moi';
+    }
+    
+    // Fallback: Utilisateur + ID
+    return userId ? `Utilisateur ${userId}` : 'Utilisateur inconnu';
+  };
   
   // États pour les projets
   const [projects, setProjects] = useState<Project[]>([]);
@@ -170,6 +196,7 @@ const ModernMessagesInterface: React.FC = () => {
   // Charger les noms d'utilisateurs pour l'affichage des messages
   const loadUserNames = async () => {
     try {
+      // Tenter de récupérer tous les utilisateurs (admins seulement)
       const usersResult = await UsersService.getUsersByCriteria({
         index: 0,
         size: 200, // Plus large pour couvrir tous les utilisateurs
@@ -186,7 +213,8 @@ const ModernMessagesInterface: React.FC = () => {
         setUserNamesMap(namesMap);
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des noms d\'utilisateurs:', error);
+      console.error('Erreur lors du chargement des noms d\'utilisateurs (peut être normal pour les partenaires):', error);
+      // Pour les partenaires, nous nous appuierons sur les données des messages eux-mêmes
     }
   };
 
@@ -287,12 +315,8 @@ const ModernMessagesInterface: React.FC = () => {
         let conversationTitle = message.title || 'Sans titre';
         // Remplacer les multiples "Réponse: " par un seul
         conversationTitle = conversationTitle.replace(/^(Réponse:\s*)+/gi, 'Réponse: ').trim();
-        // Essayer plusieurs champs pour récupérer le nom de l'utilisateur
-        const senderName = message.sender_name || 
-                          message.user?.name || 
-                          message.created_by_name ||
-                          (message.created_by === user?.id ? user?.name : null) ||
-                          (message.created_by ? `Utilisateur ${message.created_by}` : 'Utilisateur inconnu');
+        // Utiliser la fonction utilitaire pour extraire le nom
+        const senderName = extractUserName(message);
         
         if (!conversationsMap.has(conversationKey)) {
           conversationsMap.set(conversationKey, {
@@ -749,17 +773,7 @@ const ModernMessagesInterface: React.FC = () => {
                       style={isMyMessage ? { backgroundColor: '#4ba9b7' } : {}}>
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`text-xs font-medium ${isMyMessage ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
-                            {isMyMessage ? `${user?.name || 'Moi'}` : (
-                              message.sender_name || 
-                              (message as any).user?.name || 
-                              (message as any).created_by_name ||
-                              (message as any).sender ||
-                              // Utiliser la map des noms d'utilisateurs
-                              userNamesMap.get((message as any).created_by) ||
-                              userNamesMap.get((message as any).user_id) ||
-                              `Utilisateur ${(message as any).created_by || (message as any).user_id}` ||
-                              'Utilisateur inconnu'
-                            )}
+                            {extractUserName(message, isMyMessage)}
                           </span>
                           <div className={`w-1.5 h-1.5 rounded-full ${getPriorityColor(message.priority)}`} />
                         </div>
@@ -927,7 +941,7 @@ const ModernMessagesInterface: React.FC = () => {
                           }}
                         >
                           {users.length === 0 ? (
-                            <SelectItem key="loading" value="loading" isDisabled={true}>
+                            <SelectItem key="loading" value="loading" isReadOnly>
                               {loadingUsers ? "Chargement..." : "Aucun utilisateur"}
                             </SelectItem>
                           ) : (
