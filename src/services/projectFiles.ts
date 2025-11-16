@@ -887,12 +887,29 @@ export class ProjectFilesService {
   /**
    * Visualiser un fichier (ouvre dans un nouvel onglet)
    */
-  async viewFile(fileId: number, fileName: string): Promise<void> {
+  async viewFile(fileId: number, fileName: string, fileUrl?: string): Promise<void> {
     try {
       console.log(`📖 [VIEW FILE] - Ouverture du fichier: ${fileName} (ID: ${fileId})`);
+      console.log(`📖 [VIEW FILE] - File URL fournie: ${fileUrl}`);
       
-      const response = await securedFetch(`/api/files/download/${fileId}`, {
+      // Utiliser l'endpoint /files/serve/{file_url} comme dans Postman
+      let viewUrl: string;
+      if (fileUrl) {
+        // Nettoyer le file_url (enlever les slashes de début)
+        const cleanFileUrl = fileUrl.replace(/^\/+/, '');
+        viewUrl = `${baseUrl}/files/serve/${cleanFileUrl}`;
+      } else {
+        throw new Error('file_url manquant pour visualiser le fichier');
+      }
+      
+      console.log(`📖 [VIEW FILE] - URL finale: ${viewUrl}`);
+      
+      const token = SecureStorage.getItem('authToken');
+      const response = await fetch(viewUrl, {
         method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
