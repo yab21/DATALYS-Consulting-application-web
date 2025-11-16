@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { SecureStorage } from "@/lib/secure-storage";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
   Table,
   TableHeader,
@@ -109,6 +110,9 @@ const TablePartner: React.FC = () => {
     search: "",
     status: "all"
   });
+  
+  // Debounced search pour éviter les appels API à chaque frappe
+  const debouncedSearch = useDebounce(filters.search, 500);
   
   
   // États pour les modals
@@ -327,9 +331,9 @@ const TablePartner: React.FC = () => {
         data: {}
       };
 
-      // Ajouter les filtres de recherche
-      if (filters.search.trim()) {
-        params.data!.name = filters.search.trim();
+      // Ajouter les filtres de recherche (utiliser la valeur debouncée)
+      if (debouncedSearch.trim()) {
+        params.data!.name = debouncedSearch.trim();
       }
 
       // Ajouter le filtre de statut
@@ -390,12 +394,19 @@ const TablePartner: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, authLoading, isAdmin, pagination.page, pagination.rowsPerPage, filters, fixImageUrl]);
+  }, [isAuthenticated, authLoading, isAdmin, pagination.page, pagination.rowsPerPage, debouncedSearch, filters.status, fixImageUrl]);
 
   // Effet pour charger les données au démarrage et lors des changements de filtres/pagination
   useEffect(() => {
     loadPartners();
   }, [loadPartners]);
+  
+  // Réinitialiser la pagination quand la recherche debouncée change
+  useEffect(() => {
+    if (debouncedSearch !== filters.search) {
+      setPagination(prev => ({ ...prev, page: 1 }));
+    }
+  }, [debouncedSearch, filters.search]);
 
   // Pagination effect pour la pagination côté client
   useEffect(() => {
@@ -416,7 +427,10 @@ const TablePartner: React.FC = () => {
   // Fonction pour gérer les changements de filtres
   const handleFilterChange = useCallback((key: keyof TableFilters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, page: 1 })); // Retourner à la première page
+    // Retourner à la première page seulement pour les filtres qui déclenchent une recherche
+    if (key === 'status' || (key === 'search' && value.trim() !== '')) {
+      setPagination(prev => ({ ...prev, page: 1 }));
+    }
   }, []);
 
   // Handlers pour les callbacks des modals
@@ -679,8 +693,20 @@ const TablePartner: React.FC = () => {
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               startContent={<Search className="h-4 w-4 text-gray-400" />}
+              endContent={
+                filters.search !== debouncedSearch ? (
+                  <div className="flex items-center">
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-r-transparent"></div>
+                  </div>
+                ) : null
+              }
               className="max-w-md"
               size="lg"
+              description={
+                filters.search !== debouncedSearch 
+                  ? "Recherche en cours..." 
+                  : undefined
+              }
             />
           </div>
           <div className="flex items-center gap-4">
