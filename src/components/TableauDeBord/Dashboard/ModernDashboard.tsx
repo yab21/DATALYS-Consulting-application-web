@@ -888,7 +888,7 @@ const ModernDashboard: React.FC = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 * index }}
                             className="group p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-blue-400 transition-all duration-300 cursor-pointer"
-                            onClick={() => window.location.href = `/tableaudebord/projet/pageprojet/${project.id}`}
+                            onClick={() => window.location.href = `/tableaudebord/projet/gerer`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
@@ -1161,7 +1161,6 @@ const ModernDashboard: React.FC = () => {
                               />
                               <div>
                                 <p className="font-semibold text-gray-900">{partner.partner_name}</p>
-                                <p className="text-xs text-gray-500">ID: {partner.partner_id}</p>
                               </div>
                             </div>
                           </TableCell>

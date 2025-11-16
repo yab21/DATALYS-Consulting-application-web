@@ -119,14 +119,32 @@ jobs:
           echo "🧹 Nettoyage agressif du serveur..."
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
             echo '🛑 Arrêt des processus...'
-            # Arrêt forcé avec timeout pour éviter les blocages
-            timeout 30s pm2 stop all 2>/dev/null || echo 'PM2 stop timeout'
-            timeout 20s pm2 delete all 2>/dev/null || echo 'PM2 delete timeout'
-            timeout 15s pm2 kill 2>/dev/null || echo 'PM2 kill timeout'
+            # Vérification santé PM2 avant arrêt
+            if ! timeout 5s pm2 status >/dev/null 2>&1; then
+              echo '⚠️ PM2 daemon corrompu détecté, reset forcé...'
+              pkill -f pm2 2>/dev/null || echo 'No PM2 processes'
+              pkill -f node 2>/dev/null || echo 'No Node processes'
+              rm -f ~/.pm2/rpc.sock ~/.pm2/pub.sock 2>/dev/null || echo 'PM2 sockets cleaned'
+              sleep 3
+            else
+              echo '✅ PM2 daemon responsive, arrêt normal...'
+              timeout 30s pm2 stop all 2>/dev/null || echo 'PM2 stop timeout'
+              timeout 20s pm2 delete all 2>/dev/null || echo 'PM2 delete timeout'
+              timeout 15s pm2 kill 2>/dev/null || echo 'PM2 kill timeout'
+            fi
             
-            # Force kill si PM2 est encore bloqué
+            # Nettoyage processus final et libération port 3000
             pkill -f pm2 2>/dev/null || echo 'No PM2 processes to kill'
-            sleep 2
+            pkill -f node 2>/dev/null || echo 'No Node processes to kill'
+            fuser -k 3000/tcp 2>/dev/null || echo 'Port 3000 already free'
+            sleep 3
+            
+            # Vérifier que le port 3000 est libre
+            if netstat -tlnp | grep -q ':3000'; then
+              echo '⚠️ Port 3000 still busy, force cleanup...'
+              lsof -ti:3000 | xargs kill -9 2>/dev/null || echo 'Port cleanup attempted'
+              sleep 2
+            fi
             
             echo '🗂️ Nettoyage espace disque...'
             # Nettoyer les anciens déploiements
