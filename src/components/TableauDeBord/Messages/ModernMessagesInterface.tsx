@@ -85,6 +85,9 @@ const ModernMessagesInterface: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   
+  // Map pour stocker les noms d'utilisateurs par ID
+  const [userNamesMap, setUserNamesMap] = useState<Map<number, string>>(new Map());
+  
   // États pour les projets
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -130,7 +133,22 @@ const ModernMessagesInterface: React.FC = () => {
   // Charger et organiser les messages en conversations
   useEffect(() => {
     loadMessages();
+    loadUserNames(); // Charger les noms d'utilisateurs pour l'affichage
   }, []);
+  
+  // Mettre à jour la conversation sélectionnée quand les conversations changent
+  useEffect(() => {
+    if (selectedConversation && conversations.length > 0) {
+      const updatedConversation = conversations.find(conv => conv.id === selectedConversation.id);
+      if (updatedConversation && updatedConversation !== selectedConversation) {
+        // Vérifier si le contenu a changé (nouveau message)
+        const hasNewMessages = updatedConversation.messages.length !== selectedConversation.messages.length;
+        if (hasNewMessages) {
+          setSelectedConversation(updatedConversation);
+        }
+      }
+    }
+  }, [conversations, selectedConversation]);
 
   // Charger les projets
   const loadProjects = async () => {
@@ -146,6 +164,29 @@ const ModernMessagesInterface: React.FC = () => {
       setProjects([]);
     } finally {
       setLoadingProjects(false);
+    }
+  };
+
+  // Charger les noms d'utilisateurs pour l'affichage des messages
+  const loadUserNames = async () => {
+    try {
+      const usersResult = await UsersService.getUsersByCriteria({
+        index: 0,
+        size: 200, // Plus large pour couvrir tous les utilisateurs
+        data: {}  // Pas de filtre pour récupérer tous
+      });
+      
+      if (usersResult && usersResult.items) {
+        const namesMap = new Map<number, string>();
+        usersResult.items.forEach((user: User) => {
+          if (user.id && user.name) {
+            namesMap.set(user.id, user.name);
+          }
+        });
+        setUserNamesMap(namesMap);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des noms d\'utilisateurs:', error);
     }
   };
 
@@ -219,26 +260,33 @@ const ModernMessagesInterface: React.FC = () => {
         messages = [];
       }
       
-      // Essayer de récupérer les notifications via l'API dédiée
-      try {
-        const notificationsResponse = await messagesService.getUnreadNotifications(0, 100);
-        const notifications = notificationsResponse.items || [];
-        
-        if (notifications.length > 0) {
-          // Combiner messages et notifications
-          messages = [...messages, ...notifications];
-        }
-      } catch (notifError) {
-        console.warn('⚠️ Impossible de récupérer les notifications:', notifError);
-      }
+      // Temporairement désactivé car l'API notifications retourne 500
+      // try {
+      //   const notificationsResponse = await messagesService.getUnreadNotifications(0, 100);
+      //   const notifications = notificationsResponse.items || [];
+      //   
+      //   if (notifications.length > 0) {
+      //     // Combiner messages et notifications
+      //     messages = [...messages, ...notifications];
+      //   }
+      // } catch (notifError) {
+      //   console.warn('⚠️ Impossible de récupérer les notifications:', notifError);
+      // }
       
+      // Récupérer les messages marqués comme lus depuis localStorage
+      const readMessagesKey = `readMessages_user_${user?.id}`;
+      const readMessageIds = new Set(JSON.parse(localStorage.getItem(readMessagesKey) || '[]'));
+
       // Organiser les messages en conversations
       const conversationsMap = new Map<string, Conversation>();
       
       messages.forEach((message: any) => {
         // Grouper par titre de conversation (parent_id pour les réponses, sinon par title)
         const conversationKey = message.parent_id || message.id;
-        const conversationTitle = message.title || 'Sans titre';
+        // Nettoyer le titre pour éviter les "Réponse: " multiples
+        let conversationTitle = message.title || 'Sans titre';
+        // Remplacer les multiples "Réponse: " par un seul
+        conversationTitle = conversationTitle.replace(/^(Réponse:\s*)+/gi, 'Réponse: ').trim();
         // Essayer plusieurs champs pour récupérer le nom de l'utilisateur
         const senderName = message.sender_name || 
                           message.user?.name || 
@@ -263,14 +311,27 @@ const ModernMessagesInterface: React.FC = () => {
         }
         
         const conversation = conversationsMap.get(conversationKey)!;
-        conversation.messages.push(message);
+        
+        // Déterminer si c'est mon message
+        const isMyMessage = (
+          ((message as any).created_by && String((message as any).created_by) === String(user?.id)) ||
+          ((message as any).user_id && String((message as any).user_id) === String(user?.id))
+        );
+        
+        // Appliquer l'état "lu" depuis localStorage OU marquer automatiquement mes propres messages comme lus
+        const messageWithReadState = {
+          ...message,
+          is_read: isMyMessage || message.is_read || readMessageIds.has(message.id)
+        };
+        
+        conversation.messages.push(messageWithReadState);
         
         // Mettre à jour le dernier message
         const messageDate = new Date(message.updated_at || message.created_at || Date.now());
         const lastMessageDate = new Date(conversation.lastMessage.updated_at || conversation.lastMessage.created_at || 0);
         
         if (messageDate > lastMessageDate) {
-          conversation.lastMessage = message;
+          conversation.lastMessage = messageWithReadState; // Utiliser le message avec l'état "lu" correct
           conversation.updatedAt = message.updated_at || message.created_at || new Date().toISOString();
         }
         
@@ -279,14 +340,21 @@ const ModernMessagesInterface: React.FC = () => {
           conversation.participants.push(senderName);
         }
         
-        // Compter les non lus
-        if (!message.is_read) {
+        // Compter les non lus en tenant compte du localStorage
+        if (!messageWithReadState.is_read) {
           conversation.unreadCount++;
         }
       });
       
       // Convertir en array et trier par date
       const conversationsArray = Array.from(conversationsMap.values())
+        .map(conversation => ({
+          ...conversation,
+          // Trier les messages par ordre chronologique (ancien vers récent)
+          messages: conversation.messages.sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+        }))
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       
       setConversations(conversationsArray);
@@ -304,7 +372,35 @@ const ModernMessagesInterface: React.FC = () => {
   };
 
   const handleSelectConversation = (conversation: Conversation) => {
-    setSelectedConversation(conversation);
+    // Marquer tous les messages de cette conversation comme lus (côté frontend uniquement)
+    const updatedConversation = {
+      ...conversation,
+      unreadCount: 0,
+      messages: conversation.messages.map(message => {
+        // Toujours marquer tous les messages comme lus quand on ouvre la conversation
+        return {
+          ...message,
+          is_read: true,
+          read_at: message.read_at || new Date().toISOString()
+        };
+      })
+    };
+
+    // Sauvegarder l'état "lu" en localStorage pour persister après rechargement
+    const readMessagesKey = `readMessages_user_${user?.id}`;
+    const currentReadMessages = JSON.parse(localStorage.getItem(readMessagesKey) || '[]');
+    const messageIds = conversation.messages.map(m => m.id);
+    const updatedReadMessages = [...new Set([...currentReadMessages, ...messageIds])];
+    localStorage.setItem(readMessagesKey, JSON.stringify(updatedReadMessages));
+    
+    // Mettre à jour la liste des conversations pour refléter les changements
+    setConversations(prevConversations => 
+      prevConversations.map(conv => 
+        conv.id === conversation.id ? updatedConversation : conv
+      )
+    );
+    
+    setSelectedConversation(updatedConversation);
     if (isMobile) {
       setShowConversationDetail(true);
     }
@@ -333,8 +429,14 @@ const ModernMessagesInterface: React.FC = () => {
         await messagesService.replyToIncidentMessage(incidentReplyData);
       } else {
         // Message normal - utiliser sendMessage avec parent_id
+        // Éviter d'ajouter "Réponse: " plusieurs fois
+        let replyTitle = selectedConversation.title;
+        if (!replyTitle.startsWith("Réponse:") && !replyTitle.startsWith("Re:")) {
+          replyTitle = `Réponse: ${replyTitle}`;
+        }
+        
         const replyData: CreateMessageRequest = {
-          title: `Réponse: ${selectedConversation.title}`,
+          title: replyTitle,
           description: replyText.trim(),
           parent_id: parseInt(selectedConversation.id)
         };
@@ -343,6 +445,7 @@ const ModernMessagesInterface: React.FC = () => {
       }
       
       setReplyText("");
+      
       await loadMessages(); // Recharger pour voir la nouvelle réponse
       
     } catch (error) {
@@ -358,8 +461,6 @@ const ModernMessagesInterface: React.FC = () => {
     try {
       setSendingNewMessage(true);
       
-      const isAdmin = user?.role_id === 1 || String(user?.role_id) === "1";
-      
       // Toujours utiliser sendMessage pour que les messages apparaissent dans la liste
       const messageData: CreateMessageRequest = {
         title: newMessage.title.trim(),
@@ -374,7 +475,7 @@ const ModernMessagesInterface: React.FC = () => {
         })
       };
       
-      const response = await messagesService.sendMessage(messageData);
+      await messagesService.sendMessage(messageData);
       
       // Réinitialiser le formulaire
       setNewMessage({
@@ -617,26 +718,48 @@ const ModernMessagesInterface: React.FC = () => {
 
                 {/* Messages */}
                 <ScrollShadow className="flex-1 p-4 space-y-4">
-                  {selectedConversation.messages.map((message, index) => (
+                  {selectedConversation.messages.map((message, index) => {
+                    // Utiliser les champs corrects identifiés dans les logs
+                    const isMyMessage = (
+                      // Vérifier created_by (présent dans tous les messages)
+                      ((message as any).created_by && String((message as any).created_by) === String(user?.id)) ||
+                      // Vérifier user_id (présent dans certains messages)
+                      ((message as any).user_id && String((message as any).user_id) === String(user?.id)) ||
+                      // Fallback vers sender_id au cas où il serait défini
+                      (message.sender_id && String(message.sender_id) === String(user?.id))
+                    );
+                    
+                    // Pour l'instant, désactiver la logique temporelle qui est incorrecte
+                    // Concentrons-nous sur les champs réels dans les données
+                    
+                    
+                    return (
                     <motion.div
                       key={message.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className={`flex ${message.sender_id === user?.id.toString() ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'} mb-3`}
                     >
-                      <div className={`max-w-[70%] ${
-                        message.sender_id === user?.id.toString()
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                      } rounded-2xl px-4 py-3`}>
+                      <div className={`max-w-[70%] px-4 py-3 relative shadow-lg ${
+                        isMyMessage
+                          ? 'text-white rounded-tl-2xl rounded-tr-sm rounded-bl-2xl rounded-br-2xl ml-12'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-tl-sm rounded-tr-2xl rounded-bl-2xl rounded-br-2xl mr-12'
+                      }`}
+                      style={isMyMessage ? { backgroundColor: '#4ba9b7' } : {}}>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium opacity-75">
-                            {(message as any).sender_name || 
-                             (message as any).user?.name || 
-                             (message as any).created_by_name ||
-                             ((message as any).created_by === user?.id ? user?.name : null) ||
-                             ((message as any).created_by ? `Utilisateur ${(message as any).created_by}` : 'Utilisateur inconnu')}
+                          <span className={`text-xs font-medium ${isMyMessage ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
+                            {isMyMessage ? `${user?.name || 'Moi'}` : (
+                              message.sender_name || 
+                              (message as any).user?.name || 
+                              (message as any).created_by_name ||
+                              (message as any).sender ||
+                              // Utiliser la map des noms d'utilisateurs
+                              userNamesMap.get((message as any).created_by) ||
+                              userNamesMap.get((message as any).user_id) ||
+                              `Utilisateur ${(message as any).created_by || (message as any).user_id}` ||
+                              'Utilisateur inconnu'
+                            )}
                           </span>
                           <div className={`w-1.5 h-1.5 rounded-full ${getPriorityColor(message.priority)}`} />
                         </div>
@@ -647,7 +770,7 @@ const ModernMessagesInterface: React.FC = () => {
                           <span className="text-xs opacity-75">
                             {formatTime(message.created_at)}
                           </span>
-                          {message.sender_id === user?.id.toString() && (
+                          {isMyMessage && (
                             <div className="flex items-center gap-1">
                               {message.is_read ? (
                                 <CheckCircle className="h-3 w-3 opacity-75" />
@@ -659,7 +782,8 @@ const ModernMessagesInterface: React.FC = () => {
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                   <div ref={messagesEndRef} />
                 </ScrollShadow>
 
@@ -803,7 +927,7 @@ const ModernMessagesInterface: React.FC = () => {
                           }}
                         >
                           {users.length === 0 ? (
-                            <SelectItem key="loading" value="loading" isDisabled>
+                            <SelectItem key="loading" value="loading" isDisabled={true}>
                               {loadingUsers ? "Chargement..." : "Aucun utilisateur"}
                             </SelectItem>
                           ) : (
