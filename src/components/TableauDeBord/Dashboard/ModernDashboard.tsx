@@ -1220,12 +1220,14 @@ const ModernDashboard: React.FC = () => {
                                 <DropdownItem
                                   key="view"
                                   startContent={<Eye className="h-4 w-4" />}
+                                  onClick={() => window.location.href = '/tableaudebord/partenaire/liste'}
                                 >
-                                  Voir détails
+                                  Voir partenaire
                                 </DropdownItem>
                                 <DropdownItem
                                   key="projects"
                                   startContent={<FolderOpen className="h-4 w-4" />}
+                                  onClick={() => window.location.href = '/tableaudebord/projet/gerer'}
                                 >
                                   Voir projets
                                 </DropdownItem>
@@ -1279,7 +1281,6 @@ const ModernDashboard: React.FC = () => {
                       <TableColumn>DESCRIPTION</TableColumn>
                       <TableColumn>TYPE</TableColumn>
                       <TableColumn>DATE</TableColumn>
-                      <TableColumn align="center">ACTIONS</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent="Aucune activité trouvée">
                       {adminData.recentActivity
@@ -1343,27 +1344,6 @@ const ModernDashboard: React.FC = () => {
                                 })}
                               </span>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <Dropdown>
-                              <DropdownTrigger>
-                                <Button
-                                  isIconOnly
-                                  variant="light"
-                                  size="sm"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownTrigger>
-                              <DropdownMenu aria-label="Actions activité">
-                                <DropdownItem
-                                  key="view"
-                                  startContent={<Eye className="h-4 w-4" />}
-                                >
-                                  Voir détails
-                                </DropdownItem>
-                              </DropdownMenu>
-                            </Dropdown>
                           </TableCell>
                         </TableRow>
                       ))}
