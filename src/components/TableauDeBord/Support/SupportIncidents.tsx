@@ -1193,6 +1193,10 @@ const SupportIncidents: React.FC = () => {
         isOpen={showCreateModal} 
         onOpenChange={setShowCreateModal}
         size="2xl"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
       >
         <ModalContent>
           {(onClose) => (
@@ -1406,6 +1410,10 @@ const SupportIncidents: React.FC = () => {
         isOpen={showDetailModal} 
         onOpenChange={setShowDetailModal}
         size="3xl"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
       >
         <ModalContent>
           {(onClose) => (
@@ -1484,6 +1492,10 @@ const SupportIncidents: React.FC = () => {
         isOpen={showEditModal} 
         onOpenChange={setShowEditModal}
         size="2xl"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
       >
         <ModalContent>
           {(onClose) => (
@@ -1694,6 +1706,10 @@ const SupportIncidents: React.FC = () => {
         isOpen={showDeleteModal} 
         onOpenChange={setShowDeleteModal}
         size="md"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
       >
         <ModalContent>
           {(onClose) => (
