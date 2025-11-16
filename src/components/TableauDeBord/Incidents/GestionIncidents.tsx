@@ -642,55 +642,29 @@ const GestionIncidents: React.FC = () => {
   const validateEditForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    // Validation du titre
-    if (!editForm.title?.trim()) {
-      errors.title = "Le titre est obligatoire";
-    } else if (editForm.title.trim().length < 5) {
-      errors.title = "Le titre doit contenir au moins 5 caractères";
-    } else if (editForm.title.trim().length > 200) {
-      errors.title = "Le titre ne peut pas dépasser 200 caractères";
+    // Pour la modification, nous validons seulement les formats/longueurs si les champs sont remplis
+    // Les champs vides conserveront leurs valeurs existantes
+
+    // Validation du titre (seulement si modifié)
+    if (editForm.title && editForm.title.trim()) {
+      if (editForm.title.trim().length < 5) {
+        errors.title = "Le titre doit contenir au moins 5 caractères";
+      } else if (editForm.title.trim().length > 200) {
+        errors.title = "Le titre ne peut pas dépasser 200 caractères";
+      }
     }
 
-    // Validation de la description
-    if (!editForm.description?.trim()) {
-      errors.description = "La description est obligatoire";
-    } else if (editForm.description.trim().length < 10) {
-      errors.description = "La description doit contenir au moins 10 caractères";
-    } else if (editForm.description.trim().length > 2000) {
-      errors.description = "La description ne peut pas dépasser 2000 caractères";
+    // Validation de la description (seulement si modifiée)
+    if (editForm.description && editForm.description.trim()) {
+      if (editForm.description.trim().length < 10) {
+        errors.description = "La description doit contenir au moins 10 caractères";
+      } else if (editForm.description.trim().length > 2000) {
+        errors.description = "La description ne peut pas dépasser 2000 caractères";
+      }
     }
 
-    // Validation du déclarant
-    if (!editForm.declarant_name?.trim()) {
-      errors.declarant_name = "Le déclarant est obligatoire";
-    }
-
-    // Validation du projet
-    if (!editForm.project_id || editForm.project_id === 0) {
-      errors.project_id = "Le projet est obligatoire";
-    }
-
-    // Validation de l'expert (obligatoire pour les admins seulement)
-    if (isAdmin() && (!editForm.user_id || editForm.user_id === 0)) {
-      errors.user_id = "L'assignation d'un expert est obligatoire";
-    }
-
-    // Validation des champs obligatoires
-    if (!editForm.type?.trim()) {
-      errors.type = "Le type est obligatoire";
-    }
-
-    if (!editForm.category?.trim()) {
-      errors.category = "La catégorie est obligatoire";
-    }
-
-    if (!editForm.domain?.trim()) {
-      errors.domain = "Le domaine est obligatoire";
-    }
-
-    if (!editForm.impact?.trim()) {
-      errors.impact = "L'impact est obligatoire";
-    }
+    // Pour les autres champs, pas de validation obligatoire en modification
+    // car ils conservent leurs valeurs existantes
 
     setEditFormErrors(errors);
     return Object.keys(errors).length === 0;

@@ -1251,7 +1251,6 @@ const SupportIncidents: React.FC = () => {
                         setCreateForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
                       }}
                       isLoading={loadingPartners}
-                      isRequired
                     >
                       {partners.map((partner) => (
                         <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
@@ -1269,7 +1268,6 @@ const SupportIncidents: React.FC = () => {
                         setCreateForm(prev => ({ ...prev, project_id: selected ? parseInt(selected) : 0 }));
                       }}
                       isLoading={loadingProjects}
-                      isRequired
                     >
                       {projects.map((project) => (
                         <SelectItem key={project.id.toString()} value={project.id.toString()}>
@@ -1285,7 +1283,6 @@ const SupportIncidents: React.FC = () => {
                       placeholder="Sélectionnez le type"
                       selectedKeys={createForm.type ? [createForm.type] : []}
                       onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }))}
-                      isRequired
                     >
                       <SelectItem key="incident" value="incident">Incident</SelectItem>
                       <SelectItem key="support" value="support">Support</SelectItem>
@@ -1296,7 +1293,6 @@ const SupportIncidents: React.FC = () => {
                       placeholder="Ex: Technique, Fonctionnel..."
                       value={createForm.category}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value }))}
-                      isRequired
                     />
                     
                     <Select
@@ -1304,7 +1300,6 @@ const SupportIncidents: React.FC = () => {
                       placeholder="Sélectionnez le domaine"
                       selectedKeys={createForm.domain ? [createForm.domain] : []}
                       onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }))}
-                      isRequired
                     >
                       <SelectItem key="reseau" value="reseau">Réseau</SelectItem>
                       <SelectItem key="infrastructure" value="infrastructure">Infrastructure système</SelectItem>
@@ -1354,7 +1349,6 @@ const SupportIncidents: React.FC = () => {
                       label="Priorité"
                       selectedKeys={createForm.priority ? [createForm.priority] : []}
                       onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
-                      isRequired
                     >
                       <SelectItem key="P0" value="P0">P0 - Arrêt de service (immédiat)</SelectItem>
                       <SelectItem key="P1" value="P1">P1 - Haute (dégradation)</SelectItem>
@@ -1367,7 +1361,6 @@ const SupportIncidents: React.FC = () => {
                       label="Statut"
                       selectedKeys={createForm.status ? [createForm.status] : []}
                       onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
-                      isRequired
                     >
                       <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
                       <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
@@ -1509,7 +1502,6 @@ const SupportIncidents: React.FC = () => {
                     label="Titre du ticket"
                     value={editForm.title}
                     onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                    isRequired
                   />
                   
                   <Textarea
@@ -1517,7 +1509,6 @@ const SupportIncidents: React.FC = () => {
                     value={editForm.description}
                     onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                     minRows={3}
-                    isRequired
                   />
                   
                   <Select
@@ -1529,7 +1520,6 @@ const SupportIncidents: React.FC = () => {
                       setEditForm(prev => ({ ...prev, declarant_name: selected || '' }));
                     }}
                     isLoading={loadingUsers}
-                    isRequired
                   >
                     {users.map((user) => (
                       <SelectItem key={user.name} value={user.name}>
@@ -1548,7 +1538,6 @@ const SupportIncidents: React.FC = () => {
                         setEditForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
                       }}
                       isLoading={loadingPartners}
-                      isRequired
                     >
                       {partners.map((partner) => (
                         <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
@@ -1566,7 +1555,6 @@ const SupportIncidents: React.FC = () => {
                         setEditForm(prev => ({ ...prev, project_id: selected ? parseInt(selected) : 0 }));
                       }}
                       isLoading={loadingProjects}
-                      isRequired
                     >
                       {projects.map((project) => (
                         <SelectItem key={project.id.toString()} value={project.id.toString()}>
@@ -1582,7 +1570,6 @@ const SupportIncidents: React.FC = () => {
                       placeholder="Sélectionnez le type"
                       selectedKeys={editForm.type ? [editForm.type] : []}
                       onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }))}
-                      isRequired
                     >
                       <SelectItem key="incident" value="incident">Incident</SelectItem>
                       <SelectItem key="support" value="support">Support</SelectItem>
@@ -1592,7 +1579,6 @@ const SupportIncidents: React.FC = () => {
                       label="Catégorie"
                       value={editForm.category}
                       onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
-                      isRequired
                     />
                     
                     <Select
@@ -1600,7 +1586,6 @@ const SupportIncidents: React.FC = () => {
                       placeholder="Sélectionnez le domaine"
                       selectedKeys={editForm.domain ? [editForm.domain] : []}
                       onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }))}
-                      isRequired
                     >
                       <SelectItem key="reseau" value="reseau">Réseau</SelectItem>
                       <SelectItem key="infrastructure" value="infrastructure">Infrastructure système</SelectItem>
@@ -1650,7 +1635,6 @@ const SupportIncidents: React.FC = () => {
                       label="Priorité"
                       selectedKeys={editForm.priority ? [editForm.priority] : []}
                       onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
-                      isRequired
                     >
                       <SelectItem key="P0" value="P0">P0 - Arrêt de service (immédiat)</SelectItem>
                       <SelectItem key="P1" value="P1">P1 - Haute (dégradation)</SelectItem>
@@ -1663,7 +1647,6 @@ const SupportIncidents: React.FC = () => {
                       label="Statut"
                       selectedKeys={editForm.status ? [editForm.status] : []}
                       onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
-                      isRequired
                     >
                       <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
                       <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
