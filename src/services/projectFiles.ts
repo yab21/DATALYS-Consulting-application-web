@@ -3,6 +3,10 @@
  */
 
 import { securedFetch } from '@/lib/api-interceptor';
+import { SecureStorage } from '@/lib/secure-storage';
+
+// Configuration de base - utilise toujours l'URL de production
+const baseUrl = 'https://applicationweb.datalysconsulting.com/api';
 
 // Types pour les dossiers
 export interface ProjectFolder {
@@ -752,7 +756,7 @@ export class ProjectFilesService {
   }
 
   /**
-   * Upload d'un fichier
+   * Upload d'un fichier - UTILISE XMLHttpRequest comme les incidents qui fonctionnent
    */
   async uploadFile(
     file: File,
@@ -764,31 +768,59 @@ export class ProjectFilesService {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder_id', folderId.toString());
-      formData.append('user', JSON.stringify({ id: userId }));
-
+      
       if (projectId) {
         formData.append('project_id', projectId.toString());
       }
 
-      const response = await securedFetch('/api/files/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (data.code === 200 || response.ok) {
-        // Invalider le cache des stats pour ce dossier
-        Object.keys(statsCache).forEach(key => {
-          if (key.startsWith(`${folderId}_`)) {
-            delete statsCache[key];
+      console.log('📋 [UPLOAD FIXED] - Utilisation XMLHttpRequest comme les incidents');
+      
+      // Utiliser XMLHttpRequest comme dans incident-files.ts qui fonctionne
+      const xhr = new XMLHttpRequest();
+      
+      const uploadPromise = new Promise<boolean>((resolve, reject) => {
+        xhr.addEventListener('load', () => {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            console.log('📡 [UPLOAD FIXED] - Response:', response);
+            
+            if (xhr.status >= 200 && xhr.status < 300 && 
+                (response.status === 'success' || response.code === 200)) {
+              // Invalider le cache des stats pour ce dossier
+              Object.keys(statsCache).forEach(key => {
+                if (key.startsWith(`${folderId}_`)) {
+                  delete statsCache[key];
+                }
+              });
+              resolve(true);
+            } else {
+              console.error('Upload échoué:', response);
+              resolve(false);
+            }
+          } catch (error) {
+            console.error('Erreur parsing response:', error);
+            resolve(false);
           }
         });
-        return true;
-      } else {
-        console.error('Erreur lors de l\'upload du fichier:', data);
-        return false;
-      }
+
+        xhr.addEventListener('error', () => {
+          console.error('Erreur réseau lors de l\'upload');
+          resolve(false);
+        });
+
+        xhr.open('POST', `${baseUrl}/files/upload`);
+        
+        // Ajouter l'en-tête d'authentification comme dans incident-files.ts
+        const token = SecureStorage.getItem('authToken');
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+        
+        xhr.send(formData);
+      });
+
+      return await uploadPromise;
+      
     } catch (error) {
       console.error('Erreur lors de l\'upload du fichier:', error);
       return false;
