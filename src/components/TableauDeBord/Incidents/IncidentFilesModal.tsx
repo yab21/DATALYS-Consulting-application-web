@@ -17,7 +17,6 @@ import {
 } from "@/services/incident-files";
 import {
   Upload,
-  Download,
   Eye,
   File,
   FileImage,
@@ -27,14 +26,12 @@ import {
   FileAudio,
   Plus,
   X,
-  AlertTriangle,
   Search,
   FolderOpen,
   Maximize2,
   Minimize2,
   Trash2
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface IncidentFilesModalProps {
   isOpen: boolean;
@@ -71,10 +68,6 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [uploadModal, setUploadModal] = useState(false);
   
-  // État pour la prévisualisation
-  const [previewFile, setPreviewFile] = useState<IncidentFile | null>(null);
-  const [previewModal, setPreviewModal] = useState(false);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   // Charger les fichiers
   const loadFiles = useCallback(async () => {
@@ -101,14 +94,6 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
     loadFiles();
   }, [loadFiles]);
 
-  // Nettoyer l'URL blob au changement de fichier ou fermeture du modal
-  useEffect(() => {
-    return () => {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
-    };
-  }, [blobUrl]);
 
   // Gestion de l'upload
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,36 +153,21 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
     }
   };
 
-  // Téléchargement de fichier
-  const handleDownload = async (file: IncidentFile) => {
+
+  // Prévisualisation de fichier (ouvre dans un nouvel onglet comme les projets)
+  const handlePreview = async (file: IncidentFile) => {
     try {
-      await incidentFilesService.downloadIncidentFile(file.file_url, file.file_name);
+      await incidentFilesService.viewIncidentFile(file.file_url, file.file_name);
       showNotification({
         type: 'success',
         title: 'Succès',
-        message: 'Fichier téléchargé avec succès'
+        message: 'Fichier ouvert dans un nouvel onglet'
       });
     } catch (error) {
       showNotification({
         type: 'error',
         title: 'Erreur',
-        message: 'Erreur lors du téléchargement'
-      });
-    }
-  };
-
-  // Prévisualisation de fichier
-  const handlePreview = async (file: IncidentFile) => {
-    try {
-      const url = await incidentFilesService.createPreviewBlob(file.file_url);
-      setBlobUrl(url);
-      setPreviewFile(file);
-      setPreviewModal(true);
-    } catch (error) {
-      showNotification({
-        type: 'error',
-        title: 'Erreur',
-        message: 'Impossible de prévisualiser le fichier'
+        message: 'Impossible d\'ouvrir le fichier'
       });
     }
   };
@@ -405,13 +375,6 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                          onClick={() => handleDownload(file)}
-                          title="Télécharger"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                        <button
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
                           onClick={() => handleDeleteClick(file)}
                           title="Supprimer"
@@ -508,74 +471,6 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
         </ModalContent>
       </Modal>
 
-      {/* Modal de prévisualisation */}
-      <Modal 
-        isOpen={previewModal} 
-        onClose={() => setPreviewModal(false)} 
-        size="4xl"
-        classNames={{
-          wrapper: "z-[100000]",
-          backdrop: "z-[99998]"
-        }}
-      >
-        <ModalContent>
-          <ModalHeader className="border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-blue-50">
-                <Eye className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Aperçu du fichier</h3>
-                <p className="text-sm text-gray-600">{previewFile?.file_name}</p>
-              </div>
-            </div>
-          </ModalHeader>
-          <ModalBody className="p-6">
-            {previewFile && blobUrl && (
-              <div className="flex justify-center">
-                {previewFile.file_type.startsWith('image/') ? (
-                  <img 
-                    src={blobUrl} 
-                    alt={previewFile.file_name}
-                    className="max-w-full max-h-96 object-contain rounded-lg border border-gray-200"
-                  />
-                ) : previewFile.file_type === 'application/pdf' ? (
-                  <iframe
-                    src={blobUrl}
-                    className="w-full h-96 border border-gray-200 rounded-lg"
-                    title={previewFile.file_name}
-                  />
-                ) : (
-                  <div className="text-center py-12">
-                    <AlertTriangle className="w-12 h-12 mx-auto text-orange-500 mb-4" />
-                    <p className="text-gray-600">Aperçu non disponible pour ce type de fichier</p>
-                    <p className="text-sm text-gray-500 mt-2">Vous pouvez toujours télécharger le fichier</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </ModalBody>
-          <ModalFooter className="border-t border-gray-200 px-6 py-4">
-            <div className="flex gap-3">
-              <button
-                onClick={() => setPreviewModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] transition-colors"
-              >
-                Fermer
-              </button>
-              {previewFile && (
-                <button
-                  onClick={() => handleDownload(previewFile)}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#4ba9b7] rounded-md hover:bg-[#4ba9b7]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  Télécharger
-                </button>
-              )}
-            </div>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       {/* Modal de suppression */}
       <Modal 

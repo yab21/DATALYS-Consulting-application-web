@@ -326,9 +326,16 @@ class IncidentFilesService {
    */
   async downloadIncidentFile(fileUrl: string, fileName?: string): Promise<void> {
     try {
-      // Utiliser le proxy pour éviter les problèmes CORS
+      // Nettoyer l'URL et s'assurer qu'elle utilise le bon format pour la nouvelle API
       const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      const downloadUrl = `${this.baseUrl}/files/serve/${cleanFileUrl}`;
+      
+      // La nouvelle API attend le format: /files/serve/incidents/incident_X/filename
+      let finalUrl = cleanFileUrl;
+      if (!cleanFileUrl.startsWith('incidents/')) {
+        finalUrl = cleanFileUrl;
+      }
+      
+      const downloadUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
       
       console.log('📥 Téléchargement du fichier:', downloadUrl);
       console.log('🔑 Headers d\'authentification:', this.getAuthHeaders());
@@ -381,7 +388,14 @@ class IncidentFilesService {
    */
   getFilePreviewUrl(fileUrl: string): string {
     const cleanPath = fileUrl.replace(/^\/+/, '');
-    return `${this.baseUrl}/files/serve/${cleanPath}`;
+    
+    // S'assurer que l'URL utilise le bon format pour la nouvelle API
+    let finalUrl = cleanPath;
+    if (!cleanPath.startsWith('incidents/')) {
+      finalUrl = cleanPath;
+    }
+    
+    return `${this.baseUrl}/files/serve/${finalUrl}`;
   }
 
   /**
@@ -391,8 +405,14 @@ class IncidentFilesService {
     const token = SecureStorage.getItem('authToken');
     const cleanPath = fileUrl.replace(/^\/+/, '');
     
+    // S'assurer que l'URL utilise le bon format pour la nouvelle API
+    let finalUrl = cleanPath;
+    if (!cleanPath.startsWith('incidents/')) {
+      finalUrl = cleanPath;
+    }
+    
     // S'assurer que l'URL est correctement formée
-    const baseUrl = `${this.baseUrl}/files/serve/${cleanPath}`;
+    const baseUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
     
     console.log('🔗 URL authentifiée générée:', baseUrl);
     console.log('🔑 Token présent:', !!token);
@@ -401,15 +421,69 @@ class IncidentFilesService {
   }
 
   /**
-   * Créer un blob URL pour la prévisualisation
+   * Prévisualiser un fichier en ouvrant dans un nouvel onglet (comme les projets)
+   */
+  async viewIncidentFile(fileUrl: string, fileName?: string): Promise<void> {
+    try {
+      console.log(`📖 [VIEW INCIDENT FILE] - Ouverture du fichier: ${fileName}`);
+      console.log(`📖 [VIEW INCIDENT FILE] - File URL fournie: ${fileUrl}`);
+      
+      // Nettoyer l'URL et s'assurer qu'elle utilise le bon format pour la nouvelle API
+      const cleanFileUrl = fileUrl.replace(/^\/+/, '');
+      
+      // La nouvelle API attend le format: /files/serve/incidents/incident_X/filename
+      let finalUrl = cleanFileUrl;
+      if (!cleanFileUrl.startsWith('incidents/')) {
+        finalUrl = cleanFileUrl;
+      }
+      
+      const viewUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
+      
+      console.log(`📖 [VIEW INCIDENT FILE] - URL finale: ${viewUrl}`);
+      
+      const response = await fetch(viewUrl, {
+        method: 'GET',
+        headers: this.getAuthHeaders()
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // Ouvrir dans un nouvel onglet au lieu d'utiliser iframe (évite CSP)
+        window.open(url, '_blank');
+        
+        // Nettoyer l'URL après un délai pour permettre l'ouverture
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 1000);
+      } else {
+        throw new Error(`Erreur lors de l'ouverture du fichier: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'ouverture du fichier ${fileName}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Créer un blob URL pour la prévisualisation (conservé pour compatibilité)
+   * @deprecated Utiliser viewIncidentFile() à la place
    */
   async createPreviewBlob(fileUrl: string): Promise<string> {
     try {
-      // Utiliser le proxy pour éviter les problèmes CORS
+      // Nettoyer l'URL et s'assurer qu'elle utilise le bon format pour la nouvelle API
       const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      const previewUrl = `${this.baseUrl}/files/serve/${cleanFileUrl}`;
       
-      console.log('🔗 URL de prévisualisation:', previewUrl);
+      // La nouvelle API attend le format: /files/serve/incidents/incident_X/filename
+      let finalUrl = cleanFileUrl;
+      if (!cleanFileUrl.startsWith('incidents/')) {
+        finalUrl = cleanFileUrl;
+      }
+      
+      const previewUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
+      
+      console.log('🔗 URL de prévisualisation (corrigée):', previewUrl);
       
       const response = await fetch(previewUrl, {
         headers: this.getAuthHeaders()
@@ -435,9 +509,16 @@ class IncidentFilesService {
    */
   async getFileSize(fileUrl: string): Promise<number> {
     try {
-      // Utiliser le proxy pour éviter les problèmes CORS
+      // Nettoyer l'URL et s'assurer qu'elle utilise le bon format pour la nouvelle API
       const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      const headUrl = `${this.baseUrl}/files/serve/${cleanFileUrl}`;
+      
+      // S'assurer que l'URL utilise le bon format pour la nouvelle API
+      let finalUrl = cleanFileUrl;
+      if (!cleanFileUrl.startsWith('incidents/')) {
+        finalUrl = cleanFileUrl;
+      }
+      
+      const headUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
       
       const response = await fetch(headUrl, {
         method: 'HEAD',
