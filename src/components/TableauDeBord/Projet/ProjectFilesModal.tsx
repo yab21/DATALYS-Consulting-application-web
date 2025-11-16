@@ -487,7 +487,18 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
 
   // Gestion de l'upload de fichiers
   const handleFileUpload = async (selectedFiles: FileList | null) => {
-    if (!selectedFiles || selectedFiles.length === 0) return;
+    console.log('🔍 [UPLOAD DEBUG] - handleFileUpload appelé avec:', selectedFiles);
+    
+    if (!selectedFiles || selectedFiles.length === 0) {
+      console.log('❌ [UPLOAD DEBUG] - Aucun fichier sélectionné');
+      return;
+    }
+    
+    console.log('📁 [UPLOAD DEBUG] - Fichiers sélectionnés:', Array.from(selectedFiles).map(f => ({
+      name: f.name,
+      size: f.size,
+      type: f.type
+    })));
     if (currentFolderId === null) {
       showNotification({
         type: 'warning',
@@ -554,11 +565,12 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     try {
       console.log('🔍 [DEBUG VIEW FILE] - Ouverture du fichier pour visualisation:', {
         file_id: file.id,
-        file_name: file.original_name
+        file_name: file.original_name,
+        file_path: file.file_path
       });
 
-      // Utiliser la nouvelle fonction viewFile qui ouvre le fichier au lieu de le télécharger
-      await projectFilesService.viewFile(file.id, file.original_name || 'fichier');
+      // Utiliser la nouvelle fonction viewFile avec le file_path pour l'endpoint correct
+      await projectFilesService.viewFile(file.id, file.original_name || 'fichier', file.file_path);
       
       console.log('✅ [DEBUG VIEW FILE] - Fichier ouvert avec succès');
     } catch (error) {
@@ -848,11 +860,14 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                   <button
                     className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.multiple = true;
-                      input.onchange = (e) => handleFileUpload((e.target as HTMLInputElement).files);
-                      input.click();
+                      console.log('🔘 [UPLOAD DEBUG] - Bouton upload cliqué');
+                      const input = document.getElementById('file-upload-input') as HTMLInputElement;
+                      if (input) {
+                        console.log('📁 [UPLOAD DEBUG] - Input file trouvé, déclenchement...');
+                        input.click();
+                      } else {
+                        console.error('❌ [UPLOAD DEBUG] - Input file non trouvé !');
+                      }
                     }}
                     disabled={currentFolderId === null || uploading}
                   >
@@ -1274,6 +1289,21 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Input file caché pour l'upload */}
+      <input
+        id="file-upload-input"
+        type="file"
+        multiple
+        onChange={(e) => {
+          console.log('📁 [UPLOAD DEBUG] - Input file changé:', e.target.files);
+          handleFileUpload(e.target.files);
+          // Réinitialiser l'input pour permettre de re-sélectionner le même fichier
+          e.target.value = '';
+        }}
+        style={{ display: 'none' }}
+        accept="*/*"
+      />
     </Modal>
   );
 };

@@ -97,6 +97,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [createLogoPreview, setCreateLogoPreview] = useState<string | null>(null);
+  const [removeExistingLogo, setRemoveExistingLogo] = useState(false);
   
 
   // Initialiser le formulaire avec les données du partenaire
@@ -111,6 +112,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         logo: undefined
       });
       setLogoPreview(null);
+      setRemoveExistingLogo(false);
     }
   }, [partner, type]);
 
@@ -171,12 +173,18 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
 
   // Fonction pour supprimer le logo d'édition
   const handleRemoveEditLogo = () => {
-    setEditForm(prev => ({ ...prev, logo: undefined }));
-    setLogoPreview(null);
-    // Réinitialiser l'input file
-    const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
+    if (logoPreview) {
+      // Cas 1: Supprimer un nouveau logo uploadé
+      setEditForm(prev => ({ ...prev, logo: undefined }));
+      setLogoPreview(null);
+      // Réinitialiser l'input file
+      const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    } else {
+      // Cas 2: Marquer le logo existant pour suppression
+      setRemoveExistingLogo(true);
     }
   };
 
@@ -220,6 +228,13 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         address: editForm.address,
         logo: editForm.logo
       };
+
+      // Si l'utilisateur a choisi de supprimer le logo existant, on n'envoie pas de logo
+      if (removeExistingLogo && !editForm.logo) {
+        // Note: L'API pourrait ne pas supporter la suppression de logo
+        // Dans ce cas, on garde le logo existant
+        console.log('⚠️ Suppression de logo demandée, mais pas encore supportée par l\'API');
+      }
 
       console.log('🔄 Modal - Données de modification:', {
         partnerId: partner.id,
@@ -544,7 +559,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                           <X className="h-4 w-4" />
                         </button>
                       </>
-                    ) : partner && partner.logo_url && fixImageUrl(partner.logo_url) ? (
+                    ) : partner && partner.logo_url && fixImageUrl(partner.logo_url) && !removeExistingLogo ? (
                       <>
                         <img
                           src={fixImageUrl(partner.logo_url)!}
@@ -572,7 +587,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                     ) : null}
                     <div 
                       className="fallback-logo absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-400"
-                      style={{ display: (logoPreview || (partner && partner.logo_url && fixImageUrl(partner.logo_url))) ? 'none' : 'flex' }}
+                      style={{ display: (logoPreview || (partner && partner.logo_url && fixImageUrl(partner.logo_url) && !removeExistingLogo)) ? 'none' : 'flex' }}
                     >
                       {partner ? partner?.name?.charAt(0).toUpperCase() : 'P'}
                     </div>

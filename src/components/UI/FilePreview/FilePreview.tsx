@@ -71,33 +71,61 @@ const FilePreview: React.FC<FilePreviewProps> = ({ isOpen, onClose, file, baseUr
   const downloadFileForPreview = async () => {
     if (!file) return;
 
-    console.log('🎯 PRÉVISUALISATION LOCALE - Génération de contenu local');
-    console.log('- File:', file.original_name);
-    console.log('- Extension:', file.extension);
-    console.log('- MIME Type:', file.mime_type);
-    
-    const mimeType = file.mime_type.toLowerCase();
-    const extension = file.extension.toLowerCase();
-    
-    // Générer du contenu de prévisualisation local selon le type de fichier
-    if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) {
-      console.log('📷 Génération d\'une prévisualisation d\'image locale');
-      await createLocalImagePreview();
-    } else if (mimeType.includes('pdf') || extension === 'pdf') {
-      console.log('📄 Génération d\'une prévisualisation PDF locale');
-      await createLocalPdfPreview();
-    } else if (mimeType.includes('video') || ['mp4', 'avi', 'mov', 'webm', 'mkv'].includes(extension)) {
-      console.log('🎬 Génération d\'une prévisualisation vidéo locale');
-      await createLocalVideoPreview();
-    } else if (mimeType.includes('audio') || ['mp3', 'wav', 'flac', 'ogg'].includes(extension)) {
-      console.log('🎵 Génération d\'une prévisualisation audio locale');
-      await createLocalAudioPreview();
-    } else if (mimeType.includes('text') || ['txt', 'json', 'xml', 'css', 'js', 'html', 'md'].includes(extension)) {
-      console.log('📝 Génération d\'une prévisualisation texte locale');
-      await createLocalTextPreview();
-    } else {
-      console.log('📁 Génération d\'une prévisualisation générique locale');
-      await createLocalGenericPreview();
+    try {
+      console.log('🎯 PRÉVISUALISATION - Récupération du fichier réel');
+      console.log('- File:', file.original_name);
+      console.log('- File Path:', file.file_path);
+      console.log('- Extension:', file.extension);
+      console.log('- MIME Type:', file.mime_type);
+      
+      const token = SecureStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Token d\'authentification manquant');
+      }
+
+      // Utiliser l'API /api/files/serve/files/ pour récupérer le fichier
+      const fileUrl = `${baseUrl}/files/serve/files/${file.file_path}`;
+      console.log('📡 URL de récupération:', fileUrl);
+
+      const response = await fetch(fileUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
+
+      // Créer un blob URL pour l'affichage
+      const blob = await response.blob();
+      const blobURL = window.URL.createObjectURL(blob);
+      setBlobUrl(blobURL);
+      setLoading(false);
+
+      console.log('✅ Fichier récupéré avec succès');
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la récupération du fichier:', error);
+      
+      // Fallback: générer du contenu local en cas d'erreur
+      console.log('🔄 Fallback vers prévisualisation locale');
+      const mimeType = file.mime_type.toLowerCase();
+      const extension = file.extension.toLowerCase();
+      
+      if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) {
+        await createLocalImagePreview();
+      } else if (mimeType.includes('pdf') || extension === 'pdf') {
+        await createLocalPdfPreview();
+      } else if (mimeType.includes('video') || ['mp4', 'avi', 'mov', 'webm', 'mkv'].includes(extension)) {
+        await createLocalVideoPreview();
+      } else if (mimeType.includes('audio') || ['mp3', 'wav', 'flac', 'ogg'].includes(extension)) {
+        await createLocalAudioPreview();
+      } else if (mimeType.includes('text') || ['txt', 'json', 'xml', 'css', 'js', 'html', 'md'].includes(extension)) {
+        await createLocalTextPreview();
+      } else {
+        await createLocalGenericPreview();
+      }
     }
   };
 
@@ -372,74 +400,56 @@ const FilePreview: React.FC<FilePreviewProps> = ({ isOpen, onClose, file, baseUr
       );
     }
 
-    // Vidéos (prévisualisation locale)
-    if (mimeType.startsWith('video/')) {
-      if (blobUrl === 'video-preview') {
-        return (
-          <Card className="min-h-[400px] bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20">
-            <CardBody className="flex flex-col items-center justify-center space-y-6">
-              <div className="relative">
-                <div className="w-32 h-24 bg-purple-600 rounded-lg flex items-center justify-center">
-                  <FileVideo className="w-16 h-16 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs">▶</span>
-                </div>
-              </div>
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  🎬 {file.original_name}
-                </h3>
-                <p className="text-purple-700 dark:text-purple-300 mb-4">
-                  Fichier vidéo • {file.extension?.toUpperCase()}
-                </p>
-                <Button
-                  color="primary"
-                  startContent={<Download className="w-4 h-4" />}
-                  onPress={handleDownload}
-                >
-                  Télécharger la vidéo
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        );
-      }
+    // Vidéos
+    if (mimeType.startsWith('video/') || ['mp4', 'avi', 'mov', 'webm', 'mkv'].includes(extension)) {
+      return (
+        <div className="w-full h-[70vh] bg-gray-50 dark:bg-gray-800 rounded-lg flex justify-center items-center">
+          <video
+            src={blobUrl}
+            controls
+            className="max-w-full max-h-full rounded-lg"
+            onLoadedData={() => {
+              console.log('✅ Vidéo chargée avec succès');
+              setLoading(false);
+            }}
+            onError={() => {
+              console.log('⚠️ Erreur de chargement vidéo');
+              setLoading(false);
+            }}
+          >
+            Votre navigateur ne supporte pas la lecture vidéo.
+          </video>
+        </div>
+      );
     }
 
-    // Audio (prévisualisation locale)
-    if (mimeType.startsWith('audio/')) {
-      if (blobUrl === 'audio-preview') {
-        return (
-          <Card className="min-h-[400px] bg-gradient-to-br from-orange-50 to-red-100 dark:from-orange-900/20 dark:to-red-900/20">
-            <CardBody className="flex flex-col items-center justify-center space-y-6">
-              <div className="relative">
-                <div className="w-32 h-32 bg-orange-500 rounded-full flex items-center justify-center">
-                  <FileAudio className="w-16 h-16 text-white" />
-                </div>
-                <div className="absolute top-0 right-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs">♪</span>
-                </div>
-              </div>
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  🎵 {file.original_name}
-                </h3>
-                <p className="text-orange-700 dark:text-orange-300 mb-4">
-                  Fichier audio • {file.extension?.toUpperCase()}
-                </p>
-                <Button
-                  color="primary"
-                  startContent={<Download className="w-4 h-4" />}
-                  onPress={handleDownload}
-                >
-                  Télécharger l'audio
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        );
-      }
+    // Audio
+    if (mimeType.startsWith('audio/') || ['mp3', 'wav', 'flac', 'ogg'].includes(extension)) {
+      return (
+        <div className="w-full h-[400px] bg-gray-50 dark:bg-gray-800 rounded-lg flex justify-center items-center">
+          <div className="text-center">
+            <FileAudio className="w-24 h-24 text-orange-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              🎵 {file.original_name}
+            </h3>
+            <audio
+              src={blobUrl}
+              controls
+              className="w-full max-w-md mx-auto"
+              onLoadedData={() => {
+                console.log('✅ Audio chargé avec succès');
+                setLoading(false);
+              }}
+              onError={() => {
+                console.log('⚠️ Erreur de chargement audio');
+                setLoading(false);
+              }}
+            >
+              Votre navigateur ne supporte pas la lecture audio.
+            </audio>
+          </div>
+        </div>
+      );
     }
 
     // Fichiers texte (prévisualisation du contenu)
