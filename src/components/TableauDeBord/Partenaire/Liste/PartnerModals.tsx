@@ -169,6 +169,17 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     }
   };
 
+  // Fonction pour supprimer le logo d'édition
+  const handleRemoveEditLogo = () => {
+    setEditForm(prev => ({ ...prev, logo: undefined }));
+    setLogoPreview(null);
+    // Réinitialiser l'input file
+    const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   // Gestion de l'upload de logo pour la création
   const handleCreateLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -181,6 +192,17 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         setCreateLogoPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Fonction pour supprimer le logo de création
+  const handleRemoveCreateLogo = () => {
+    setCreateForm(prev => ({ ...prev, logo: undefined }));
+    setCreateLogoPreview(null);
+    // Réinitialiser l'input file
+    const fileInput = document.getElementById('create-logo-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
     }
   };
 
@@ -506,25 +528,47 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 <div className="flex items-center gap-4">
                   <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
                     {logoPreview ? (
-                      <img
-                        src={logoPreview}
-                        alt="Aperçu"
-                        className="h-full w-full object-cover"
-                      />
+                      <>
+                        <img
+                          src={logoPreview}
+                          alt="Aperçu"
+                          className="h-full w-full object-cover"
+                        />
+                        {/* Bouton pour supprimer le logo */}
+                        <button
+                          type="button"
+                          onClick={handleRemoveEditLogo}
+                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg border-2 border-white z-10"
+                          title="Supprimer le logo"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
                     ) : partner && partner.logo_url && fixImageUrl(partner.logo_url) ? (
-                      <img
-                        src={fixImageUrl(partner.logo_url)!}
-                        alt={partner?.name}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const fallback = target.parentElement?.querySelector('.fallback-logo');
-                          if (fallback) {
-                            (fallback as HTMLElement).style.display = 'flex';
-                          }
-                        }}
-                      />
+                      <>
+                        <img
+                          src={fixImageUrl(partner.logo_url)!}
+                          alt={partner?.name}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.parentElement?.querySelector('.fallback-logo');
+                            if (fallback) {
+                              (fallback as HTMLElement).style.display = 'flex';
+                            }
+                          }}
+                        />
+                        {/* Bouton pour supprimer le logo existant */}
+                        <button
+                          type="button"
+                          onClick={handleRemoveEditLogo}
+                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg border-2 border-white z-10"
+                          title="Supprimer le logo"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
                     ) : null}
                     <div 
                       className="fallback-logo absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-400"
@@ -763,11 +807,22 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 <div className="flex items-center gap-4">
                   <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
                     {createLogoPreview ? (
-                      <img
-                        src={createLogoPreview}
-                        alt="Aperçu"
-                        className="h-full w-full object-cover"
-                      />
+                      <>
+                        <img
+                          src={createLogoPreview}
+                          alt="Aperçu"
+                          className="h-full w-full object-cover"
+                        />
+                        {/* Bouton pour supprimer le logo */}
+                        <button
+                          type="button"
+                          onClick={handleRemoveCreateLogo}
+                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg border-2 border-white z-10"
+                          title="Supprimer le logo"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
                     ) : (
                       <div className="text-xl font-bold text-gray-400">
                         P
