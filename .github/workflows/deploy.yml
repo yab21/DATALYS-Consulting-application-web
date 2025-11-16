@@ -196,18 +196,26 @@ jobs:
             echo '🚀 Starting PM2...'
             cd ${{ env.DEPLOY_PATH }}
             
-            # Démarrage PM2 avec timeout et vérification
-            timeout 60s pm2 start ecosystem.config.js --env production || {
-              echo 'PM2 start timeout, trying alternative method...'
-              timeout 30s pm2 start ecosystem.config.js --no-daemon --env production || {
-                echo 'PM2 start failed, checking logs...'
-                pm2 logs --lines 10 2>/dev/null || echo 'No PM2 logs available'
+            # Démarrage PM2 avec timeout et vérification améliorés
+            if pm2 status | grep -q 'datalys-app'; then
+              echo 'Application déjà déployée, rechargement...'
+              timeout 120s pm2 reload datalys-app || {
+                echo 'Reload failed, stopping and restarting...'
+                timeout 60s pm2 stop datalys-app
+                timeout 60s pm2 delete datalys-app
+                timeout 120s pm2 start ecosystem.config.js --env production
+              }
+            else
+              echo 'Nouveau déploiement...'
+              timeout 120s pm2 start ecosystem.config.js --env production || {
+                echo 'PM2 start timeout, vérification des logs...'
+                pm2 logs --lines 20 2>/dev/null || echo 'No PM2 logs available'
                 exit 1
               }
-            }
+            fi
             
-            sleep 5
-            timeout 15s pm2 save || echo 'PM2 save timeout (non-critical)'
+            sleep 10
+            timeout 30s pm2 save || echo 'PM2 save timeout (non-critical)'
             
             # Vérification que l'application est démarrée
             pm2 list | grep -E '(online|stopped|errored)' || echo 'PM2 status unclear'
