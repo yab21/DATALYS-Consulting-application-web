@@ -459,6 +459,10 @@ const GestionMessages: React.FC = () => {
         onClose={() => setShowConversationModal(false)}
         size="4xl"
         scrollBehavior="inside"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
       >
         <ModalContent>
           <ModalHeader>
@@ -597,8 +601,9 @@ const GestionMessages: React.FC = () => {
         size="2xl"
         placement="center"
         classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998] bg-black/60 backdrop-blur-sm",
           base: "bg-white dark:bg-gray-800",
-          backdrop: "bg-black/60 backdrop-blur-sm",
           header: "border-b border-gray-200 dark:border-gray-600",
           footer: "border-t border-gray-200 dark:border-gray-600",
         }}

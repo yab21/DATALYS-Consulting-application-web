@@ -135,62 +135,85 @@ const TablePartner: React.FC = () => {
     canCreate
   } = useAuth();
 
-  // Fonction utilitaire pour corriger les URLs d'images
+  // Fonction utilitaire pour corriger les URLs d'images (adaptée pour HTTPS backend direct)
   const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
-    if (!url) return url;
+    if (!url || url.trim() === '') return undefined;
     
-    
-    // Les URLs passent par le proxy pour éviter les mixed content
-    if (url.includes('82.112.253.137:8082/files/serve/')) {
-      const fixedUrl = url.replace('http://82.112.253.137:8082', '/api');
-      return fixedUrl;
-    }
-    
-    // Pour les URLs avec localhost:8081
-    if (url.includes('localhost:8081')) {
-      const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
-      if (pathMatch) {
-        const filename = pathMatch[1];
-        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
-      } else {
-        return url.replace('localhost:8081', '')
-                  .replace('/uploads/', `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/`);
-      }
-    }
-    
-    // Pour les URLs qui pointent déjà vers l'ancien serveur d'images
-    if (url.includes('82.112.253.137:8081/uploads/') || url.includes('/uploads/')) {
-      const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
-      if (pathMatch) {
-        const filename = pathMatch[1];
-        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
-      }
-    }
-    
-    // Si l'URL est relative avec /uploads/
-    if (url.startsWith('/uploads/logos/')) {
-      const filename = url.replace('/uploads/logos/', '');
-      return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
-    }
-    
-    // Vérifier si l'URL pointe vers /files/serve/ (nouveau format d'upload)
-    if (url.includes('/files/serve/')) {
-      // Si c'est déjà un chemin /api/files/serve/, le garder tel quel
-      if (url.startsWith('/api/files/serve/')) {
-        return url;
-      }
-      // Sinon, ajouter le prefix /api
-      if (url.startsWith('/files/serve/')) {
-        return `/api${url}`;
-      }
-    }
+    // Nettoyer l'URL
+    const cleanUrl = url.trim();
     
     // Ignorer les URLs placeholder ou de test
-    if (url.includes('example.com') || url.includes('placeholder')) {
+    if (cleanUrl.includes('example.com') || cleanUrl.includes('placeholder') || cleanUrl.includes('test.com')) {
       return undefined;
     }
     
-    return url;
+    // Nouveau format d'upload via /files/serve/ avec backend HTTPS direct
+    if (cleanUrl.includes('/files/serve/')) {
+      // Si c'est déjà une URL complète HTTPS, la garder telle quelle
+      if (cleanUrl.startsWith('https://applicationweb.datalysconsulting.com/api/files/serve/')) {
+        return cleanUrl;
+      }
+      
+      // Si c'est un chemin /api/files/serve/, le convertir en URL complète HTTPS
+      if (cleanUrl.startsWith('/api/files/serve/')) {
+        return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
+      }
+      
+      // Si c'est un chemin /files/serve/, ajouter le domaine et prefix /api
+      if (cleanUrl.startsWith('/files/serve/')) {
+        return `https://applicationweb.datalysconsulting.com/api${cleanUrl}`;
+      }
+      
+      // Si c'est une URL complète avec /files/serve/, la convertir vers HTTPS
+      if (cleanUrl.includes('/files/serve/')) {
+        const pathMatch = cleanUrl.match(/\/files\/serve\/(.+)$/);
+        if (pathMatch) {
+          return `https://applicationweb.datalysconsulting.com/api/files/serve/${pathMatch[1]}`;
+        }
+      }
+    }
+    
+    // Ancien format avec serveur d'images statiques - convertir vers HTTPS
+    if (cleanUrl.includes('82.112.253.137:8082')) {
+      return cleanUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com/api');
+    }
+    
+    // URLs avec ancien localhost - convertir vers HTTPS
+    if (cleanUrl.includes('localhost:8081') || cleanUrl.includes('82.112.253.137:8081')) {
+      const pathMatch = cleanUrl.match(/\/uploads\/logos\/(.+)$/);
+      if (pathMatch) {
+        const filename = pathMatch[1];
+        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+      }
+    }
+    
+    // URLs relatives /uploads/ - utiliser l'ancien système d'images statiques
+    if (cleanUrl.startsWith('/uploads/logos/')) {
+      const filename = cleanUrl.replace('/uploads/logos/', '');
+      return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+    }
+    
+    // URLs relatives /api/ - convertir vers URL complète HTTPS
+    if (cleanUrl.startsWith('/api/')) {
+      return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
+    }
+    
+    // Si c'est une URL absolue HTTPS valide, la retourner telle quelle
+    if (cleanUrl.startsWith('https://')) {
+      return cleanUrl;
+    }
+    
+    // Convertir les URLs HTTP vers HTTPS
+    if (cleanUrl.startsWith('http://')) {
+      return cleanUrl.replace('http://', 'https://');
+    }
+    
+    // Pour les autres URLs relatives, les préfixer avec le domaine HTTPS
+    if (cleanUrl.startsWith('/')) {
+      return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
+    }
+    
+    return cleanUrl;
   }, []);
 
   // Gestion des erreurs d'images
@@ -198,18 +221,28 @@ const TablePartner: React.FC = () => {
     setImageErrors(prev => new Set(prev).add(partnerId.toString()));
   }, []);
 
-  // Validation d'URL d'image
+  // Validation d'URL d'image (améliorée)
   const isValidImageUrl = useCallback((url: string | undefined): boolean => {
-    if (!url) return false;
+    if (!url || url.trim() === '') return false;
+    
+    const cleanUrl = url.trim();
+    
+    // Ignorer les URLs placeholder ou de test
+    if (cleanUrl.includes('example.com') || cleanUrl.includes('placeholder') || cleanUrl.includes('test.com')) {
+      return false;
+    }
     
     // Accepter les URLs relatives (commençant par /)
-    if (url.startsWith('/')) return true;
+    if (cleanUrl.startsWith('/')) return true;
     
+    // Accepter les URLs absolutes valides
     try {
-      const urlObj = new URL(url);
+      const urlObj = new URL(cleanUrl);
       return ['http:', 'https:'].includes(urlObj.protocol);
     } catch {
-      return false;
+      // Si ce n'est pas une URL valide mais que c'est une chaîne non vide, l'accepter
+      // (pour les cas de URLs malformées qui pourraient quand même fonctionner)
+      return cleanUrl.length > 0;
     }
   }, []);
 
@@ -312,7 +345,15 @@ const TablePartner: React.FC = () => {
         // Corriger les URLs d'images
         result.items.forEach((partner) => {
           if (partner.logo_url) {
+            const originalUrl = partner.logo_url;
             partner.logo_url = fixImageUrl(partner.logo_url);
+            console.log(`🖼️ Partenaire ${partner.name}:`, {
+              original: originalUrl,
+              fixed: partner.logo_url,
+              hasLogo: !!partner.logo_url
+            });
+          } else {
+            console.log(`❌ Partenaire ${partner.name} sans logo`);
           }
         });
         
@@ -671,7 +712,10 @@ const TablePartner: React.FC = () => {
             <Button
               variant="light"
               startContent={<RefreshCw className="h-4 w-4" />}
-              onPress={loadPartners}
+              onPress={() => {
+                setImageErrors(new Set()); // Réinitialiser les erreurs d'images
+                loadPartners();
+              }}
               size="sm"
             >
               Actualiser
@@ -733,22 +777,48 @@ const TablePartner: React.FC = () => {
               <TableRow key={partner.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {isValidImageUrl(partner.logo_url) && !imageErrors.has(partner.id.toString()) ? (
-                      <div className="w-12 h-12 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
-                        <img
-                          src={fixImageUrl(partner.logo_url)!}
-                          alt={`Logo ${partner.name}`}
-                          className="w-full h-full object-contain"
-                          onError={() => handleImageError(partner.id)}
-                        />
-                      </div>
-                    ) : (
-                      <Avatar
-                        size="md"
-                        name={partner.name.charAt(0)}
-                        className="bg-blue-500 text-white"
-                      />
-                    )}
+                    {(() => {
+                      const fixedUrl = fixImageUrl(partner.logo_url);
+                      const isValid = isValidImageUrl(fixedUrl);
+                      const hasError = imageErrors.has(partner.id.toString());
+                      
+                      // Debug logging pour comprendre pourquoi les logos ne s'affichent pas
+                      if (partner.logo_url && !isValid) {
+                        console.warn(`Logo invalide pour ${partner.name}:`, {
+                          original: partner.logo_url,
+                          fixed: fixedUrl,
+                          isValid,
+                          hasError
+                        });
+                      }
+                      
+                      if (isValid && !hasError) {
+                        return (
+                          <div className="w-12 h-12 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                            <img
+                              src={fixedUrl!}
+                              alt={`Logo ${partner.name}`}
+                              className="w-full h-full object-contain"
+                              onError={() => {
+                                console.error(`Erreur chargement logo pour ${partner.name}:`, fixedUrl);
+                                handleImageError(partner.id);
+                              }}
+                              onLoad={() => {
+                                console.log(`Logo chargé avec succès pour ${partner.name}:`, fixedUrl);
+                              }}
+                            />
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <Avatar
+                            size="md"
+                            name={partner.name.charAt(0)}
+                            className="bg-gradient-to-br from-[#4ba9b7] to-[#6bb6c7] text-white font-bold"
+                          />
+                        );
+                      }
+                    })()}
                     <div className="flex flex-col">
                       <p className="font-semibold text-sm text-gray-900 dark:text-white">{partner.name}</p>
                       <p className="font-medium text-sm text-gray-600 dark:text-gray-400">{partner.email}</p>

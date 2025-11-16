@@ -720,6 +720,10 @@ const ModernMessagesInterface: React.FC = () => {
         onClose={() => setShowNewMessageModal(false)}
         size="2xl"
         placement="center"
+        classNames={{
+          wrapper: "z-[100000]",
+          backdrop: "z-[99998]"
+        }}
       >
         <ModalContent>
           {(onClose) => (
