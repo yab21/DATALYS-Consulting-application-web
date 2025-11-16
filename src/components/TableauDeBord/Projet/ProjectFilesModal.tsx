@@ -20,7 +20,6 @@ import {
   ArrowLeft,
   Plus,
   Upload,
-  Download,
   Edit,
   Trash2,
   Eye,
@@ -583,35 +582,6 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
     }
   };
 
-  // Télécharger un fichier
-  const handleDownloadFile = async (file: ProjectFile) => {
-    try {
-      if (!file.id) {
-        throw new Error('ID du fichier non disponible');
-      }
-
-      console.log('🔍 [DEBUG DOWNLOAD FILE] - Téléchargement via service:', {
-        file_id: file.id,
-        file_name: file.original_name
-      });
-
-      // Utiliser le service existant qui gère l'authentification
-      await projectFilesService.downloadFile(file.id, file.original_name || 'fichier');
-      
-      showNotification({
-        type: 'success',
-        title: 'Succès',
-        message: 'Téléchargement démarré'
-      });
-    } catch (error) {
-      console.error('❌ [DEBUG DOWNLOAD FILE] - Erreur:', error);
-      showNotification({
-        type: 'error',
-        title: 'Erreur',
-        message: 'Impossible de télécharger le fichier'
-      });
-    }
-  };
 
   // Supprimer un fichier
   const handleDeleteFile = async (file: ProjectFile) => {
