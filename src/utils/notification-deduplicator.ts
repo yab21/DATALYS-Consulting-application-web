@@ -13,7 +13,7 @@ interface NotificationEntry {
 class NotificationDeduplicator {
   private static instance: NotificationDeduplicator;
   private notifications: Map<string, NotificationEntry> = new Map();
-  private readonly DEDUP_WINDOW_MS = 10000; // 10 secondes de fenêtre de déduplication
+  private readonly DEDUP_WINDOW_MS = 3000; // 3 secondes de fenêtre de déduplication pour éviter les doublons
   private readonly CLEANUP_INTERVAL_MS = 5000; // Nettoyage toutes les 5 secondes
 
   private constructor() {
@@ -70,6 +70,25 @@ class NotificationDeduplicator {
       .replace(/\s+/g, ' ')
       .replace(/[^\w\s]/g, '') // Supprimer la ponctuation
       .trim();
+    
+    // Pour tous les messages d'erreur génériques, utiliser une clé commune
+    if (type === 'error' || normalizedMessage.includes('erreur') || normalizedMessage.includes('error')) {
+      // Messages d'erreur serveur communs
+      if (normalizedMessage.includes('serveur') || 
+          normalizedMessage.includes('server') ||
+          normalizedMessage.includes('veuillez ressayer') ||
+          normalizedMessage.includes('quelques instants')) {
+        return `${type}:server_error_generic`;
+      }
+      
+      // Messages d'erreur de chargement communs
+      if (normalizedMessage.includes('impossible') || 
+          normalizedMessage.includes('charger') ||
+          normalizedMessage.includes('load') ||
+          normalizedMessage.includes('projets')) {
+        return `${type}:loading_error_generic`;
+      }
+    }
     
     // Pour les messages de connexion, créer des clés génériques
     if (normalizedMessage.includes('mode hors ligne') || 

@@ -432,50 +432,11 @@ const OptimizedProjectList: React.FC = () => {
     setFilteredProjects(filtered);
   };
 
-  const loadProjectsByPartner = async (partnerName: string) => {
-    // Éviter les appels multiples
-    if (isLoadingData) {
-      console.log("⚠️ Chargement déjà en cours, abandon de l'appel");
-      return;
-    }
-
-    try {
-      setIsLoadingData(true);
-      setLoading(true);
-      
-      if (partnerName === "tous") {
-        const allProjects = await projectsService.getActiveProjects();
-        setProjects(allProjects);
-      } else {
-        const partnerProjects = await projectsService.getProjectsByPartner(partnerName);
-        setProjects(partnerProjects);
-      }
-      
-    } catch (error) {
-      console.error("Erreur lors du chargement des projets:", error);
-      // Ne pas afficher de notification si l'erreur a déjà été gérée
-      if (!(error as any)?.errorHandled) {
-        showNotification(simpleNotificationHelpers.error(
-          "Erreur",
-          "Impossible de charger les projets du partenaire"
-        ));
-      }
-    } finally {
-      setLoading(false);
-      setIsLoadingData(false);
-    }
-  };
 
   const handlePartnerChange = (keys: any) => {
     const selected = Array.from(keys)[0] as string;
     setSelectedPartner(selected);
-    
-    // Recharger les projets si nécessaire
-    if (selected !== "tous") {
-      loadProjectsByPartner(selected);
-    } else {
-      loadProjectsByPartner("tous");
-    }
+    // Le filtrage se fait automatiquement via filterProjects() dans le useEffect
   };
 
   const handleProjectAction = (project: Project, action: 'view' | 'edit' | 'delete') => {

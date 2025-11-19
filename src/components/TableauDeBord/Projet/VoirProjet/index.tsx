@@ -6,11 +6,9 @@ import {
   FolderOpen, 
   Users, 
   Calendar, 
-  Activity, 
   Clock,
   ArrowLeft,
-  Eye,
-  AlertTriangle
+  Eye
 } from "lucide-react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { projectsService } from "@/services/projects";
@@ -18,9 +16,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import ProjectOverview from "./ProjectOverview";
-import ProjectIncidents from "./ProjectIncidents";
-import ProjectTeam from "./ProjectTeam";
-import ProjectActivity from "./ProjectActivity";
 import ProjectFileManager from "./ProjectFileManager";
 
 // Interfaces
@@ -344,42 +339,6 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                   uploadedFiles={uploadedFiles}
                   refreshKey={fileRefreshKey}
                 />
-              </Tab>
-
-              <Tab 
-                key="incidents" 
-                title={
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5" />
-                    <span>Incidents</span>
-                  </div>
-                }
-              >
-                <ProjectIncidents projectId={projectId} projectName={project?.intitule || ""} />
-              </Tab>
-
-              <Tab 
-                key="team" 
-                title={
-                  <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5" />
-                    <span>Équipe</span>
-                  </div>
-                }
-              >
-                <ProjectTeam projectId={projectId} projectName={project?.intitule || ""} />
-              </Tab>
-
-              <Tab 
-                key="activity" 
-                title={
-                  <div className="flex items-center gap-3">
-                    <Activity className="w-5 h-5" />
-                    <span>Activité</span>
-                  </div>
-                }
-              >
-                <ProjectActivity projectId={projectId} projectName={project?.intitule || ""} />
               </Tab>
             </Tabs>
           </CardBody>

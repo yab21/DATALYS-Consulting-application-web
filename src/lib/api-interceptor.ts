@@ -258,29 +258,29 @@ class ApiInterceptor {
       }
 
       // PRIORITÉ 2: Traitement des autres erreurs seulement si ce n'est pas un token expiré
+      // NE PAS déclencher de notifications automatiques pour éviter les doublons
+      // Les composants gèrent leurs propres notifications d'erreur
       if (isJsonError) {
-        // Analyser l'erreur avec le système de gestion d'erreurs
+        // Analyser l'erreur avec le système de gestion d'erreurs SANS notification automatique
         const errorDetails = errorHandler.analyzeError(errorData, {
           url: response.url,
           method: "unknown",
           status: response.status,
         });
 
-        // Gérer l'erreur seulement si ce n'est pas une erreur de navigation normale
-        if (response.status !== 404 || !response.url.includes("/api/")) {
-          await errorHandler.handleError(errorDetails);
-        }
+        // Log l'erreur mais ne pas déclencher de notification automatique
+        console.warn("Erreur API interceptée:", errorDetails);
       } else {
-        // Analyser l'erreur réseau seulement pour les vraies erreurs API
+        // Log les erreurs réseau mais ne pas déclencher de notifications automatiques
         if (
           response.url.includes("/api/") ||
           response.url.includes("dashboard")
         ) {
-          const errorDetails = errorHandler.analyzeError(errorData, {
+          console.warn("Erreur réseau interceptée:", {
             url: response.url,
             status: response.status,
+            statusText: response.statusText
           });
-          await errorHandler.handleError(errorDetails);
         }
       }
     }
@@ -314,13 +314,13 @@ class ApiInterceptor {
             return Promise.reject(error);
           }
 
-          // Analyser l'erreur réseau avec le gestionnaire d'erreurs
+          // Log l'erreur réseau mais ne pas déclencher de notification automatique
           if (isApiCall) {
-            const errorDetails = errorHandler.analyzeError(error, {
+            console.warn("Erreur réseau lors de la requête:", {
               url: url,
               method: init?.method || "GET",
+              error: error instanceof Error ? error.message : String(error)
             });
-            await errorHandler.handleError(errorDetails);
           }
 
           throw error;
