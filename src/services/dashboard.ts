@@ -64,56 +64,59 @@ export interface DashboardAdminResponse {
       partner_name: string;
       total_projects: number;
     }>;
-    recent_activity: Array<{
-      action_type: string;
-      created_at: string;
-      description: string;
-      entity_id: number;
-      entity_type: string;
-      id: number;
-      ip_address: string;
-      user_id: number;
-      user_name: string;
-    }>;
-    recent_incidents: Array<{
-      assigned_to?: number;
-      category: string;
-      created_at: string;
-      created_by: number;
-      declarant_name?: string;
-      description: string;
-      domain?: string;
-      id: number;
-      impact?: string;
-      impact_label?: string;
-      incident_number: string;
-      is_active: boolean;
-      is_deleted: boolean;
-      is_read: boolean;
-      priority: string;
-      priority_label: string;
-      project_id?: number;
-      refusal_count: number;
-      resolution_notes?: string;
-      sla_prise_en_charge_deadline?: string;
-      sla_prise_en_charge_status: string;
-      sla_resolution_deadline?: string;
-      sla_resolution_status: string;
-      status: string;
-      status_color: string;
-      temps_restant_prise_en_charge?: any;
-      temps_restant_resolution?: any;
-      title: string;
-      type: string;
-      updated_at: string;
-      updated_by: number;
-      user_id?: number;
-    }>;
+    recent_activity: Array<RecentActivity>;
+    recent_incidents: Array<RecentIncident>;
   };
-  message: {
-    code: number;
-    message: string;
-  };
+  message?: string;
+}
+
+// Type pour les éléments d'activité récente
+export interface RecentActivity {
+  action_type: string;
+  created_at: string;
+  description: string;
+  entity_id: number;
+  entity_type: string;
+  id: number;
+  ip_address: string;
+  user_id: number;
+  user_name: string;
+}
+
+// Interface pour les incidents récents
+export interface RecentIncident {
+  assigned_to?: number;
+  category: string;
+  created_at: string;
+  created_by: number;
+  declarant_name?: string;
+  description: string;
+  domain?: string;
+  id: number;
+  impact?: string;
+  impact_label?: string;
+  incident_number: string;
+  is_active: boolean;
+  is_deleted: boolean;
+  is_read: boolean;
+  priority: string;
+  priority_label: string;
+  project_id?: number;
+  refusal_count: number;
+  resolution_notes?: string;
+  sla_prise_en_charge_deadline?: string;
+  sla_prise_en_charge_status: string;
+  sla_resolution_deadline?: string;
+  sla_resolution_status: string;
+  status: string;
+  status_color: string;
+  temps_restant_prise_en_charge?: any;
+  temps_restant_resolution?: any;
+  title: string;
+  type: string;
+  updated_at: string;
+  updated_by: number;
+  user_id?: number;
 }
 
 export interface ProjectFilters {

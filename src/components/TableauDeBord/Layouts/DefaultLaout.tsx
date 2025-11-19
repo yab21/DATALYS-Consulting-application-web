@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Sidebar from "@/components/TableauDeBord/Sidebar";
 import Header from "@/components/TableauDeBord/Header";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { NotificationProvider as SimpleNotificationProvider } from "@/components/UI/Notifications/NotificationProvider";
 import { AdvancedNotificationProvider } from "@/components/UI/Notifications/AdvancedNotificationProvider";
 import FCMInitializer from "@/components/UI/Notifications/FCMInitializer";
 import ErrorBoundary from "@/components/UI/ErrorBoundary/ErrorBoundary";
@@ -19,7 +20,8 @@ export default function DefaultLayout({
     <ErrorBoundary>
       <AdvancedNotificationProvider>
         <FCMInitializer />
-        <NotificationProvider>
+        <SimpleNotificationProvider>
+          <NotificationProvider>
           {/* <!-- ===== Page Wrapper Star ===== --> */}
           <div className="flex h-screen overflow-hidden">
             {/* <!-- ===== Sidebar Star ===== --> */}
@@ -124,7 +126,8 @@ export default function DefaultLayout({
             {/* <!-- ===== Content Area End ===== --> */}
           </div>
           {/* <!-- ===== Page Wrapper End ===== --> */}
-        </NotificationProvider>
+          </NotificationProvider>
+        </SimpleNotificationProvider>
       </AdvancedNotificationProvider>
     </ErrorBoundary>
   );

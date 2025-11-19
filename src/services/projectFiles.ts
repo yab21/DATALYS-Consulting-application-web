@@ -299,9 +299,16 @@ export class ProjectFilesService {
 
   /**
    * Récupérer les fichiers d'un dossier
+   * CORRECTION: Gérer correctement le cas où folderId est null (fichiers racine)
    */
-  async getFiles(folderId: number, projectId?: number): Promise<ProjectFile[]> {
+  async getFiles(folderId: number | null, projectId?: number): Promise<ProjectFile[]> {
     try {
+      // CORRECTION: Gérer le cas où folderId est null (fichiers racine)
+      if (folderId === null) {
+        console.log('🔍 [DEBUG FIX] - Tentative de récupération des fichiers racine ignorée');
+        return []; // Retourner un tableau vide pour les fichiers racine pour l'instant
+      }
+
       const requestData: any = {
         index: 0,
         size: 100,

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { 
   Plus, 
@@ -57,6 +58,7 @@ const OptimizedProjectList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPartner, setSelectedPartner] = useState<string>("tous");
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -107,11 +109,20 @@ const OptimizedProjectList: React.FC = () => {
 
   // Charger les données initiales
   useEffect(() => {
-    if (isAuthenticated && user) {
-      loadInitialData();
-    }
-    // Suppression de la redirection automatique car elle peut interférer
-    // avec le système d'authentification existant (ProtectedRoute)
+    let mounted = true;
+
+    const loadData = async () => {
+      if (isAuthenticated && user && !isLoadingData && mounted) {
+        await loadInitialData();
+      }
+    };
+
+    loadData();
+
+    // Cleanup pour éviter les mises à jour après démontage
+    return () => {
+      mounted = false;
+    };
   }, [isAuthenticated, user]);
 
   // Filtrer les projets
@@ -236,7 +247,14 @@ const OptimizedProjectList: React.FC = () => {
   };
 
   const loadInitialData = async () => {
+    // Éviter les appels multiples
+    if (isLoadingData) {
+      console.log("⚠️ Chargement déjà en cours, abandon de l'appel");
+      return;
+    }
+
     try {
+      setIsLoadingData(true);
       setLoading(true);
       
       // Vérifier les permissions avant de charger les données
@@ -265,10 +283,33 @@ const OptimizedProjectList: React.FC = () => {
       
       // Charger les données selon le rôle
       if (user.role_id === 1) { // ADMIN - peut voir tous les projets
-        const [partnersResponse, projectsResponse] = await Promise.all([
+        // Utiliser Promise.allSettled pour gérer les erreurs individuellement
+        const [partnersResult, projectsResult] = await Promise.allSettled([
           projectsService.getPartnerNames(),
           projectsService.getActiveProjects()
         ]);
+
+        // Gérer les résultats séparément
+        let partnersResponse: string[] = [];
+        let projectsResponse: Project[] = [];
+
+        if (partnersResult.status === 'fulfilled') {
+          partnersResponse = partnersResult.value;
+        } else {
+          console.error("Erreur lors du chargement des partenaires:", partnersResult.reason);
+        }
+
+        if (projectsResult.status === 'fulfilled') {
+          projectsResponse = projectsResult.value;
+        } else {
+          console.error("Erreur lors du chargement des projets:", projectsResult.reason);
+          // Si les projets ne se chargent pas, afficher UNE SEULE notification
+          showNotification(simpleNotificationHelpers.error(
+            "Erreur",
+            "Impossible de charger les projets"
+          ));
+          return;
+        }
         
         // Importer le service partners pour récupérer les détails complets
         const { partnersService } = await import('@/services/partners');
@@ -330,6 +371,12 @@ const OptimizedProjectList: React.FC = () => {
     } catch (error: any) {
       console.error("Erreur lors du chargement:", error);
       
+      // Ne pas afficher de notification si l'erreur a déjà été gérée par l'intercepteur
+      if ((error as any)?.errorHandled) {
+        console.log("Erreur déjà gérée par l'intercepteur, pas de notification supplémentaire");
+        return;
+      }
+      
       // Gestion spécifique des erreurs d'authentification
       if (error.message && error.message.includes('401')) {
         // Pour les partenaires, une erreur 401 peut indiquer un problème de permissions
@@ -343,17 +390,12 @@ const OptimizedProjectList: React.FC = () => {
           // Ne pas rediriger car l'utilisateur est connecté mais n'a peut-être pas les bonnes permissions
         } else {
           // Pour les admins, c'est probablement une session expirée
-          showNotification(simpleNotificationHelpers.error(
-            "Session expirée",
-            "Votre session a expiré. Vous allez être redirigé vers la connexion."
-          ));
-          // Laisser TokenExpirationHandler gérer la redirection pour les admins
+          // L'intercepteur devrait déjà gérer cela, donc on ne fait rien ici
+          console.log("Erreur 401 détectée, l'intercepteur devrait la gérer");
         }
-      } else {
-        // Vérifier d'abord si c'est une erreur de token expiré
-        apiInterceptor.handleApiError(error);
-
-        // Générer le message d'erreur approprié
+      } else if (!error.message?.includes('token') && !error.message?.includes('session')) {
+        // Afficher une notification seulement si ce n'est pas une erreur d'authentification
+        // (qui est déjà gérée par l'intercepteur)
         const errorMessage = getContextualErrorMessage(error, {
           operation: 'load',
           dataType: 'projects',
@@ -367,6 +409,7 @@ const OptimizedProjectList: React.FC = () => {
       }
     } finally {
       setLoading(false);
+      setIsLoadingData(false);
     }
   };
 
@@ -390,7 +433,14 @@ const OptimizedProjectList: React.FC = () => {
   };
 
   const loadProjectsByPartner = async (partnerName: string) => {
+    // Éviter les appels multiples
+    if (isLoadingData) {
+      console.log("⚠️ Chargement déjà en cours, abandon de l'appel");
+      return;
+    }
+
     try {
+      setIsLoadingData(true);
       setLoading(true);
       
       if (partnerName === "tous") {
@@ -403,12 +453,16 @@ const OptimizedProjectList: React.FC = () => {
       
     } catch (error) {
       console.error("Erreur lors du chargement des projets:", error);
-      showNotification(simpleNotificationHelpers.error(
-        "Erreur",
-        "Impossible de charger les projets du partenaire"
-      ));
+      // Ne pas afficher de notification si l'erreur a déjà été gérée
+      if (!(error as any)?.errorHandled) {
+        showNotification(simpleNotificationHelpers.error(
+          "Erreur",
+          "Impossible de charger les projets du partenaire"
+        ));
+      }
     } finally {
       setLoading(false);
+      setIsLoadingData(false);
     }
   };
 
@@ -761,9 +815,12 @@ const OptimizedProjectList: React.FC = () => {
                       className="bg-blue-500 text-white flex-shrink-0"
                     />
                     <div className="flex flex-col min-w-0">
-                      <p className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-none">
+                      <Link 
+                        href={`/tableaudebord/projet/pageprojet/${project.id}`}
+                        className="font-semibold text-xs sm:text-sm text-[#4ba9b7] hover:text-[#3a8a96] dark:text-[#4ba9b7] dark:hover:text-[#5bc9d7] hover:underline truncate max-w-[120px] sm:max-w-none transition-colors duration-200"
+                      >
                         {project.title}
-                      </p>
+                      </Link>
                       {/* Afficher le partenaire sur mobile quand la colonne est masquée */}
                       <p className="text-xs text-gray-500 dark:text-gray-400 sm:hidden truncate max-w-[120px]">
                         {project.partner_name || "Non assigné"}

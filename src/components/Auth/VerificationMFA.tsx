@@ -74,7 +74,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
         
         showNotification(simpleNotificationHelpers.success(
           "Authentification réussie !",
-          `Bienvenue ${result.data.name || "sur DATALYS"} 🎉`
+          `Bienvenue ${result.data.name || "sur DATALYS"}`
         ));
         
         // Rediriger vers le tableau de bord
