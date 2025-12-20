@@ -33,9 +33,14 @@ class NotificationDeduplicator {
   /**
    * Vérifie si une notification doit être affichée ou si c'est un doublon
    */
-  public shouldShowNotification(message: string, type: string): boolean {
+  public shouldShowNotification(message: string, type: string, id?: string): boolean {
     const now = Date.now();
-    const key = this.generateKey(message, type);
+    
+    // Pour les notifications d'expiration de session, utiliser une fenêtre plus longue
+    const isSessionExpiration = message.includes('Session expirée') || message.includes('session a expiré') || id?.includes('token-expiration');
+    const dedupWindow = isSessionExpiration ? 60000 : this.DEDUP_WINDOW_MS; // 1 minute pour session expirée vs 3s normal
+    
+    const key = id || this.generateKey(message, type);
     
     // Nettoyer d'abord les notifications expirées
     this.cleanup();
@@ -43,17 +48,17 @@ class NotificationDeduplicator {
     // Vérifier si cette notification existe déjà
     const existing = this.notifications.get(key);
     if (existing && now < existing.expires) {
-      console.log(`🚫 Notification dupliquée ignorée: ${message.substring(0, 50)}...`);
+      console.log(`🚫 Notification dupliquée ignorée (${isSessionExpiration ? 'session' : 'normale'}): ${message.substring(0, 50)}...`);
       return false; // Doublon détecté
     }
     
-    // Enregistrer cette nouvelle notification
+    // Enregistrer cette nouvelle notification avec la fenêtre appropriée
     this.notifications.set(key, {
       id: key,
       message,
       type,
       timestamp: now,
-      expires: now + this.DEDUP_WINDOW_MS
+      expires: now + dedupWindow
     });
     
     console.log(`✅ Notification autorisée: ${message.substring(0, 50)}...`);

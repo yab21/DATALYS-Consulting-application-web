@@ -13,6 +13,8 @@ interface ApiErrorResponse {
 class ApiInterceptor {
   private static instance: ApiInterceptor;
   private redirectCallback: (() => void) | null = null;
+  private tokenExpirationHandled: boolean = false;
+  private lastTokenExpirationTime: number = 0;
   
 
   private constructor() {
@@ -168,6 +170,17 @@ class ApiInterceptor {
    * Gérer l'expiration du token
    */
   private handleTokenExpiration() {
+    const now = Date.now();
+    
+    // Protection contre les multiples appels simultanés
+    if (this.tokenExpirationHandled || (now - this.lastTokenExpirationTime) < 5000) {
+      console.warn("🔒 Expiration token déjà en cours de traitement, ignorée");
+      return;
+    }
+
+    this.tokenExpirationHandled = true;
+    this.lastTokenExpirationTime = now;
+
     console.warn(
       "🔒 Token expiré détecté - Nettoyage et redirection en cours...",
     );
@@ -201,14 +214,15 @@ class ApiInterceptor {
       keysToRemove.forEach(key => localStorage.removeItem(key));
     }
 
-    // Afficher une notification à l'utilisateur
+    // Afficher UNE SEULE notification à l'utilisateur
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent('global-error-notification', {
         detail: {
           type: 'warning',
           title: 'Session expirée',
           message: 'Votre session a expiré. Vous allez être redirigé vers la page de connexion.',
-          persistent: true
+          persistent: true,
+          id: 'token-expiration-' + now // ID unique pour éviter les doublons
         }
       }));
     }

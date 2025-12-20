@@ -22,6 +22,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Folder, 
+  FolderOpen,
   FileText, 
   Image, 
   Video, 
@@ -38,14 +39,13 @@ import {
   ArrowDown,
   Grid,
   List,
-  Share2,
   Trash2,
   FolderPlus,
   MoreVertical,
   HardDrive
 } from 'lucide-react';
 import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
-import { projectFilesService } from '@/services/projectFiles';
+import { projectFilesService, FolderStats } from '@/services/projectFiles';
 import { useAuth } from '@/context/AuthContext';
 
 // Types
@@ -64,6 +64,8 @@ interface FileItem {
   file_url?: string;
   original_name?: string;
   folder_id?: number | null;
+  stats?: FolderStats;
+  loadingStats?: boolean;
 }
 
 interface ProjectFileManagerProps {
@@ -165,14 +167,31 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   const { isOpen: isCreateFolderOpen, onOpen: onCreateFolderOpen, onClose: onCreateFolderClose } = useDisclosure();
   const { isOpen: isEditFolderOpen, onOpen: onEditFolderOpen, onClose: onEditFolderClose } = useDisclosure();
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
+  const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderDescription, setNewFolderDescription] = useState('');
   const [editingFolder, setEditingFolder] = useState<FileItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<FileItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditingFolder, setIsEditingFolder] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // Navigation
   const [breadcrumbs, setBreadcrumbs] = useState<FileItem[]>([]);
+
+  // Charger les statistiques d'un dossier
+  const loadFolderStats = useCallback(async (folderId: string, projectId: number): Promise<FolderStats | null> => {
+    try {
+      console.log('📊 Chargement des statistiques du dossier:', folderId);
+      const stats = await projectFilesService.getFolderStats(Number(folderId), projectId);
+      console.log('✅ Statistiques chargées:', stats);
+      return stats;
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des statistiques:', error);
+      return null;
+    }
+  }, []);
 
   // Charger les fichiers et dossiers
   const loadFilesAndFolders = useCallback(async () => {
@@ -195,8 +214,37 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         modifiedAt: new Date(folder.updated_at || folder.created_at),
         parentId: folder.parent_folder_id?.toString() || null,
         path: folder.name,
-        isShared: false
+        isShared: false,
+        loadingStats: true
       }));
+
+      setFolders(formattedFolders);
+
+      // Charger les statistiques pour chaque dossier en parallèle
+      const foldersWithStats = await Promise.allSettled(
+        formattedFolders.map(async (folder) => {
+          const stats = await loadFolderStats(folder.id, Number(projectId));
+          return {
+            ...folder,
+            stats: stats || undefined,
+            loadingStats: false
+          };
+        })
+      );
+
+      // Mettre à jour les dossiers avec leurs statistiques
+      const finalFolders = foldersWithStats.map((result, index) => {
+        if (result.status === 'fulfilled') {
+          return result.value;
+        } else {
+          // En cas d'erreur, garder le dossier sans statistiques
+          console.error('Erreur stats pour dossier:', formattedFolders[index].name, result.reason);
+          return {
+            ...formattedFolders[index],
+            loadingStats: false
+          };
+        }
+      });
 
       // Charger les fichiers
       let formattedFiles: FileItem[] = [];
@@ -240,7 +288,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
           isShared: file.is_public || false
         }));
 
-      setFolders(formattedFolders);
+      setFolders(finalFolders);
       setFiles([...formattedFiles, ...localUploadedFiles]);
 
     } catch (error) {
@@ -303,6 +351,9 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         user?.id || 1 // userId
       );
 
+      // Vider le cache des statistiques car la structure a changé
+      projectFilesService.clearStatsCache();
+
       // Utiliser le message du backend si disponible
       const successMessage = result ? `Dossier "${newFolderName}" créé avec succès` : `Dossier "${newFolderName}" créé`;
       showNotification({
@@ -327,9 +378,10 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
 
   // Modifier un dossier
   const handleEditFolder = useCallback(async () => {
-    if (!editingFolder || !newFolderName.trim()) return;
+    if (!editingFolder || !newFolderName.trim() || isEditingFolder) return;
 
     try {
+      setIsEditingFolder(true);
       await projectFilesService.updateFolder(
         Number(editingFolder.id),
         newFolderName.trim(),
@@ -338,9 +390,12 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         user?.email || ''
       );
 
+      // Vider le cache des statistiques car le nom a changé
+      projectFilesService.clearStatsCache();
+
       showNotification({
         title: 'Succès',
-        message: `Dossier modifié avec succès`,
+        message: `Dossier "${newFolderName}" modifié avec succès`,
         type: 'success'
       });
       setEditingFolder(null);
@@ -356,60 +411,64 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         message: errorMessage,
         type: 'error'
       });
+    } finally {
+      setIsEditingFolder(false);
     }
-  }, [editingFolder, newFolderName, newFolderDescription, user?.id, showNotification, onEditFolderClose, loadFilesAndFolders]);
+  }, [editingFolder, newFolderName, newFolderDescription, user?.id, showNotification, onEditFolderClose, loadFilesAndFolders, isEditingFolder]);
 
-  // Supprimer un dossier
+  // Ouvrir le modal de confirmation de suppression
+  const openDeleteModal = useCallback((item: FileItem) => {
+    setItemToDelete(item);
+    onDeleteModalOpen();
+  }, [onDeleteModalOpen]);
+
+  // Confirmer la suppression
+  const confirmDelete = useCallback(async () => {
+    if (!itemToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      
+      if (itemToDelete.type === 'folder') {
+        await projectFilesService.deleteFolder(Number(itemToDelete.id));
+      } else {
+        await projectFilesService.deleteFile(Number(itemToDelete.id));
+      }
+      
+      // Vider le cache des statistiques car la structure a changé
+      projectFilesService.clearStatsCache();
+      
+      showNotification({
+        title: 'Succès',
+        message: `${itemToDelete.type === 'folder' ? 'Dossier' : 'Fichier'} "${itemToDelete.name}" supprimé avec succès`,
+        type: 'success'
+      });
+      
+      onDeleteModalClose();
+      setItemToDelete(null);
+      loadFilesAndFolders();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la suppression';
+      showNotification({
+        title: 'Erreur',
+        message: errorMessage,
+        type: 'error'
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [itemToDelete, showNotification, onDeleteModalClose, loadFilesAndFolders]);
+
+  // Supprimer un dossier (legacy - garder pour compatibilité avec la vue grille)
   const handleDeleteFolder = useCallback(async (folder: FileItem) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer le dossier "${folder.name}" ? Cette action est irréversible.`)) {
-      return;
-    }
+    openDeleteModal(folder);
+  }, [openDeleteModal]);
 
-    try {
-      await projectFilesService.deleteFolder(Number(folder.id));
-      
-      showNotification({
-        title: 'Succès',
-        message: `Dossier "${folder.name}" supprimé avec succès`,
-        type: 'success'
-      });
-      loadFilesAndFolders();
-    } catch (error) {
-      console.error('Erreur lors de la suppression du dossier:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la suppression du dossier';
-      showNotification({
-        title: 'Erreur',
-        message: errorMessage,
-        type: 'error'
-      });
-    }
-  }, [showNotification, loadFilesAndFolders]);
-
-  // Supprimer un fichier
+  // Supprimer un fichier (legacy - garder pour compatibilité)
   const handleDeleteFile = useCallback(async (file: FileItem) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer le fichier "${file.name}" ? Cette action est irréversible.`)) {
-      return;
-    }
-
-    try {
-      await projectFilesService.deleteFile(Number(file.id));
-      
-      showNotification({
-        title: 'Succès',
-        message: `Fichier "${file.name}" supprimé avec succès`,
-        type: 'success'
-      });
-      loadFilesAndFolders();
-    } catch (error) {
-      console.error('Erreur lors de la suppression du fichier:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la suppression du fichier';
-      showNotification({
-        title: 'Erreur',
-        message: errorMessage,
-        type: 'error'
-      });
-    }
-  }, [showNotification, loadFilesAndFolders]);
+    openDeleteModal(file);
+  }, [openDeleteModal]);
 
   // Upload de fichiers
   const handleUpload = useCallback(async () => {
@@ -441,6 +500,9 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
           onFileUpload(result);
         }
       }
+
+      // Vider le cache des statistiques car de nouveaux fichiers ont été ajoutés
+      projectFilesService.clearStatsCache();
 
       showNotification({
         title: 'Succès',
@@ -536,38 +598,38 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[600px]">
-      {/* Header harmonisé */}
-      <div className="bg-gradient-to-r from-[#4ba9b7] to-[#3d8b96] p-6">
+      {/* Header harmonisé avec le modal */}
+      <div className="border-b border-gray-200 px-6 py-4 bg-white dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-              <Folder className="w-5 h-5 text-white" />
+            <div className="p-2 rounded-md bg-[#4ba9b7]/10">
+              <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Gestionnaire de fichiers
-              </h1>
-              <p className="text-blue-100 text-sm">
-                Organisez vos fichiers et dossiers pour {projectName}
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {projectName}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
-              color="default"
-              variant="solid"
+              variant="flat"
+              size="sm"
               startContent={<Upload className="w-4 h-4" />}
               onPress={onUploadOpen}
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              isDisabled={!currentFolder}
+              className="text-gray-700 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Uploader
             </Button>
             <Button
-              color="default"
-              variant="solid"
+              size="sm"
               startContent={<FolderPlus className="w-4 h-4" />}
               onPress={onCreateFolderOpen}
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              className="bg-[#4ba9b7] text-white hover:bg-[#4ba9b7]/90"
             >
               Nouveau dossier
             </Button>
@@ -757,14 +819,76 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                     >
                       {viewMode === 'grid' ? (
                         // Vue grille harmonisée
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group relative">
+                          {/* Action buttons pour les dossiers - Seulement au survol */}
+                          {item.type === 'folder' && (
+                            <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 rounded-md shadow-lg p-0.5 border border-gray-200 dark:border-gray-600">
+                                <button
+                                  className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingFolder(item);
+                                    setNewFolderName(item.name);
+                                    setNewFolderDescription('');
+                                    onEditFolderOpen();
+                                  }}
+                                  title="Modifier"
+                                >
+                                  <Settings className="w-3 h-3" />
+                                </button>
+                                <button
+                                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteFolder(item);
+                                  }}
+                                  title="Supprimer"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          
                           <div 
                             className="text-center"
                             onClick={() => item.type === 'folder' ? navigateToFolder(item) : handlePreview(item)}
                           >
-                            <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg group-hover:scale-105 transition-transform duration-200">
-                              {getFileIconComponent(item.type, item.name)}
-                            </div>
+                            {item.type === 'folder' ? (
+                              // Design de dossier personnalisé comme dans le modal
+                              <div className="relative w-[100px] h-[80px] mx-auto mb-3 cursor-pointer group-hover:scale-105 transition-transform duration-200">
+                                {/* Folder Tab */}
+                                <div className="absolute top-0 left-0 w-[40px] h-[12px] bg-[#F59E0B] rounded-t-md" />
+                                {/* Folder Body */}
+                                <div className="absolute top-[8px] left-0 w-full h-[72px] bg-gradient-to-b from-[#FCD34D] to-[#F59E0B] rounded-lg shadow-sm" />
+                                
+                                {/* Inner content area with stats */}
+                                <div className="absolute inset-0 top-[20px] flex items-center justify-center">
+                                  <div className="flex items-center gap-1.5 text-[11px] text-gray-700/80 font-medium">
+                                    {item.loadingStats ? (
+                                      <div className="w-3 h-3 border-2 border-gray-600/30 border-t-transparent rounded-full animate-spin"></div>
+                                    ) : item.stats ? (
+                                      <>
+                                        <div className="flex items-center gap-0.5">
+                                          <FolderOpen className="w-3 h-3 opacity-70" />
+                                          <span>{item.stats.subfolders}</span>
+                                        </div>
+                                        <div className="flex items-center gap-0.5">
+                                          <FileText className="w-3 h-3 opacity-70" />
+                                          <span>{item.stats.files}</span>
+                                        </div>
+                                      </>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              // Design de fichier normal
+                              <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg group-hover:scale-105 transition-transform duration-200">
+                                {getFileIconComponent(item.type, item.name)}
+                              </div>
+                            )}
                             <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-1">
                               {item.name}
                             </h4>
@@ -796,7 +920,22 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                                 {item.name}
                               </h4>
                               <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                                <span>{item.type === 'folder' ? 'Dossier' : formatFileSize(item.size || 0)}</span>
+                                <span>
+                                  {item.type === 'folder' ? (
+                                    item.loadingStats ? (
+                                      <span className="flex items-center gap-1">
+                                        <div className="w-3 h-3 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                        Chargement...
+                                      </span>
+                                    ) : item.stats ? (
+                                      `${item.stats.subfolders} dossier${item.stats.subfolders !== 1 ? 's' : ''} • ${item.stats.files} fichier${item.stats.files !== 1 ? 's' : ''}`
+                                    ) : (
+                                      'Dossier'
+                                    )
+                                  ) : (
+                                    formatFileSize(item.size || 0)
+                                  )}
+                                </span>
                                 <span>{item.modifiedAt.toLocaleDateString('fr-FR')}</span>
                               </div>
                             </div>
@@ -811,43 +950,44 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                                   <MoreVertical className="w-4 h-4" />
                                 </Button>
                               </DropdownTrigger>
-                              <DropdownMenu>
-                                <DropdownItem 
-                                  key="view"
-                                  startContent={<Eye className="w-4 h-4" />}
-                                  onPress={() => item.type === 'folder' ? navigateToFolder(item) : handlePreview(item)}
-                                >
-                                  {item.type === 'folder' ? 'Ouvrir' : 'Voir'}
-                                </DropdownItem>
-                                {item.type === 'folder' ? (
-                                  <DropdownItem 
-                                    key="edit"
-                                    startContent={<Settings className="w-4 h-4" />}
-                                    onPress={() => {
+                              <DropdownMenu
+                                items={[
+                                  {
+                                    key: "view",
+                                    label: item.type === 'folder' ? 'Ouvrir' : 'Voir',
+                                    startContent: <Eye className="w-4 h-4" />,
+                                    onPress: () => item.type === 'folder' ? navigateToFolder(item) : handlePreview(item)
+                                  },
+                                  ...(item.type === 'folder' ? [{
+                                    key: "edit",
+                                    label: "Modifier",
+                                    startContent: <Settings className="w-4 h-4" />,
+                                    onPress: () => {
                                       setEditingFolder(item);
                                       setNewFolderName(item.name);
                                       setNewFolderDescription('');
                                       onEditFolderOpen();
-                                    }}
+                                    }
+                                  }] : []),
+                                  {
+                                    key: "delete",
+                                    label: "Supprimer",
+                                    startContent: <Trash2 className="w-4 h-4" />,
+                                    className: "text-danger",
+                                    onPress: () => openDeleteModal(item)
+                                  }
+                                ]}
+                              >
+                                {(menuItem) => (
+                                  <DropdownItem
+                                    key={menuItem.key}
+                                    startContent={menuItem.startContent}
+                                    className={menuItem.className}
+                                    onPress={menuItem.onPress}
                                   >
-                                    Modifier
-                                  </DropdownItem>
-                                ) : (
-                                  <DropdownItem key="edit-disabled" className="hidden">
-                                    Hidden
+                                    {menuItem.label}
                                   </DropdownItem>
                                 )}
-                                <DropdownItem key="share" startContent={<Share2 className="w-4 h-4" />}>
-                                  Partager
-                                </DropdownItem>
-                                <DropdownItem 
-                                  key="delete"
-                                  startContent={<Trash2 className="w-4 h-4" />}
-                                  className="text-danger"
-                                  onPress={() => item.type === 'folder' ? handleDeleteFolder(item) : handleDeleteFile(item)}
-                                >
-                                  Supprimer
-                                </DropdownItem>
                               </DropdownMenu>
                             </Dropdown>
                           </div>
@@ -946,6 +1086,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
               color="primary"
               onPress={handleEditFolder}
               isDisabled={!newFolderName.trim()}
+              isLoading={isEditingFolder}
             >
               Modifier
             </Button>
@@ -969,37 +1110,53 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
               {currentFolder ? (
                 <>Upload dans le dossier : <strong>{currentFolder.name}</strong></>
               ) : (
-                <>Upload dans le dossier racine du projet</>
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-3">
+                    <div className="p-1 rounded-full bg-amber-100 dark:bg-amber-900/40">
+                      <Upload className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                        Upload non disponible à la racine
+                      </h3>
+                      <p className="text-sm text-amber-700 dark:text-amber-300">
+                        Vous devez d'abord créer un dossier ou naviguer dans un dossier existant pour uploader des fichiers.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            {currentFolder && (
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Cliquez pour sélectionner ou glissez-déposez vos fichiers
+                </p>
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setUploadingFiles(files);
+                  }}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <Button
+                  as="label"
+                  htmlFor="file-upload"
+                  color="primary"
+                  variant="flat"
+                  className="cursor-pointer"
+                >
+                  Sélectionner des fichiers
+                </Button>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Cliquez pour sélectionner ou glissez-déposez vos fichiers
-              </p>
-              <input
-                type="file"
-                multiple
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  setUploadingFiles(files);
-                }}
-                className="hidden"
-                id="file-upload"
-              />
-              <Button
-                as="label"
-                htmlFor="file-upload"
-                color="primary"
-                variant="flat"
-                className="cursor-pointer"
-              >
-                Sélectionner des fichiers
-              </Button>
-            </div>
+            )}
 
             {uploadingFiles.length > 0 && (
               <div className="space-y-3">
@@ -1038,10 +1195,67 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
             <Button
               color="primary"
               onPress={handleUpload}
-              isDisabled={uploadingFiles.length === 0}
+              isDisabled={uploadingFiles.length === 0 || !currentFolder}
               isLoading={uploadProgress > 0 && uploadProgress < 100}
             >
               Upload ({uploadingFiles.length} fichier{uploadingFiles.length > 1 ? 's' : ''})
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de confirmation de suppression - Design identique au modal original */}
+      <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-100">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <span>Supprimer {itemToDelete?.type === 'folder' ? 'le dossier' : 'le fichier'}</span>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-start gap-3">
+                  <div className="p-1 rounded-full bg-red-100 dark:bg-red-900/40">
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
+                      Attention : Suppression définitive
+                    </h3>
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      Cette action est irréversible. {itemToDelete?.type === 'folder' && 'Tous les fichiers et sous-dossiers contenus dans ce dossier seront également supprimés.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {itemToDelete && (
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>{itemToDelete.type === 'folder' ? 'Dossier' : 'Fichier'} à supprimer :</strong> {itemToDelete.name}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="flat"
+              onPress={onDeleteModalClose}
+              isDisabled={isDeleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="danger"
+              onPress={confirmDelete}
+              isLoading={isDeleting}
+            >
+              Supprimer définitivement
             </Button>
           </ModalFooter>
         </ModalContent>

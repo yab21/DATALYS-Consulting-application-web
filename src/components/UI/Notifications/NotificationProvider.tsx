@@ -89,11 +89,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   // Écouter les événements globaux d'erreur avec déduplication
   useEffect(() => {
     const handleGlobalError = (event: CustomEvent) => {
-      const { type, title, message, persistent } = event.detail;
+      const { type, title, message, persistent, id } = event.detail;
       
-      // Première couche : déduplication globale
+      // Première couche : déduplication globale avec ID si fourni
       const notificationKey = `${title}: ${message}`;
-      if (!notificationDeduplicator.shouldShowNotification(notificationKey, type)) {
+      if (!notificationDeduplicator.shouldShowNotification(notificationKey, type, id)) {
         return; // Notification dupliquée, ignorer
       }
       
