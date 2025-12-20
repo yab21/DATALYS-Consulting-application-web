@@ -618,10 +618,7 @@ const GestionIncidents: React.FC = () => {
       errors.user_id = "L'assignation d'un expert est obligatoire";
     }
 
-    // Validation des champs obligatoires
-    if (!createForm.type || !createForm.type.trim()) {
-      errors.type = "Le type est obligatoire";
-    }
+    // Le type est fixé à "incident" pour ce modal, pas besoin de validation
 
     if (!createForm.category || !createForm.category.trim()) {
       errors.category = "La catégorie est obligatoire";
@@ -2003,21 +2000,15 @@ const GestionIncidents: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <Select
+                <Input
                   label="Type"
-                  placeholder="Sélectionnez le type"
-                  selectedKeys={createForm.type ? [createForm.type] : []}
-                  onSelectionChange={(keys) => {
-                    setCreateForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }));
-                    clearCreateFormError('type');
+                  value="Incident"
+                  isReadOnly
+                  className="cursor-not-allowed"
+                  classNames={{
+                    input: "text-gray-600 bg-gray-50"
                   }}
-                  isRequired
-                  isInvalid={!!createFormErrors.type}
-                  errorMessage={createFormErrors.type}
-                >
-                  <SelectItem key="incident" value="incident">Incident</SelectItem>
-                  <SelectItem key="support" value="support">Support</SelectItem>
-                </Select>
+                />
 
                 <Input
                   label="Catégorie"
@@ -2280,21 +2271,16 @@ const GestionIncidents: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
-                  <Select
+                  <Input
                     label="Type"
-                    placeholder="Sélectionnez le type"
-                    selectedKeys={editForm.type ? [editForm.type] : []}
-                    onSelectionChange={(keys) => {
-                      setEditForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }));
-                      clearEditFormError('type');
+                    value={editForm.type === "incident" ? "Incident" : editForm.type === "support" ? "Support" : editForm.type}
+                    isReadOnly
+                    className="cursor-not-allowed"
+                    classNames={{
+                      input: "text-gray-600 bg-gray-50"
                     }}
-                    isRequired
-                    isInvalid={!!editFormErrors.type}
-                    errorMessage={editFormErrors.type}
-                  >
-                    <SelectItem key="incident" value="incident">Incident</SelectItem>
-                    <SelectItem key="support" value="support">Support</SelectItem>
-                  </Select>
+                    description="Le type ne peut pas être modifié"
+                  />
 
                   <Input
                     label="Catégorie"
