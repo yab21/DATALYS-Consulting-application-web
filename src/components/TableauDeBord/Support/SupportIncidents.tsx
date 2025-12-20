@@ -1278,15 +1278,15 @@ const SupportIncidents: React.FC = () => {
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4">
-                    <Select
+                    <Input
                       label="Type"
-                      placeholder="Sélectionnez le type"
-                      selectedKeys={createForm.type ? [createForm.type] : []}
-                      onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }))}
-                    >
-                      <SelectItem key="incident" value="incident">Incident</SelectItem>
-                      <SelectItem key="support" value="support">Support</SelectItem>
-                    </Select>
+                      value="Support"
+                      isReadOnly
+                      className="cursor-not-allowed"
+                      classNames={{
+                        input: "text-gray-600 bg-gray-50"
+                      }}
+                    />
                     
                     <Input
                       label="Catégorie"
@@ -1565,15 +1565,16 @@ const SupportIncidents: React.FC = () => {
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4">
-                    <Select
+                    <Input
                       label="Type"
-                      placeholder="Sélectionnez le type"
-                      selectedKeys={editForm.type ? [editForm.type] : []}
-                      onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, type: Array.from(keys)[0] as any }))}
-                    >
-                      <SelectItem key="incident" value="incident">Incident</SelectItem>
-                      <SelectItem key="support" value="support">Support</SelectItem>
-                    </Select>
+                      value={editForm.type === "incident" ? "Incident" : editForm.type === "support" ? "Support" : editForm.type}
+                      isReadOnly
+                      className="cursor-not-allowed"
+                      classNames={{
+                        input: "text-gray-600 bg-gray-50"
+                      }}
+                      description="Le type ne peut pas être modifié"
+                    />
                     
                     <Input
                       label="Catégorie"
