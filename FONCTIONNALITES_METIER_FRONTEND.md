@@ -79,6 +79,7 @@ Cette application est une **plateforme de gestion de services de consulting** co
 - **Gestion des permissions** d'accès par projet et partenaire
 - **Tableau de bord projet** avec métriques et indicateurs de performance
 - **Workflow de validation** et approbation des livrables
+- **Workflow de validation** et approbation des livrables
 
 ---
 
