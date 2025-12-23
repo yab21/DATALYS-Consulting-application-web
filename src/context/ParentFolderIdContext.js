@@ -1,5 +1,5 @@
 "use client"; // Ajoute cette ligne pour définir le fichier comme composant client
-import { createContext, useState } from "react";
+import React, { createContext, useState } from "react";
 
 // Création du contexte ParentFolderId
 export const ParentFolderIdContext = createContext(null);
