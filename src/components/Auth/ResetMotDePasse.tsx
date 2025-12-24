@@ -52,25 +52,39 @@ const ResetMotDePasse: React.FC = () => {
 
   // Récupérer le token depuis les paramètres URL
   useEffect(() => {
+    console.log('🔍 DEBUG Reset - URL complète:', typeof window !== 'undefined' ? window.location.href : 'SSR');
+    console.log('🔍 DEBUG Reset - Search params:', searchParams?.toString());
+    
     const urlToken = searchParams?.get("token");
+    console.log('🔍 DEBUG Reset - Token reçu:', urlToken ? urlToken.substring(0, 20) + '...' : 'AUCUN TOKEN');
+    
     if (urlToken) {
       setToken(urlToken);
       setTokenError("");
+      console.log('✅ DEBUG Reset - Token défini avec succès');
     } else {
+      console.log('❌ DEBUG Reset - Aucun token trouvé dans l\'URL');
       setTokenError("Token de réinitialisation manquant. Veuillez utiliser le lien reçu par email.");
     }
   }, [searchParams]);
 
   const onSubmit = async (data: ResetPasswordForm) => {
+    console.log('🔍 DEBUG Reset - Début onSubmit');
+    console.log('🔍 DEBUG Reset - Token disponible:', token ? 'OUI (' + token.substring(0, 20) + '...)' : 'NON');
+    console.log('🔍 DEBUG Reset - Longueur mot de passe:', data.newPassword?.length);
+    
     if (!token) {
+      console.log('❌ DEBUG Reset - Token manquant, arrêt du processus');
       setTokenError("Token de réinitialisation manquant.");
       return;
     }
 
     setIsLoading(true);
+    console.log('🔍 DEBUG Reset - Appel API en cours...');
 
     try {
       const result = await AuthService.resetPassword(token, data.newPassword);
+      console.log('🔍 DEBUG Reset - Résultat API:', JSON.stringify(result, null, 2));
 
       if (result.status === "success") {
         showNotification(
@@ -93,7 +107,11 @@ const ResetMotDePasse: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error("Erreur reset mot de passe:", error);
+      console.error('❌ DEBUG Reset - Erreur capturée:', error);
+      console.error('❌ DEBUG Reset - Type erreur:', typeof error);
+      console.error('❌ DEBUG Reset - Message erreur:', (error as any)?.message);
+      console.error('❌ DEBUG Reset - Response erreur:', (error as any)?.response);
+      
       showNotification(
         simpleNotificationHelpers.error(
           "Erreur",

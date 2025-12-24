@@ -379,23 +379,37 @@ export class AuthService {
     token: string,
     newPassword: string
   ): Promise<ApiResponse> {
+    const apiUrl = buildApiUrl("/auth/reset-password");
+    console.log('🔍 DEBUG AuthService - URL API:', apiUrl);
+    console.log('🔍 DEBUG AuthService - Token (20 premiers chars):', token?.substring(0, 20) + '...');
+    console.log('🔍 DEBUG AuthService - Longueur mot de passe:', newPassword?.length);
+    
     try {
+      const requestBody = { token, new_password: newPassword };
+      console.log('🔍 DEBUG AuthService - Corps de la requête:', JSON.stringify(requestBody, null, 2));
+      
       const response = await fetch(
-        buildApiUrl("/auth/reset-password"),
+        apiUrl,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ token, new_password: newPassword }),
+          body: JSON.stringify(requestBody),
         },
       );
+      
+      console.log('🔍 DEBUG AuthService - Status réponse:', response.status);
+      console.log('🔍 DEBUG AuthService - OK?:', response.ok);
 
       const result: ApiResponse = await response.json();
+      console.log('🔍 DEBUG AuthService - Résultat JSON:', JSON.stringify(result, null, 2));
       return result;
     } catch (error) {
-      console.error("Erreur lors de la réinitialisation:", error);
+      console.error('❌ DEBUG AuthService - Erreur capturée:', error);
+      console.error('❌ DEBUG AuthService - Stack:', error instanceof Error ? error.stack : 'Pas de stack');
       const message = extractBackendMessage(error);
+      console.log('🔍 DEBUG AuthService - Message extrait:', message);
       return {
         status: "error",
         message,
