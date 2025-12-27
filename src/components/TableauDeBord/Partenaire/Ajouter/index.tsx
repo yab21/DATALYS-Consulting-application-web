@@ -11,7 +11,7 @@ import {
   DropdownItem,
   Button,
   Divider,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -356,7 +356,7 @@ const AjouterPartenaire: React.FC = () => {
                   </label>
                   <Input
                     placeholder="Ex: TechCorp Solutions"
-                    value={formData.name}
+                   
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name}
@@ -373,7 +373,7 @@ const AjouterPartenaire: React.FC = () => {
                   <Input
                     type="email"
                     placeholder="contact@partenaire.com"
-                    value={formData.email}
+                   
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     isInvalid={!!errors.email}
                     errorMessage={errors.email}
@@ -444,7 +444,7 @@ const AjouterPartenaire: React.FC = () => {
                       }
                       return "Numéro de téléphone";
                     })()}
-                    value={formData.phone}
+                   
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     isInvalid={!!errors.phone}
                     errorMessage={errors.phone}
@@ -461,7 +461,7 @@ const AjouterPartenaire: React.FC = () => {
                 </label>
                 <Textarea
                   placeholder="Adresse complète du partenaire (rue, ville, code postal, pays)"
-                  value={formData.address}
+                 
                   onChange={(e) => handleInputChange("address", e.target.value)}
                   isInvalid={!!errors.address}
                   errorMessage={errors.address}

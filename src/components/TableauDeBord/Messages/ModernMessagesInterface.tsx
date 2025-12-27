@@ -16,7 +16,7 @@ import {
   SelectItem,
   Textarea,
   ScrollShadow,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { motion } from "framer-motion";
 import { 
   Search, 
@@ -630,7 +630,7 @@ const ModernMessagesInterface: React.FC = () => {
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <Input
                   placeholder="Rechercher une conversation..."
-                  value={searchTerm}
+                 
                   onChange={(e) => setSearchTerm(e.target.value)}
                   startContent={<Search className="h-4 w-4 text-gray-400" />}
                   variant="bordered"
@@ -807,7 +807,7 @@ const ModernMessagesInterface: React.FC = () => {
                     <div className="flex-1">
                       <Textarea
                         placeholder="Tapez votre réponse..."
-                        value={replyText}
+                       
                         onChange={(e) => setReplyText(e.target.value)}
                         minRows={1}
                         maxRows={4}
@@ -880,7 +880,7 @@ const ModernMessagesInterface: React.FC = () => {
                   <Input
                     label="Sujet"
                     placeholder="Entrez le sujet de votre message..."
-                    value={newMessage.title}
+                   
                     onChange={(e) => setNewMessage({...newMessage, title: e.target.value})}
                     isRequired
                   />
@@ -895,10 +895,10 @@ const ModernMessagesInterface: React.FC = () => {
                     }}
                     isRequired
                   >
-                    <SelectItem key="faible" value="faible">🟢 Faible</SelectItem>
-                    <SelectItem key="moyenne" value="moyenne">🟡 Moyenne</SelectItem>
-                    <SelectItem key="haute" value="haute">🟠 Haute</SelectItem>
-                    <SelectItem key="critique" value="critique">🔴 Critique</SelectItem>
+                    <SelectItem key="faible">🟢 Faible</SelectItem>
+                    <SelectItem key="moyenne">🟡 Moyenne</SelectItem>
+                    <SelectItem key="haute">🟠 Haute</SelectItem>
+                    <SelectItem key="critique">🔴 Critique</SelectItem>
                   </Select>
 
                   {/* Section Destinataires - seulement pour les admins */}
@@ -913,9 +913,9 @@ const ModernMessagesInterface: React.FC = () => {
                           setNewMessage({...newMessage, recipient_type: recipientType, recipient_id: ""});
                         }}
                       >
-                        <SelectItem key="normal" value="normal">Message normal</SelectItem>
-                        <SelectItem key="specific_partner" value="specific_partner">Utilisateur spécifique</SelectItem>
-                        <SelectItem key="all_partners" value="all_partners">Tous les utilisateurs</SelectItem>
+                        <SelectItem key="normal">Message normal</SelectItem>
+                        <SelectItem key="specific_partner">Utilisateur spécifique</SelectItem>
+                        <SelectItem key="all_partners">Tous les utilisateurs</SelectItem>
                       </Select>
                       
                       {/* Sélection de l'utilisateur spécifique */}
@@ -941,14 +941,13 @@ const ModernMessagesInterface: React.FC = () => {
                           }}
                         >
                           {users.length === 0 ? (
-                            <SelectItem key="loading" value="loading" isReadOnly>
+                            <SelectItem key="loading" isReadOnly>
                               {loadingUsers ? "Chargement..." : "Aucun utilisateur"}
                             </SelectItem>
                           ) : (
                             users.map((user) => (
                               <SelectItem 
                                 key={user.id.toString()} 
-                                value={user.id.toString()}
                                 textValue={`${user.name} (${user.email})`}
                               >
                                 {user.name} ({user.email})
@@ -971,7 +970,7 @@ const ModernMessagesInterface: React.FC = () => {
                     isLoading={loadingProjects}
                   >
                     {projects.map((project) => (
-                      <SelectItem key={project.id.toString()} value={project.id.toString()} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
+                      <SelectItem key={project.id.toString()} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
                         {project.title} {project.partner_name ? `(${project.partner_name})` : ''}
                       </SelectItem>
                     ))}
@@ -980,7 +979,7 @@ const ModernMessagesInterface: React.FC = () => {
                   <Textarea
                     label="Message"
                     placeholder="Décrivez votre message..."
-                    value={newMessage.description}
+                   
                     onChange={(e) => setNewMessage({...newMessage, description: e.target.value})}
                     minRows={3}
                     isRequired

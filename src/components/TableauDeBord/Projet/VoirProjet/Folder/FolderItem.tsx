@@ -15,7 +15,7 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter
-} from "@nextui-org/react";
+} from "@heroui/react";
 import RenameModal from "../Common/RenameModal";
 import MoveModal from "../Common/MoveModal";
 

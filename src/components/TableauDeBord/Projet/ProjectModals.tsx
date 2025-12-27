@@ -15,7 +15,7 @@ import {
   Divider,
   Select,
   SelectItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Save, 
   X, 
@@ -383,7 +383,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
                   <Input
                     label="Titre du projet"
                     placeholder="Ex: Migration Data Center, Sécurisation réseau entreprise"
-                    value={editForm.title}
+                   
                     onValueChange={(value) => handleEditFormChange('title', value)}
                     startContent={<Edit className="h-4 w-4" />}
                     isRequired
@@ -403,7 +403,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
                     isRequired
                   >
                     {partners.map((partner) => (
-                      <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                      <SelectItem key={partner.id.toString()}>
                         {partner.name}
                       </SelectItem>
                     ))}
@@ -544,7 +544,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
               <Input
                 label="Titre du projet"
                 placeholder="Ex: Migration Data Center, Sécurisation réseau entreprise"
-                value={createForm.title}
+               
                 onValueChange={(value) => handleCreateFormChange('title', value)}
                 startContent={<Edit className="h-4 w-4" />}
                 isRequired
@@ -566,7 +566,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
                 size="sm"
               >
                 {partners.map((partner) => (
-                  <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                  <SelectItem key={partner.id.toString()}>
                     {partner.name}
                   </SelectItem>
                 ))}

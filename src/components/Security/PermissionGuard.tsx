@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, CardBody, Button } from '@nextui-org/react';
+import { Card, CardBody, Button } from '@heroui/react';
 import { Shield, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Permission } from '@/lib/permissions';

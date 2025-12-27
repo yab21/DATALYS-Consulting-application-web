@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Input } from "@nextui-org/react";
-import { Button } from "@nextui-org/button";
+import { Input } from "@heroui/react";
+import { Button } from "@heroui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -127,7 +127,7 @@ const MotDePasseOublie = () => {
               className="mb-8"
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              transition={{ type: "spring" as const, stiffness: 300 }}
             >
               <Image
                 src="/images/logo/logo.png"
@@ -164,7 +164,7 @@ const MotDePasseOublie = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -182,7 +182,7 @@ const MotDePasseOublie = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -200,7 +200,7 @@ const MotDePasseOublie = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -218,7 +218,7 @@ const MotDePasseOublie = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">

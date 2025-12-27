@@ -16,7 +16,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {
   BarChart3,
   TrendingUp,
@@ -359,10 +359,10 @@ const DashboardAdmin: React.FC = () => {
               size="lg"
               placeholder="Période"
             >
-              <SelectItem key="7d" value="7d">7 derniers jours</SelectItem>
-              <SelectItem key="30d" value="30d">30 derniers jours</SelectItem>
-              <SelectItem key="90d" value="90d">90 derniers jours</SelectItem>
-              <SelectItem key="1y" value="1y">1 an</SelectItem>
+              <SelectItem key="7d">7 derniers jours</SelectItem>
+              <SelectItem key="30d">30 derniers jours</SelectItem>
+              <SelectItem key="90d">90 derniers jours</SelectItem>
+              <SelectItem key="1y">1 an</SelectItem>
             </Select>
             <Button
               color="primary"
@@ -505,7 +505,7 @@ const DashboardAdmin: React.FC = () => {
                       </Chip>
                       <div className="mt-2 w-20">
                         <Progress
-                          value={partner.activityScore}
+                         
                           size="sm"
                           color={
                             partner.activityScore >= 80 ? "success" :
@@ -568,7 +568,7 @@ const DashboardAdmin: React.FC = () => {
                         <span className="font-medium">{project.progress}%</span>
                       </div>
                       <Progress
-                        value={project.progress}
+                       
                         size="sm"
                         color={getStatusColor(project.status)}
                       />

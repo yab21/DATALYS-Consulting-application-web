@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Badge, Button, Tooltip } from '@nextui-org/react';
+import { Badge, Button, Tooltip } from '@heroui/react';
 import { Bell, BellRing } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdvancedNotifications, useNotificationPermissions } from './AdvancedNotificationProvider';

@@ -11,7 +11,7 @@ import {
   Progress,
   Avatar,
   Divider,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {
   FolderOpen,
   FileText,

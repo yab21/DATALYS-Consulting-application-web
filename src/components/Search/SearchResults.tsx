@@ -9,7 +9,7 @@ import {
   Avatar,
   Pagination,
   Spinner
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { 
   FileText, 
   FolderOpen, 

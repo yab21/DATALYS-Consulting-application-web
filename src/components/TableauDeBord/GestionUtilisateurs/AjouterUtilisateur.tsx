@@ -7,7 +7,7 @@ import {
   Select,
   SelectItem,
   Divider,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {
   User,
   Mail,
@@ -296,7 +296,7 @@ const AjouterUtilisateur: React.FC = () => {
                 </label>
                 <Input
                   placeholder="Ex: Jean Dupont"
-                  value={formData.name}
+                 
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   isInvalid={!!errors.name}
                   errorMessage={errors.name}
@@ -312,7 +312,7 @@ const AjouterUtilisateur: React.FC = () => {
                 <Input
                   placeholder="jean@datalys.com"
                   type="email"
-                  value={formData.email}
+                 
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   isInvalid={!!errors.email}
                   errorMessage={errors.email}
@@ -345,7 +345,7 @@ const AjouterUtilisateur: React.FC = () => {
                 <Input
                   placeholder="Mot de passe sécurisé"
                   type={showPassword ? "text" : "password"}
-                  value={formData.password}
+                 
                   onChange={(e) => handleInputChange("password", e.target.value)}
                   isInvalid={!!errors.password}
                   errorMessage={errors.password}
@@ -370,7 +370,7 @@ const AjouterUtilisateur: React.FC = () => {
                 <Input
                   placeholder="Confirmer le mot de passe"
                   type={showConfirmPassword ? "text" : "password"}
-                  value={formData.confirmPassword}
+                 
                   onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                   isInvalid={!!errors.confirmPassword}
                   errorMessage={errors.confirmPassword}
@@ -439,10 +439,10 @@ const AjouterUtilisateur: React.FC = () => {
                   )
                 }
               >
-                <SelectItem key="admin" value="admin">
+                <SelectItem key="admin">
                   Administrateur - Contrôle total du système
                 </SelectItem>
-                <SelectItem key="partner" value="partner">
+                <SelectItem key="partner">
                   Partenaire - Accès aux projets et documents assignés
                 </SelectItem>
               </Select>
@@ -469,7 +469,7 @@ const AjouterUtilisateur: React.FC = () => {
                   startContent={<Users className="h-4 w-4 text-gray-400" />}
                 >
                   {partners.map((partner) => (
-                    <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                    <SelectItem key={partner.id.toString()}>
                       {partner.name} {partner.email && `(${partner.email})`}
                     </SelectItem>
                   ))}

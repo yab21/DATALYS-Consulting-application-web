@@ -15,7 +15,7 @@ import {
   ModalFooter,
   Divider,
   Input,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { ProfessionalCard, SectionHeader, ProfessionalButton } from "@/components/UI/Professional";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
@@ -517,7 +517,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
               {/* Barre de recherche */}
               <Input
                 placeholder="Rechercher un fichier..."
-                value={searchTerm}
+               
                 onChange={(e) => setSearchTerm(e.target.value)}
                 startContent={<Search className="h-4 w-4 text-gray-400" />}
                 className="max-w-xs"
@@ -730,7 +730,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
                         <>
                           <Progress
                             size="sm"
-                            value={uploadProgress[index].progress}
+                           
                             className="w-20"
                             color="primary"
                           />

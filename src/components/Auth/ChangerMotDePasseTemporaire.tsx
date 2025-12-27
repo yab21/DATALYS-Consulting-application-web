@@ -10,7 +10,7 @@ import {
   Input,
   Button,
   Link,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Eye, 
   EyeOff, 
@@ -191,11 +191,6 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
     visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-      },
     },
   };
 
@@ -231,7 +226,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
               className="mb-8"
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              transition={{ type: "spring" as const, stiffness: 300 }}
             >
               <Image
                 src="/images/logo/logo.png"
@@ -266,7 +261,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -284,7 +279,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -302,7 +297,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -320,7 +315,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -404,7 +399,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     type="email"
                     variant="bordered"
                     placeholder="votre@email.com"
-                    value={formData.email}
+                   
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     isInvalid={!!errors.email}
                     errorMessage={errors.email}
@@ -438,7 +433,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     type={showCurrentPassword ? "text" : "password"}
                     variant="bordered"
                     placeholder="Entrez votre mot de passe temporaire"
-                    value={formData.current_password}
+                   
                     onChange={(e) => handleInputChange("current_password", e.target.value)}
                     isInvalid={!!errors.current_password}
                     errorMessage={errors.current_password}
@@ -484,7 +479,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     type={showNewPassword ? "text" : "password"}
                     variant="bordered"
                     placeholder="Choisissez un nouveau mot de passe"
-                    value={formData.new_password}
+                   
                     onChange={(e) => handleInputChange("new_password", e.target.value)}
                     isInvalid={!!errors.new_password}
                     errorMessage={errors.new_password}
@@ -530,7 +525,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     type={showConfirmPassword ? "text" : "password"}
                     variant="bordered"
                     placeholder="Répétez votre nouveau mot de passe"
-                    value={confirmPassword}
+                   
                     onChange={(e) => {
                       setConfirmPassword(e.target.value);
                       if (errors.confirmPassword) {

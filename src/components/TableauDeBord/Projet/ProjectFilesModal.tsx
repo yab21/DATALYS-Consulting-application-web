@@ -13,7 +13,7 @@ import {
   Breadcrumbs,
   BreadcrumbItem,
   Progress,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import {
   FolderOpen,
   FileText,
@@ -854,7 +854,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                 <input
                   type="text"
                   placeholder="Rechercher..."
-                  value={searchTerm}
+                 
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#4ba9b7] focus:border-transparent w-64"
                 />
@@ -877,7 +877,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                 </span>
               </div>
               <Progress
-                value={uploadProgress}
+               
                 color="primary"
                 className="mb-2"
               />
@@ -1090,14 +1090,14 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
               <Input
                 label="Nom du dossier"
                 placeholder="Entrez le nom du dossier"
-                value={newFolderName}
+               
                 onChange={(e) => setNewFolderName(e.target.value)}
                 isRequired
               />
               <Input
                 label="Description (optionnel)"
                 placeholder="Description du dossier"
-                value={newFolderDescription}
+               
                 onChange={(e) => setNewFolderDescription(e.target.value)}
               />
               
@@ -1151,14 +1151,14 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
               <Input
                 label="Nom du dossier"
                 placeholder="Entrez le nom du dossier"
-                value={editFolderName}
+               
                 onChange={(e) => setEditFolderName(e.target.value)}
                 isRequired
               />
               <Input
                 label="Description (optionnel)"
                 placeholder="Description du dossier"
-                value={editFolderDescription}
+               
                 onChange={(e) => setEditFolderDescription(e.target.value)}
               />
               

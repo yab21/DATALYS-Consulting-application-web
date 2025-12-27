@@ -18,7 +18,7 @@ import {
   Avatar,
   Divider,
   ScrollShadow,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
@@ -361,7 +361,7 @@ const GestionMessages: React.FC = () => {
               <div className="flex flex-1 gap-4">
                 <Input
                   placeholder="Rechercher un message..."
-                  value={searchTerm}
+                 
                   onChange={(e) => setSearchTerm(e.target.value)}
                   startContent={<Search className="h-4 w-4 text-gray-400" />}
                   className="max-w-md"
@@ -374,10 +374,10 @@ const GestionMessages: React.FC = () => {
                   className="max-w-[150px]"
                   startContent={<Filter className="h-4 w-4" />}
                 >
-                  <SelectItem key="tous" value="tous">Tous</SelectItem>
-                  <SelectItem key="message" value="message">Messages</SelectItem>
-                  <SelectItem key="support" value="support">Support</SelectItem>
-                  <SelectItem key="notification" value="notification">Notifications</SelectItem>
+                  <SelectItem key="tous">Tous</SelectItem>
+                  <SelectItem key="message">Messages</SelectItem>
+                  <SelectItem key="support">Support</SelectItem>
+                  <SelectItem key="notification">Notifications</SelectItem>
                 </Select>
 
                 <Select
@@ -386,11 +386,11 @@ const GestionMessages: React.FC = () => {
                   onSelectionChange={(keys) => setFilterStatus(Array.from(keys)[0] as string)}
                   className="max-w-[150px]"
                 >
-                  <SelectItem key="tous" value="tous">Tous</SelectItem>
-                  <SelectItem key="ouvert" value="ouvert">Ouvert</SelectItem>
-                  <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
-                  <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
-                  <SelectItem key="ferme" value="ferme">Fermé</SelectItem>
+                  <SelectItem key="tous">Tous</SelectItem>
+                  <SelectItem key="ouvert">Ouvert</SelectItem>
+                  <SelectItem key="en_cours">En cours</SelectItem>
+                  <SelectItem key="resolu">Résolu</SelectItem>
+                  <SelectItem key="ferme">Fermé</SelectItem>
                 </Select>
 
                 <Button
@@ -565,7 +565,7 @@ const GestionMessages: React.FC = () => {
               <div className="flex-1 flex gap-2">
                 <Textarea
                   placeholder="Tapez votre réponse..."
-                  value={replyText}
+                 
                   onValueChange={setReplyText}
                   minRows={2}
                   maxRows={4}
@@ -633,7 +633,7 @@ const GestionMessages: React.FC = () => {
                     </label>
                     <Input
                       placeholder="Entrez le sujet de votre message..."
-                      value={newMessage.title}
+                     
                       onChange={(e) => setNewMessage({...newMessage, title: e.target.value})}
                       variant="bordered"
                       size="lg"
@@ -658,10 +658,10 @@ const GestionMessages: React.FC = () => {
                       variant="bordered"
                       size="lg"
                     >
-                      <SelectItem key="faible" value="faible">🟢 Faible</SelectItem>
-                      <SelectItem key="moyenne" value="moyenne">🟡 Moyenne</SelectItem>
-                      <SelectItem key="haute" value="haute">🟠 Haute</SelectItem>
-                      <SelectItem key="critique" value="critique">🔴 Critique</SelectItem>
+                      <SelectItem key="faible">🟢 Faible</SelectItem>
+                      <SelectItem key="moyenne">🟡 Moyenne</SelectItem>
+                      <SelectItem key="haute">🟠 Haute</SelectItem>
+                      <SelectItem key="critique">🔴 Critique</SelectItem>
                     </Select>
                   </div>
 
@@ -672,7 +672,7 @@ const GestionMessages: React.FC = () => {
                     </label>
                     <Input
                       placeholder="ID du projet (optionnel)"
-                      value={newMessage.project_id}
+                     
                       onChange={(e) => setNewMessage({...newMessage, project_id: e.target.value})}
                       variant="bordered"
                       size="lg"
@@ -690,7 +690,7 @@ const GestionMessages: React.FC = () => {
                     </label>
                     <Textarea
                       placeholder="Décrivez votre message ou votre demande..."
-                      value={newMessage.description}
+                     
                       onChange={(e) => setNewMessage({...newMessage, description: e.target.value})}
                       variant="bordered"
                       size="lg"
@@ -905,7 +905,7 @@ const ForumMessageCard: React.FC<ForumMessageCardProps> = ({
                       <div className="flex-1">
                         <Textarea
                           placeholder="Tapez votre réponse..."
-                          value={replyText}
+                         
                           onValueChange={setReplyText}
                           minRows={3}
                           maxRows={6}

@@ -5,7 +5,7 @@ import {
   Chip,
   Tabs,
   Tab,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
 import Link from "next/link";
@@ -476,7 +476,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
         
         <MetricCard
           title="Incidents Critiques"
-          value={incidentStats.critical}
+          value={incidents.filter(i => i.priority === 'critique' || i.priority === 'haute').length}
           subtitle="priorité élevée"
           icon={<XCircle className="h-6 w-6" />}
           variant="danger"

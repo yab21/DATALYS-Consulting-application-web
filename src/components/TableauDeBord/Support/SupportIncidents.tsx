@@ -29,7 +29,7 @@ import {
   DropdownItem,
   Avatar,
   Progress,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { motion } from "framer-motion";
 import { 
   Search, 
@@ -1020,7 +1020,7 @@ const SupportIncidents: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Input
               placeholder="Rechercher tickets..."
-              value={searchTerm}
+             
               onChange={(e) => setSearchTerm(e.target.value)}
               startContent={<Search size={16} />}
               className="w-full"
@@ -1034,13 +1034,13 @@ const SupportIncidents: React.FC = () => {
                 setFilterStatus(selected || "tous");
               }}
             >
-              <SelectItem key="tous" value="tous">Tous les statuts</SelectItem>
-              <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
-              <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
-              <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
-              <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
-              <SelectItem key="en_pause" value="en_pause">En pause</SelectItem>
-              <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
+              <SelectItem key="tous">Tous les statuts</SelectItem>
+              <SelectItem key="nouveau">Nouveau</SelectItem>
+              <SelectItem key="en_cours">En cours</SelectItem>
+              <SelectItem key="en_attente">En attente</SelectItem>
+              <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
+              <SelectItem key="en_pause">En pause</SelectItem>
+              <SelectItem key="resolu">Résolu</SelectItem>
             </Select>
             
             <Select
@@ -1051,11 +1051,11 @@ const SupportIncidents: React.FC = () => {
                 setFilterPriority(selected || "tous");
               }}
             >
-              <SelectItem key="tous" value="tous">Toutes les priorités</SelectItem>
-              <SelectItem key="P1" value="P1">P1 - Critique</SelectItem>
-              <SelectItem key="P2" value="P2">P2 - Élevée</SelectItem>
-              <SelectItem key="P3" value="P3">P3 - Moyenne</SelectItem>
-              <SelectItem key="P4" value="P4">P4 - Faible</SelectItem>
+              <SelectItem key="tous">Toutes les priorités</SelectItem>
+              <SelectItem key="P1">P1 - Critique</SelectItem>
+              <SelectItem key="P2">P2 - Élevée</SelectItem>
+              <SelectItem key="P3">P3 - Moyenne</SelectItem>
+              <SelectItem key="P4">P4 - Faible</SelectItem>
             </Select>
 
             <div className="flex items-center gap-2">
@@ -1209,7 +1209,7 @@ const SupportIncidents: React.FC = () => {
                   <Input
                     label="Titre du ticket"
                     placeholder="Ex: Problème de connectivité..."
-                    value={createForm.title}
+                   
                     onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
                     isRequired
                   />
@@ -1217,7 +1217,7 @@ const SupportIncidents: React.FC = () => {
                   <Textarea
                     label="Description"
                     placeholder="Décrivez le problème en détail..."
-                    value={createForm.description}
+                   
                     onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
                     minRows={3}
                     isRequired
@@ -1235,7 +1235,7 @@ const SupportIncidents: React.FC = () => {
                     isRequired
                   >
                     {users.map((user) => (
-                      <SelectItem key={user.name} value={user.name}>
+                      <SelectItem key={user.name}>
                         {user.name} ({user.email})
                       </SelectItem>
                     ))}
@@ -1253,7 +1253,7 @@ const SupportIncidents: React.FC = () => {
                       isLoading={loadingPartners}
                     >
                       {partners.map((partner) => (
-                        <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                        <SelectItem key={partner.id.toString()}>
                           {partner.name}
                         </SelectItem>
                       ))}
@@ -1270,7 +1270,7 @@ const SupportIncidents: React.FC = () => {
                       isLoading={loadingProjects}
                     >
                       {projects.map((project) => (
-                        <SelectItem key={project.id.toString()} value={project.id.toString()}>
+                        <SelectItem key={project.id.toString()}>
                           {project.title}
                         </SelectItem>
                       ))}
@@ -1280,7 +1280,7 @@ const SupportIncidents: React.FC = () => {
                   <div className="grid grid-cols-3 gap-4">
                     <Input
                       label="Type"
-                      value="Support"
+                     
                       isReadOnly
                       className="cursor-not-allowed"
                       classNames={{
@@ -1291,7 +1291,7 @@ const SupportIncidents: React.FC = () => {
                     <Input
                       label="Catégorie"
                       placeholder="Ex: Technique, Fonctionnel..."
-                      value={createForm.category}
+                     
                       onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value }))}
                     />
                     
@@ -1301,10 +1301,10 @@ const SupportIncidents: React.FC = () => {
                       selectedKeys={createForm.domain ? [createForm.domain] : []}
                       onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }))}
                     >
-                      <SelectItem key="reseau" value="reseau">Réseau</SelectItem>
-                      <SelectItem key="infrastructure" value="infrastructure">Infrastructure système</SelectItem>
-                      <SelectItem key="cloud" value="cloud">Cloud</SelectItem>
-                      <SelectItem key="energie" value="energie">Energie</SelectItem>
+                      <SelectItem key="reseau">Réseau</SelectItem>
+                      <SelectItem key="infrastructure">Infrastructure système</SelectItem>
+                      <SelectItem key="cloud">Cloud</SelectItem>
+                      <SelectItem key="energie">Energie</SelectItem>
                     </Select>
                   </div>
                   
@@ -1338,10 +1338,10 @@ const SupportIncidents: React.FC = () => {
                     }}
                     isRequired
                   >
-                    <SelectItem key="arret_service" value="arret_service">Arrêt de service</SelectItem>
-                    <SelectItem key="service_fortement_degrade" value="service_fortement_degrade">Service fortement dégradé</SelectItem>
-                    <SelectItem key="majeur" value="majeur">Majeur</SelectItem>
-                    <SelectItem key="mineur" value="mineur">Mineur</SelectItem>
+                    <SelectItem key="arret_service">Arrêt de service</SelectItem>
+                    <SelectItem key="service_fortement_degrade">Service fortement dégradé</SelectItem>
+                    <SelectItem key="majeur">Majeur</SelectItem>
+                    <SelectItem key="mineur">Mineur</SelectItem>
                   </Select>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -1350,11 +1350,11 @@ const SupportIncidents: React.FC = () => {
                       selectedKeys={createForm.priority ? [createForm.priority] : []}
                       onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
                     >
-                      <SelectItem key="P0" value="P0">P0 - Arrêt de service (immédiat)</SelectItem>
-                      <SelectItem key="P1" value="P1">P1 - Haute (dégradation)</SelectItem>
-                      <SelectItem key="P2" value="P2">P2 - Moyenne</SelectItem>
-                      <SelectItem key="P3" value="P3">P3 - Faible</SelectItem>
-                      <SelectItem key="P4" value="P4">P4 - Très faible</SelectItem>
+                      <SelectItem key="P0">P0 - Arrêt de service (immédiat)</SelectItem>
+                      <SelectItem key="P1">P1 - Haute (dégradation)</SelectItem>
+                      <SelectItem key="P2">P2 - Moyenne</SelectItem>
+                      <SelectItem key="P3">P3 - Faible</SelectItem>
+                      <SelectItem key="P4">P4 - Très faible</SelectItem>
                     </Select>
                     
                     <Select
@@ -1362,19 +1362,19 @@ const SupportIncidents: React.FC = () => {
                       selectedKeys={createForm.status ? [createForm.status] : []}
                       onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
                     >
-                      <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
-                      <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
-                      <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
-                      <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
-                      <SelectItem key="en_pause" value="en_pause">En pause</SelectItem>
-                      <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
+                      <SelectItem key="nouveau">Nouveau</SelectItem>
+                      <SelectItem key="en_cours">En cours</SelectItem>
+                      <SelectItem key="en_attente">En attente</SelectItem>
+                      <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
+                      <SelectItem key="en_pause">En pause</SelectItem>
+                      <SelectItem key="resolu">Résolu</SelectItem>
                     </Select>
                   </div>
                   
                   <Textarea
                     label="Notes de résolution (optionnel)"
                     placeholder="Ajoutez des notes sur la résolution du ticket..."
-                    value={createForm.resolution_notes}
+                   
                     onChange={(e) => setCreateForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
                     minRows={2}
                   />
@@ -1500,13 +1500,13 @@ const SupportIncidents: React.FC = () => {
                 <div className="space-y-4">
                   <Input
                     label="Titre du ticket"
-                    value={editForm.title}
+                   
                     onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
                   />
                   
                   <Textarea
                     label="Description"
-                    value={editForm.description}
+                   
                     onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                     minRows={3}
                   />
@@ -1522,7 +1522,7 @@ const SupportIncidents: React.FC = () => {
                     isLoading={loadingUsers}
                   >
                     {users.map((user) => (
-                      <SelectItem key={user.name} value={user.name}>
+                      <SelectItem key={user.name}>
                         {user.name} ({user.email})
                       </SelectItem>
                     ))}
@@ -1540,7 +1540,7 @@ const SupportIncidents: React.FC = () => {
                       isLoading={loadingPartners}
                     >
                       {partners.map((partner) => (
-                        <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                        <SelectItem key={partner.id.toString()}>
                           {partner.name}
                         </SelectItem>
                       ))}
@@ -1557,7 +1557,7 @@ const SupportIncidents: React.FC = () => {
                       isLoading={loadingProjects}
                     >
                       {projects.map((project) => (
-                        <SelectItem key={project.id.toString()} value={project.id.toString()}>
+                        <SelectItem key={project.id.toString()}>
                           {project.title}
                         </SelectItem>
                       ))}
@@ -1567,7 +1567,7 @@ const SupportIncidents: React.FC = () => {
                   <div className="grid grid-cols-3 gap-4">
                     <Input
                       label="Type"
-                      value={editForm.type === "incident" ? "Incident" : editForm.type === "support" ? "Support" : editForm.type}
+                     
                       isReadOnly
                       className="cursor-not-allowed"
                       classNames={{
@@ -1578,7 +1578,7 @@ const SupportIncidents: React.FC = () => {
                     
                     <Input
                       label="Catégorie"
-                      value={editForm.category}
+                     
                       onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
                     />
                     
@@ -1588,10 +1588,10 @@ const SupportIncidents: React.FC = () => {
                       selectedKeys={editForm.domain ? [editForm.domain] : []}
                       onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }))}
                     >
-                      <SelectItem key="reseau" value="reseau">Réseau</SelectItem>
-                      <SelectItem key="infrastructure" value="infrastructure">Infrastructure système</SelectItem>
-                      <SelectItem key="cloud" value="cloud">Cloud</SelectItem>
-                      <SelectItem key="energie" value="energie">Energie</SelectItem>
+                      <SelectItem key="reseau">Réseau</SelectItem>
+                      <SelectItem key="infrastructure">Infrastructure système</SelectItem>
+                      <SelectItem key="cloud">Cloud</SelectItem>
+                      <SelectItem key="energie">Energie</SelectItem>
                     </Select>
                   </div>
                   
@@ -1625,10 +1625,10 @@ const SupportIncidents: React.FC = () => {
                     }}
                     isRequired
                   >
-                    <SelectItem key="arret_service" value="arret_service">Arrêt de service</SelectItem>
-                    <SelectItem key="service_fortement_degrade" value="service_fortement_degrade">Service fortement dégradé</SelectItem>
-                    <SelectItem key="majeur" value="majeur">Majeur</SelectItem>
-                    <SelectItem key="mineur" value="mineur">Mineur</SelectItem>
+                    <SelectItem key="arret_service">Arrêt de service</SelectItem>
+                    <SelectItem key="service_fortement_degrade">Service fortement dégradé</SelectItem>
+                    <SelectItem key="majeur">Majeur</SelectItem>
+                    <SelectItem key="mineur">Mineur</SelectItem>
                   </Select>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -1637,11 +1637,11 @@ const SupportIncidents: React.FC = () => {
                       selectedKeys={editForm.priority ? [editForm.priority] : []}
                       onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
                     >
-                      <SelectItem key="P0" value="P0">P0 - Arrêt de service (immédiat)</SelectItem>
-                      <SelectItem key="P1" value="P1">P1 - Haute (dégradation)</SelectItem>
-                      <SelectItem key="P2" value="P2">P2 - Moyenne</SelectItem>
-                      <SelectItem key="P3" value="P3">P3 - Faible</SelectItem>
-                      <SelectItem key="P4" value="P4">P4 - Très faible</SelectItem>
+                      <SelectItem key="P0">P0 - Arrêt de service (immédiat)</SelectItem>
+                      <SelectItem key="P1">P1 - Haute (dégradation)</SelectItem>
+                      <SelectItem key="P2">P2 - Moyenne</SelectItem>
+                      <SelectItem key="P3">P3 - Faible</SelectItem>
+                      <SelectItem key="P4">P4 - Très faible</SelectItem>
                     </Select>
                     
                     <Select
@@ -1649,19 +1649,19 @@ const SupportIncidents: React.FC = () => {
                       selectedKeys={editForm.status ? [editForm.status] : []}
                       onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
                     >
-                      <SelectItem key="nouveau" value="nouveau">Nouveau</SelectItem>
-                      <SelectItem key="en_cours" value="en_cours">En cours</SelectItem>
-                      <SelectItem key="en_attente" value="en_attente">En attente</SelectItem>
-                      <SelectItem key="en_arbitrage" value="en_arbitrage">En arbitrage</SelectItem>
-                      <SelectItem key="en_pause" value="en_pause">En pause</SelectItem>
-                      <SelectItem key="resolu" value="resolu">Résolu</SelectItem>
+                      <SelectItem key="nouveau">Nouveau</SelectItem>
+                      <SelectItem key="en_cours">En cours</SelectItem>
+                      <SelectItem key="en_attente">En attente</SelectItem>
+                      <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
+                      <SelectItem key="en_pause">En pause</SelectItem>
+                      <SelectItem key="resolu">Résolu</SelectItem>
                     </Select>
                   </div>
                   
                   <Textarea
                     label="Notes de résolution (optionnel)"
                     placeholder="Ajoutez des notes sur la résolution du ticket..."
-                    value={editForm.resolution_notes}
+                   
                     onChange={(e) => setEditForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
                     minRows={2}
                   />

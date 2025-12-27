@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Breadcrumbs, BreadcrumbItem, Skeleton } from "@nextui-org/react";
+import { Breadcrumbs, BreadcrumbItem, Skeleton } from "@heroui/react";
 import { ChevronRight, Home } from "lucide-react";
 import { useBreadcrumb } from "@/hooks/useBreadcrumb";
 

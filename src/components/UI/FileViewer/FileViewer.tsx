@@ -23,7 +23,7 @@ import {
   ModalFooter,
   useDisclosure,
   Spinner
-} from '@nextui-org/react';
+} from '@heroui/react';
 import {
   FileText,
   Download,

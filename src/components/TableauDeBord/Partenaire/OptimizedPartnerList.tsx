@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Plus, Building2, Phone, Mail, MapPin, Users, AlertCircle } from "lucide-react";
-import { Button, Chip, Avatar, Card, CardBody } from "@nextui-org/react";
+import { Button, Chip, Avatar, Card, CardBody } from "@heroui/react";
 import { 
   useProjectCache,
   VirtualizedTable,

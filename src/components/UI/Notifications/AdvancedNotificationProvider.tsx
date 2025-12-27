@@ -16,7 +16,7 @@ import {
   User,
   Building
 } from 'lucide-react';
-import { Card, CardBody, Button, Chip, Badge, Switch } from '@nextui-org/react';
+import { Card, CardBody, Button, Chip, Badge, Switch } from '@heroui/react';
 import { usePermissions } from '@/hooks/usePermissions';
 
 // Types étendus pour les notifications avancées

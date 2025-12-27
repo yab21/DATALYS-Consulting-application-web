@@ -11,7 +11,7 @@ import {
   Divider,
   Spinner,
   Progress
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { 
   Bell, 
   BellOff, 

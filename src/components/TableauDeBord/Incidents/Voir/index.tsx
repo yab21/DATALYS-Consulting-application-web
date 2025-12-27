@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Chip
-} from "@nextui-org/react";
+} from "@heroui/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Link from "next/link";
 import LoadingState from "@/components/UI/Loading/LoadingState";
@@ -282,7 +282,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Priorité"
-          value={incident.priority}
+          value={incident.priority_label || incident.priority}
           subtitle={incident.priority_label}
           icon={<AlertTriangle className="h-6 w-6" />}
           variant={getPriorityColor(incident.priority) as any}
@@ -290,7 +290,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
         
         <MetricCard
           title="SLA Prise en charge"
-          value={getSLAStatusLabel(incident.sla_prise_en_charge_status)}
+          value={incident.sla_prise_en_charge_status || "N/A"}
           subtitle="délai de réponse"
           icon={<Clock className="h-6 w-6" />}
           variant={getSLAStatusColor(incident.sla_prise_en_charge_status) as any}
@@ -298,7 +298,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
         
         <MetricCard
           title="SLA Résolution"
-          value={getSLAStatusLabel(incident.sla_resolution_status)}
+          value={incident.sla_resolution_status || "N/A"}
           subtitle="délai de résolution"
           icon={<CheckCircle className="h-6 w-6" />}
           variant={getSLAStatusColor(incident.sla_resolution_status) as any}
@@ -306,7 +306,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
         
         <MetricCard
           title="Refus"
-          value={incident.refusal_count}
+          value={incident.refusal_count || 0}
           subtitle="nombre de refus"
           icon={<XCircle className="h-6 w-6" />}
           variant="warning"

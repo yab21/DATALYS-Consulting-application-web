@@ -179,7 +179,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
             <div className="flex items-center gap-3 mb-2">
               {icon && (
                 <div className={`${variantClasses.iconColor} ${sizeClasses.iconSize} flex-shrink-0`}>
-                  {React.cloneElement(icon as React.ReactElement, {
+                  {React.cloneElement(icon as React.ReactElement<any>, {
                     className: sizeClasses.iconSize,
                   })}
                 </div>

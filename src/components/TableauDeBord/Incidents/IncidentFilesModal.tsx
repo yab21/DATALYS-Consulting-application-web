@@ -7,7 +7,7 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { 
   IncidentFile, 
@@ -322,7 +322,7 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
                   <input
                     type="text"
                     placeholder="Rechercher un fichier..."
-                    value={searchTerm}
+                   
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#4ba9b7] focus:border-transparent w-64"
                   />

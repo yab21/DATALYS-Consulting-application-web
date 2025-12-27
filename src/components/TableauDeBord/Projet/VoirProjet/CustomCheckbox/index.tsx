@@ -1,5 +1,5 @@
 import React from "react";
-import { Checkbox, Link, User, Chip, cn } from "@nextui-org/react";
+import { Checkbox, Link, User, Chip, cn } from "@heroui/react";
 
 interface UserType {
   name: string;
@@ -26,7 +26,7 @@ export const CustomCheckbox: React.FC<CustomCheckboxProps> = ({ user, value }) =
         ),
         label: "w-full",
       }}
-      value={value}
+     
     >
       <div className="flex w-full justify-between gap-2">
         <User

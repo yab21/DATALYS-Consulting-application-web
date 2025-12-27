@@ -11,7 +11,7 @@ import {
   useDisclosure,
   Checkbox,
   Input,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 
 const LesDossiers: React.FC = () => {
@@ -529,7 +529,7 @@ const LesDossiers: React.FC = () => {
                 />
                 <Input
                   label="Date"
-                  value="2024/09/12"
+                 
                   type="date"
                   variant="bordered"
                 />

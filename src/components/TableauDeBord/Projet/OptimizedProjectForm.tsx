@@ -7,7 +7,7 @@ import {
   SelectItem,
   Switch,
   Divider,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -239,7 +239,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
                 </label>
                 <Input
                   placeholder="Ex: Migration Data Center, Sécurisation réseau entreprise"
-                  value={formData.title}
+                 
                   onValueChange={(value) => handleInputChange("title", value)}
                   isInvalid={!!errors.title}
                   errorMessage={errors.title}
@@ -269,7 +269,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
                   startContent={<Users className="h-4 w-4 text-gray-400" />}
                 >
                   {partners.map((partner) => (
-                    <SelectItem key={partner.id.toString()} value={partner.id.toString()}>
+                    <SelectItem key={partner.id.toString()}>
                       {partner.name}
                     </SelectItem>
                   ))}

@@ -6,11 +6,11 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-} from "@nextui-org/modal";
+} from "@heroui/modal";
 import React from "react";
 import Link from "next/link";
 import Iframe from "react-iframe";
-import { Button } from "@nextui-org/button";
+import { Button } from "@heroui/button";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 
 const VoirDossier = () => {

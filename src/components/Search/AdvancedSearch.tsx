@@ -16,7 +16,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { 
   Search, 
   Filter, 
@@ -189,7 +189,7 @@ export default function AdvancedSearch({
           <div className="flex gap-2 items-center">
             <Input
               placeholder="Rechercher dans tous vos contenus..."
-              value={filters.query || ''}
+             
               onChange={(e) => updateFilter('query', e.target.value)}
               startContent={<Search className="w-4 h-4 text-gray-400" />}
               className="flex-1"
@@ -245,11 +245,14 @@ export default function AdvancedSearch({
               <Select
                 label="Type de contenu"
                 placeholder="Sélectionner un type"
-                value={filters.entityType || 'all'}
-                onChange={(e) => updateFilter('entityType', e.target.value)}
+                selectedKeys={filters.entityType ? new Set([filters.entityType]) : new Set(['all'])}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
+                  updateFilter('entityType', value);
+                }}
               >
                 {availableEntityTypes.map((type) => (
-                  <SelectItem key={type.key} value={type.key}>
+                  <SelectItem key={type.key}>
                     <div className="flex items-center gap-2">
                       <type.icon className="w-4 h-4" />
                       {type.label}
@@ -262,11 +265,14 @@ export default function AdvancedSearch({
               <Select
                 label="Statut"
                 placeholder="Sélectionner un statut"
-                value={filters.status || 'all'}
-                onChange={(e) => updateFilter('status', e.target.value)}
+                selectedKeys={filters.status ? new Set([filters.status]) : new Set(['all'])}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
+                  updateFilter('status', value);
+                }}
               >
                 {STATUS_OPTIONS.map((status) => (
-                  <SelectItem key={status.key} value={status.key}>
+                  <SelectItem key={status.key}>
                     {status.label}
                   </SelectItem>
                 ))}
@@ -276,11 +282,14 @@ export default function AdvancedSearch({
               <Select
                 label="Priorité"
                 placeholder="Sélectionner une priorité"
-                value={filters.priority || 'all'}
-                onChange={(e) => updateFilter('priority', e.target.value)}
+                selectedKeys={filters.priority ? new Set([filters.priority]) : new Set(['all'])}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
+                  updateFilter('priority', value);
+                }}
               >
                 {PRIORITY_OPTIONS.map((priority) => (
-                  <SelectItem key={priority.key} value={priority.key}>
+                  <SelectItem key={priority.key}>
                     {priority.label}
                   </SelectItem>
                 ))}
@@ -290,7 +299,7 @@ export default function AdvancedSearch({
               <Input
                 label="Date de début"
                 type="date"
-                value={filters.dateFrom || ''}
+               
                 onChange={(e) => updateFilter('dateFrom', e.target.value)}
                 startContent={<Calendar className="w-4 h-4 text-gray-400" />}
               />
@@ -299,7 +308,7 @@ export default function AdvancedSearch({
               <Input
                 label="Date de fin"
                 type="date"
-                value={filters.dateTo || ''}
+               
                 onChange={(e) => updateFilter('dateTo', e.target.value)}
                 startContent={<Calendar className="w-4 h-4 text-gray-400" />}
               />
@@ -308,12 +317,15 @@ export default function AdvancedSearch({
               <Select
                 label="État"
                 placeholder="Actif/Inactif"
-                value={filters.is_active?.toString() || 'all'}
-                onChange={(e) => updateFilter('is_active', e.target.value === 'true' ? true : e.target.value === 'false' ? false : undefined)}
+                selectedKeys={filters.is_active !== undefined ? new Set([filters.is_active.toString()]) : new Set(['all'])}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
+                  updateFilter('is_active', value === 'true' ? true : value === 'false' ? false : undefined);
+                }}
               >
-                <SelectItem key="all" value="all">Tous</SelectItem>
-                <SelectItem key="true" value="true">Actif</SelectItem>
-                <SelectItem key="false" value="false">Inactif</SelectItem>
+                <SelectItem key="all">Tous</SelectItem>
+                <SelectItem key="true">Actif</SelectItem>
+                <SelectItem key="false">Inactif</SelectItem>
               </Select>
             </div>
 
@@ -362,7 +374,7 @@ export default function AdvancedSearch({
             <Input
               label="Nom de la recherche"
               placeholder="Entrer un nom pour cette recherche"
-              value={saveName}
+             
               onChange={(e) => setSaveName(e.target.value)}
               autoFocus
             />

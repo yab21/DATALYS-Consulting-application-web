@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
-import { Button } from "@nextui-org/button";
-import { Input } from "@nextui-org/react";
-import { Select, SelectItem } from "@nextui-org/react";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/react";
+import { Select, SelectItem } from "@heroui/react";
 import { domaines } from "./domaineData";
 import { useSimpleNotifications } from "@/context/NotificationContext";
 
@@ -316,7 +316,7 @@ const ModifierCompte = () => {
                 }}
               >
                 {domaines.map((domaine) => (
-                  <SelectItem key={domaine.key} value={domaine.label}>
+                  <SelectItem key={domaine.key}>
                     {domaine.label}
                   </SelectItem>
                 ))}

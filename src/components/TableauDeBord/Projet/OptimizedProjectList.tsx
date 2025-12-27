@@ -37,7 +37,7 @@ import {
   DropdownItem,
   Card,
   CardBody
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { projectsService, Project } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import LoadingState from "@/components/UI/Loading/LoadingState";
@@ -673,7 +673,7 @@ const OptimizedProjectList: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
             placeholder="Rechercher un projet..."
-            value={searchTerm}
+           
             onValueChange={setSearchTerm}
             startContent={<Search className="h-4 w-4 text-gray-400" />}
             size="lg"
@@ -696,7 +696,7 @@ const OptimizedProjectList: React.FC = () => {
                 items={[{ key: "tous", label: "Tous les partenaires" }, ...partnerNames.map(name => ({ key: name, label: name }))]}
               >
                 {(item) => (
-                  <SelectItem key={item.key} value={item.key}>
+                  <SelectItem key={item.key}>
                     {item.label}
                   </SelectItem>
                 )}

@@ -17,7 +17,7 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { motion } from "framer-motion";
 import { 
   Search, 
@@ -274,7 +274,7 @@ const GestionSupport: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Input
               placeholder="Rechercher tickets..."
-              value={searchTerm}
+             
               onChange={(e) => setSearchTerm(e.target.value)}
               startContent={<Search size={16} />}
               className="w-full"
@@ -282,13 +282,13 @@ const GestionSupport: React.FC = () => {
             
             <Input
               placeholder="Filtrer par statut"
-              value={filterStatus === "all" ? "" : filterStatus}
+             
               onChange={(e) => setFilterStatus(e.target.value || "all")}
             />
             
             <Input
               placeholder="Filtrer par priorité"
-              value={filterPriority === "all" ? "" : filterPriority}
+             
               onChange={(e) => setFilterPriority(e.target.value || "all")}
             />
 

@@ -25,7 +25,7 @@ import {
   Spinner,
   Select,
   SelectItem
-} from '@nextui-org/react';
+} from '@heroui/react';
 import {
   FolderPlus,
   Folder,
@@ -580,7 +580,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
           {/* Barre de recherche */}
           <Input
             placeholder="Rechercher des dossiers..."
-            value={searchTerm}
+           
             onValueChange={setSearchTerm}
             startContent={<Search className="w-4 h-4 text-gray-400" />}
             size="sm"
@@ -694,7 +694,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                 <Input
                   label="Nom du dossier"
                   placeholder="Ex: Documents, Images, Archives..."
-                  value={newFolderName}
+                 
                   onValueChange={setNewFolderName}
                   variant="bordered"
                   size="lg"
@@ -743,7 +743,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                   ]}
                 >
                   {(item) => (
-                    <SelectItem key={item.key} value={item.key}>
+                    <SelectItem key={item.key}>
                       {item.label}
                     </SelectItem>
                   )}
@@ -789,7 +789,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                 <Input
                   label="Nouveau nom"
                   placeholder="Entrez le nouveau nom"
-                  value={editFolderName}
+                 
                   onValueChange={setEditFolderName}
                   variant="bordered"
                   size="lg"
@@ -892,7 +892,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                   <Input
                     label="Nom du dossier de destination"
                     placeholder="Nom du dossier qui sera créé"
-                    value={uploadFolderName}
+                   
                     onValueChange={setUploadFolderName}
                     variant="bordered"
                     size="lg"
@@ -915,7 +915,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                     <Input
                       label="Folder Name (optionnel)"
                       placeholder="Nom du nouveau dossier à créer"
-                      value={singleFileFolderName}
+                     
                       onValueChange={setSingleFileFolderName}
                       description="Créera un nouveau dossier si spécifié"
                       variant="bordered"
@@ -937,7 +937,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
                     <Input
                       label="Subfolder"
                       placeholder="Sous-dossier de stockage"
-                      value={singleFileSubfolder}
+                     
                       onValueChange={setSingleFileSubfolder}
                       description="Défaut: files"
                       variant="bordered"

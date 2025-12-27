@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardBody, CardHeader, Divider, Button, Chip, Tabs, Tab } from '@nextui-org/react';
+import { Card, CardBody, CardHeader, Divider, Button, Chip, Tabs, Tab } from '@heroui/react';
 import { Clock, Bookmark, TrendingUp } from 'lucide-react';
 import AdvancedSearch from '@/components/Search/AdvancedSearch';
 import SearchResults from '@/components/Search/SearchResults';

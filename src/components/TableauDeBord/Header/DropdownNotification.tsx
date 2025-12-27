@@ -11,7 +11,7 @@ import {
   CardBody,
   Chip,
   cn,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useAdvancedNotifications } from "@/components/UI/Notifications/AdvancedNotificationProvider";
 import {
   Bell,

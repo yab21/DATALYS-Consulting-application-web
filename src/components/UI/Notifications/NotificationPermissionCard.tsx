@@ -13,7 +13,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { 
   Bell, 
   BellOff, 

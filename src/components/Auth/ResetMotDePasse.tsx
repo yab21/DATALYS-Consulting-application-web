@@ -8,7 +8,7 @@ import {
   Input,
   Button,
   Link,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Eye, 
   EyeOff, 
@@ -139,11 +139,6 @@ const ResetMotDePasse: React.FC = () => {
     visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-      },
     },
   };
 
@@ -202,7 +197,7 @@ const ResetMotDePasse: React.FC = () => {
               className="mb-8"
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              transition={{ type: "spring" as const, stiffness: 300 }}
             >
               <Image
                 src="/images/logo/logo.png"
@@ -237,7 +232,7 @@ const ResetMotDePasse: React.FC = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -255,7 +250,7 @@ const ResetMotDePasse: React.FC = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -273,7 +268,7 @@ const ResetMotDePasse: React.FC = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -291,7 +286,7 @@ const ResetMotDePasse: React.FC = () => {
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">

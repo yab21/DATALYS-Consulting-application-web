@@ -16,7 +16,7 @@ import {
   SelectItem,
   Checkbox,
   Divider,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useSimpleNotifications } from "@/context/NotificationContext";
@@ -404,7 +404,7 @@ const PartnerManager: React.FC<PartnerManagerProps> = ({
                 <Input
                   variant="bordered"
                   placeholder="Tapez le nom du partenaire..."
-                  value={searchTerm}
+                 
                   onChange={(e) => setSearchTerm(e.target.value)}
                   size="lg"
                   classNames={{
@@ -439,7 +439,7 @@ const PartnerManager: React.FC<PartnerManagerProps> = ({
                   }}
                 >
                   {PARTNER_ROLES.map((role) => (
-                    <SelectItem key={role.value} value={role.value} className="text-gray-900 dark:text-white">
+                    <SelectItem key={role.value} className="text-gray-900 dark:text-white">
                       {role.label}
                     </SelectItem>
                   ))}

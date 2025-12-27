@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Button, Card, CardBody, CardHeader, Chip, Progress } from "@nextui-org/react";
+import { Button, Card, CardBody, CardHeader, Chip, Progress } from "@heroui/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { 
@@ -451,7 +451,7 @@ const OptimizedDashboard: React.FC = () => {
                             <span className="text-xs font-bold text-[#06B6D4]">{project.progress}%</span>
                           </div>
                           <Progress
-                            value={project.progress}
+                           
                             color="primary"
                             className="max-w-full"
                             classNames={{

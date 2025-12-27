@@ -13,7 +13,7 @@ import {
   Select,
   SelectItem,
   useDisclosure,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { AlertTriangle, Plus } from "lucide-react";
 import { IncidentsService, type CreateIncidentData } from "@/services/incidents";
 import { type Project } from "@/services/projects";
@@ -178,7 +178,7 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               <Input
                 label="Titre de l'incident"
                 placeholder="Ex: Problème de connectivité serveur..."
-                value={formData.title}
+               
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 isRequired
                 variant="bordered"
@@ -192,7 +192,7 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
               <Textarea
                 label="Description détaillée"
                 placeholder="Décrivez le problème rencontré, les symptômes observés, l'impact sur le projet..."
-                value={formData.description}
+               
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 minRows={4}
                 isRequired

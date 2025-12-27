@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, FormEvent } from 'react';
-import { Card, CardBody, Button, Input, Chip } from '@nextui-org/react';
+import { Card, CardBody, Button, Input, Chip } from '@heroui/react';
 import { Shield, AlertTriangle, CheckCircle, Lock } from 'lucide-react';
 import { Permission } from '@/lib/permissions';
 import { useSecureAPI } from '@/hooks/useSecureAPI';
@@ -245,7 +245,7 @@ export function SecureInput({
         name={name}
         label={label}
         type={type}
-        value={value}
+       
         onValueChange={handleChange}
         onBlur={handleBlur}
         placeholder={placeholder}

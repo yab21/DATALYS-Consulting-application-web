@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useContext } from "react";
 import { ShowToastContext } from "@/context/ShowToastContext";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from "@heroui/react";
 import Toast from "@/components/TableauDeBord/Projet/VoirProjet/Toast";
 
 interface UploadFileModalProps {

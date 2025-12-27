@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button, Card, CardBody, Chip } from '@nextui-org/react';
+import { Button, Card, CardBody, Chip } from '@heroui/react';
 import { errorHandler } from '@/lib/error-handler';
 
 interface Props {

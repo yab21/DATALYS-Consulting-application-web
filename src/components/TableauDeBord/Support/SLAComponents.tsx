@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardBody, Chip, Progress, Badge } from "@nextui-org/react";
+import { Card, CardBody, Chip, Progress, Badge } from "@heroui/react";
 import { Clock, AlertTriangle, CheckCircle, Timer } from "lucide-react";
 import { motion } from "framer-motion";
 import { PriorityConfig, calculateSLAStatus } from "@/config/ticketContexts";
@@ -107,7 +107,7 @@ export const SLACountdown: React.FC<SLACountdownProps> = ({
               </span>
             </div>
             <Progress 
-              value={getProgressValue()}
+             
               color={getStatusColor(slaStatus.resolutionStatus)}
               size="sm"
             />

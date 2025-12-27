@@ -7,9 +7,9 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-} from "@nextui-org/modal";
+} from "@heroui/modal";
 import Iframe from "react-iframe";
-import { Button } from "@nextui-org/button";
+import { Button } from "@heroui/button";
 
 const Ficher = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();

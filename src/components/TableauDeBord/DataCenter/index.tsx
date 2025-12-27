@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Button } from "@nextui-org/button";
+import { Button } from "@heroui/button";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import Image from "next/image";
 

@@ -23,7 +23,7 @@ import {
   DropdownItem,
   Card,
   CardBody
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Search, 
   Edit, 
@@ -690,7 +690,7 @@ const TablePartner: React.FC = () => {
           <div className="flex-1">
             <Input
               placeholder="Rechercher un partenaire..."
-              value={filters.search}
+             
               onChange={(e) => handleFilterChange('search', e.target.value)}
               startContent={<Search className="h-4 w-4 text-gray-400" />}
               endContent={
@@ -724,13 +724,13 @@ const TablePartner: React.FC = () => {
               size="sm"
               placeholder="Statut"
             >
-              <SelectItem key="all" value="all">
+              <SelectItem key="all">
                 Tous
               </SelectItem>
-              <SelectItem key="active" value="active">
+              <SelectItem key="active">
                 Actifs
               </SelectItem>
-              <SelectItem key="inactive" value="inactive">
+              <SelectItem key="inactive">
                 Inactifs
               </SelectItem>
             </Select>

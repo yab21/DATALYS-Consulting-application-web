@@ -17,7 +17,7 @@ import {
   DropdownMenu,
   DropdownItem,
   cn,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { motion } from 'framer-motion';
 import { ProtectedComponent } from '../PermissionManager/PermissionManager';
 
@@ -407,7 +407,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   className="min-w-40"
                 >
                   {TIME_RANGES.map((range) => (
-                    <SelectItem key={range.value} value={range.value}>
+                    <SelectItem key={range.value}>
                       {range.label}
                     </SelectItem>
                   ))}
@@ -539,7 +539,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                           <p className="text-xs text-default-400">Serveur principal - 78% utilisé</p>
                         </div>
                       </div>
-                      <Progress value={78} color="warning" size="sm" className="w-20" />
+                      <Progress color="warning" size="sm" className="w-20" />
                     </div>
                     
                     <div className="flex items-center justify-between p-3 bg-success-50 dark:bg-success-950/20 rounded-lg">

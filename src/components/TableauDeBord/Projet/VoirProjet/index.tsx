@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Chip, Card, CardBody, CardHeader, Tabs, Tab, Button, Avatar, Progress } from "@nextui-org/react";
+import { Chip, Card, CardBody, CardHeader, Tabs, Tab, Button, Avatar, Progress } from "@heroui/react";
 import { 
   FolderOpen, 
   Users, 

@@ -29,7 +29,7 @@ import {
   DropdownItem,
   Spinner,
   Tooltip
-} from '@nextui-org/react';
+} from '@heroui/react';
 import {
   UserPlus,
   Users,
@@ -504,7 +504,7 @@ const ProjectPartnerManager: React.FC<ProjectPartnerManagerProps> = ({
               <Input
                 label="Rechercher un partenaire"
                 placeholder="Nom de l'entreprise ou secteur d'activité"
-                value={searchTerm}
+               
                 onValueChange={setSearchTerm}
                 startContent={<Search className="w-4 h-4 text-gray-400" />}
               />

@@ -58,8 +58,8 @@ export function useOptimizedForm<T extends Record<string, any>>({
   const [isDirty, setIsDirty] = useState(false);
   
   // Refs pour les timers
-  const debounceTimer = useRef<NodeJS.Timeout>();
-  const autoSaveTimer = useRef<NodeJS.Timeout>();
+  const debounceTimer = useRef<NodeJS.Timeout | undefined>(undefined);
+  const autoSaveTimer = useRef<NodeJS.Timeout | undefined>(undefined);
   const initialValuesRef = useRef(initialValues);
   
   // Clé unique pour les drafts

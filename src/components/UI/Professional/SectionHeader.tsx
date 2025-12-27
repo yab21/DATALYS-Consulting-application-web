@@ -93,7 +93,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   };
 
   const getHeadingTag = () => {
-    const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+    const Tag = `h${level}` as React.ElementType;
     return Tag;
   };
 
@@ -117,7 +117,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
           <div className={`flex items-center gap-3 ${variant === "centered" ? "justify-center" : ""}`}>
             {icon && (
               <div className={`${colorClasses.icon} flex-shrink-0`}>
-                {React.cloneElement(icon as React.ReactElement, {
+                {React.cloneElement(icon as React.ReactElement<any>, {
                   className: variant === "large" ? "h-8 w-8" : variant === "compact" ? "h-4 w-4" : "h-5 w-5",
                 })}
               </div>

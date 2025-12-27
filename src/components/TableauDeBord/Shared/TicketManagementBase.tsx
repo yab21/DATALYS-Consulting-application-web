@@ -29,7 +29,7 @@ import {
   DropdownItem,
   Avatar,
   Progress,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { motion } from "framer-motion";
 import { 
   Search, 
@@ -425,7 +425,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Input
               placeholder={`Rechercher ${context}...`}
-              value={searchTerm}
+             
               onChange={(e) => setSearchTerm(e.target.value)}
               startContent={<Search size={16} />}
               className="w-full"
@@ -433,13 +433,13 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
             
             <Input
               placeholder="Filtrer par statut"
-              value={filterStatus === "all" ? "" : filterStatus}
+             
               onChange={(e) => setFilterStatus(e.target.value || "all")}
             />
             
             <Input
               placeholder="Filtrer par priorité"
-              value={filterPriority === "all" ? "" : filterPriority}
+             
               onChange={(e) => setFilterPriority(e.target.value || "all")}
             />
 
@@ -679,7 +679,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                   <Input
                     label="Titre"
                     placeholder="Titre du ticket"
-                    value={createForm.title || ""}
+                   
                     onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
                     isRequired
                   />
@@ -687,7 +687,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                   <Textarea
                     label="Description"
                     placeholder="Description détaillée"
-                    value={createForm.description || ""}
+                   
                     onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
                     minRows={3}
                   />
@@ -695,7 +695,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                   <Input
                     label="Priorité"
                     placeholder="P1, P2, P3, P4, etc."
-                    value={createForm.priority || ""}
+                   
                     onChange={(e) => setCreateForm(prev => ({ 
                       ...prev, 
                       priority: e.target.value as any
@@ -707,7 +707,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                     <Input
                       label="Projet (ID)"
                       placeholder="ID du projet (optionnel)"
-                      value={createForm.project_id?.toString() || ""}
+                     
                       onChange={(e) => setCreateForm(prev => ({ 
                         ...prev, 
                         project_id: e.target.value ? parseInt(e.target.value) : undefined

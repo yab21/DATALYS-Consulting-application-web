@@ -12,7 +12,7 @@ import {
   Select,
   SelectItem,
   Divider,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {
   User,
   Mail,
@@ -224,7 +224,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                     <Input
                       label="Nom complet"
                       placeholder="Nom de l'utilisateur"
-                      value={formData.name}
+                     
                       onChange={(e) => handleInputChange("name", e.target.value)}
                       startContent={<User className="w-4 h-4 text-gray-400" />}
                       isRequired
@@ -236,7 +236,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                       label="Adresse email"
                       placeholder="email@exemple.com"
                       type="email"
-                      value={formData.email}
+                     
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       startContent={<Mail className="w-4 h-4 text-gray-400" />}
                       isRequired
@@ -260,7 +260,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                       label="Mot de passe"
                       placeholder="Mot de passe sécurisé"
                       type={showPassword ? "text" : "password"}
-                      value={formData.password}
+                     
                       onChange={(e) => handleInputChange("password", e.target.value)}
                       startContent={<Lock className="w-4 h-4 text-gray-400" />}
                       endContent={
@@ -285,7 +285,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                       label="Confirmer le mot de passe"
                       placeholder="Répéter le mot de passe"
                       type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
+                     
                       onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                       startContent={<Lock className="w-4 h-4 text-gray-400" />}
                       endContent={

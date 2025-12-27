@@ -15,7 +15,7 @@ import {
   RadioGroup,
   Radio,
   Slider,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useForm, Controller, FieldValues, Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -273,7 +273,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                       isDisabled={field.disabled}
                       isInvalid={!!fieldError}
                       errorMessage={fieldError?.message as string}
-                      value={value || ""}
+                     
                       onValueChange={onChange}
                       minRows={3}
                       classNames={{
@@ -312,7 +312,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                       }}
                     >
                       {field.options?.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem key={option.value}>
                           {option.label}
                         </SelectItem>
                       )) || []}
@@ -343,7 +343,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                       }}
                     >
                       {field.options?.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem key={option.value}>
                           {option.label}
                         </SelectItem>
                       )) || []}
@@ -391,7 +391,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                       isDisabled={field.disabled}
                       isInvalid={!!fieldError}
                       errorMessage={fieldError?.message as string}
-                      value={value}
+                     
                       onValueChange={onChange}
                       classNames={{
                         label: "text-gray-800 dark:text-gray-200 font-medium",
@@ -458,7 +458,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                         minValue={field.min || 0}
                         maxValue={field.max || 100}
                         step={field.step || 1}
-                        value={value || field.min || 0}
+                       
                         onChange={onChange}
                         isDisabled={field.disabled}
                         className="max-w-md"
@@ -489,7 +489,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                       isDisabled={field.disabled}
                       isInvalid={!!fieldError}
                       errorMessage={fieldError?.message as string}
-                      value={value?.toString() || ""}
+                     
                       onValueChange={(val) => onChange(val ? Number(val) : "")}
                       min={field.min}
                       max={field.max}
@@ -523,7 +523,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                       isDisabled={field.disabled}
                       isInvalid={!!fieldError}
                       errorMessage={fieldError?.message as string}
-                      value={value || ""}
+                     
                       onValueChange={onChange}
                       classNames={{
                         label: "text-gray-800 dark:text-gray-200 font-medium",

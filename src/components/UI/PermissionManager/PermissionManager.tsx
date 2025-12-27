@@ -31,7 +31,7 @@ import {
   Tabs,
   Tab,
   cn,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { motion } from 'framer-motion';
 import { useSimpleNotifications } from '@/context/NotificationContext';
 
@@ -640,13 +640,13 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
                 <Input
                   label="Prénom"
                   placeholder="Jean"
-                  value={editingUser.prenom || ''}
+                 
                   onValueChange={(value) => setEditingUser(prev => ({ ...prev, prenom: value }))}
                 />
                 <Input
                   label="Nom"
                   placeholder="Dupont"
-                  value={editingUser.nom || ''}
+                 
                   onValueChange={(value) => setEditingUser(prev => ({ ...prev, nom: value }))}
                 />
               </div>
@@ -655,7 +655,7 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
                 label="Email"
                 type="email"
                 placeholder="jean.dupont@example.com"
-                value={editingUser.email || ''}
+               
                 onValueChange={(value) => setEditingUser(prev => ({ ...prev, email: value }))}
               />
               
@@ -670,7 +670,7 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
                   }}
                 >
                   {DEFAULT_ROLES.map((role) => (
-                    <SelectItem key={role.role} value={role.role}>
+                    <SelectItem key={role.role}>
                       {role.label}
                     </SelectItem>
                   ))}
@@ -679,7 +679,7 @@ export const PermissionManager: React.FC<PermissionManagerProps> = ({
                 <Input
                   label="Département"
                   placeholder="IT, RH, Finance..."
-                  value={editingUser.departement || ''}
+                 
                   onValueChange={(value) => setEditingUser(prev => ({ ...prev, departement: value }))}
                 />
               </div>

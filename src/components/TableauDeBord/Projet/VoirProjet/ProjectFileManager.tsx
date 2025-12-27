@@ -18,7 +18,7 @@ import {
   Progress,
   Tooltip,
   cn,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Folder, 
@@ -694,7 +694,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
               <div className="flex-1 max-w-md">
                 <Input
                   placeholder="Rechercher des fichiers et dossiers..."
-                  value={searchTerm}
+                 
                   onValueChange={setSearchTerm}
                   startContent={<Search className="w-4 h-4 text-gray-400" />}
                   classNames={{
@@ -1017,7 +1017,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
             <Input
               label="Nom du dossier"
               placeholder="Saisissez le nom du dossier"
-              value={newFolderName}
+             
               onValueChange={setNewFolderName}
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && !newFolderDescription && handleCreateFolder()}
@@ -1025,7 +1025,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
             <Input
               label="Description (optionnel)"
               placeholder="Décrivez le contenu de ce dossier"
-              value={newFolderDescription}
+             
               onValueChange={setNewFolderDescription}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
             />
@@ -1063,14 +1063,14 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
             <Input
               label="Nom du dossier"
               placeholder="Saisissez le nom du dossier"
-              value={newFolderName}
+             
               onValueChange={setNewFolderName}
               autoFocus
             />
             <Input
               label="Description (optionnel)"
               placeholder="Décrivez le contenu de ce dossier"
-              value={newFolderDescription}
+             
               onValueChange={setNewFolderDescription}
               onKeyDown={(e) => e.key === 'Enter' && handleEditFolder()}
             />
@@ -1179,7 +1179,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                       <span>Progression</span>
                       <span>{Math.round(uploadProgress)}%</span>
                     </div>
-                    <Progress value={uploadProgress} color="primary" />
+                    <Progress color="primary" />
                   </div>
                 )}
               </div>

@@ -7,7 +7,7 @@ import Image from "next/image";
 import {
   Input,
   Button,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Shield,
   ArrowRight,
@@ -186,11 +186,6 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
     visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-      },
     },
   };
 
@@ -216,7 +211,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
               className="mb-8"
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              transition={{ type: "spring" as const, stiffness: 300 }}
             >
               <Image
                 src="/images/logo/logo.png"
@@ -251,7 +246,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -269,7 +264,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -287,7 +282,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -305,7 +300,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
               <motion.div
                 className="rounded-xl bg-white/10 p-4 backdrop-blur-sm"
                 whileHover={{ scale: 1.02, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring" as const, stiffness: 300 }}
               >
                 <div className="mb-3 flex items-center justify-center">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/20">
@@ -430,7 +425,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                           inputMode="numeric"
                           pattern="[0-9]"
                           maxLength={1}
-                          value={codeDigits[index]}
+                         
                           onChange={(e) => handleDigitChange(index, e.target.value)}
                           onKeyDown={(e) => handleKeyDown(index, e)}
                           onPaste={(e) => {

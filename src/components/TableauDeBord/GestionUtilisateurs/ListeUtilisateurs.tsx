@@ -22,7 +22,7 @@ import {
   DropdownItem,
   Card,
   CardBody
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {
   Plus,
   Search,
@@ -478,7 +478,7 @@ const ListeUtilisateurs: React.FC = () => {
           <div className="flex-1">
             <Input
               placeholder="Rechercher un utilisateur..."
-              value={searchTerm}
+             
               onChange={(e) => setSearchTerm(e.target.value)}
               startContent={<Search className="h-4 w-4 text-gray-400" />}
               className="max-w-md"
@@ -500,13 +500,13 @@ const ListeUtilisateurs: React.FC = () => {
               size="sm"
               placeholder="Rôle"
             >
-              <SelectItem key="all" value="all">
+              <SelectItem key="all">
                 Tous les rôles
               </SelectItem>
-              <SelectItem key="1" value="1">
+              <SelectItem key="1">
                 Administrateurs
               </SelectItem>
-              <SelectItem key="5" value="5">
+              <SelectItem key="5">
                 Partenaires
               </SelectItem>
             </Select>
@@ -520,13 +520,13 @@ const ListeUtilisateurs: React.FC = () => {
               size="sm"
               placeholder="Statut"
             >
-              <SelectItem key="all" value="all">
+              <SelectItem key="all">
                 Tous
               </SelectItem>
-              <SelectItem key="active" value="active">
+              <SelectItem key="active">
                 Actifs
               </SelectItem>
-              <SelectItem key="inactive" value="inactive">
+              <SelectItem key="inactive">
                 Inactifs
               </SelectItem>
             </Select>

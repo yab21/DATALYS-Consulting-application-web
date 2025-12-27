@@ -24,7 +24,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {
   Plus,
   Search,
@@ -444,7 +444,7 @@ const GestionRoles: React.FC = () => {
       >
         <Input
           placeholder="Rechercher un rôle..."
-          value={searchTerm}
+         
           onChange={(e) => setSearchTerm(e.target.value)}
           startContent={<Search className="h-4 w-4 text-gray-400" />}
           className="max-w-md"
@@ -606,7 +606,7 @@ const GestionRoles: React.FC = () => {
                     <Input
                       label="Nom du rôle"
                       placeholder="Ex: Gestionnaire de projet"
-                      value={formData.name}
+                     
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       isInvalid={!!errors.name}
                       errorMessage={errors.name}
@@ -616,7 +616,7 @@ const GestionRoles: React.FC = () => {
                     <Input
                       label="Description (optionnelle)"
                       placeholder="Description du rôle et de ses responsabilités"
-                      value={formData.description}
+                     
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       variant="bordered"
                       size="lg"

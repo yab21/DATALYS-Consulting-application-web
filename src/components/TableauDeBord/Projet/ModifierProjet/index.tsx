@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Input, Select, SelectItem } from "@nextui-org/react";
-import { Button } from "@nextui-org/button";
+import { Input, Select, SelectItem } from "@heroui/react";
+import { Button } from "@heroui/button";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { domaines } from "../GererProjet/domaineData";
 import { useSimpleNotifications } from "@/context/NotificationContext";
@@ -159,7 +159,7 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
                 variant="bordered"
                 color="primary"
                 name="intitule"
-                value={projectData.intitule}
+               
                 onChange={handleChange}
                 className="text-base"
                 labelPlacement="outside"
@@ -173,7 +173,7 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
                 variant="bordered"
                 color="primary"
                 name="societe"
-                value={projectData.societe}
+               
                 onChange={handleChange}
                 className="text-base"
                 labelPlacement="outside"
@@ -187,7 +187,7 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
                 variant="bordered"
                 color="primary"
                 name="chefDeProjet"
-                value={projectData.chefDeProjet}
+               
                 onChange={handleChange}
                 className="text-base"
                 labelPlacement="outside"
@@ -213,7 +213,7 @@ const ModifierProjet: React.FC<ModifierProjetProps> = ({ id }) => {
                 size="lg"
               >
                 {domaines.map((domaine) => (
-                  <SelectItem key={domaine.key} value={domaine.key}>
+                  <SelectItem key={domaine.key}>
                     {domaine.label}
                   </SelectItem>
                 ))}

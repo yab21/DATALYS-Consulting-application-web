@@ -8,7 +8,7 @@ import {
   Button,
   Select,
   SelectItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 
 interface MoveModalProps {
   isOpen: boolean;
@@ -131,7 +131,7 @@ const MoveModal: React.FC<MoveModalProps> = ({
                 }}
               >
                 {folders.map((folder) => (
-                  <SelectItem key={folder.id} value={folder.id}>
+                  <SelectItem key={folder.id}>
                     {folder.name}
                   </SelectItem>
                 ))}

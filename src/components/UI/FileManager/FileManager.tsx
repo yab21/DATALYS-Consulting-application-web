@@ -23,7 +23,7 @@ import {
   Breadcrumbs,
   BreadcrumbItem,
   cn,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Folder, 
@@ -845,7 +845,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
               <Input
                 size="sm"
                 placeholder="Rechercher des fichiers..."
-                value={searchQuery}
+               
                 onValueChange={setSearchQuery}
                 className="max-w-xs"
                 startContent={<Search className="w-4 h-4 text-gray-400" />}
@@ -1028,7 +1028,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                       <span>{upload.progress}%</span>
                     </div>
                     <Progress 
-                      value={upload.progress} 
+                      
                       color={upload.status === 'error' ? 'danger' : 'primary'}
                       size="sm"
                     />
@@ -1059,7 +1059,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
             <Input
               label="Nom du dossier"
               placeholder="Mon nouveau dossier"
-              value={newFolderName}
+             
               onValueChange={setNewFolderName}
               autoFocus
               variant="bordered"

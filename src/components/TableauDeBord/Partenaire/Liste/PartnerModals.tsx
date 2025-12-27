@@ -15,7 +15,7 @@ import {
   Divider,
   Select,
   SelectItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Save, 
   X, 
@@ -619,7 +619,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 <Input
                   label="Nom"
                   placeholder="Nom du partenaire"
-                  value={editForm.name}
+                 
                   onValueChange={(value) => handleEditFormChange('name', value)}
                   isRequired
                 />
@@ -628,7 +628,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   label="Email"
                   placeholder="email@example.com"
                   type="email"
-                  value={editForm.email}
+                 
                   onValueChange={(value) => handleEditFormChange('email', value)}
                   isRequired
                 />
@@ -656,7 +656,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   }}
                 >
                   {COUNTRY_CODES.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
+                    <SelectItem key={country.code}>
                       <div className="flex items-center gap-2">
                         <span>{country.flag}</span>
                         <span>{country.code}</span>
@@ -669,7 +669,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 <Input
                   label="Téléphone"
                   placeholder="123456789"
-                  value={editForm.phone}
+                 
                   onValueChange={(value) => handleEditFormChange('phone', value)}
                   startContent={<Phone className="h-4 w-4" />}
                   isRequired
@@ -680,7 +680,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               <Input
                 label="Adresse"
                 placeholder="Adresse complète"
-                value={editForm.address}
+               
                 onValueChange={(value) => handleEditFormChange('address', value)}
                 isRequired
               />
@@ -869,7 +869,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               <Input
                 label="Nom du partenaire"
                 placeholder="Nom de l'entreprise ou organisation"
-                value={createForm.name}
+               
                 onValueChange={(value) => handleCreateFormChange('name', value)}
                 startContent={<User className="h-4 w-4" />}
                 isRequired
@@ -880,7 +880,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 label="Adresse email"
                 placeholder="contact@example.com"
                 type="email"
-                value={createForm.email}
+               
                 onValueChange={(value) => handleCreateFormChange('email', value)}
                 startContent={<Mail className="h-4 w-4" />}
                 isRequired
@@ -915,7 +915,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   }}
                 >
                   {COUNTRY_CODES.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
+                    <SelectItem key={country.code}>
                       <div className="flex items-center gap-2">
                         <span>{country.flag}</span>
                         <span>{country.code}</span>
@@ -928,7 +928,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 <Input
                   label="Numéro de téléphone"
                   placeholder="123456789"
-                  value={createForm.phone}
+                 
                   onValueChange={(value) => handleCreateFormChange('phone', value)}
                   startContent={<Phone className="h-4 w-4" />}
                   isRequired
@@ -940,7 +940,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               <Input
                 label="Adresse"
                 placeholder="123 Rue Example, Ville, Pays"
-                value={createForm.address}
+               
                 onValueChange={(value) => handleCreateFormChange('address', value)}
                 startContent={<MapPin className="h-4 w-4" />}
                 isRequired

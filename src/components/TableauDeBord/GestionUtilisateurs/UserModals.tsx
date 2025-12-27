@@ -15,7 +15,7 @@ import {
   Divider,
   Select,
   SelectItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Save, 
   X, 
@@ -368,7 +368,7 @@ const UserModals: React.FC<UserModalsProps> = ({
                   <Input
                     label="Nom complet"
                     placeholder="Nom de l'utilisateur"
-                    value={editForm.name}
+                   
                     onValueChange={(value) => handleEditFormChange('name', value)}
                     isRequired
                   />
@@ -377,7 +377,7 @@ const UserModals: React.FC<UserModalsProps> = ({
                     label="Email"
                     placeholder="email@example.com"
                     type="email"
-                    value={editForm.email}
+                   
                     onValueChange={(value) => handleEditFormChange('email', value)}
                     isRequired
                   />
@@ -388,7 +388,7 @@ const UserModals: React.FC<UserModalsProps> = ({
                     label="Nouveau mot de passe"
                     placeholder="Laisser vide pour conserver l'ancien mot de passe"
                     type="password"
-                    value={editForm.password || ''}
+                   
                     onValueChange={(value) => handleEditFormChange('password', value)}
                     description="Optionnel - Laisser vide pour ne pas modifier le mot de passe"
                   />
@@ -410,10 +410,10 @@ const UserModals: React.FC<UserModalsProps> = ({
                   }}
                   isRequired
                 >
-                  <SelectItem key="admin" value="admin">
+                  <SelectItem key="admin">
                     Administrateur
                   </SelectItem>
-                  <SelectItem key="partner" value="partner">
+                  <SelectItem key="partner">
                     Partenaire
                   </SelectItem>
                 </Select>

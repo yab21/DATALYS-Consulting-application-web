@@ -23,7 +23,7 @@ import {
   Select,
   SelectItem,
   Tooltip
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Users, 
   Plus, 
@@ -278,7 +278,7 @@ const ProjectTeam: React.FC<ProjectTeamProps> = ({ projectId, projectName }) => 
             <Input
               placeholder="Rechercher un membre..."
               startContent={<Search className="w-4 h-4 text-gray-400" />}
-              value={searchTerm}
+             
               onValueChange={setSearchTerm}
               className="flex-1"
             />
@@ -421,7 +421,7 @@ const ProjectTeam: React.FC<ProjectTeamProps> = ({ projectId, projectName }) => 
               label="ID du partenaire"
               placeholder="Entrez l'ID du partenaire à ajouter"
               type="number"
-              value={newMember.partnerId}
+             
               onValueChange={(value) => setNewMember(prev => ({ ...prev, partnerId: value }))}
               isRequired
             />

@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { FixedSizeList as List } from "react-window";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, SortAsc, SortDesc, Download, RefreshCw } from "lucide-react";
-import { Input, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
+import { Input, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { useApiCache } from "@/hooks/useApiCache";
 
 interface ColumnConfig {
@@ -249,7 +249,7 @@ export const VirtualizedTable = <T extends Record<string, any>>({
             <div className="flex-1 max-w-md">
               <Input
                 placeholder="Rechercher..."
-                value={searchQuery}
+               
                 onChange={(e) => setSearchQuery(e.target.value)}
                 startContent={<Search className="h-4 w-4 text-gray-400" />}
                 className="w-full"

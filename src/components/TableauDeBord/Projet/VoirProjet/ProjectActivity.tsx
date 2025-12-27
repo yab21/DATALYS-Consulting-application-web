@@ -12,7 +12,7 @@ import {
   Select,
   SelectItem,
   Pagination
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   Activity, 
   Search, 
@@ -344,7 +344,7 @@ const ProjectActivity: React.FC<ProjectActivityProps> = ({ projectId, projectNam
             <Input
               placeholder="Rechercher une activité..."
               startContent={<Search className="w-4 h-4 text-gray-400" />}
-              value={searchTerm}
+             
               onValueChange={setSearchTerm}
               className="flex-1"
             />

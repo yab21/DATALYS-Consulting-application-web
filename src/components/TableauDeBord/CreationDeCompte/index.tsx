@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
-import { Button } from "@nextui-org/button";
-import { Input, Checkbox } from "@nextui-org/react";
+import { Button } from "@heroui/button";
+import { Input, Checkbox } from "@heroui/react";
 import { useRouter } from "next/navigation";
 
 const CreerUnCompte = () => {

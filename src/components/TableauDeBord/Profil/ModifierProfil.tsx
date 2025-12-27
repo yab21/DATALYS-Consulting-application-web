@@ -10,7 +10,7 @@ import {
   Button,
   Input,
   Divider,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { Save, Mail, User, Edit } from "lucide-react";
 import { UsersService } from "@/services/users";
 import { useAuth } from "@/hooks/useAuth";
@@ -166,7 +166,7 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
                 <Input
                   label="Nom complet"
                   placeholder="Votre nom complet"
-                  value={editForm.name}
+                 
                   onValueChange={(value) => handleEditFormChange('name', value)}
                   isRequired
                   startContent={<User className="h-4 w-4 text-gray-400" />}
@@ -176,7 +176,7 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
                   label="Email"
                   placeholder="votre@email.com"
                   type="email"
-                  value={editForm.email}
+                 
                   onValueChange={(value) => handleEditFormChange('email', value)}
                   isRequired
                   startContent={<Mail className="h-4 w-4 text-gray-400" />}
@@ -188,7 +188,7 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
                   label="Nouveau mot de passe"
                   placeholder="Laisser vide pour conserver l'ancien mot de passe"
                   type="password"
-                  value={editForm.password || ''}
+                 
                   onValueChange={(value) => handleEditFormChange('password', value)}
                   description="Optionnel - Laisser vide pour ne pas modifier le mot de passe"
                 />

@@ -42,7 +42,7 @@ import {
   DropdownItem,
   Avatar,
   Pagination,
-} from "@nextui-org/react";
+} from "@heroui/react";
 
 // Types pour les données du dashboard
 interface DashboardStats {

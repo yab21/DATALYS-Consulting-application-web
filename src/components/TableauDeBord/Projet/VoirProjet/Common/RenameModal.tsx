@@ -7,7 +7,7 @@ import {
   ModalFooter,
   Button,
   Input,
-} from "@nextui-org/react";
+} from "@heroui/react";
 
 interface RenameModalProps {
   isOpen: boolean;
@@ -53,7 +53,7 @@ const RenameModal: React.FC<RenameModalProps> = ({
           )}
           <Input
             label="Nouveau nom"
-            value={newName}
+           
             onChange={(e) => setNewName(e.target.value)}
             variant="bordered"
             classNames={{

@@ -22,7 +22,7 @@ import {
   ModalBody,
   ModalFooter,
   Textarea
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { 
   AlertTriangle, 
   Plus, 
@@ -279,7 +279,7 @@ const ProjectIncidents: React.FC<ProjectIncidentsProps> = ({ projectId, projectN
             <Input
               placeholder="Rechercher un incident..."
               startContent={<Search className="w-4 h-4 text-gray-400" />}
-              value={searchTerm}
+             
               onValueChange={setSearchTerm}
               className="flex-1"
             />
@@ -405,7 +405,7 @@ const ProjectIncidents: React.FC<ProjectIncidentsProps> = ({ projectId, projectN
             <Input
               label="Titre de l'incident"
               placeholder="Décrivez brièvement le problème"
-              value={newIncident.title}
+             
               onValueChange={(value) => setNewIncident(prev => ({ ...prev, title: value }))}
               isRequired
             />
@@ -413,7 +413,7 @@ const ProjectIncidents: React.FC<ProjectIncidentsProps> = ({ projectId, projectN
             <Textarea
               label="Description détaillée"
               placeholder="Décrivez le problème en détail..."
-              value={newIncident.description}
+             
               onValueChange={(value) => setNewIncident(prev => ({ ...prev, description: value }))}
               rows={4}
               isRequired

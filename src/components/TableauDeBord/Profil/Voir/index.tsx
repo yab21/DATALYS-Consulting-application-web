@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import ModifierProfil from "@/components/TableauDeBord/Profil/ModifierProfil";
-import { Chip, Avatar, Divider } from "@nextui-org/react";
+import { Chip, Avatar, Divider } from "@heroui/react";
 import { motion } from "framer-motion";
 import { User, Mail, Building, Users, Calendar, Shield, Edit3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";

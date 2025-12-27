@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
-import { Input, Checkbox } from "@nextui-org/react";
+import { Input, Checkbox } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { Lock, Eye, EyeOff, ArrowLeft, Save, Shield } from "lucide-react";
@@ -206,7 +206,7 @@ const ChangerMotDePasse = () => {
                 color="primary"
                 placeholder="Entrer votre mot de passe actuel"
                 className="text-base"
-                value={currentPassword}
+               
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
                 labelPlacement="outside"
@@ -233,7 +233,7 @@ const ChangerMotDePasse = () => {
                 color="primary"
                 placeholder="Entrer le nouveau mot de passe"
                 className="text-base"
-                value={newPassword}
+               
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 labelPlacement="outside"
@@ -260,7 +260,7 @@ const ChangerMotDePasse = () => {
                 color="primary"
                 placeholder="Confirmer le nouveau mot de passe"
                 className="text-base"
-                value={confirmPassword}
+               
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 labelPlacement="outside"

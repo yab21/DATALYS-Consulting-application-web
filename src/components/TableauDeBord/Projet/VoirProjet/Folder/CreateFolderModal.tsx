@@ -9,7 +9,7 @@ import {
   Button,
   useDisclosure,
   Input,
-} from "@nextui-org/react";
+} from "@heroui/react";
 
 interface CreateFolderModalProps {
   onFolderCreated: () => void;
@@ -118,7 +118,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
                   size="lg"
                   label="Nom du dossier"
                   placeholder="Ex: Documents, Images, Archives..."
-                  value={folderName}
+                 
                   onChange={(e) => setFolderName(e.target.value)}
                   startContent={
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

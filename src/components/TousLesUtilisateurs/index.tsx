@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Card, CardFooter, Image, Button } from "@nextui-org/react";
+import { Card, CardFooter, Image, Button } from "@heroui/react";
 
 const AllUsers: React.FC = () => {
   return (
