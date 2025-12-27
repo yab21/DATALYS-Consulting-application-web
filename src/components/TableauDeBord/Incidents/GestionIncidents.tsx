@@ -2253,6 +2253,7 @@ const GestionIncidents: React.FC = () => {
               <div className="grid grid-cols-3 gap-4">
                 <Input
                   label="Type"
+                  value={createForm.type}
                   isReadOnly
                   className="cursor-not-allowed"
                   classNames={{
@@ -2594,6 +2595,7 @@ const GestionIncidents: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <Input
                     label="Type"
+                    value={editForm.type}
                     isReadOnly
                     className="cursor-not-allowed"
                     classNames={{
