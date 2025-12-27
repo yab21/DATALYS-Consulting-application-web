@@ -562,8 +562,18 @@ const SupportIncidents: React.FC = () => {
         setLoadingUsers(true);
         const response = await UsersService.getUsersByCriteria({ size: 1000 });
         const allUsers = response.items || [];
-        setUsers(allUsers);
-        console.log('📋 Utilisateurs chargés:', allUsers.length);
+        
+        // Filtrer les utilisateurs pour éviter les doublons de noms
+        const uniqueUsersMap = new Map();
+        allUsers.forEach((user: UserType) => {
+          if (!uniqueUsersMap.has(user.name)) {
+            uniqueUsersMap.set(user.name, user);
+          }
+        });
+        const uniqueUsers = Array.from(uniqueUsersMap.values());
+        
+        setUsers(uniqueUsers);
+        console.log('📋 Utilisateurs chargés:', uniqueUsers.length);
       } catch (error) {
         console.error('❌ Erreur lors du chargement des utilisateurs:', error);
         showNotification(simpleNotificationHelpers.error(
@@ -1226,16 +1236,21 @@ const SupportIncidents: React.FC = () => {
                   <Select
                     label="Déclarant du ticket"
                     placeholder="Sélectionnez l'utilisateur déclarant"
-                    selectedKeys={createForm.declarant_name ? [createForm.declarant_name] : []}
+                    selectedKeys={createForm.declarant_name ? 
+                      [users.find(user => user.name === createForm.declarant_name)?.id.toString() || ''] : []
+                    }
                     onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      setCreateForm(prev => ({ ...prev, declarant_name: selected || '' }));
+                      const selectedKey = Array.from(keys)[0] as string;
+                      // Trouver l'utilisateur correspondant pour obtenir son nom
+                      const selectedUser = users.find(user => user.id.toString() === selectedKey);
+                      const userName = selectedUser ? selectedUser.name : '';
+                      setCreateForm(prev => ({ ...prev, declarant_name: userName }));
                     }}
                     isLoading={loadingUsers}
                     isRequired
                   >
                     {users.map((user) => (
-                      <SelectItem key={user.name}>
+                      <SelectItem key={user.id.toString()}>
                         {user.name} ({user.email})
                       </SelectItem>
                     ))}
@@ -1514,15 +1529,20 @@ const SupportIncidents: React.FC = () => {
                   <Select
                     label="Déclarant du ticket"
                     placeholder="Sélectionnez l'utilisateur déclarant"
-                    selectedKeys={editForm.declarant_name ? [editForm.declarant_name] : []}
+                    selectedKeys={editForm.declarant_name ? 
+                      [users.find(user => user.name === editForm.declarant_name)?.id.toString() || ''] : []
+                    }
                     onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      setEditForm(prev => ({ ...prev, declarant_name: selected || '' }));
+                      const selectedKey = Array.from(keys)[0] as string;
+                      // Trouver l'utilisateur correspondant pour obtenir son nom
+                      const selectedUser = users.find(user => user.id.toString() === selectedKey);
+                      const userName = selectedUser ? selectedUser.name : '';
+                      setEditForm(prev => ({ ...prev, declarant_name: userName }));
                     }}
                     isLoading={loadingUsers}
                   >
                     {users.map((user) => (
-                      <SelectItem key={user.name}>
+                      <SelectItem key={user.id.toString()}>
                         {user.name} ({user.email})
                       </SelectItem>
                     ))}

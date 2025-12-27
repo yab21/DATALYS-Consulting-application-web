@@ -2174,6 +2174,7 @@ const GestionIncidents: React.FC = () => {
 
               <Input
                 label="Déclarant de l'incident"
+                value={createForm.declarant_name}
                 isReadOnly
                 description="Déclarant automatiquement défini (utilisateur connecté)"
                 variant="bordered"
@@ -2521,6 +2522,7 @@ const GestionIncidents: React.FC = () => {
 
                 <Input
                   label="Déclarant de l'incident"
+                  value={editForm.declarant_name}
                   isReadOnly
                   description="Déclarant ne peut pas être modifié"
                   variant="bordered"
