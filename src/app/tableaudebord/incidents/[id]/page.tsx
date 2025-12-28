@@ -1,32 +1,14 @@
-import { Metadata } from 'next';
-import IncidentDetail from '@/components/TableauDeBord/Incidents/Voir';
+import { Metadata } from "next";
+import VoirIncident from "@/components/TableauDeBord/Incident/VoirIncident";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
+export const metadata: Metadata = {
+  title: "Détails de l'incident | DATALYS Consulting",
+  description: "Informations détaillées de l'incident, statut, priorité, SLA et historique",
+};
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const resolvedParams = await params;
-  return {
-    title: `Incident ${resolvedParams.id} - DATALYS Consulting`,
-    description: `Détails de l'incident ${resolvedParams.id}`,
-  };
-}
+const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
+  return <VoirIncident id={id} />;
+};
 
-export default async function IncidentDetailPage({ params }: PageProps) {
-  const resolvedParams = await params;
-  const incidentId = parseInt(resolvedParams.id);
-  
-  if (isNaN(incidentId)) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Erreur</h1>
-          <p className="text-gray-600">ID d'incident invalide</p>
-        </div>
-      </div>
-    );
-  }
-
-  return <IncidentDetail incidentId={incidentId} />;
-}
+export default Page;

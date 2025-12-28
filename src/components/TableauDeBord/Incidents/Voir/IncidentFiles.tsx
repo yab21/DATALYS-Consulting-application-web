@@ -148,6 +148,9 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [previewFile, setPreviewFile] = useState<IncidentFile | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<IncidentFile | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [pagination, setPagination] = useState({
     current_page: 1,
     per_page: 12, // Réduit pour une meilleure performance en grille
@@ -408,6 +411,55 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
     }
   };
 
+  // Gestionnaire d'ouverture du modal de suppression
+  const handleDeleteClick = (file: IncidentFile) => {
+    setFileToDelete(file);
+    setShowDeleteModal(true);
+  };
+
+  // Gestionnaire de suppression confirmée
+  const handleDeleteConfirm = async () => {
+    if (!fileToDelete) return;
+
+    setDeleting(true);
+    try {
+      console.log('🗑️ Suppression du fichier:', fileToDelete);
+      
+      const result = await incidentFilesService.deleteIncidentFile(fileToDelete.id);
+      
+      if (result.success) {
+        showNotification({
+          type: "success",
+          title: "Suppression réussie",
+          message: result.message || "Fichier supprimé avec succès",
+          duration: 3000,
+        });
+        
+        // Recharger la liste des fichiers
+        await reloadFiles();
+      } else {
+        showNotification({
+          type: "error",
+          title: "Erreur de suppression",
+          message: result.error || result.message || 'Erreur lors de la suppression',
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error);
+      showNotification({
+        type: "error",
+        title: "Erreur de suppression",
+        message: "Une erreur est survenue lors de la suppression",
+        duration: 5000,
+      });
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+      setFileToDelete(null);
+    }
+  };
+
   // Obtenir les propriétés de style pour un type de fichier
   const getFileStyle = (fileType: string) => {
     const type = (fileType || "").toLowerCase();
@@ -618,9 +670,11 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
                       
                       {/* Informations du fichier */}
                       <div className="w-full text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                        <div className="truncate font-medium">
-                          {incidentFilesService.formatFileSize(file.file_size)}
-                        </div>
+                        {file.file_size && file.file_size > 0 && (
+                          <div className="truncate font-medium">
+                            {incidentFilesService.formatFileSize(file.file_size)}
+                          </div>
+                        )}
                         <div className="truncate">
                           {formatDate(file.uploaded_at)}
                         </div>
@@ -656,6 +710,19 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
                             className="h-7 w-7 min-w-7"
                           >
                             <Download className="h-3 w-3" />
+                          </Button>
+                        </Tooltip>
+                        
+                        <Tooltip content="Supprimer">
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="flat"
+                            color="danger"
+                            onPress={() => handleDeleteClick(file)}
+                            className="h-7 w-7 min-w-7"
+                          >
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </Tooltip>
                       </div>
@@ -817,6 +884,75 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
               </ModalFooter>
             </>
           )}
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de confirmation de suppression */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => !deleting && setShowDeleteModal(false)}
+        size="md"
+        isDismissable={!deleting}
+        classNames={{
+          wrapper: "z-[60]",
+          backdrop: "z-[59]"
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Supprimer le fichier
+                </h3>
+              </div>
+            </div>
+          </ModalHeader>
+          
+          <ModalBody>
+            {fileToDelete && (
+              <div className="space-y-4">
+                <p className="text-gray-600 dark:text-gray-300">
+                  Êtes-vous sûr de vouloir supprimer le fichier <strong>{fileToDelete.file_name}</strong> ?
+                </p>
+                
+                <div className="border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                        Attention
+                      </p>
+                      <p className="text-sm text-red-700 dark:text-red-300">
+                        Cette action est irréversible. Le fichier sera définitivement supprimé du système.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </ModalBody>
+          
+          <ModalFooter>
+            <Button 
+              variant="flat" 
+              onPress={() => setShowDeleteModal(false)}
+              isDisabled={deleting}
+            >
+              Annuler
+            </Button>
+            <Button 
+              color="danger" 
+              onPress={handleDeleteConfirm}
+              isLoading={deleting}
+              startContent={!deleting ? <Trash2 className="h-4 w-4" /> : undefined}
+            >
+              {deleting ? 'Suppression...' : 'Supprimer'}
+            </Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
     </div>

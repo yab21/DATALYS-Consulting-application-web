@@ -385,6 +385,40 @@ export class IncidentsService {
       throw new Error(message);
     }
   }
+
+  // Récupérer un incident par ID
+  static async getIncidentById(incidentId: number): Promise<Incident | null> {
+    try {
+      const criteria: IncidentCriteria = {
+        index: 0,
+        size: 1000, // Grande taille pour être sûr de récupérer l'incident
+        data: { is_active: true }
+      };
+
+      const response = await this.getIncidentsByCriteria(criteria);
+      
+      // Gérer les différents formats de réponse possibles
+      let incidents: Incident[] = [];
+      if (response.code === 200 && response.items && Array.isArray(response.items)) {
+        incidents = response.items;
+      } else if (response.status === 'success' && response.data) {
+        incidents = response.data;
+      } else if (Array.isArray(response)) {
+        incidents = response;
+      } else if (response.data && Array.isArray(response.data)) {
+        incidents = response.data;
+      } else {
+        incidents = response;
+      }
+      
+      const incident = incidents.find((i: Incident) => i.id === incidentId);
+      return incident || null;
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'incident par ID:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
 }
 
 // Instance exportée du service

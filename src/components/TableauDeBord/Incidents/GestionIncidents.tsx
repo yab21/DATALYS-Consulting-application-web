@@ -63,6 +63,7 @@ import { projectsService, type Project } from "@/services/projects";
 import { UsersService, type User as UserType } from "@/services/users";
 import IncidentFilesModal from "./IncidentFilesModal";
 import { partnersService, type Partner } from "@/services/partners";
+import Link from "next/link";
 
 // Types locaux pour l'interface
 interface Incident {
@@ -1583,9 +1584,12 @@ const GestionIncidents: React.FC = () => {
                       <TableCell>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <p className="font-semibold text-gray-900 dark:text-white">
+                            <Link 
+                              href={`/tableaudebord/incidents/${incident.id}`}
+                              className="font-semibold text-gray-900 dark:text-white hover:text-[#4ba9b7] transition-colors duration-200 cursor-pointer"
+                            >
                               {incident.titre}
-                            </p>
+                            </Link>
                             {!incident.is_read && (
                               <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                             )}
@@ -1793,9 +1797,12 @@ const GestionIncidents: React.FC = () => {
                       <TableCell>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <p className="font-semibold text-gray-900 dark:text-white">
+                            <Link 
+                              href={`/tableaudebord/incidents/${incident.id}`}
+                              className="font-semibold text-gray-900 dark:text-white hover:text-[#4ba9b7] transition-colors duration-200 cursor-pointer"
+                            >
                               {incident.titre}
-                            </p>
+                            </Link>
                             {!incident.is_read && (
                               <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                             )}
