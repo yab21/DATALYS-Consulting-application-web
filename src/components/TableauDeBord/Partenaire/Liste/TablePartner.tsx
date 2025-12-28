@@ -846,7 +846,12 @@ const TablePartner: React.FC = () => {
                       }
                     })()}
                     <div className="flex flex-col">
-                      <p className="font-semibold text-sm text-gray-900 dark:text-white">{partner.name}</p>
+                      <Link 
+                        href={`/tableaudebord/partenaire/details/${partner.id}`}
+                        className="font-semibold text-sm text-gray-900 dark:text-white hover:text-[#4ba9b7] transition-colors duration-200 cursor-pointer"
+                      >
+                        {partner.name}
+                      </Link>
                       <p className="font-medium text-sm text-gray-600 dark:text-gray-400">{partner.email}</p>
                     </div>
                   </div>
