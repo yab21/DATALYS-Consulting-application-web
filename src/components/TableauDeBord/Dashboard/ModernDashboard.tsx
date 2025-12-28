@@ -1257,7 +1257,6 @@ const ModernDashboard: React.FC = () => {
                   
                   <Table aria-label="Table des activités" className="min-h-[400px]">
                     <TableHeader>
-                      <TableColumn>ACTION</TableColumn>
                       <TableColumn>UTILISATEUR</TableColumn>
                       <TableColumn>DESCRIPTION</TableColumn>
                       <TableColumn>TYPE</TableColumn>
@@ -1268,29 +1267,6 @@ const ModernDashboard: React.FC = () => {
                         .slice((activitiesPage - 1) * activitiesPerPage, activitiesPage * activitiesPerPage)
                         .map((activity: any) => (
                         <TableRow key={activity.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-md flex items-center justify-center ${
-                                activity.action_type === 'CREATE' ? 'bg-green-50 text-green-600' :
-                                activity.action_type === 'UPDATE' ? 'bg-blue-50 text-blue-600' :
-                                'bg-purple-50 text-purple-600'
-                              }`}>
-                                {activity.action_type === 'CREATE' ? <Plus className="w-4 h-4" /> :
-                                 activity.action_type === 'UPDATE' ? <RefreshCw className="w-4 h-4" /> :
-                                 <MessageCircle className="w-4 h-4" />}
-                              </div>
-                              <div>
-                                <Chip
-                                  size="sm"
-                                  variant="flat"
-                                  color={activity.action_type === 'CREATE' ? 'success' :
-                                        activity.action_type === 'UPDATE' ? 'primary' : 'secondary'}
-                                >
-                                  {activity.action_type}
-                                </Chip>
-                              </div>
-                            </div>
-                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Avatar
