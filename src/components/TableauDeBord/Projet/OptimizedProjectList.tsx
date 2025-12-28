@@ -773,12 +773,12 @@ const OptimizedProjectList: React.FC = () => {
                     <Avatar
                       size="sm"
                       name={project.title.charAt(0)}
-                      className="bg-blue-500 text-white flex-shrink-0"
+                      className="bg-[#4ba9b7] text-white flex-shrink-0"
                     />
                     <div className="flex flex-col min-w-0">
                       <Link 
                         href={`/tableaudebord/projet/pageprojet/${project.id}`}
-                        className="font-semibold text-xs sm:text-sm text-[#4ba9b7] hover:text-[#3a8a96] dark:text-[#4ba9b7] dark:hover:text-[#5bc9d7] hover:underline truncate max-w-[120px] sm:max-w-none transition-colors duration-200"
+                        className="font-semibold text-xs sm:text-sm text-gray-900 hover:text-[#4ba9b7] dark:text-white dark:hover:text-[#4ba9b7] hover:underline truncate max-w-[120px] sm:max-w-none transition-colors duration-200"
                       >
                         {project.title}
                       </Link>
