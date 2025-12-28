@@ -31,6 +31,7 @@ import {
   Progress,
 } from "@heroui/react";
 import { motion } from "framer-motion";
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
   Filter, 
@@ -442,6 +443,7 @@ const SkeletonLoader: React.FC = () => (
 const SupportIncidents: React.FC = () => {
   const { hasPermission, user, isPartner } = useAuth();
   const { showNotification } = useSimpleNotifications();
+  const router = useRouter();
   
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [filteredTickets, setFilteredTickets] = useState<SupportTicket[]>([]);
@@ -798,6 +800,10 @@ const SupportIncidents: React.FC = () => {
     });
   };
 
+  const handleViewTicket = (ticketId: string) => {
+    router.push(`/tableaudebord/support/${ticketId}`);
+  };
+
   const openViewModal = (ticket: SupportTicket) => {
     setSelectedTicket(ticket);
     setShowDetailModal(true);
@@ -1104,7 +1110,12 @@ const SupportIncidents: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{ticket.titre}</p>
+                      <p 
+                        className="font-medium cursor-pointer hover:text-[#4ba9b7] transition-colors"
+                        onClick={() => handleViewTicket(ticket.id)}
+                      >
+                        {ticket.titre}
+                      </p>
                       {ticket.description && (
                         <p className="text-sm text-gray-500 truncate max-w-xs">
                           {ticket.description.substring(0, 100)}
@@ -1171,6 +1182,13 @@ const SupportIncidents: React.FC = () => {
                           </Button>
                         </DropdownTrigger>
                         <DropdownMenu>
+                          <DropdownItem
+                            key="view"
+                            startContent={<Eye size={14} />}
+                            onPress={() => handleViewTicket(ticket.id)}
+                          >
+                            Voir détails
+                          </DropdownItem>
                           <DropdownItem
                             key="edit"
                             startContent={<Edit size={14} />}
