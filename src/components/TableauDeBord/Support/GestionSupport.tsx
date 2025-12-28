@@ -30,8 +30,10 @@ import {
   XCircle,
   Timer,
   RefreshCw,
-  Plus
+  Plus,
+  Headphones
 } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
 import { IncidentsService, type Incident, type IncidentCriteria } from "@/services/incidents";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
@@ -47,6 +49,7 @@ const GestionSupport: React.FC = () => {
 
   const { user } = useAuth();
   const { showNotification } = useSimpleNotifications();
+  const router = useRouter();
 
   // Chargement des données
   useEffect(() => {
@@ -175,6 +178,10 @@ const GestionSupport: React.FC = () => {
     });
   };
 
+  const handleViewTicket = (ticketId: number) => {
+    router.push(`/tableaudebord/support/${ticketId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -185,11 +192,21 @@ const GestionSupport: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support Technique</h1>
-          <p className="text-gray-600 mt-1">Gestion des demandes de support clients avec SLA</p>
+      {/* Header amélioré */}
+      <motion.div 
+        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-[#4ba9b7] rounded-xl flex items-center justify-center shadow-lg">
+            <Headphones className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white">Support Technique</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Gestion des demandes de support clients avec SLA</p>
+          </div>
         </div>
         
         <div className="flex gap-3">
@@ -209,7 +226,7 @@ const GestionSupport: React.FC = () => {
             Nouveau Ticket
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Métriques rapides */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -323,7 +340,12 @@ const GestionSupport: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{incident.title}</p>
+                      <p 
+                        className="font-medium cursor-pointer hover:text-[#4ba9b7] transition-colors"
+                        onClick={() => handleViewTicket(incident.id)}
+                      >
+                        {incident.title}
+                      </p>
                       {incident.description && (
                         <p className="text-sm text-gray-500 truncate max-w-xs">
                           {incident.description}
@@ -367,8 +389,9 @@ const GestionSupport: React.FC = () => {
                         <DropdownItem
                           key="view"
                           startContent={<Eye size={14} />}
+                          onPress={() => handleViewTicket(incident.id)}
                         >
-                          Voir
+                          Voir détails
                         </DropdownItem>
                         <DropdownItem
                           key="edit"
