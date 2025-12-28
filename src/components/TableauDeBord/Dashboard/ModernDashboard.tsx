@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTopBarProgress } from "@/hooks/useTopBarProgress";
+import { useRouter } from 'next/navigation';
 import {
   Users,
   FolderOpen,
@@ -95,6 +96,7 @@ const ModernDashboard: React.FC = () => {
   const { user, isAdmin, isPartner, hasPermission, isLoading: authLoading } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const { finish } = useTopBarProgress();
+  const router = useRouter();
   
   // États principaux
   const [stats, setStats] = useState<DashboardStats>({
@@ -449,6 +451,10 @@ const ModernDashboard: React.FC = () => {
     if (diffInHours < 24) return `Il y a ${Math.round(diffInHours)}h`;
     if (diffInHours < 48) return "Hier";
     return `Il y a ${Math.round(diffInHours / 24)} jours`;
+  };
+
+  const handleViewPartner = (partnerId: number) => {
+    router.push(`/tableaudebord/partenaire/details/${partnerId}`);
   };
 
   const handleRefresh = async () => {
@@ -1145,7 +1151,6 @@ const ModernDashboard: React.FC = () => {
                       <TableColumn>PROJETS TOTAL</TableColumn>
                       <TableColumn>PROJETS ACTIFS</TableColumn>
                       <TableColumn>TAUX D'ACTIVITÉ</TableColumn>
-                      <TableColumn align="center">ACTIONS</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent="Aucun partenaire trouvé">
                       {adminData.partnerStats
@@ -1160,7 +1165,12 @@ const ModernDashboard: React.FC = () => {
                                 className="bg-[#4ba9b7] text-white"
                               />
                               <div>
-                                <p className="font-semibold text-gray-900">{partner.partner_name}</p>
+                                <p 
+                                  className="font-semibold text-gray-900 cursor-pointer hover:text-[#4ba9b7] transition-colors"
+                                  onClick={() => handleViewPartner(partner.partner_id)}
+                                >
+                                  {partner.partner_name}
+                                </p>
                               </div>
                             </div>
                           </TableCell>
@@ -1204,35 +1214,6 @@ const ModernDashboard: React.FC = () => {
                                 {partner.total_projects > 0 ? Math.round((partner.active_projects / partner.total_projects) * 100) : 0}%
                               </span>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <Dropdown>
-                              <DropdownTrigger>
-                                <Button
-                                  isIconOnly
-                                  variant="light"
-                                  size="sm"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownTrigger>
-                              <DropdownMenu aria-label="Actions partenaire">
-                                <DropdownItem
-                                  key="view"
-                                  startContent={<Eye className="h-4 w-4" />}
-                                  onClick={() => window.location.href = '/tableaudebord/partenaire/liste'}
-                                >
-                                  Voir partenaire
-                                </DropdownItem>
-                                <DropdownItem
-                                  key="projects"
-                                  startContent={<FolderOpen className="h-4 w-4" />}
-                                  onClick={() => window.location.href = '/tableaudebord/projet/gerer'}
-                                >
-                                  Voir projets
-                                </DropdownItem>
-                              </DropdownMenu>
-                            </Dropdown>
                           </TableCell>
                         </TableRow>
                       ))}
