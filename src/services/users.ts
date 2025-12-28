@@ -160,6 +160,27 @@ export class UsersService {
     );
   }
 
+  // Récupérer un utilisateur par ID
+  static async getUserById(userId: number): Promise<User | null> {
+    try {
+      const criteria: UserCriteria = {
+        index: 0,
+        size: 1000, // Grande taille pour être sûr de récupérer l'utilisateur
+        data: {}
+      };
+
+      const response = await this.getUsersByCriteria(criteria);
+      const users = response.items || response.data || [];
+      
+      const user = users.find((u: User) => u.id === userId);
+      return user || null;
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'utilisateur par ID:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
   // Méthode spécifique pour désactiver/activer un utilisateur
   static async toggleUserStatus(userId: number, isActive: boolean): Promise<any> {
     const updateData: UpdateUserData = {
