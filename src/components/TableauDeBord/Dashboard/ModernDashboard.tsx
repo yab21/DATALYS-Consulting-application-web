@@ -871,12 +871,12 @@ const ModernDashboard: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-blue-200">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                  <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-gray-200">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-gray-50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
                     <div className="relative z-10">
                       <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 rounded-xl bg-blue-100 border border-blue-200">
-                          <FolderOpen className="w-6 h-6 text-blue-600" />
+                        <div className="p-3 rounded-xl bg-[#4ba9b7]/10 border border-[#4ba9b7]/20">
+                          <FolderOpen className="w-6 h-6 text-[#4ba9b7]" />
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-gray-800">Projets Récents</h3>
@@ -891,16 +891,16 @@ const ModernDashboard: React.FC = () => {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 * index }}
-                            className="group p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-blue-400 transition-all duration-300 cursor-pointer"
-                            onClick={() => window.location.href = `/tableaudebord/projet/gerer`}
+                            className="group p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-[#4ba9b7] transition-all duration-300 cursor-pointer"
+                            onClick={() => window.location.href = `/tableaudebord/projet/pageprojet/${project.id}`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4ba9b7] to-[#3a8a96] flex items-center justify-center shadow-lg">
                                   <FolderOpen className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
-                                  <h4 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                                  <h4 className="font-bold text-gray-800 group-hover:text-[#4ba9b7] transition-colors">
                                     {project.title}
                                   </h4>
                                   <p className="text-sm text-gray-600">
@@ -920,7 +920,7 @@ const ModernDashboard: React.FC = () => {
                                 }`}>
                                   {project.is_active ? "✓ Actif" : "Inactif"}
                                 </div>
-                                <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-blue-600 transition-colors" />
+                                <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-[#4ba9b7] transition-colors" />
                               </div>
                             </div>
                           </motion.div>
@@ -967,7 +967,7 @@ const ModernDashboard: React.FC = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 * index }}
                             className="group p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-red-400 transition-all duration-300 cursor-pointer"
-                            onClick={() => window.location.href = `/tableaudebord/incidents#incident-${incident.id}`}
+                            onClick={() => window.location.href = `/tableaudebord/incidents/${incident.id}`}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-start gap-4">
