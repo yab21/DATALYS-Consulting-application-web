@@ -457,6 +457,10 @@ const ModernDashboard: React.FC = () => {
     router.push(`/tableaudebord/partenaire/details/${partnerId}`);
   };
 
+  const handleViewUser = (userId: number) => {
+    router.push(`/tableaudebord/utilisateur/details/${userId}`);
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadDashboardData();
@@ -1274,7 +1278,12 @@ const ModernDashboard: React.FC = () => {
                                 size="sm"
                                 className="bg-[#4ba9b7] text-white"
                               />
-                              <span className="font-medium text-gray-800">{activity.user_name}</span>
+                              <span 
+                                className="font-medium text-gray-800 cursor-pointer hover:text-[#4ba9b7] transition-colors"
+                                onClick={() => handleViewUser(activity.created_by || activity.user_id)}
+                              >
+                                {activity.user_name}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell>
