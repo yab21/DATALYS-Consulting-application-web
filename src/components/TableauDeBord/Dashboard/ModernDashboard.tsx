@@ -114,9 +114,7 @@ const ModernDashboard: React.FC = () => {
   
   // États pour la pagination des tables
   const [partnersPage, setPartnersPage] = useState(1);
-  const [activitiesPage, setActivitiesPage] = useState(1);
   const partnersPerPage = 8;
-  const activitiesPerPage = 10;
   
 
 
@@ -455,10 +453,6 @@ const ModernDashboard: React.FC = () => {
 
   const handleViewPartner = (partnerId: number) => {
     router.push(`/tableaudebord/partenaire/details/${partnerId}`);
-  };
-
-  const handleViewUser = (userId: number) => {
-    router.push(`/tableaudebord/utilisateur/details/${userId}`);
   };
 
   const handleRefresh = async () => {
@@ -1240,97 +1234,6 @@ const ModernDashboard: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* 3. Journal d'Activité - Table Responsive */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-                <div className="mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-md bg-purple-50">
-                      <Activity className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Journal d'Activité</h3>
-                      <p className="text-sm text-gray-600">Activités récentes du système</p>
-                    </div>
-                  </div>
-                </div>
-                  
-                  <Table aria-label="Table des activités" className="min-h-[400px]">
-                    <TableHeader>
-                      <TableColumn>UTILISATEUR</TableColumn>
-                      <TableColumn>DESCRIPTION</TableColumn>
-                      <TableColumn>TYPE</TableColumn>
-                      <TableColumn>DATE</TableColumn>
-                    </TableHeader>
-                    <TableBody emptyContent="Aucune activité trouvée">
-                      {adminData.recentActivity
-                        .slice((activitiesPage - 1) * activitiesPerPage, activitiesPage * activitiesPerPage)
-                        .map((activity: any) => (
-                        <TableRow key={activity.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Avatar
-                                name={activity.user_name}
-                                size="sm"
-                                className="bg-[#4ba9b7] text-white"
-                              />
-                              <span 
-                                className="font-medium text-gray-800 cursor-pointer hover:text-[#4ba9b7] transition-colors"
-                                onClick={() => handleViewUser(activity.created_by || activity.user_id)}
-                              >
-                                {activity.user_name}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <p className="text-sm text-gray-800 line-clamp-2">{activity.description}</p>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              size="sm"
-                              variant="flat"
-                              color="default"
-                            >
-                              {activity.entity_type}
-                            </Chip>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">
-                                {new Date(activity.created_at).toLocaleDateString('fr-FR')}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(activity.created_at).toLocaleTimeString('fr-FR', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  
-                  {/* Pagination des activités */}
-                  {adminData.recentActivity.length > activitiesPerPage && (
-                    <div className="flex justify-center mt-6">
-                      <Pagination
-                        total={Math.ceil(adminData.recentActivity.length / activitiesPerPage)}
-                        page={activitiesPage}
-                        onChange={setActivitiesPage}
-                        showControls
-                        showShadow
-                        color="primary"
-                      />
-                    </div>
-                  )}
-              </div>
-            </motion.div>
 
           </div>
         )}
