@@ -111,7 +111,7 @@ jobs:
           name: complete-app
 
       - name: Deploy with aggressive cleanup
-        timeout-minutes: 20
+        timeout-minutes: 35
         run: |
           echo "🚀 Deploying optimized application with cleanup..."
           
