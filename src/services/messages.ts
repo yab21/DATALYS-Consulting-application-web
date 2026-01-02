@@ -686,6 +686,37 @@ class MessagesService {
     }
   }
 
+  /**
+   * Supprimer un message
+   */
+  async deleteMessage(messageId: number): Promise<{ success: boolean; code: number; message: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/messages/delete`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          id: messageId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la suppression du message');
+      }
+
+      const result = await response.json();
+      return {
+        success: result.code === 200,
+        code: result.code,
+        message: result.message?.message || result.message || 'Message supprimé avec succès'
+      };
+    } catch (error) {
+      console.error('Erreur suppression message:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
 }
 
 // Instance singleton du service

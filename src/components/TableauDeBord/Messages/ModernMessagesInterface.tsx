@@ -16,6 +16,10 @@ import {
   SelectItem,
   Textarea,
   ScrollShadow,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/react";
 import { motion } from "framer-motion";
 import { 
@@ -27,7 +31,9 @@ import {
   CheckCircle,
   Plus,
   ArrowLeft,
-  Bug
+  Bug,
+  MoreVertical,
+  Trash2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import messagesService, { 
@@ -37,6 +43,7 @@ import messagesService, {
 } from "@/services/messages";
 import { UsersService, User } from "@/services/users";
 import { ProjectsService, Project } from "@/services/projects";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 // Types pour les conversations groupées
 interface Conversation {
@@ -55,6 +62,7 @@ interface Conversation {
 
 const ModernMessagesInterface: React.FC = () => {
   const { user, isAdmin } = useAuth();
+  const { showNotification } = useSimpleNotifications();
   
   // États principaux
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -122,6 +130,11 @@ const ModernMessagesInterface: React.FC = () => {
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // États pour suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -526,6 +539,114 @@ const ModernMessagesInterface: React.FC = () => {
     }
   };
 
+  // Fonction pour vérifier si l'utilisateur peut supprimer un message
+  const canDeleteMessage = (message: Message): boolean => {
+    if (!user) {
+      console.log('❌ canDeleteMessage: user is null');
+      return false;
+    }
+    
+    // Vérifier si c'est le propriétaire du message
+    const isOwner = (
+      ((message as any).created_by && String((message as any).created_by) === String(user.id)) ||
+      ((message as any).user_id && String((message as any).user_id) === String(user.id))
+    );
+    
+    // Seuls les admins (role_id = 1) peuvent supprimer n'importe quel message
+    const isAdmin = user.role_id === 1;
+    
+    console.log('🔍 canDeleteMessage Debug:', {
+      messageId: message.id,
+      userId: user.id,
+      userRole: user.role_id,
+      messageCreatedBy: (message as any).created_by,
+      messageUserId: (message as any).user_id,
+      isOwner,
+      isAdmin,
+      canDelete: isOwner || isAdmin
+    });
+    
+    return isOwner || isAdmin;
+  };
+
+  // Fonction pour supprimer un message
+  const handleDeleteMessage = async () => {
+    if (!messageToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      
+      // Appeler l'API de suppression
+      const result = await messagesService.deleteMessage(parseInt(messageToDelete.id));
+      
+      if (result.success) {
+        // Mettre à jour l'état local
+        setConversations(prevConversations => 
+          prevConversations.map(conv => {
+            if (conv.id === selectedConversation?.id) {
+              // Retirer le message supprimé de la conversation
+              const updatedMessages = conv.messages.filter(m => m.id !== messageToDelete.id);
+              
+              if (updatedMessages.length === 0) {
+                // Si plus de messages, la conversation sera supprimée
+                return null;
+              }
+              
+              // Mettre à jour le dernier message
+              const newLastMessage = updatedMessages[updatedMessages.length - 1];
+              
+              return {
+                ...conv,
+                messages: updatedMessages,
+                lastMessage: newLastMessage,
+                updatedAt: newLastMessage.updated_at || newLastMessage.created_at
+              };
+            }
+            return conv;
+          }).filter((conv): conv is Conversation => conv !== null) // Filter avec type guard
+        );
+
+        // Si la conversation sélectionnée n'a plus de messages, la désélectionner
+        if (selectedConversation) {
+          const updatedConv = conversations.find(c => c.id === selectedConversation.id);
+          const hasMessages = updatedConv ? updatedConv.messages.filter(m => m.id !== messageToDelete.id).length > 0 : false;
+          
+          if (!hasMessages) {
+            setSelectedConversation(null);
+            if (isMobile) {
+              setShowConversationDetail(false);
+            }
+          }
+        }
+        
+        // Afficher une notification de succès
+        showNotification(simpleNotificationHelpers.success(
+          "Suppression réussie",
+          "Le message a été supprimé avec succès"
+        ));
+        
+      } else {
+        throw new Error(result.message || 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      showNotification(simpleNotificationHelpers.error(
+        "Erreur de suppression",
+        error instanceof Error ? error.message : "Impossible de supprimer le message"
+      ));
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setMessageToDelete(null);
+    }
+  };
+
+  // Fonction pour ouvrir la modal de confirmation de suppression
+  const openDeleteModal = (message: Message) => {
+    setMessageToDelete(message);
+    setShowDeleteModal(true);
+  };
+
   const getTypeIcon = (type: string, isIncidentChat?: boolean) => {
     if (isIncidentChat) {
       return <Bug className="h-4 w-4 text-orange-500" />;
@@ -765,17 +886,47 @@ const ModernMessagesInterface: React.FC = () => {
                       transition={{ delay: index * 0.1 }}
                       className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'} mb-3`}
                     >
-                      <div className={`max-w-[70%] px-4 py-3 relative shadow-lg ${
+                      <div className={`max-w-[70%] px-4 py-3 relative shadow-lg group ${
                         isMyMessage
                           ? 'text-white rounded-tl-2xl rounded-tr-sm rounded-bl-2xl rounded-br-2xl ml-12'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-tl-sm rounded-tr-2xl rounded-bl-2xl rounded-br-2xl mr-12'
                       }`}
                       style={isMyMessage ? { backgroundColor: '#4ba9b7' } : {}}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-xs font-medium ${isMyMessage ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
-                            {extractUserName(message, isMyMessage)}
-                          </span>
-                          <div className={`w-1.5 h-1.5 rounded-full ${getPriorityColor(message.priority)}`} />
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-medium ${isMyMessage ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
+                              {extractUserName(message, isMyMessage)}
+                            </span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${getPriorityColor(message.priority)}`} />
+                          </div>
+                          
+                          {/* Menu contextuel pour supprimer */}
+                          {canDeleteMessage(message) && (
+                            <div className="opacity-100 transition-opacity">
+                              <Dropdown>
+                                <DropdownTrigger>
+                                  <Button
+                                    isIconOnly
+                                    variant="light"
+                                    size="sm"
+                                    className={`min-w-unit-6 h-unit-6 bg-red-100 border border-red-300 ${isMyMessage ? 'text-red-600 hover:text-red-800 hover:bg-red-200' : 'text-red-600 hover:text-red-800 hover:bg-red-200'}`}
+                                  >
+                                    <MoreVertical className="h-3 w-3" />
+                                  </Button>
+                                </DropdownTrigger>
+                                <DropdownMenu aria-label="Actions du message">
+                                  <DropdownItem
+                                    key="delete"
+                                    color="danger"
+                                    startContent={<Trash2 className="h-4 w-4" />}
+                                    onPress={() => openDeleteModal(message)}
+                                  >
+                                    Supprimer le message
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              </Dropdown>
+                            </div>
+                          )}
                         </div>
                         <p className="text-sm leading-relaxed">
                           {message.description}
@@ -998,6 +1149,83 @@ const ModernMessagesInterface: React.FC = () => {
                   onPress={handleSendNewMessage}
                 >
                   Envoyer Message
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de confirmation de suppression */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setMessageToDelete(null);
+        }}
+        size="md"
+        placement="center"
+        classNames={{
+          wrapper: "z-[100001]",
+          backdrop: "z-[99999]"
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-red-100 p-2">
+                    <Trash2 className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Supprimer le message</h3>
+                    <p className="text-sm text-gray-600 mt-1">Cette action est irréversible</p>
+                  </div>
+                </div>
+              </ModalHeader>
+              
+              <ModalBody>
+                <div className="space-y-4">
+                  <p className="text-gray-700">
+                    Êtes-vous sûr de vouloir supprimer ce message ? Cette action ne peut pas être annulée.
+                  </p>
+                  
+                  {messageToDelete && (
+                    <div className="bg-gray-50 rounded-lg p-4 border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-gray-700">
+                          {extractUserName(messageToDelete)}
+                        </span>
+                        <div className={`w-2 h-2 rounded-full ${getPriorityColor(messageToDelete.priority)}`} />
+                      </div>
+                      <p className="text-sm text-gray-600 line-clamp-3">
+                        {messageToDelete.description}
+                      </p>
+                      <span className="text-xs text-gray-500 mt-2 block">
+                        {formatTime(messageToDelete.created_at)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </ModalBody>
+              
+              <ModalFooter>
+                <Button 
+                  variant="light" 
+                  onPress={onClose}
+                  isDisabled={isDeleting}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  color="danger"
+                  isLoading={isDeleting}
+                  isDisabled={isDeleting}
+                  onPress={handleDeleteMessage}
+                  startContent={!isDeleting ? <Trash2 className="h-4 w-4" /> : undefined}
+                >
+                  {isDeleting ? "Suppression..." : "Supprimer"}
                 </Button>
               </ModalFooter>
             </>
