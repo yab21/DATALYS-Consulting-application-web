@@ -40,6 +40,7 @@ import {
   CheckCircle,
   XCircle,
   ArrowUpRight,
+  Pause,
   User as UserIcon,
   Timer,
   Download,
@@ -923,6 +924,106 @@ const GestionIncidents: React.FC = () => {
     }
   };
 
+  // Fonction pour mettre un incident en attente
+  const handleIncidentPause = async (incident: Incident) => {
+    if (!user) {
+      showNotification({
+        type: "error",
+        title: "Erreur",
+        message: "Utilisateur non connecté",
+      });
+      return;
+    }
+
+    try {
+      console.log("⏸️ Mise en attente de l'incident:", incident.id);
+
+      // Préparer les données de mise à jour
+      const updateData: UpdateIncidentData = {
+        id: parseInt(incident.id),
+        status: "en_attente",
+        resolution_notes: `${incident.resolution_notes || ""}\n\n[MISE EN ATTENTE - ${new Date().toLocaleString()}] Incident mis en attente par ${user.name}`,
+      };
+
+      const result = await IncidentsService.updateIncident(updateData, user.id, user.email);
+
+      // Utiliser le message de l'API
+      const successMessage = extractBackendMessage(result) || result?.message || "Incident mis en attente avec succès";
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
+
+      // Recharger la liste des incidents
+      await refreshIncidents();
+    } catch (error: any) {
+      console.error("❌ Erreur lors de la mise en attente:", error);
+      const errorMessage = extractBackendMessage(error);
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
+    }
+  };
+
+  // Fonction pour clôturer un incident
+  const handleIncidentClose = async (incident: Incident) => {
+    if (!user) {
+      showNotification({
+        type: "error",
+        title: "Erreur",
+        message: "Utilisateur non connecté",
+      });
+      return;
+    }
+
+    try {
+      console.log("✅ Clôture de l'incident:", incident.id);
+
+      // Préparer les données de mise à jour
+      const updateData: UpdateIncidentData = {
+        id: parseInt(incident.id),
+        status: "resolu",
+        resolution_notes: `${incident.resolution_notes || ""}\n\n[CLÔTURE - ${new Date().toLocaleString()}] Incident résolu et clôturé par ${user.name}`,
+      };
+
+      const result = await IncidentsService.updateIncident(updateData, user.id, user.email);
+
+      // Utiliser le message de l'API
+      const successMessage = extractBackendMessage(result) || result?.message || "Incident clôturé avec succès";
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
+
+      // Recharger la liste des incidents
+      await refreshIncidents();
+    } catch (error: any) {
+      console.error("❌ Erreur lors de la clôture:", error);
+      const errorMessage = extractBackendMessage(error);
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
+    }
+  };
+
+  // Fonction utilitaire pour recharger les incidents
+  const refreshIncidents = async () => {
+    const criteria: IncidentCriteria = {
+      index: currentPage,
+      size: pageSize,
+      data: {
+        is_active: true,
+        type: "incident",
+        ...(isPartner() && user?.id && { created_by: user.id }),
+      },
+    };
+
+    const refreshResponse = await IncidentsService.getIncidentsByCriteria(criteria);
+    let apiIncidents: ApiIncident[] = [];
+
+    if (refreshResponse.code === 200 && refreshResponse.items) {
+      apiIncidents = refreshResponse.items;
+    } else if (Array.isArray(refreshResponse)) {
+      apiIncidents = refreshResponse;
+    }
+
+    const convertedIncidents = apiIncidents.map((incident) =>
+      convertApiIncidentToLocal(incident, projects, users),
+    );
+    setIncidents(convertedIncidents);
+    setFilteredIncidents(convertedIncidents);
+  };
+
   // Fonction pour créer un incident
   const handleCreateIncident = async () => {
     if (isCreating) return; // Prévenir les double-clics
@@ -1751,6 +1852,30 @@ const GestionIncidents: React.FC = () => {
                                 ? `Chat avec client (${incident.partnerNom})`
                                 : "Chat avec support"}
                             </DropdownItem>
+                            
+                            {/* Actions conditionnelles selon le statut */}
+                            {(incident.statut === "nouveau" || incident.statut === "en_cours") ? (
+                              <DropdownItem
+                                key="pause"
+                                startContent={<Pause className="h-4 w-4" />}
+                                onPress={() => handleIncidentPause(incident)}
+                                className="text-warning"
+                              >
+                                Mettre en attente
+                              </DropdownItem>
+                            ) : null}
+                            
+                            {incident.statut !== "resolu" ? (
+                              <DropdownItem
+                                key="close"
+                                startContent={<CheckCircle className="h-4 w-4" />}
+                                onPress={() => handleIncidentClose(incident)}
+                                className="text-success"
+                              >
+                                Clôturer l'incident
+                              </DropdownItem>
+                            ) : null}
+                            
                             <DropdownItem
                               key="edit"
                               startContent={<Edit className="h-4 w-4" />}
@@ -1973,6 +2098,29 @@ const GestionIncidents: React.FC = () => {
                               >
                                 Chat avec support
                               </DropdownItem>
+                              
+                              {/* Actions conditionnelles selon le statut */}
+                              {(incident.statut === "nouveau" || incident.statut === "en_cours") ? (
+                                <DropdownItem
+                                  key="pause"
+                                  startContent={<Pause className="h-4 w-4" />}
+                                  onPress={() => handleIncidentPause(incident)}
+                                  className="text-warning"
+                                >
+                                  Mettre en attente
+                                </DropdownItem>
+                              ) : null}
+                              
+                              {(incident.statut as string) !== "resolu" ? (
+                                <DropdownItem
+                                  key="close"
+                                  startContent={<CheckCircle className="h-4 w-4" />}
+                                  onPress={() => handleIncidentClose(incident)}
+                                  className="text-success"
+                                >
+                                  Clôturer l'incident
+                                </DropdownItem>
+                              ) : null}
                             </DropdownMenu>
                           </Dropdown>
                         )}
