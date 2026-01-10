@@ -14,7 +14,8 @@ import {
   ArrowLeft,
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import { AuthService } from "@/services/auth";
 import { MFAVerificationRequest } from "@/lib/api-config";
@@ -38,6 +39,8 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 
@@ -46,6 +49,17 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
     const code = codeDigits.join("");
     setMfaCode(code);
   }, [codeDigits]);
+
+  // Gérer le cooldown de renvoi
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,6 +181,49 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
       inputRefs.current[index - 1]?.focus();
     } else if (e.key === "ArrowRight" && index < 5) {
       inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || isResending) return;
+    
+    setIsResending(true);
+    setError(""); // Effacer les erreurs précédentes
+
+    try {
+      const result = await AuthService.resendMFACode(identifier);
+      
+      if (result.status === "success") {
+        showNotification(simpleNotificationHelpers.success(
+          "Code renvoyé !",
+          result.message || "Un nouveau code a été envoyé à votre email"
+        ));
+        
+        // Démarrer le cooldown de 60 secondes
+        setResendCooldown(60);
+        
+        // Effacer les champs de saisie pour saisir le nouveau code
+        setCodeDigits(["", "", "", "", "", ""]);
+        if (inputRefs.current[0]) {
+          inputRefs.current[0].focus();
+        }
+      } else {
+        setError(result.message || "Erreur lors du renvoi du code");
+        showNotification(simpleNotificationHelpers.error(
+          "Erreur de renvoi",
+          result.message || "Impossible de renvoyer le code. Veuillez réessayer."
+        ));
+      }
+    } catch (error) {
+      console.error("Erreur renvoi MFA:", error);
+      const errorMessage = "Erreur de connexion lors du renvoi du code";
+      setError(errorMessage);
+      showNotification(simpleNotificationHelpers.error(
+        "Erreur de connexion",
+        errorMessage
+      ));
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -492,7 +549,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={onBack}
+                    onPress={onBack}
                     isDisabled={isLoading}
                     className="w-full py-4 text-gray-600 hover:text-gray-800 transition-colors duration-300"
                     size="lg"
@@ -505,7 +562,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
 
               {/* Footer */}
               <motion.div
-                className="mt-8 border-t border-gray-100 pt-6 text-center"
+                className="mt-8 border-t border-gray-100 pt-6 text-center space-y-4"
                 variants={itemVariants}
                 initial="hidden"
                 animate="visible"
@@ -514,6 +571,47 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                 <p className="text-sm text-gray-500">
                   Vérifiez votre boîte email pour le code de vérification
                 </p>
+                
+                {/* Bouton de renvoi */}
+                <motion.div
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: 0.9 }}
+                >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onPress={handleResendCode}
+                    isLoading={isResending}
+                    isDisabled={isResending || resendCooldown > 0 || isLoading}
+                    className="text-primary hover:text-primary-600 transition-colors duration-300 text-sm"
+                  >
+                    {isResending ? (
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>Envoi en cours...</span>
+                      </div>
+                    ) : resendCooldown > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Renvoyer dans {resendCooldown}s</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        <span>Renvoyer le code</span>
+                      </div>
+                    )}
+                  </Button>
+                  
+                  {resendCooldown > 0 && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      Vous pourrez demander un nouveau code dans {resendCooldown} seconde{resendCooldown > 1 ? 's' : ''}
+                    </p>
+                  )}
+                </motion.div>
               </motion.div>
             </div>
           </motion.div>

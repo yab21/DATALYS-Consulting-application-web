@@ -13,6 +13,7 @@ export const API_CONFIG = {
       RESET_PASSWORD: '/auth/reset-password',
       CHANGE_TEMP_PASSWORD: '/auth/change-temp-password',
       VERIFY_MFA: '/auth/verify-mfa',
+      RESEND_MFA_CODE: '/auth/resend-mfa-code',
     },
     USER: {
       PROFILE: '/user/profile',
@@ -138,4 +139,8 @@ export interface MFAVerificationResponse {
   message: string;
   remaining_attempts?: number;
   data?: LoginResponse; // Données complètes après vérification réussie
+}
+
+export interface ResendMFARequest {
+  identifier: string;
 }

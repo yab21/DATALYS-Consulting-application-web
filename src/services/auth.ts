@@ -145,6 +145,45 @@ export class AuthService {
   }
 
   /**
+   * Renvoi du code MFA
+   */
+  static async resendMFACode(
+    identifier: string
+  ): Promise<ApiResponse> {
+    try {
+      const response = await fetch(
+        buildApiUrl(API_CONFIG.ENDPOINTS.AUTH.RESEND_MFA_CODE),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+            "Cache-Control": "no-cache",
+          },
+          body: JSON.stringify({ identifier }),
+        }
+      );
+
+      const result = await response.json();
+
+      return {
+        status: result.status || (response.ok ? "success" : "error"),
+        message: result.message || (response.ok 
+          ? "Un nouveau code de vérification a été envoyé à votre adresse email"
+          : "Erreur lors du renvoi du code"
+        ),
+      };
+    } catch (error) {
+      console.error("Erreur lors du renvoi du code MFA:", error);
+      const message = extractBackendMessage(error);
+      return {
+        status: "error",
+        message: message || "Erreur de connexion lors du renvoi du code",
+      };
+    }
+  }
+
+  /**
    * Changement de mot de passe temporaire
    */
   static async changeTempPassword(data: {
