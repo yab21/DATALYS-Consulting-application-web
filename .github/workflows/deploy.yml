@@ -211,13 +211,18 @@ jobs:
             fi
             mv ${{ env.DEPLOY_PATH }}_new ${{ env.DEPLOY_PATH }}
             
-            echo '🚀 Starting PM2...'
+            echo 'Creating required symbolic links...'
             cd ${{ env.DEPLOY_PATH }}
+            mkdir -p shared/logs
+            ln -sf ${{ env.DEPLOY_PATH }}/shared/.env .env
+            ln -sf ${{ env.DEPLOY_PATH }}/shared/logs logs
             
-            # Démarrage PM2 avec timeout et vérification (version qui fonctionnait)
-            timeout 60s pm2 start ecosystem.config.js --env production || {
-              echo 'PM2 start timeout, trying alternative method...'
-              timeout 30s pm2 start ecosystem.config.js --no-daemon --env production || {
+            echo '🚀 Starting PM2...'
+            
+            # Démarrage PM2 avec méthode alternative plus fiable
+            timeout 60s pm2 start npm --name 'datalys-app' -- start || {
+              echo 'PM2 start timeout, trying with ecosystem config...'
+              timeout 30s pm2 start ecosystem.config.js --env production || {
                 echo 'PM2 start failed, checking logs...'
                 pm2 logs --lines 10 2>/dev/null || echo 'No PM2 logs available'
                 exit 1
