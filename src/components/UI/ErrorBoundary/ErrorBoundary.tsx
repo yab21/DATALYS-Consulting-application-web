@@ -76,7 +76,7 @@ class ErrorBoundary extends Component<Props, State> {
     console.log('Sending error to monitoring service:', errorData);
     
     // Simuler l'envoi vers un service externe
-    fetch('/api/errors', {
+    fetch('/errors', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

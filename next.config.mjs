@@ -126,7 +126,7 @@ const nextConfig = {
     return process.env.NODE_ENV === 'development' ? [
       {
         source: '/api/:path*',
-        destination: 'https://applicationweb.datalysconsulting.com/api/:path*',
+        destination: 'https://applicationweb.datalysconsulting.com/:path*',
       },
       {
         source: '/health',

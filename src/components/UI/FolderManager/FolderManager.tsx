@@ -378,7 +378,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       formData.append('is_public', singleFileIsPublic.toString());
       formData.append('subfolder', singleFileSubfolder);
       
-      const response = await fetch('/api/files/upload', {
+      const response = await fetch('/files/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${SecureStorage.getItem('authToken')}`

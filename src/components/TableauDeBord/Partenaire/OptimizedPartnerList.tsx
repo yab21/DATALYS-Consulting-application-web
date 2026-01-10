@@ -41,7 +41,7 @@ const OptimizedPartnerList: React.FC = () => {
     isStale,
     refetch 
   } = useProjectCache<Partner[]>("partners-list", async () => {
-    const response = await fetch("/api/partners");
+    const response = await fetch("/partners");
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des partenaires");
     }

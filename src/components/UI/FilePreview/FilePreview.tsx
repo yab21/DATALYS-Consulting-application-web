@@ -83,7 +83,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ isOpen, onClose, file, baseUr
         throw new Error('Token d\'authentification manquant');
       }
 
-      // Utiliser l'API /api/files/serve/files/ pour récupérer le fichier
+      // Utiliser l'API /files/serve/files/ pour récupérer le fichier
       const fileUrl = `${baseUrl}/files/serve/files/${file.file_path}`;
       console.log('📡 URL de récupération:', fileUrl);
 

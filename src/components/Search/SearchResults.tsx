@@ -173,7 +173,7 @@ function SearchResultItem({
           onClick={(e) => {
             e.stopPropagation();
             // Logique de téléchargement
-            window.open(`/api/files/download/${result.id}`, '_blank');
+            window.open(`/files/download/${result.id}`, '_blank');
           }}
         >
           Télécharger

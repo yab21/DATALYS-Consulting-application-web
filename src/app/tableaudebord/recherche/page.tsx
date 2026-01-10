@@ -87,7 +87,7 @@ export default function RecherchePage() {
       case 'file':
         // Ouvrir le fichier ou aller à sa page de détails
         if (result.file_path) {
-          window.open(`/api/files/serve/${result.file_path}`, '_blank');
+          window.open(`/files/serve/${result.file_path}`, '_blank');
         }
         break;
       case 'folder':

@@ -154,25 +154,25 @@ const TablePartner: React.FC = () => {
     // Nouveau format d'upload via /files/serve/ avec backend HTTPS direct
     if (cleanUrl.includes('/files/serve/')) {
       // Si c'est déjà une URL complète HTTPS, la garder telle quelle
-      if (cleanUrl.startsWith('https://applicationweb.datalysconsulting.com/api/files/serve/')) {
+      if (cleanUrl.startsWith('https://applicationweb.datalysconsulting.com/files/serve/')) {
         return cleanUrl;
       }
       
-      // Si c'est un chemin /api/files/serve/, le convertir en URL complète HTTPS
-      if (cleanUrl.startsWith('/api/files/serve/')) {
+      // Si c'est un chemin /files/serve/, le convertir en URL complète HTTPS
+      if (cleanUrl.startsWith('/files/serve/')) {
         return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
       }
       
-      // Si c'est un chemin /files/serve/, ajouter le domaine et prefix /api
-      if (cleanUrl.startsWith('/files/serve/')) {
-        return `https://applicationweb.datalysconsulting.com/api${cleanUrl}`;
+      // Si c'est un chemin files/serve/ relatif, ajouter le domaine
+      if (cleanUrl.startsWith('files/serve/')) {
+        return `https://applicationweb.datalysconsulting.com/${cleanUrl}`;
       }
       
       // Si c'est une URL complète avec /files/serve/, la convertir vers HTTPS
       if (cleanUrl.includes('/files/serve/')) {
         const pathMatch = cleanUrl.match(/\/files\/serve\/(.+)$/);
         if (pathMatch) {
-          return `https://applicationweb.datalysconsulting.com/api/files/serve/${pathMatch[1]}`;
+          return `https://applicationweb.datalysconsulting.com/files/serve/${pathMatch[1]}`;
         }
       }
     }
@@ -197,8 +197,8 @@ const TablePartner: React.FC = () => {
       return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
     }
     
-    // URLs relatives /api/ - convertir vers URL complète HTTPS
-    if (cleanUrl.startsWith('/api/')) {
+    // URLs relatives backend - convertir vers URL complète HTTPS
+    if (cleanUrl.startsWith('/') && !cleanUrl.startsWith('/uploads/') && !cleanUrl.startsWith('/files/serve/')) {
       return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
     }
     

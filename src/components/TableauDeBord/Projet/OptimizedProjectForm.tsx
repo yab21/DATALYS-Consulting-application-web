@@ -66,7 +66,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
     try {
       setLoadingPartners(true);
       // Pour récupérer les partenaires avec leurs IDs, on utilise l'API complète
-      const response = await fetch('/api/partners/getByCriteria', {
+      const response = await fetch('/partners/getByCriteria', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -94,10 +94,10 @@ class ApiTester {
     results.push(await this.makeRequest('/health', 'GET', null, false));
     
     // Test sessions health
-    results.push(await this.makeRequest('/api/sessions/health', 'GET', null, false));
+    results.push(await this.makeRequest('/sessions/health', 'GET', null, false));
     
     // Test sessions stats
-    results.push(await this.makeRequest('/api/sessions/stats', 'GET', null, false));
+    results.push(await this.makeRequest('/sessions/stats', 'GET', null, false));
 
     return this.createTestSuite('Monitoring APIs', results);
   }
