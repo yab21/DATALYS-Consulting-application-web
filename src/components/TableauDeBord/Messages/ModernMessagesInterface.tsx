@@ -45,16 +45,27 @@ import { UsersService, User } from "@/services/users";
 import { ProjectsService, Project } from "@/services/projects";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
-// Types pour les conversations groupées
+// Types pour les conversations groupées par tickets
 interface Conversation {
-  id: string;
-  title: string;
+  id: string; // incident_number (ex: "INC-2025-00064")
+  title: string; // incident_number
+  subtitle: string; // titre original nettoyé
   lastMessage: Message;
   unreadCount: number;
   participants: string[];
   messages: Message[];
   updatedAt: string;
-  // Support pour les incidents
+  // Informations du ticket
+  incident_number: string;
+  priority: string;
+  priority_label: string;
+  status: string;
+  status_color: string;
+  sla_prise_en_charge_status: string;
+  sla_resolution_status: string;
+  temps_restant_prise_en_charge?: any;
+  temps_restant_resolution?: any;
+  // Support pour les incidents (conservé pour compatibilité)
   incident_id?: string;
   expert_id?: string;
   isIncidentChat?: boolean;
@@ -322,28 +333,40 @@ const ModernMessagesInterface: React.FC = () => {
       const conversationsMap = new Map<string, Conversation>();
       
       messages.forEach((message: any) => {
-        // Grouper par titre de conversation (parent_id pour les réponses, sinon par title)
-        const conversationKey = message.parent_id || message.id;
+        // Grouper par numéro de ticket (incident_number)
+        const conversationKey = message.incident_number;
+        
         // Nettoyer le titre pour éviter les "Réponse: " multiples
-        let conversationTitle = message.title || 'Sans titre';
-        // Remplacer les multiples "Réponse: " par un seul
-        conversationTitle = conversationTitle.replace(/^(Réponse:\s*)+/gi, 'Réponse: ').trim();
+        let originalTitle = message.title || 'Sans titre';
+        originalTitle = originalTitle.replace(/^(Réponse:\s*)+/gi, '').trim();
+        
         // Utiliser la fonction utilitaire pour extraire le nom
         const senderName = extractUserName(message);
         
         if (!conversationsMap.has(conversationKey)) {
           conversationsMap.set(conversationKey, {
             id: conversationKey,
-            title: conversationTitle,
+            title: message.incident_number, // Titre = numéro du ticket
+            subtitle: originalTitle, // Sous-titre = titre original nettoyé
             lastMessage: message,
             unreadCount: 0,
             participants: [senderName],
             messages: [],
             updatedAt: message.updated_at || new Date().toISOString(),
-            // Support incidents
+            // Informations du ticket
+            incident_number: message.incident_number,
+            priority: message.priority,
+            priority_label: message.priority_label,
+            status: message.status,
+            status_color: message.status_color,
+            sla_prise_en_charge_status: message.sla_prise_en_charge_status,
+            sla_resolution_status: message.sla_resolution_status,
+            temps_restant_prise_en_charge: message.temps_restant_prise_en_charge,
+            temps_restant_resolution: message.temps_restant_resolution,
+            // Support incidents (conservé pour compatibilité)
             incident_id: message.incident_id,
             expert_id: message.expert_id,
-            isIncidentChat: !!message.incident_id
+            isIncidentChat: true // Tous les messages sont maintenant liés à des incidents
           });
         }
         
@@ -684,12 +707,21 @@ const ModernMessagesInterface: React.FC = () => {
   };
 
   const filteredConversations = conversations.filter(conv => {
+    if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
+    const incidentNumberMatch = conv.incident_number?.toLowerCase().includes(searchLower) || false;
     const titleMatch = conv.title?.toLowerCase().includes(searchLower) || false;
+    const subtitleMatch = conv.subtitle?.toLowerCase().includes(searchLower) || false;
     const participantMatch = conv.participants?.some(p => 
       p?.toLowerCase().includes(searchLower)
     ) || false;
-    return titleMatch || participantMatch;
+    const messageMatch = conv.messages?.some(m => 
+      m.description?.toLowerCase().includes(searchLower)
+    ) || false;
+    const statusMatch = conv.status?.toLowerCase().includes(searchLower) || false;
+    const priorityMatch = conv.priority?.toLowerCase().includes(searchLower) || false;
+    
+    return incidentNumberMatch || titleMatch || subtitleMatch || participantMatch || messageMatch || statusMatch || priorityMatch;
   });
 
   if (loading) {
@@ -750,8 +782,8 @@ const ModernMessagesInterface: React.FC = () => {
               {/* Recherche */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <Input
-                  placeholder="Rechercher une conversation..."
-                 
+                  placeholder="Rechercher par numéro de ticket, statut, priorité..."
+                  value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   startContent={<Search className="h-4 w-4 text-gray-400" />}
                   variant="bordered"
@@ -785,22 +817,45 @@ const ModernMessagesInterface: React.FC = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                                {conversation.title}
-                              </h3>
-                              <span className="text-xs text-gray-500">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <h3 className="font-semibold text-blue-600 dark:text-blue-400 text-sm">
+                                  🎫 {conversation.title}
+                                </h3>
+                                <Chip 
+                                  size="sm" 
+                                  variant="flat"
+                                  color={conversation.priority === 'P0' ? 'danger' : conversation.priority === 'P1' ? 'warning' : 'primary'}
+                                  className="text-xs"
+                                >
+                                  {conversation.priority}
+                                </Chip>
+                              </div>
+                              <span className="text-xs text-gray-500 flex-shrink-0">
                                 {formatTime(conversation.updatedAt)}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate mb-1">
+                              {conversation.subtitle}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate mb-2">
                               {conversation.lastMessage.description}
                             </p>
-                            <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${getPriorityColor(conversation.lastMessage.priority)}`} />
-                                <span className="text-xs text-gray-500">
-                                  {conversation.participants.join(', ')}
+                                <Chip 
+                                  size="sm" 
+                                  variant="dot"
+                                  color={conversation.status === 'ouvert' ? 'warning' : conversation.status === 'resolu' ? 'success' : 'default'}
+                                  className="text-xs"
+                                >
+                                  {conversation.status}
+                                </Chip>
+                                <span className="text-xs text-gray-400">
+                                  💬 {conversation.messages.length} msg
                                 </span>
+                                {conversation.sla_resolution_status === 'depasse' && (
+                                  <span className="text-xs text-red-500">⏰ SLA dépassé</span>
+                                )}
                               </div>
                               {conversation.unreadCount > 0 && (
                                 <Chip size="sm" color="danger" variant="solid">
@@ -838,20 +893,34 @@ const ModernMessagesInterface: React.FC = () => {
                         </Button>
                       )}
                       <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="font-semibold text-gray-900 dark:text-white">
-                            {selectedConversation.title}
-                          </h2>
-                          {selectedConversation.isIncidentChat && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h2 className="font-bold text-blue-600 dark:text-blue-400 text-lg">
+                              🎫 {selectedConversation.title}
+                            </h2>
                             <Chip 
                               size="sm" 
-                              color="warning" 
                               variant="flat"
-                              startContent={<Bug className="h-3 w-3" />}
+                              color={selectedConversation.priority === 'P0' ? 'danger' : selectedConversation.priority === 'P1' ? 'warning' : 'primary'}
                             >
-                              Incident #{selectedConversation.incident_id}
+                              {selectedConversation.priority}
                             </Chip>
-                          )}
+                            <Chip 
+                              size="sm" 
+                              variant="dot"
+                              color={selectedConversation.status === 'ouvert' ? 'warning' : selectedConversation.status === 'resolu' ? 'success' : 'default'}
+                            >
+                              {selectedConversation.status}
+                            </Chip>
+                            {selectedConversation.sla_resolution_status === 'depasse' && (
+                              <Chip size="sm" color="danger" variant="flat">
+                                ⏰ SLA dépassé
+                              </Chip>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {selectedConversation.subtitle}
+                          </p>
                         </div>
                         <p className="text-sm text-gray-500">
                           {selectedConversation.participants.join(', ')}

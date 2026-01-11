@@ -35,7 +35,6 @@ import { UsersService, type User } from "@/services/users";
 import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { extractBackendMessage } from "@/lib/error-handler";
-import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import IncidentFiles from "./Voir/IncidentFiles";
 
@@ -313,21 +312,14 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
     setActiveTab(key);
   };
 
-  // Loading state (identical to VoirIncident)
+  // Loading state
   if (loading) {
-    return (
-      <>
-        <Breadcrumb pageName="Chargement de l'incident..." />
-        <LoadingState type="skeleton" skeletonVariant="profile" />
-      </>
-    );
+    return <LoadingState type="skeleton" skeletonVariant="profile" />;
   }
 
-  // Error state (identical to VoirIncident)
+  // Error state
   if (error) {
     return (
-      <>
-        <Breadcrumb pageName="Erreur" />
         <div className="text-center py-12">
           <div className="text-red-500 text-xl mb-2">⚠️</div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur</h3>
@@ -348,15 +340,12 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
             </Button>
           </div>
         </div>
-      </>
     );
   }
 
-  // Not found state (identical to VoirIncident)
+  // Not found state
   if (!incident) {
     return (
-      <>
-        <Breadcrumb pageName="Incident introuvable" />
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-gray-600">Incident introuvable</h3>
           <p className="text-gray-400 mt-2">L'incident demandé n'existe pas ou vous n'y avez pas accès.</p>
@@ -369,13 +358,11 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
             Retour
           </Button>
         </div>
-      </>
     );
   }
 
   return (
     <>
-      <Breadcrumb pageName={`Gestion: ${incident.incident_number}`} />
       
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Bouton de retour (identique à VoirIncident) */}
@@ -648,16 +635,22 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
                           <Select
                             label="Sélectionner un utilisateur"
                             placeholder="Choisir un utilisateur"
-                            selectedKeys={selectedUserId ? new Set([selectedUserId]) : new Set([])}
+                            selectedKeys={selectedUserId ? new Set([selectedUserId]) : new Set()}
                             onSelectionChange={(keys) => {
-                              const selectedKey = Array.from(keys)[0] as string;
+                              const keysArray = Array.from(keys);
+                              const selectedKey = keysArray[0] as string;
+                              console.log('Selected keys:', keysArray, 'Selected key:', selectedKey);
                               setSelectedUserId(selectedKey || "");
                             }}
                             isLoading={loadingUsers}
                             size="lg"
+                            selectionMode="single"
                           >
                             {users.map((user) => (
-                              <SelectItem key={user.id.toString()}>
+                              <SelectItem 
+                                key={user.id.toString()} 
+                                textValue={`${user.name} (${user.email})`}
+                              >
                                 {user.name} ({user.email})
                               </SelectItem>
                             ))}
@@ -736,7 +729,10 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
                             size="lg"
                           >
                             {priorityOptions.map((option) => (
-                              <SelectItem key={option.key}>
+                              <SelectItem 
+                                key={option.key} 
+                                textValue={option.label}
+                              >
                                 {option.label}
                               </SelectItem>
                             ))}

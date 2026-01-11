@@ -691,6 +691,9 @@ class MessagesService {
    */
   async deleteMessage(messageId: number): Promise<{ success: boolean; code: number; message: string }> {
     try {
+      console.log('🗑️ Tentative de suppression du message ID:', messageId);
+      console.log('🔍 Headers:', this.getAuthHeaders());
+      
       const response = await fetch(`${this.baseUrl}/messages/delete`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
@@ -699,19 +702,30 @@ class MessagesService {
         })
       });
 
+      console.log('📤 Réponse API suppression:', response.status, response.statusText);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la suppression du message');
+        const errorText = await response.text();
+        console.error('❌ Erreur API:', errorText);
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.message || `Erreur ${response.status}: ${errorText}`);
+        } catch {
+          throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
+        }
       }
 
       const result = await response.json();
+      console.log('✅ Résultat suppression:', result);
+      
       return {
         success: result.code === 200,
         code: result.code,
         message: result.message?.message || result.message || 'Message supprimé avec succès'
       };
     } catch (error) {
-      console.error('Erreur suppression message:', error);
+      console.error('💥 Erreur suppression message:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
