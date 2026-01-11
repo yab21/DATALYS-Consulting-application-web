@@ -114,13 +114,11 @@ class PartnersService {
       headers['Content-Type'] = 'application/json';
     }
     
-    // Synchroniser le token avec le localStorage si nécessaire
-    if (!this.token && typeof window !== 'undefined') {
-      this.token = SecureStorage.getItem('authToken');
-    }
+    // Toujours récupérer le token le plus récent depuis le storage
+    const currentToken = typeof window !== 'undefined' ? SecureStorage.getItem('authToken') : this.token;
     
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    if (currentToken) {
+      headers['Authorization'] = `Bearer ${currentToken}`;
     }
     
     return headers;

@@ -45,6 +45,7 @@ import {
   Timer,
   Download,
   MessageCircle,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
@@ -65,6 +66,7 @@ import { UsersService, type User as UserType } from "@/services/users";
 import IncidentFilesModal from "./IncidentFilesModal";
 import { partnersService, type Partner } from "@/services/partners";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // Types locaux pour l'interface
 interface Incident {
@@ -177,6 +179,7 @@ interface IncidentStats {
 const GestionIncidents: React.FC = () => {
   const { hasPermission, user, isAdmin, isPartner } = useAuth();
   const { showNotification } = useSimpleNotifications();
+  const router = useRouter();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [filteredIncidents, setFilteredIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -804,6 +807,14 @@ const GestionIncidents: React.FC = () => {
       case "view":
         // Ouvrir le modal de fichiers
         setShowFilesModal(true);
+        break;
+      case "detail":
+        // Naviguer vers la page de détails de l'incident
+        router.push(`/tableaudebord/incidents/${incident.id}`);
+        break;
+      case "manage":
+        // Naviguer vers la page de gestion de l'incident
+        router.push(`/tableaudebord/incidents/${incident.id}/gerer`);
         break;
       case "edit":
         // Pré-remplir le formulaire d'édition
@@ -1827,6 +1838,24 @@ const GestionIncidents: React.FC = () => {
                               Voir fichiers
                             </DropdownItem>
                             <DropdownItem
+                              key="detail"
+                              startContent={<Eye className="h-4 w-4" />}
+                              onPress={() =>
+                                handleIncidentAction(incident, "detail")
+                              }
+                            >
+                              Voir détails
+                            </DropdownItem>
+                            <DropdownItem
+                              key="manage"
+                              startContent={<Settings className="h-4 w-4" />}
+                              onPress={() =>
+                                handleIncidentAction(incident, "manage")
+                              }
+                            >
+                              Gérer
+                            </DropdownItem>
+                            <DropdownItem
                               key="chat"
                               startContent={
                                 <MessageCircle className="h-4 w-4" />
@@ -2034,6 +2063,24 @@ const GestionIncidents: React.FC = () => {
                                 Voir fichiers
                               </DropdownItem>
                               <DropdownItem
+                                key="detail"
+                                startContent={<Eye className="h-4 w-4" />}
+                                onPress={() =>
+                                  handleIncidentAction(incident, "detail")
+                                }
+                              >
+                                Voir détails
+                              </DropdownItem>
+                              <DropdownItem
+                                key="manage"
+                                startContent={<Settings className="h-4 w-4" />}
+                                onPress={() =>
+                                  handleIncidentAction(incident, "manage")
+                                }
+                              >
+                                Gérer
+                              </DropdownItem>
+                              <DropdownItem
                                 key="chat"
                                 startContent={
                                   <MessageCircle className="h-4 w-4" />
@@ -2079,6 +2126,24 @@ const GestionIncidents: React.FC = () => {
                                 }
                               >
                                 Voir fichiers
+                              </DropdownItem>
+                              <DropdownItem
+                                key="detail"
+                                startContent={<Eye className="h-4 w-4" />}
+                                onPress={() =>
+                                  handleIncidentAction(incident, "detail")
+                                }
+                              >
+                                Voir détails
+                              </DropdownItem>
+                              <DropdownItem
+                                key="manage"
+                                startContent={<Settings className="h-4 w-4" />}
+                                onPress={() =>
+                                  handleIncidentAction(incident, "manage")
+                                }
+                              >
+                                Gérer
                               </DropdownItem>
                               <DropdownItem
                                 key="chat"

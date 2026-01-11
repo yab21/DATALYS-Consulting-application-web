@@ -103,9 +103,11 @@ export class ProjectsService {
    * Obtenir les headers avec authentification
    */
   private getAuthHeaders(): HeadersInit {
+    // Toujours récupérer le token le plus récent depuis le storage
+    const currentToken = typeof window !== "undefined" ? SecureStorage.getItem("authToken") : this.token;
     return {
       ...getDefaultHeaders(),
-      ...(this.token && { Authorization: `Bearer ${this.token}` }),
+      ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
     };
   }
 
