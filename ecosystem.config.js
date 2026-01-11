@@ -8,11 +8,11 @@ module.exports = {
       instances: 1,
       env: {
         NODE_ENV: "production",
-        PORT: 3000
+        PORT: 3000,
       },
       env_production: {
         NODE_ENV: "production",
-        PORT: 3000
+        PORT: 3000,
       },
       watch: false,
       max_memory_restart: "512M",
@@ -25,7 +25,7 @@ module.exports = {
       max_restarts: 15,
       autorestart: true,
       node_args: "--max_old_space_size=512",
-      env_file: ".env"
-    }
-  ]
+      env_file: ".env",
+    },
+  ],
 };

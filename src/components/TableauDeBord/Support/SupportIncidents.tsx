@@ -51,7 +51,8 @@ import {
   Download,
   Plus,
   RefreshCw,
-  Trash2
+  Trash2,
+  Settings
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -804,6 +805,10 @@ const SupportIncidents: React.FC = () => {
     router.push(`/tableaudebord/support/${ticketId}`);
   };
 
+  const handleManageTicket = (ticketId: string) => {
+    router.push(`/tableaudebord/support/${ticketId}/gerer`);
+  };
+
   const openViewModal = (ticket: SupportTicket) => {
     setSelectedTicket(ticket);
     setShowDetailModal(true);
@@ -1188,6 +1193,13 @@ const SupportIncidents: React.FC = () => {
                             onPress={() => handleViewTicket(ticket.id)}
                           >
                             Voir détails
+                          </DropdownItem>
+                          <DropdownItem
+                            key="manage"
+                            startContent={<Settings size={14} />}
+                            onPress={() => handleManageTicket(ticket.id)}
+                          >
+                            Gérer
                           </DropdownItem>
                           <DropdownItem
                             key="edit"
