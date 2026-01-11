@@ -97,7 +97,7 @@ class IncidentFilesService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
   }
 
   private getAuthHeaders(): HeadersInit {

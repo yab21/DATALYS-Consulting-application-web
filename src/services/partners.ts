@@ -1,6 +1,7 @@
 // Service API pour la gestion des partenaires
 import { SecureStorage } from '@/lib/secure-storage';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { API_CONFIG } from '@/lib/api-config';
 export interface Partner {
   id: number;
   name: string;
@@ -80,7 +81,7 @@ export interface PartnerLoginResponse {
 }
 
 class PartnersService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+  private baseUrl = API_CONFIG.BASE_URL;
   private token: string | null = null;
 
   constructor() {
