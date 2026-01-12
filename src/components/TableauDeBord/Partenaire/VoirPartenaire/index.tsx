@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardBody, CardHeader, Tab, Tabs, Spinner, Chip, Button } from '@heroui/react';
-import { ArrowLeft, Building, Mail, Phone, MapPin, Calendar, User, FileText, Folder as FolderIcon, Eye } from 'lucide-react';
+import { ArrowLeft, Building, Mail, Phone, MapPin, Calendar, User, FileText, Folder as FolderIcon, Eye, AlertTriangle, Headphones } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { partnersService, Partner } from '@/services/partners';
@@ -11,6 +11,7 @@ import { filesService, ProjectFile } from '@/services/files';
 import { foldersService, Folder } from '@/services/folders';
 import { extractBackendMessage } from '@/lib/error-handler';
 import LoadingState from "@/components/UI/Loading/LoadingState";
+import { PartnerStatsService, PartnerStats } from '@/services/partnerStats';
 
 interface VoirPartenaireProps {
   id: string;
@@ -28,8 +29,91 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [loadingFolders, setLoadingFolders] = useState(false);
+  const [stats, setStats] = useState<PartnerStats>({
+    projectsCount: 0,
+    incidentsCount: 0,
+    supportTicketsCount: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const partnerId = parseInt(id);
+
+  // Function pour corriger les URLs d'images
+  const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
+    if (!url || url.trim() === '') return undefined;
+    
+    // Nettoyer l'URL
+    const cleanUrl = url.trim();
+    
+    // Ignorer les URLs placeholder ou de test
+    if (cleanUrl.includes('example.com') || cleanUrl.includes('placeholder') || cleanUrl.includes('test.com')) {
+      return undefined;
+    }
+    
+    // Vérifier que l'URL se termine bien par un nom de fichier
+    const hasFileExtension = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(cleanUrl);
+    if (!hasFileExtension) {
+      console.warn('URL sans extension de fichier détectée:', cleanUrl);
+      return undefined;
+    }
+    
+    // Nouveau format d'upload via /files/serve/ avec backend HTTPS direct
+    if (cleanUrl.includes('/files/serve/')) {
+      // Si c'est déjà une URL complète HTTPS, la garder telle quelle
+      if (cleanUrl.startsWith('https://applicationweb.datalysconsulting.com/files/serve/')) {
+        return cleanUrl;
+      }
+      
+      // Si c'est un chemin /files/serve/, le convertir en URL complète HTTPS
+      if (cleanUrl.startsWith('/files/serve/')) {
+        return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
+      }
+      
+      // URLs avec ancien domaine - convertir vers HTTPS SANS /api
+      if (cleanUrl.includes('82.112.253.137:8082')) {
+        return cleanUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com');
+      }
+      
+      // Si l'URL contient déjà /api/files/serve/, la corriger en enlevant /api
+      if (cleanUrl.includes('/api/files/serve/')) {
+        return cleanUrl.replace('/api/files/serve/', '/files/serve/');
+      }
+    }
+    
+    // URLs avec ancien localhost - convertir vers HTTPS
+    if (cleanUrl.includes('localhost:8081') || cleanUrl.includes('82.112.253.137:8081')) {
+      const pathMatch = cleanUrl.match(/\/uploads\/logos\/(.+)$/);
+      if (pathMatch) {
+        const filename = pathMatch[1];
+        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+      }
+    }
+    
+    // URLs relatives /uploads/ - utiliser l'ancien système d'images statiques
+    if (cleanUrl.startsWith('/uploads/logos/')) {
+      const filename = cleanUrl.replace('/uploads/logos/', '');
+      return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+    }
+    
+    // URLs relatives backend - convertir vers URL complète HTTPS
+    if (cleanUrl.startsWith('/') && !cleanUrl.startsWith('/uploads/') && !cleanUrl.startsWith('/files/serve/')) {
+      return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
+    }
+    
+    // URLs déjà complètes avec HTTP - convertir vers HTTPS
+    if (cleanUrl.startsWith('http://')) {
+      return cleanUrl.replace('http://', 'https://');
+    }
+    
+    // URLs HTTPS déjà valides
+    if (cleanUrl.startsWith('https://')) {
+      return cleanUrl;
+    }
+    
+    // Fallback pour URLs inconnues
+    return cleanUrl;
+  }, []);
 
   useEffect(() => {
     loadPartnerData();
@@ -39,6 +123,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     try {
       setLoading(true);
       setError(null);
+      setLogoError(false); // Reset logo error when loading new partner
 
       const partnerData = await partnersService.getPartnerById(partnerId);
       if (!partnerData) {
@@ -47,11 +132,35 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       }
 
       setPartner(partnerData);
+      
+      // Charger les statistiques après avoir récupéré les données du partenaire
+      loadPartnerStats(partnerData);
     } catch (error) {
       const message = extractBackendMessage(error);
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPartnerStats = async (partnerData?: Partner) => {
+    const currentPartner = partnerData || partner;
+    if (!currentPartner) return;
+
+    try {
+      setLoadingStats(true);
+      
+      const statistics = await PartnerStatsService.getPartnerStatsWithCache(
+        currentPartner.id, 
+        currentPartner.name
+      );
+      
+      setStats(statistics);
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des statistiques:', error);
+      // Garder les valeurs par défaut en cas d'erreur
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -245,19 +354,34 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
               <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
-                    {partner.logo_url ? (
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white shadow-xl">
-                        <img
-                          src={partner.logo_url}
-                          alt={`Logo ${partner.name}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#4ba9b7] to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-[#4ba9b7]/25">
-                        <Building className="w-8 h-8 text-white" />
-                      </div>
-                    )}
+                    {(() => {
+                      const fixedLogoUrl = fixImageUrl(partner.logo_url);
+                      const shouldShowLogo = fixedLogoUrl && !logoError;
+                      
+                      return shouldShowLogo ? (
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white shadow-xl">
+                          <img
+                            src={fixedLogoUrl}
+                            alt={`Logo ${partner.name}`}
+                            className="w-full h-full object-cover"
+                            onError={() => {
+                              console.error(`Erreur chargement logo pour ${partner.name}:`, fixedLogoUrl);
+                              setLogoError(true);
+                            }}
+                            onLoad={() => {
+                              // Reset logo error if image loads successfully
+                              setLogoError(false);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 bg-gradient-to-br from-[#4ba9b7] to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-[#4ba9b7]/25">
+                          <span className="text-white font-bold text-xl uppercase">
+                            {partner.name.slice(0, 2)}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-3 leading-tight">
@@ -288,45 +412,79 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
               </div>
 
               {/* Statistiques du partenaire */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-[#4ba9b7]" />
+              <div className="space-y-4">
+                {/* Première ligne : Informations de contact */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                        <Phone className="w-5 h-5 text-[#4ba9b7]" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Téléphone</p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {partner.phone}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Téléphone</p>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {partner.phone}
-                      </p>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                        <MapPin className="w-5 h-5 text-[#4ba9b7]" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Adresse</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                          {partner.address}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-[#4ba9b7]" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Adresse</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {partner.address}
-                      </p>
+                {/* Deuxième ligne : Statistiques métier */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Projets</p>
+                        <div className="text-xl font-semibold text-gray-900 dark:text-white">
+                          {loadingStats ? <Spinner size="sm" /> : stats.projectsCount}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-[#4ba9b7]" />
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Incidents</p>
+                        <div className="text-xl font-semibold text-gray-900 dark:text-white">
+                          {loadingStats ? <Spinner size="sm" /> : stats.incidentsCount}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Projets</p>
-                      <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                        {projects.length}
-                      </p>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                        <Headphones className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Support</p>
+                        <div className="text-xl font-semibold text-gray-900 dark:text-white">
+                          {loadingStats ? <Spinner size="sm" /> : stats.supportTicketsCount}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -409,19 +567,40 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                         </div>
                       </div>
                       
-                      {partner.logo_url && (
-                        <div className="flex items-start space-x-3">
-                          <Building className="text-gray-400 mt-1" size={20} />
-                          <div>
-                            <p className="text-sm text-gray-500 mb-2">Logo</p>
-                            <img 
-                              src={partner.logo_url} 
-                              alt={`Logo ${partner.name}`}
-                              className="w-16 h-16 object-cover rounded-lg border"
-                            />
+                      {(() => {
+                        const fixedLogoUrl = fixImageUrl(partner.logo_url);
+                        const shouldShowLogo = fixedLogoUrl && !logoError;
+                        
+                        return shouldShowLogo ? (
+                          <div className="flex items-start space-x-3">
+                            <Building className="text-gray-400 mt-1" size={20} />
+                            <div>
+                              <p className="text-sm text-gray-500 mb-2">Logo</p>
+                              <img 
+                                src={fixedLogoUrl} 
+                                alt={`Logo ${partner.name}`}
+                                className="w-16 h-16 object-cover rounded-lg border"
+                                onError={() => {
+                                  console.error(`Erreur chargement logo dans Vue d'ensemble pour ${partner.name}:`, fixedLogoUrl);
+                                  setLogoError(true);
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <div className="flex items-start space-x-3">
+                            <Building className="text-gray-400 mt-1" size={20} />
+                            <div>
+                              <p className="text-sm text-gray-500 mb-2">Logo</p>
+                              <div className="w-16 h-16 bg-gradient-to-br from-[#4ba9b7] to-blue-600 rounded-lg flex items-center justify-center border">
+                                <span className="text-white font-bold text-xl uppercase">
+                                  {partner.name.slice(0, 2)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
