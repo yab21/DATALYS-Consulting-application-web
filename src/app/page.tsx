@@ -1,6 +1,5 @@
 import Connexion from "@/components/Connexion";
 import { Metadata } from "next";
-import { HeroUIProvider } from "@heroui/react";
 import React from "react";
 
 export const metadata: Metadata = {
@@ -9,11 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return (
-    <>
-      <HeroUIProvider>
-        <Connexion />
-      </HeroUIProvider>
-    </>
-  );
+  return <Connexion />;
 }

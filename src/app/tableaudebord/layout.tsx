@@ -6,7 +6,6 @@ import "@/css/style.css";
 import React from "react";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import DefaultLayout from "@/components/TableauDeBord/Layouts/DefaultLaout";
-import { HeroUIProvider } from "@heroui/react";
 import { usePathname } from "next/navigation";
 import TokenExpirationHandler from "@/components/Security/TokenExpirationHandler";
 import ErrorBoundary from "@/components/UI/ErrorBoundary/ErrorBoundary";
@@ -28,15 +27,13 @@ export default function TableauDeBordLayout({
     <ProtectedRoute>
       <ErrorBoundary>
         <TokenExpirationHandler>
-          <HeroUIProvider>
-            {shouldUseDefaultLayout ? (
-              <DefaultLayout>
-                {children}
-              </DefaultLayout>
-            ) : (
-              children
-            )}
-          </HeroUIProvider>
+          {shouldUseDefaultLayout ? (
+            <DefaultLayout>
+              {children}
+            </DefaultLayout>
+          ) : (
+            children
+          )}
         </TokenExpirationHandler>
       </ErrorBoundary>
     </ProtectedRoute>

@@ -11,6 +11,7 @@ import "@/styles/modal-fixes.css";
 import "nprogress/nprogress.css";
 import "@/styles/nprogress.css";
 import React, { useEffect, useState } from "react";
+import { HeroUIProvider } from "@heroui/react";
 import { SimpleNotificationProvider } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { PerformanceUtils } from "@/components/Optimizations";
 import { AuthProvider } from "@/context/AuthContext";
@@ -62,18 +63,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning={true}>
-        <AuthProvider>
-          <NetworkProvider 
-            showIndicator={false}
-            indicatorPosition="top-right"
-            enableAutoSync={true}
-            enableToasts={true}
-          >
-            <SimpleNotificationProvider>
-              {children}
-            </SimpleNotificationProvider>
-          </NetworkProvider>
-        </AuthProvider>
+        <HeroUIProvider>
+          <AuthProvider>
+            <NetworkProvider 
+              showIndicator={false}
+              indicatorPosition="top-right"
+              enableAutoSync={true}
+              enableToasts={true}
+            >
+              <SimpleNotificationProvider>
+                {children}
+              </SimpleNotificationProvider>
+            </NetworkProvider>
+          </AuthProvider>
+        </HeroUIProvider>
       </body>
     </html>
   );

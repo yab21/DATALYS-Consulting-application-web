@@ -72,6 +72,8 @@ const nextConfig = {
       bodySizeLimit: '2mb'
     }
   },
+  // Configuration pour Turbopack (Next.js 16+)
+  turbopack: {},
   async headers() {
     return [
       {

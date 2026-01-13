@@ -354,6 +354,10 @@ class ApiInterceptor {
     options?: RequestInit,
   ): Promise<Response> {
     try {
+      // Construire l'URL complète si c'est un chemin relatif
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+
       // Ajouter les headers d'authentification par défaut
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -368,7 +372,7 @@ class ApiInterceptor {
         }
       }
 
-      const response = await fetch(url, {
+      const response = await fetch(fullUrl, {
         ...options,
         headers,
       });
