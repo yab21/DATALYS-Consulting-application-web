@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Temporairement Indisponible | DATALYS Consulting</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #4ba9b7 0%, #367a85 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .error-container {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            margin: 2rem;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #4ba9b7, #367a85);
+            border-radius: 50%;
+            margin: 0 auto 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        h1 {
+            color: #4ba9b7;
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .error-code {
+            color: #6b7280;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        
+        .message {
+            color: #374151;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4ba9b7, #367a85);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(75, 169, 183, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
+        }
+        
+        .status-info {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .status-text {
+            color: #075985;
+            font-size: 0.9rem;
+        }
+        
+        .reload-timer {
+            color: #4ba9b7;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 640px) {
+            .error-container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="logo">DC</div>
+        
+        <h1>Service Temporairement Indisponible</h1>
+        
+        <div class="error-code">Erreur 502 - Bad Gateway</div>
+        
+        <div class="message">
+            Notre application est temporairement indisponible en raison d'une maintenance ou d'un problème technique. 
+            Nos équipes travaillent activement pour rétablir le service dans les plus brefs délais.
+        </div>
+        
+        <div class="actions">
+            <a href="javascript:location.reload()" class="btn btn-primary">
+                ↻ Réessayer
+            </a>
+            <a href="mailto:support@datalysconsulting.com" class="btn btn-secondary">
+                ✉ Contacter le Support
+            </a>
+        </div>
+        
+        <div class="status-info">
+            <div class="status-text">
+                🔄 Rechargement automatique dans <span class="reload-timer" id="timer">30</span> secondes
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-reload après 30 secondes
+        let timeLeft = 30;
+        const timerElement = document.getElementById('timer');
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                location.reload();
+            }
+        }, 1000);
+        
+        // Retry automatique toutes les 5 minutes en arrière-plan
+        setInterval(() => {
+            fetch(window.location.href)
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                })
+                .catch(() => {
+                    // Service toujours indisponible
+                });
+        }, 300000); // 5 minutes
+    </script>
+</body>
+</html>
