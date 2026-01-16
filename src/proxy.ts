@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { SecurityMiddleware } from "./middleware/security-middleware-basic";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
+  // 🛡️ SÉCURITÉ: Appliquer le middleware de sécurité en premier
+  try {
+    const securityResponse = await SecurityMiddleware.securityHandler(request);
+    if (securityResponse) {
+      return securityResponse; // Bloquer la requête si menace détectée
+    }
+  } catch (error) {
+    console.error('🚨 Erreur middleware sécurité:', error);
+    // Continuer le traitement même si erreur sécurité
+  }
   const { pathname } = request.nextUrl;
   
   // Pages publiques qui ne nécessitent pas d'authentification

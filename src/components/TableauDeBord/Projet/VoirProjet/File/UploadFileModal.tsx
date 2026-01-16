@@ -143,7 +143,37 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({ isOpen, onClose, onFi
                     
                     <Input
                       type="file"
-                      onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif"
+                      onChange={(e) => {
+                        const file = e.target.files ? e.target.files[0] : null;
+                        if (file) {
+                          // 🛡️ VALIDATION SÉCURITÉ IMMÉDIATE
+                          const maxSize = 5 * 1024 * 1024; // 5MB
+                          const allowedExts = ['.pdf','.doc','.docx','.xls','.xlsx','.ppt','.pptx','.txt','.jpg','.jpeg','.png','.gif'];
+                          const blockedExts = ['.exe','.bat','.cmd','.sh','.php','.asp','.js','.py'];
+                          
+                          const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                          
+                          if (file.size > maxSize) {
+                            alert('🚫 Fichier trop volumineux (max: 5MB)');
+                            e.target.value = '';
+                            return;
+                          }
+                          
+                          if (blockedExts.includes(ext)) {
+                            alert('🚫 Type de fichier dangereux interdit: ' + ext);
+                            e.target.value = '';
+                            return;
+                          }
+                          
+                          if (!allowedExts.includes(ext)) {
+                            alert('🚫 Type de fichier non autorisé: ' + ext);
+                            e.target.value = '';
+                            return;
+                          }
+                        }
+                        setSelectedFile(file);
+                      }}
                       className="cursor-pointer"
                       classNames={{
                         input: "cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-gradient-to-r file:from-[#06B6D4] file:to-teal-600 file:text-white file:font-medium file:shadow-lg hover:file:from-cyan-600 hover:file:to-teal-700 file:transition-all file:duration-300",
