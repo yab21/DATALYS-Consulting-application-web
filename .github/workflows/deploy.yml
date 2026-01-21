@@ -170,7 +170,7 @@ jobs:
             df -h | grep -E '(Filesystem|/$)'
             
             echo ' Cleanup terminé'
-          " || echo "Cleanup attempted"
+          "
 
           sleep 5
 
@@ -181,7 +181,7 @@ jobs:
             mkdir -p ${{ env.DEPLOY_PATH }}_new
             cd ${{ env.DEPLOY_PATH }}_new
             echo 'Directory ready'
-          " || echo "Directory preparation attempted"
+          "
 
           # Step 3: Transfer and extract (one connection)
           echo "Transferring pre-built application..."
@@ -209,7 +209,7 @@ jobs:
             
             echo 'Atomic deployment switch...'
             if [ -d ${{ env.DEPLOY_PATH }} ]; then
-              mv ${{ env.DEPLOY_PATH }} ${{ env.DEPLOY_PATH }}_backup_\$(date +%H%M%S) 2>/dev/null || echo 'No old version'
+              mv ${{ env.DEPLOY_PATH }} ${{ env.DEPLOY_PATH }}_backup_\$(date +%H%M%S)
             fi
             mv ${{ env.DEPLOY_PATH }}_new ${{ env.DEPLOY_PATH }}
             
@@ -258,7 +258,7 @@ jobs:
             else
               echo 'Script disk-cleanup.sh non trouvé dans le déploiement'
             fi
-          " || echo "Nettoyage programmé"
+          "
 
           sleep 15
 
