@@ -119,7 +119,7 @@ jobs:
 
           # Step 1: Aggressive server cleanup
           echo " Nettoyage agressif du serveur..."
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 ubuntu@${{ env.SERVER_HOST }} "
             echo ' Arrêt des processus...'
             # Vérification santé PM2 avant arrêt
             if ! timeout 5s pm2 status >/dev/null 2>&1; then
@@ -176,7 +176,7 @@ jobs:
 
           # Step 2: Directory preparation (short connection) 
           echo "Preparing directories..."
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=2 root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=2 ubuntu@${{ env.SERVER_HOST }} "
             echo 'Setting up deployment directory...'
             mkdir -p ${{ env.DEPLOY_PATH }}_new
             cd ${{ env.DEPLOY_PATH }}_new
@@ -185,10 +185,10 @@ jobs:
 
           # Step 3: Transfer and extract (one connection)
           echo "Transferring pre-built application..."
-          scp -o StrictHostKeyChecking=no complete-app.tar.gz root@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}_new/
+          scp -o StrictHostKeyChecking=no complete-app.tar.gz ubuntu@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}_new/
 
           # Step 4: Extraction and setup (short connection)
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 ubuntu@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}_new
             
             echo 'Extracting pre-built application...'
@@ -249,7 +249,7 @@ jobs:
           echo " Health check et nettoyage final..."
 
           # Exécuter le nettoyage automatique depuis le répertoire déployé
-          ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ env.SERVER_HOST }} "
             cd ${{ env.DEPLOY_PATH }}
             if [ -f scripts/disk-cleanup.sh ]; then
               chmod +x scripts/disk-cleanup.sh
@@ -268,7 +268,7 @@ jobs:
               echo " Application is healthy!"
               
               # Afficher le résultat du nettoyage
-              ssh -o StrictHostKeyChecking=no root@${{ env.SERVER_HOST }} "
+              ssh -o StrictHostKeyChecking=no ubuntu@${{ env.SERVER_HOST }} "
                 echo ' Résultat du nettoyage:'
                 tail -10 /var/log/disk-cleanup.log 2>/dev/null || echo 'Nettoyage en cours...'
               " || true
