@@ -120,59 +120,30 @@ jobs:
           # Step 1: Aggressive server cleanup
           echo " Nettoyage agressif du serveur..."
           ssh -p 2222 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 ubuntu@${{ env.SERVER_HOST }} "
-            set +e
-            echo ' Arrêt des processus...'
-            # Vérification santé PM2 avant arrêt
-            if ! timeout 5s pm2 status >/dev/null 2>&1; then
-              echo ' PM2 daemon corrompu détecté, reset forcé...'
-              pkill -f pm2 2>/dev/null || echo 'No PM2 processes'
-              pkill -f node 2>/dev/null || echo 'No Node processes'
-              rm -f ~/.pm2/rpc.sock ~/.pm2/pub.sock 2>/dev/null || echo 'PM2 sockets cleaned'
-              sleep 3
-            else
-              echo ' PM2 daemon responsive, arrêt normal...'
-              timeout 30s pm2 stop all 2>/dev/null || echo 'PM2 stop timeout'
-              timeout 20s pm2 delete all 2>/dev/null || echo 'PM2 delete timeout'
-              timeout 15s pm2 kill 2>/dev/null || echo 'PM2 kill timeout'
-            fi
-            
-            # Nettoyage processus final et libération port 3000
-            pkill -f pm2 2>/dev/null || echo 'No PM2 processes to kill'
-            pkill -f node 2>/dev/null || echo 'No Node processes to kill'
-            fuser -k 3000/tcp 2>/dev/null || echo 'Port 3000 already free'
-            sleep 3
-            
-            # Vérifier que le port 3000 est libre
-            if netstat -tlnp | grep -q ':3000'; then
-              echo ' Port 3000 still busy, force cleanup...'
-              lsof -ti:3000 | xargs kill -9 2>/dev/null || echo 'Port cleanup attempted'
-              sleep 2
-            fi
-            
-            echo ' Nettoyage espace disque...'
-            # Nettoyer les anciens déploiements
-            rm -rf ${{ env.DEPLOY_PATH }}_backup_* 2>/dev/null || echo 'No old backups'
-            rm -rf ${{ env.DEPLOY_PATH }}_new 2>/dev/null || echo 'No pending deployment'
-            
-            # Nettoyer les logs volumineux (garder seulement les 100 dernières lignes)
-            if [ -d '${{ env.DEPLOY_PATH }}/logs' ]; then
-              for logfile in ${{ env.DEPLOY_PATH }}/logs/*.log; do
-                if [ -f \"\$logfile\" ] && [ \$(wc -l < \"\$logfile\") -gt 100 ]; then
-                  tail -100 \"\$logfile\" > \"\$logfile.tmp\" && mv \"\$logfile.tmp\" \"\$logfile\"
-                fi
-              done
-            fi
-            
-            # Nettoyer le cache npm global
-            npm cache clean --force 2>/dev/null || echo 'NPM cache cleaned'
-            
-            # Afficher l'espace disque
-            echo ' Espace disque avant déploiement:'
-            df -h | grep -E '(Filesystem|/$)'
-            
-            echo ' Cleanup terminé'
-            exit 0
-          "
+            echo 'Arrêt des processus...'
+
+            pm2 stop all 2>/dev/null || true
+            pm2 delete all 2>/dev/null || true
+            pm2 kill 2>/dev/null || true
+
+            sleep 2
+
+            pkill -f 'pm2' 2>/dev/null || true
+            pkill -f 'next-server' 2>/dev/null || true
+            fuser -k 3000/tcp 2>/dev/null || true
+
+            sleep 2
+
+            echo 'Nettoyage espace disque...'
+            rm -rf ${{ env.DEPLOY_PATH }}_backup_* 2>/dev/null || true
+            rm -rf ${{ env.DEPLOY_PATH }}_new 2>/dev/null || true
+            npm cache clean --force 2>/dev/null || true
+
+            echo 'Espace disque avant deploiement:'
+            df -h / || true
+
+            echo 'Cleanup termine'
+          " || true
 
           sleep 5
 
