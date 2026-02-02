@@ -120,6 +120,7 @@ jobs:
           # Step 1: Aggressive server cleanup
           echo " Nettoyage agressif du serveur..."
           ssh -p 2222 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 ubuntu@${{ env.SERVER_HOST }} "
+            set +e
             echo ' Arrêt des processus...'
             # Vérification santé PM2 avant arrêt
             if ! timeout 5s pm2 status >/dev/null 2>&1; then
@@ -170,6 +171,7 @@ jobs:
             df -h | grep -E '(Filesystem|/$)'
             
             echo ' Cleanup terminé'
+            exit 0
           "
 
           sleep 5
