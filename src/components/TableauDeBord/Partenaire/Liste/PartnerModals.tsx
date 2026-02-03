@@ -339,9 +339,9 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
       }
     } catch (error) {
       console.error('Erreur création:', error);
-      
-      // Supprimer la notification ici car elle sera gérée par l'error handler global
-      console.log('🔇 Erreur catchée dans PartnerModals, mais notification ignorée pour éviter les doublons');
+
+      // Afficher la notification d'erreur
+      onError?.(extractBackendMessage(error));
     } finally {
       setCreateLoading(false);
     }

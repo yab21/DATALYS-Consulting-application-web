@@ -131,6 +131,10 @@ const nextConfig = {
         destination: 'https://applicationweb.datalysconsulting.com/:path*',
       },
       {
+        source: '/notifications/:path*',
+        destination: 'https://applicationweb.datalysconsulting.com/notifications/:path*',
+      },
+      {
         source: '/health',
         destination: 'https://applicationweb.datalysconsulting.com/health',
       },

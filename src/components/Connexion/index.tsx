@@ -383,6 +383,7 @@ const Connexion: React.FC = () => {
                         message: "Format d'identifiant invalide (email ou code client)"
                       }
                     })}
+                    id="login-identifier"
                     type="text"
                     variant="bordered"
                     placeholder="email@exemple.com ou DTLS9UG6X8"
@@ -421,6 +422,7 @@ const Connexion: React.FC = () => {
                         message: "Le mot de passe doit contenir au moins 6 caractères"
                       }
                     })}
+                    id="login-password"
                     type={isVisible ? "text" : "password"}
                     variant="bordered"
                     placeholder="••••••••"
@@ -462,6 +464,7 @@ const Connexion: React.FC = () => {
                 >
                   <Checkbox
                     {...register("rememberMe")}
+                    id="login-remember-me"
                     classNames={{
                       base: "text-gray-800",
                       wrapper:

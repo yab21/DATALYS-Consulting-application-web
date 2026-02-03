@@ -45,12 +45,10 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
     current_password: "",
     new_password: "",
   });
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showMFA, setShowMFA] = useState(false);
   const [pendingIdentifier, setPendingIdentifier] = useState("");
 
@@ -77,12 +75,6 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
       newErrors.new_password = "Le nouveau mot de passe est requis";
     } else if (formData.new_password.length < 8) {
       newErrors.new_password = "Le mot de passe doit contenir au moins 8 caractères";
-    }
-
-    if (!confirmPassword) {
-      newErrors.confirmPassword = "La confirmation du mot de passe est requise";
-    } else if (formData.new_password !== confirmPassword) {
-      newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
     }
 
     setErrors(newErrors);
@@ -399,7 +391,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     type="email"
                     variant="bordered"
                     placeholder="votre@email.com"
-                   
+                    value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     isInvalid={!!errors.email}
                     errorMessage={errors.email}
@@ -433,7 +425,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     type={showCurrentPassword ? "text" : "password"}
                     variant="bordered"
                     placeholder="Entrez votre mot de passe temporaire"
-                   
+                    value={formData.current_password}
                     onChange={(e) => handleInputChange("current_password", e.target.value)}
                     isInvalid={!!errors.current_password}
                     errorMessage={errors.current_password}
@@ -479,7 +471,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     type={showNewPassword ? "text" : "password"}
                     variant="bordered"
                     placeholder="Choisissez un nouveau mot de passe"
-                   
+                    value={formData.new_password}
                     onChange={(e) => handleInputChange("new_password", e.target.value)}
                     isInvalid={!!errors.new_password}
                     errorMessage={errors.new_password}
@@ -500,57 +492,6 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                         onClick={() => setShowNewPassword(!showNewPassword)}
                       >
                         {showNewPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    }
-                  />
-                </motion.div>
-
-                {/* Confirm Password Input */}
-                <motion.div
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  transition={{ delay: 0.8 }}
-                >
-                  <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
-                      Confirmer le nouveau mot de passe
-                    </label>
-                  </div>
-                  <Input
-                    type={showConfirmPassword ? "text" : "password"}
-                    variant="bordered"
-                    placeholder="Répétez votre nouveau mot de passe"
-                   
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (errors.confirmPassword) {
-                        setErrors(prev => ({ ...prev, confirmPassword: "" }));
-                      }
-                    }}
-                    isInvalid={!!errors.confirmPassword}
-                    errorMessage={errors.confirmPassword}
-                    classNames={{
-                      input:
-                        "text-gray-900 placeholder:text-gray-500 pl-10 pr-10 text-base dark:text-white dark:placeholder:text-gray-400",
-                      inputWrapper:
-                        "bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 focus-within:border-sky-500 dark:focus-within:border-sky-400 shadow-sm hover:shadow-md transition-all duration-300",
-                      base: "!text-gray-800 dark:!text-gray-200",
-                    }}
-                    size="lg"
-                    radius="lg"
-                    startContent={<CheckCircle className="h-5 w-5 text-gray-500" />}
-                    endContent={
-                      <button
-                        className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      >
-                        {showConfirmPassword ? (
                           <EyeOff className="h-5 w-5" />
                         ) : (
                           <Eye className="h-5 w-5" />
