@@ -32,6 +32,7 @@ import {
   Minimize2,
   Trash2
 } from "lucide-react";
+import { validateFileImmediately } from '@/lib/upload-security-immediate';
 
 interface IncidentFilesModalProps {
   isOpen: boolean;
@@ -98,7 +99,43 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
   // Gestion de l'upload
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
-    setUploadFiles(selectedFiles);
+
+    // Validation de sécurité de tous les fichiers
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
+
+    for (const file of selectedFiles) {
+      const validation = validateFileImmediately(file);
+      if (validation.valid) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(`${file.name}: ${validation.error}`);
+      }
+    }
+
+    // Afficher les erreurs pour les fichiers invalides
+    if (invalidFiles.length > 0) {
+      showNotification({
+        type: 'warning',
+        title: 'Fichiers non autorisés',
+        message: `${invalidFiles.length} fichier(s) rejeté(s) pour des raisons de sécurité`
+      });
+    }
+
+    // Si aucun fichier valide, ne pas ouvrir le modal
+    if (validFiles.length === 0) {
+      if (selectedFiles.length > 0) {
+        showNotification({
+          type: 'error',
+          title: 'Aucun fichier valide',
+          message: 'Tous les fichiers ont été rejetés pour des raisons de sécurité'
+        });
+      }
+      event.target.value = '';
+      return;
+    }
+
+    setUploadFiles(validFiles);
     setUploadModal(true);
     // Reset l'input
     event.target.value = '';

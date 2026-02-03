@@ -45,6 +45,7 @@ import {
 import { foldersService, Folder as FolderType } from '@/services/folders';
 import { useAuth } from '@/context/AuthContext';
 import { useSimpleNotifications } from '@/components/UI/Notifications/NotificationProvider';
+import { validateFileImmediately, sanitizeFileName } from '@/lib/upload-security-immediate';
 
 interface FolderManagerProps {
   projectId: number;
@@ -356,10 +357,21 @@ const FolderManager: React.FC<FolderManagerProps> = ({
   // Upload d'un fichier unique avec /files/upload (API simple)
   const uploadSingleFile = async (file: File) => {
     if (!user) return;
-    
+
+    // Validation de sécurité du fichier
+    const validation = validateFileImmediately(file);
+    if (!validation.valid) {
+      addNotification({
+        title: "Fichier non autorisé",
+        message: validation.error || "Le fichier ne respecte pas les critères de sécurité",
+        type: "error"
+      });
+      return;
+    }
+
     try {
       setUploadLoading(true);
-      
+
       const formData = new FormData();
       formData.append('file', file);
       
@@ -435,14 +447,46 @@ const FolderManager: React.FC<FolderManagerProps> = ({
   // Upload de fichiers multiples dans un dossier avec /folders/upload
   const uploadFilesToFolder = async (files: File[]) => {
     if (!user) return;
-    
+
+    // Validation de sécurité de tous les fichiers
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
+
+    for (const file of files) {
+      const validation = validateFileImmediately(file);
+      if (validation.valid) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(`${file.name}: ${validation.error}`);
+      }
+    }
+
+    // Afficher les erreurs pour les fichiers invalides
+    if (invalidFiles.length > 0) {
+      addNotification({
+        title: "Fichiers non autorisés",
+        message: `${invalidFiles.length} fichier(s) rejeté(s): ${invalidFiles.join(', ')}`,
+        type: "warning"
+      });
+    }
+
+    // Si aucun fichier valide, arrêter
+    if (validFiles.length === 0) {
+      addNotification({
+        title: "Aucun fichier valide",
+        message: "Tous les fichiers ont été rejetés pour des raisons de sécurité",
+        type: "error"
+      });
+      return;
+    }
+
     try {
       setUploadLoading(true);
-      
+
       const folderName = uploadFolderName.trim() || `Fichiers-${new Date().toISOString().split('T')[0]}`;
       
       const uploadResponse = await foldersService.uploadFilesToFolder(
-        files,
+        validFiles,
         projectId,
         user.id,
         currentFolder?.id || null,
@@ -456,8 +500,9 @@ const FolderManager: React.FC<FolderManagerProps> = ({
 
       addNotification({
         title: "Fichiers uploadés",
-        message: `${files.length} fichier(s) ont été uploadés dans le dossier "${folderName}"`,
-        type: "success"      });
+        message: `${validFiles.length} fichier(s) ont été uploadés dans le dossier "${folderName}"`,
+        type: "success"
+      });
 
       setUploadFolderName('');
       await loadFolders(currentFolder?.id || null);

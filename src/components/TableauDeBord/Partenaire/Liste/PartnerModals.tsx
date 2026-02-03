@@ -32,6 +32,7 @@ import {
 import { Partner, UpdatePartnerFormData, CreatePartnerData, CreatePartnerFormData, partnersService } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { validateFileImmediately } from '@/lib/upload-security-immediate';
 
 interface PartnerModalsProps {
   isOpen: boolean;
@@ -160,8 +161,23 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validation de sécurité du fichier
+      const validation = validateFileImmediately(file);
+      if (!validation.valid) {
+        onError?.(validation.error || "Fichier non autorisé");
+        event.target.value = '';
+        return;
+      }
+
+      // Vérifier que c'est une image
+      if (!file.type.startsWith('image/')) {
+        onError?.("Seuls les fichiers image sont autorisés pour le logo");
+        event.target.value = '';
+        return;
+      }
+
       setEditForm(prev => ({ ...prev, logo: file }));
-      
+
       // Créer un aperçu
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -192,8 +208,23 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
   const handleCreateLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validation de sécurité du fichier
+      const validation = validateFileImmediately(file);
+      if (!validation.valid) {
+        onError?.(validation.error || "Fichier non autorisé");
+        event.target.value = '';
+        return;
+      }
+
+      // Vérifier que c'est une image
+      if (!file.type.startsWith('image/')) {
+        onError?.("Seuls les fichiers image sont autorisés pour le logo");
+        event.target.value = '';
+        return;
+      }
+
       setCreateForm(prev => ({ ...prev, logo: file }));
-      
+
       // Créer un aperçu
       const reader = new FileReader();
       reader.onload = (e) => {
