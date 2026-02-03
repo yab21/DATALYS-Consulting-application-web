@@ -197,9 +197,9 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
     return editForm.title.trim() && editForm.partner_id > 0;
   };
 
-  // Validation du formulaire de création
+  // Validation du formulaire de création (partenaire optionnel)
   const isCreateFormValid = () => {
-    return createForm.title.trim() && createForm.partner_id > 0;
+    return createForm.title.trim().length > 0;
   };
 
   // Fonction pour créer un projet
@@ -552,17 +552,18 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
               />
               
               <Select
-                label="Partenaire"
+                label="Partenaire (optionnel)"
                 placeholder="Sélectionner un partenaire"
                 selectedKeys={createForm.partner_id ? [createForm.partner_id.toString()] : []}
                 onSelectionChange={(keys) => {
                   const selectedId = Array.from(keys)[0] as string;
                   if (selectedId) {
                     handleCreateFormChange('partner_id', parseInt(selectedId));
+                  } else {
+                    handleCreateFormChange('partner_id', 0);
                   }
                 }}
                 startContent={<Users className="h-4 w-4" />}
-                isRequired
                 size="sm"
               >
                 {partners.map((partner) => (

@@ -20,7 +20,7 @@ export interface Project {
 
 export interface CreateProjectFormData {
   title: string;
-  partner_id: number;
+  partner_id?: number; // Optionnel - un projet peut être créé sans partenaire
   is_active?: boolean;
 }
 
@@ -32,7 +32,7 @@ export interface ProjectCreateRequest {
   };
   datas: Array<{
     title: string;
-    partner_id: number;
+    partner_id?: number; // Optionnel
   }>;
 }
 
@@ -300,17 +300,21 @@ export class ProjectsService {
     try {
       console.log("📡 Création d'un nouveau projet...");
 
+      const projectDataPayload: { title: string; partner_id?: number } = {
+        title: projectData.title,
+      };
+
+      // N'inclure partner_id que s'il est défini et > 0
+      if (projectData.partner_id && projectData.partner_id > 0) {
+        projectDataPayload.partner_id = projectData.partner_id;
+      }
+
       const requestBody: ProjectCreateRequest = {
         user: {
           id: userId,
           email: userEmail || '',
         },
-        datas: [
-          {
-            title: projectData.title,
-            partner_id: projectData.partner_id,
-          },
-        ],
+        datas: [projectDataPayload],
       };
 
       console.log("📋 Données du projet à créer:", requestBody);
