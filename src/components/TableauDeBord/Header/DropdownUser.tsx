@@ -104,7 +104,7 @@ const DropdownUser = () => {
               </motion.svg>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {user.role_id === 1 ? "Administrateur" : user.role_id === 5 ? "Partenaire" : user.role_id === 2 ? "Utilisateur" : "Invité"}
+              {user.role_id === 1 ? "Administrateur" : (user.role_id === 5 || user.partner_id) ? "Partenaire" : user.role_id === 2 ? "Utilisateur" : "Utilisateur"}
             </p>
           </div>
         </Link>
@@ -149,7 +149,7 @@ const DropdownUser = () => {
                   </p>
                   <div className="mt-1 flex items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                      {user.role_id === 1 ? "Administrateur" : user.role_id === 5 ? "Partenaire" : user.role_id === 2 ? "Utilisateur" : "Invité"}
+                      {user.role_id === 1 ? "Administrateur" : (user.role_id === 5 || user.partner_id) ? "Partenaire" : user.role_id === 2 ? "Utilisateur" : "Utilisateur"}
                     </span>
                     {user.is_active && (
                       <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">

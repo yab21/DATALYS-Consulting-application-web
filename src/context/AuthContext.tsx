@@ -256,7 +256,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const isPartner = (): boolean => {
     if (!userWithPermissions) return false;
-    return PermissionManager.isPartner(userWithPermissions);
+    // Vérifier par role_id OU par partner_id (plus fiable)
+    return PermissionManager.isPartner(userWithPermissions) || !!userWithPermissions.partner_id;
   };
 
   const canAccessProject = (projectPartnerId: number): boolean => {

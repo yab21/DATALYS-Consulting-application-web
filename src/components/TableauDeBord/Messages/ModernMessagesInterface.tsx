@@ -219,12 +219,16 @@ const ModernMessagesInterface: React.FC = () => {
 
   // Charger les noms d'utilisateurs pour l'affichage des messages
   const loadUserNames = async () => {
+    // Ne pas appeler l'API pour les partenaires (403 Forbidden)
+    if ((user?.role_id !== 1 && String(user?.role_id) !== "1") || user?.partner_id) {
+      return;
+    }
+
     try {
-      // Tenter de récupérer tous les utilisateurs (admins seulement)
       const usersResult = await UsersService.getUsersByCriteria({
         index: 0,
-        size: 200, // Plus large pour couvrir tous les utilisateurs
-        data: {}  // Pas de filtre pour récupérer tous
+        size: 200,
+        data: {}
       });
       
       if (usersResult && usersResult.items) {
