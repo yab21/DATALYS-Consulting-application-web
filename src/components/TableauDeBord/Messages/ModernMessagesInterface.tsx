@@ -480,9 +480,19 @@ const ModernMessagesInterface: React.FC = () => {
       setSending(true);
       
       // Utiliser replyToMessage pour toutes les réponses
-      // Trouver le parent_id : premier message de la conversation
+      // Trouver le parent_id : ID du message racine de la conversation
       const firstMessage = selectedConversation.messages[0];
-      const parentId = parseInt(firstMessage?.id || selectedConversation.id);
+      // Utiliser parent_id du message s'il existe (pointe vers la racine), sinon l'id du premier message
+      const parentId = Number(firstMessage?.parent_id) || Number(firstMessage?.id);
+
+      if (!parentId || isNaN(parentId)) {
+        console.error('Impossible de déterminer le parent_id pour la réponse', {
+          conversationId: selectedConversation.id,
+          firstMessageId: firstMessage?.id,
+          firstMessageParentId: firstMessage?.parent_id
+        });
+        return;
+      }
 
       await messagesService.replyToMessage({
         parent_id: parentId,
