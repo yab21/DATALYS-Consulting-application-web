@@ -86,7 +86,7 @@ const ModernMessagesInterface: React.FC = () => {
     description: "",
     priority: "moyenne" as "faible" | "moyenne" | "haute" | "critique",
     project_id: "",
-    recipient_type: "normal" as "normal" | "specific_partner" | "all_partners",
+    recipient_type: "specific_partner" as "specific_partner" | "all_partners",
     recipient_id: "",
     // Support incidents
     incident_id: "",
@@ -330,13 +330,45 @@ const ModernMessagesInterface: React.FC = () => {
       const readMessagesKey = `readMessages_user_${user?.id}`;
       const readMessageIds = new Set(JSON.parse(localStorage.getItem(readMessagesKey) || '[]'));
 
+      // Détecter les messages broadcast (même titre, description, created_by, created_at)
+      // et leur assigner un même conversation key pour les regrouper
+      const broadcastKeyMap = new Map<string, string>(); // broadcastKey -> first thread_ticket_number
+      messages.forEach((message: any) => {
+        const key = message.thread_ticket_number || message.incident_number;
+        const isMyMessage = String(message.created_by) === String(user?.id);
+        if (isMyMessage && message.title && message.created_at) {
+          const broadcastKey = `broadcast_${message.title}_${message.description}_${message.created_by}_${message.created_at}`;
+          if (!broadcastKeyMap.has(broadcastKey)) {
+            broadcastKeyMap.set(broadcastKey, key);
+          }
+        }
+      });
+      // Créer un reverse map: thread_ticket_number -> grouped key
+      const broadcastGroupMap = new Map<string, string>();
+      broadcastKeyMap.forEach((firstKey, broadcastKey) => {
+        messages.forEach((message: any) => {
+          const key = message.thread_ticket_number || message.incident_number;
+          const checkKey = `broadcast_${message.title}_${message.description}_${message.created_by}_${message.created_at}`;
+          if (checkKey === broadcastKey && key !== firstKey) {
+            broadcastGroupMap.set(key, firstKey);
+          }
+        });
+      });
+
       // Organiser les messages en conversations
       const conversationsMap = new Map<string, Conversation>();
+      const broadcastSkipped = new Set<string>(); // Tickets broadcast dupliqués à ignorer
 
       messages.forEach((message: any) => {
         // Grouper par thread_ticket_number (lie les réponses au ticket parent)
         // Si thread_ticket_number est absent, utiliser incident_number (message racine)
-        const conversationKey = message.thread_ticket_number || message.incident_number;
+        let conversationKey = message.thread_ticket_number || message.incident_number;
+
+        // Si c'est un doublon de broadcast, regrouper sous le premier ticket
+        if (broadcastGroupMap.has(conversationKey)) {
+          // Ne pas afficher les doublons broadcast, garder seulement le premier
+          return;
+        }
         
         // Nettoyer le titre pour éviter les "Réponse: " multiples
         let originalTitle = message.title || 'Sans titre';
@@ -575,7 +607,7 @@ const ModernMessagesInterface: React.FC = () => {
         description: "",
         priority: "moyenne",
         project_id: "",
-        recipient_type: "normal",
+        recipient_type: "specific_partner",
         recipient_id: "",
         incident_id: "",
         expert_id: ""
@@ -1127,11 +1159,10 @@ const ModernMessagesInterface: React.FC = () => {
                         placeholder="Sélectionner le type de destinataire"
                         selectedKeys={[newMessage.recipient_type]}
                         onSelectionChange={(keys) => {
-                          const recipientType = Array.from(keys)[0] as "normal" | "specific_partner" | "all_partners";
+                          const recipientType = Array.from(keys)[0] as "specific_partner" | "all_partners";
                           setNewMessage({...newMessage, recipient_type: recipientType, recipient_id: ""});
                         }}
                       >
-                        <SelectItem key="normal">Message normal</SelectItem>
                         <SelectItem key="specific_partner">Utilisateur spécifique</SelectItem>
                         <SelectItem key="all_partners">Tous les utilisateurs</SelectItem>
                       </Select>
