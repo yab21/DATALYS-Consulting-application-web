@@ -97,20 +97,36 @@ export interface MessageFilters {
 }
 
 export interface GetMyMessagesRequest {
-  user: {
-    id: number;
-  };
   index: number;
   size: number;
   filters?: MessageFilters;
 }
 
 export interface GetConversationThreadRequest {
-  user: {
-    id: number;
-  };
-  incident_id?: number;
-  parent_id?: number;
+  parent_id: number;
+  index: number;
+  size: number;
+}
+
+export interface ReplyMessageRequest {
+  parent_id: number;
+  description: string;
+}
+
+export interface BroadcastMessageRequest {
+  title: string;
+  description: string;
+  recipient_ids: number[] | "all";
+}
+
+export interface ListThreadsRequest {
+  index: number;
+  size: number;
+  type?: string;
+}
+
+export interface GetConversationByTicketRequest {
+  ticket_number: string;
 }
 
 export interface MessagesResponse {
@@ -281,22 +297,13 @@ class MessagesService {
    * Récupérer mes messages avec pagination
    */
   async getMyMessages(
-    userId: number,
-    index: number = 0, 
+    index: number = 0,
     size: number = 20
   ): Promise<MessagesResponse> {
     try {
       const requestBody: GetMyMessagesRequest = {
-        user: {
-          id: userId
-        },
         index,
-        size,
-        // Inclure tous les types de messages : messages et notifications
-        filters: {
-          type: undefined, // Pas de filtre sur le type pour récupérer tout
-          category: undefined // Pas de filtre sur la catégorie
-        }
+        size
       };
 
       const response = await fetch(`${this.baseUrl}/messages/my-messages`, {
@@ -323,26 +330,16 @@ class MessagesService {
    * Récupérer un fil de conversation
    */
   async getConversationThread(
-    userId: number,
-    parentId?: number,
-    incidentId?: number
+    parentId: number,
+    index: number = 0,
+    size: number = 50
   ): Promise<ConversationResponse> {
     try {
       const requestBody: GetConversationThreadRequest = {
-        user: {
-          id: userId
-        }
+        parent_id: parentId,
+        index,
+        size
       };
-
-      // Ajouter incident_id si fourni
-      if (incidentId) {
-        requestBody.incident_id = incidentId;
-      }
-
-      // Ajouter parent_id si fourni
-      if (parentId) {
-        requestBody.parent_id = parentId;
-      }
 
       const response = await fetch(`${this.baseUrl}/conversations/thread`, {
         method: 'POST',
@@ -670,17 +667,125 @@ class MessagesService {
     title?: string;
   }): Promise<{ message: Message; code: number }> {
     try {
-      // Utiliser sendMessage avec parent_id pour les réponses
-      const messageData: CreateMessageRequest = {
-        title: data.title || `Réponse incident #${data.incident_id}`,
-        description: data.description,
+      return await this.replyToMessage({
         parent_id: data.parent_id,
-        incident_id: data.incident_id.toString()
-      };
-
-      return await this.sendMessage(messageData);
+        description: data.description
+      });
     } catch (error) {
       console.error('Erreur réponse incident:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Diffuser un message (broadcast) à plusieurs destinataires ou à tous
+   */
+  async broadcastMessage(data: BroadcastMessageRequest): Promise<{ message: Message; code: number }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/messages/broadcast`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la diffusion du message');
+      }
+
+      const result = await response.json();
+      return {
+        message: result.items?.[0] || result,
+        code: result.code
+      };
+    } catch (error) {
+      console.error('Erreur broadcast message:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Répondre à un message existant
+   */
+  async replyToMessage(data: ReplyMessageRequest): Promise<{ message: Message; code: number }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/messages/reply`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la réponse au message');
+      }
+
+      const result = await response.json();
+      return {
+        message: result.items?.[0] || result,
+        code: result.code
+      };
+    } catch (error) {
+      console.error('Erreur réponse message:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Lister les fils de discussion avec pagination
+   */
+  async listThreads(
+    index: number = 0,
+    size: number = 20,
+    type?: string
+  ): Promise<MessagesResponse> {
+    try {
+      const requestBody: ListThreadsRequest = { index, size };
+      if (type) {
+        requestBody.type = type;
+      }
+
+      const response = await fetch(`${this.baseUrl}/conversations/list-threads`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la récupération des fils de discussion');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur récupération threads:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Récupérer une conversation par numéro de ticket
+   */
+  async getConversationByTicket(ticketNumber: string): Promise<ConversationResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/conversations/by-ticket`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ ticket_number: ticketNumber })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la récupération de la conversation');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur récupération conversation par ticket:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

@@ -36,10 +36,9 @@ import {
   Trash2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import messagesService, { 
-  Message, 
-  CreateMessageRequest,
-  CreateNotificationRequest
+import messagesService, {
+  Message,
+  CreateMessageRequest
 } from "@/services/messages";
 import { UsersService, User } from "@/services/users";
 import { ProjectsService, Project } from "@/services/projects";
@@ -308,7 +307,7 @@ const ModernMessagesInterface: React.FC = () => {
       // Récupérer les messages normaux avec gestion d'erreur robuste
       let messages: any[] = [];
       try {
-        const messagesResponse = await messagesService.getMyMessages(user.id, 0, 100);
+        const messagesResponse = await messagesService.getMyMessages(0, 100);
         messages = messagesResponse.items || [];
       } catch (msgError) {
         console.error('❌ Erreur récupération messages:', msgError);
@@ -480,33 +479,15 @@ const ModernMessagesInterface: React.FC = () => {
     try {
       setSending(true);
       
-      // Utiliser sendMessage avec parent_id pour toutes les réponses
-      if (selectedConversation.isIncidentChat && selectedConversation.incident_id) {
-        // Chat d'incident - utiliser replyToIncidentMessage avec les bons types
-        const incidentReplyData = {
-          parent_id: parseInt(selectedConversation.id),
-          incident_id: parseInt(selectedConversation.incident_id),
-          description: replyText.trim(),
-          title: `Réponse incident #${selectedConversation.incident_id}`
-        };
-        
-        await messagesService.replyToIncidentMessage(incidentReplyData);
-      } else {
-        // Message normal - utiliser sendMessage avec parent_id
-        // Éviter d'ajouter "Réponse: " plusieurs fois
-        let replyTitle = selectedConversation.title;
-        if (!replyTitle.startsWith("Réponse:") && !replyTitle.startsWith("Re:")) {
-          replyTitle = `Réponse: ${replyTitle}`;
-        }
-        
-        const replyData: CreateMessageRequest = {
-          title: replyTitle,
-          description: replyText.trim(),
-          parent_id: parseInt(selectedConversation.id)
-        };
-        
-        await messagesService.sendMessage(replyData);
-      }
+      // Utiliser replyToMessage pour toutes les réponses
+      // Trouver le parent_id : premier message de la conversation
+      const firstMessage = selectedConversation.messages[0];
+      const parentId = parseInt(firstMessage?.id || selectedConversation.id);
+
+      await messagesService.replyToMessage({
+        parent_id: parentId,
+        description: replyText.trim()
+      });
       
       setReplyText("");
       
@@ -525,21 +506,29 @@ const ModernMessagesInterface: React.FC = () => {
     try {
       setSendingNewMessage(true);
       
-      // Toujours utiliser sendMessage pour que les messages apparaissent dans la liste
-      const messageData: CreateMessageRequest = {
-        title: newMessage.title.trim(),
-        description: newMessage.description.trim(),
-        priority: newMessage.priority,
-        type: "message", // Forcer le type message
-        category: "communication", // Forcer la catégorie communication
-        project_id: newMessage.project_id ? parseInt(newMessage.project_id) : undefined,
-        // Si utilisateur spécifique, inclure l'ID
-        ...(newMessage.recipient_type === "specific_partner" && newMessage.recipient_id && {
-          recipient_id: parseInt(newMessage.recipient_id)
-        })
-      };
-      
-      await messagesService.sendMessage(messageData);
+      if (newMessage.recipient_type === "all_partners") {
+        // Broadcast à tous les utilisateurs
+        await messagesService.broadcastMessage({
+          title: newMessage.title.trim(),
+          description: newMessage.description.trim(),
+          recipient_ids: "all"
+        });
+      } else {
+        // Message normal ou vers un utilisateur spécifique
+        const messageData: CreateMessageRequest = {
+          title: newMessage.title.trim(),
+          description: newMessage.description.trim(),
+          priority: newMessage.priority,
+          type: "message",
+          category: "communication",
+          project_id: newMessage.project_id ? parseInt(newMessage.project_id) : undefined,
+          ...(newMessage.recipient_type === "specific_partner" && newMessage.recipient_id && {
+            recipient_id: parseInt(newMessage.recipient_id)
+          })
+        };
+
+        await messagesService.sendMessage(messageData);
+      }
       
       // Réinitialiser le formulaire
       setNewMessage({

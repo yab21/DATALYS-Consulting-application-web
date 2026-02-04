@@ -38,8 +38,8 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import messagesService, { 
-  Message, 
+import messagesService, {
+  Message,
   CreateMessageRequest
 } from "@/services/messages";
 
@@ -143,9 +143,11 @@ const GestionMessages: React.FC = () => {
 
     try {
       setSending(true);
-      // TODO: Implémenter la réponse avec la nouvelle API
-      console.log('Reply functionality needs to be implemented with new API');
-      
+      await messagesService.replyToMessage({
+        parent_id: parseInt(selectedMessage.id),
+        description: replyText.trim()
+      });
+
       // Recharger la conversation pour avoir les données à jour
       loadConversation(selectedMessage.id);
       setReplyText("");
@@ -161,17 +163,12 @@ const GestionMessages: React.FC = () => {
 
     try {
       setSending(true);
-      
-      // Utiliser l'API POST /messages/send pour envoyer la réponse
-      const originalMessage = messages.find(m => m.id === messageId);
-      const replyData: CreateMessageRequest = {
-        title: `Réponse à: ${originalMessage?.title || 'Message'}`,
-        description: replyText,
-        priority: "moyenne"
-      };
-      
-      await messagesService.sendMessage(replyData);
-      
+
+      await messagesService.replyToMessage({
+        parent_id: parseInt(messageId),
+        description: replyText.trim()
+      });
+
       // Recharger tous les messages pour avoir la liste à jour
       await loadMessages();
     } catch (error) {
