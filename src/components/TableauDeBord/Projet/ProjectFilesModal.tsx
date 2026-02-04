@@ -1100,15 +1100,6 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                
                 onChange={(e) => setNewFolderDescription(e.target.value)}
               />
-              
-              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  <strong>Emplacement :</strong> {breadcrumbPath.length > 1 ? breadcrumbPath.map(b => b.name).join(' > ') : `${project.title} (Racine)`}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  Le nouveau dossier sera créé dans {breadcrumbPath.length > 1 ? `le dossier "${breadcrumbPath[breadcrumbPath.length - 1].name}"` : 'la racine du projet'}
-                </p>
-              </div>
             </div>
           </ModalBody>
           <ModalFooter>
