@@ -383,7 +383,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
                   <Input
                     label="Titre du projet"
                     placeholder="Ex: Migration Data Center, Sécurisation réseau entreprise"
-                   
+                    value={editForm.title}
                     onValueChange={(value) => handleEditFormChange('title', value)}
                     startContent={<Edit className="h-4 w-4" />}
                     isRequired

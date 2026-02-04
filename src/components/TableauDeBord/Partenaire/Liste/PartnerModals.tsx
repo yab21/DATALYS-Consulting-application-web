@@ -650,7 +650,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 <Input
                   label="Nom"
                   placeholder="Nom du partenaire"
-                 
+                  value={editForm.name}
                   onValueChange={(value) => handleEditFormChange('name', value)}
                   isRequired
                 />
@@ -659,7 +659,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   label="Email"
                   placeholder="email@example.com"
                   type="email"
-                 
+                  value={editForm.email}
                   onValueChange={(value) => handleEditFormChange('email', value)}
                   isRequired
                 />
@@ -700,7 +700,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 <Input
                   label="Téléphone"
                   placeholder="123456789"
-                 
+                  value={editForm.phone}
                   onValueChange={(value) => handleEditFormChange('phone', value)}
                   startContent={<Phone className="h-4 w-4" />}
                   isRequired
@@ -711,7 +711,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               <Input
                 label="Adresse"
                 placeholder="Adresse complète"
-               
+                value={editForm.address}
                 onValueChange={(value) => handleEditFormChange('address', value)}
                 isRequired
               />

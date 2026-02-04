@@ -1249,15 +1249,15 @@ const SupportIncidents: React.FC = () => {
                   <Input
                     label="Titre du ticket"
                     placeholder="Ex: Problème de connectivité..."
-                   
+                    value={createForm.title}
                     onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
                     isRequired
                   />
-                  
+
                   <Textarea
                     label="Description"
                     placeholder="Décrivez le problème en détail..."
-                   
+                    value={createForm.description}
                     onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
                     minRows={3}
                     isRequired
@@ -1336,7 +1336,7 @@ const SupportIncidents: React.FC = () => {
                     <Input
                       label="Catégorie"
                       placeholder="Ex: Technique, Fonctionnel..."
-                     
+                      value={createForm.category}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value }))}
                     />
                     
@@ -1419,7 +1419,7 @@ const SupportIncidents: React.FC = () => {
                   <Textarea
                     label="Notes de résolution (optionnel)"
                     placeholder="Ajoutez des notes sur la résolution du ticket..."
-                   
+                    value={createForm.resolution_notes}
                     onChange={(e) => setCreateForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
                     minRows={2}
                   />
@@ -1545,13 +1545,13 @@ const SupportIncidents: React.FC = () => {
                 <div className="space-y-4">
                   <Input
                     label="Titre du ticket"
-                   
+                    value={editForm.title}
                     onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
                   />
-                  
+
                   <Textarea
                     label="Description"
-                   
+                    value={editForm.description}
                     onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                     minRows={3}
                   />
@@ -1628,7 +1628,7 @@ const SupportIncidents: React.FC = () => {
                     
                     <Input
                       label="Catégorie"
-                     
+                      value={editForm.category}
                       onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
                     />
                     
@@ -1711,7 +1711,7 @@ const SupportIncidents: React.FC = () => {
                   <Textarea
                     label="Notes de résolution (optionnel)"
                     placeholder="Ajoutez des notes sur la résolution du ticket..."
-                   
+                    value={editForm.resolution_notes}
                     onChange={(e) => setEditForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
                     minRows={2}
                   />

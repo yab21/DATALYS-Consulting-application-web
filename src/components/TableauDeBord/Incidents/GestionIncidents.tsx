@@ -2367,6 +2367,7 @@ const GestionIncidents: React.FC = () => {
               <Input
                 label="Titre de l'incident"
                 placeholder="Ex: Problème de connectivité..."
+                value={createForm.title}
                 onChange={(e) => {
                   setCreateForm((prev) => ({ ...prev, title: e.target.value }));
                   clearCreateFormError("title");
@@ -2379,6 +2380,7 @@ const GestionIncidents: React.FC = () => {
               <Textarea
                 label="Description"
                 placeholder="Décrivez le problème en détail..."
+                value={createForm.description}
                 onChange={(e) => {
                   setCreateForm((prev) => ({
                     ...prev,
@@ -2485,6 +2487,7 @@ const GestionIncidents: React.FC = () => {
                 <Input
                   label="Catégorie"
                   placeholder="Ex: Technique, Fonctionnel..."
+                  value={createForm.category}
                   onChange={(e) => {
                     setCreateForm((prev) => ({
                       ...prev,
@@ -2715,6 +2718,7 @@ const GestionIncidents: React.FC = () => {
                 <Input
                   label="Titre de l'incident"
                   placeholder="Ex: Problème de connectivité..."
+                  value={editForm.title}
                   onChange={(e) => {
                     setEditForm((prev) => ({ ...prev, title: e.target.value }));
                     clearEditFormError("title");
@@ -2727,6 +2731,7 @@ const GestionIncidents: React.FC = () => {
                 <Textarea
                   label="Description"
                   placeholder="Décrivez le problème en détail..."
+                  value={editForm.description}
                   onChange={(e) => {
                     setEditForm((prev) => ({
                       ...prev,
@@ -2829,6 +2834,7 @@ const GestionIncidents: React.FC = () => {
                   <Input
                     label="Catégorie"
                     placeholder="Ex: Technique, Fonctionnel..."
+                    value={editForm.category}
                     onChange={(e) => {
                       setEditForm((prev) => ({
                         ...prev,
@@ -3119,6 +3125,7 @@ const GestionIncidents: React.FC = () => {
                 <Input
                   type="date"
                   label="Date de début"
+                  value={exportForm.date_from}
                   onChange={(e) =>
                     setExportForm((prev) => ({
                       ...prev,
@@ -3129,6 +3136,7 @@ const GestionIncidents: React.FC = () => {
                 <Input
                   type="date"
                   label="Date de fin"
+                  value={exportForm.date_to}
                   onChange={(e) =>
                     setExportForm((prev) => ({
                       ...prev,
