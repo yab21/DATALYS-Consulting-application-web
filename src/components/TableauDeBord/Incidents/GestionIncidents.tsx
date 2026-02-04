@@ -105,6 +105,7 @@ interface Incident {
   is_read: boolean;
   refusal_count: number;
   resolution_notes?: string;
+  created_by?: number;
 }
 
 // Fonction de conversion API vers interface locale
@@ -160,6 +161,7 @@ const convertApiIncidentToLocal = (
     is_read: apiIncident.is_read,
     refusal_count: apiIncident.refusal_count,
     resolution_notes: apiIncident.resolution_notes,
+    created_by: apiIncident.created_by,
   };
 };
 
@@ -1867,6 +1869,7 @@ const GestionIncidents: React.FC = () => {
                                     partner_name: incident.partnerNom,
                                     project_name: incident.projectNom,
                                     incident_number: incident.incident_number,
+                                    ...(incident.created_by ? { partner_user_id: incident.created_by.toString() } : {}),
                                   });
                                   window.location.href = `/tableaudebord/messages?${messageParams.toString()}`;
                                 } else {

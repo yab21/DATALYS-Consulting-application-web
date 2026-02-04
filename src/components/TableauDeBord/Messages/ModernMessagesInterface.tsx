@@ -163,17 +163,22 @@ const ModernMessagesInterface: React.FC = () => {
     const incidentNumber = urlParams.get('incident_number');
     
     if (partnerName && incidentNumber && isAdmin()) {
+      const partnerUserId = urlParams.get('partner_user_id');
+
       // Pré-remplir le nouveau message avec le contexte de l'incident
       setNewMessage(prev => ({
         ...prev,
         title: `Re: Incident ${incidentNumber} - ${projectName || 'Projet'}`,
         description: `Concernant votre incident ${incidentNumber}`,
-        recipient_type: "specific_partner" as const
+        recipient_type: "specific_partner" as const,
+        ...(partnerUserId ? { recipient_id: partnerUserId } : {})
       }));
-      
+
       // Ouvrir automatiquement le modal de nouveau message
       setShowNewMessageModal(true);
-      
+
+      // Charger les utilisateurs pour que le dropdown affiche le nom
+      loadUsers();
     }
   }, [isAdmin]);
 
@@ -934,13 +939,7 @@ const ModernMessagesInterface: React.FC = () => {
                               </Chip>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {selectedConversation.subtitle}
-                          </p>
                         </div>
-                        <p className="text-sm text-gray-500">
-                          {selectedConversation.participants.join(', ')}
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -1099,7 +1098,7 @@ const ModernMessagesInterface: React.FC = () => {
                   <Input
                     label="Sujet"
                     placeholder="Entrez le sujet de votre message..."
-                   
+                    value={newMessage.title}
                     onChange={(e) => setNewMessage({...newMessage, title: e.target.value})}
                     isRequired
                   />
@@ -1198,7 +1197,7 @@ const ModernMessagesInterface: React.FC = () => {
                   <Textarea
                     label="Message"
                     placeholder="Décrivez votre message..."
-                   
+                    value={newMessage.description}
                     onChange={(e) => setNewMessage({...newMessage, description: e.target.value})}
                     minRows={3}
                     isRequired
