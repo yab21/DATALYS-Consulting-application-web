@@ -103,28 +103,31 @@ const ModernMessagesInterface: React.FC = () => {
 
   // Fonction utilitaire pour extraire le nom d'un utilisateur à partir d'un message
   const extractUserName = (message: any, isCurrentUser: boolean = false): string => {
-    if (isCurrentUser && user?.name) {
-      return user.name;
+    const userId = message.created_by || message.user_id || message.sender_id;
+
+    // Si c'est l'utilisateur connecté
+    if (isCurrentUser || (userId && user?.id && (parseInt(userId) === user.id || String(userId) === String(user.id)))) {
+      return user?.name || 'Moi';
     }
 
-    // Priorité 1: Nom direct du message
+    // Nom direct du message
     if (message.sender_name) return message.sender_name;
     if (message.user?.name) return message.user.name;
     if (message.created_by_name) return message.created_by_name;
-    
-    // Priorité 2: Map des noms chargés
-    const userId = message.created_by || message.user_id || message.sender_id;
+
+    // Map des noms chargés (disponible pour les admins)
     if (userId && userNamesMap.has(parseInt(userId))) {
       return userNamesMap.get(parseInt(userId))!;
     }
-    
-    // Priorité 3: Si c'est l'utilisateur connecté
-    if (userId && user?.id && (parseInt(userId) === user.id || String(userId) === String(user.id))) {
-      return user.name || 'Moi';
+
+    // Fallback : pour les partenaires, l'autre utilisateur est le support
+    // Pour les admins, afficher "Partenaire" si le nom est inconnu
+    if (userId) {
+      const isCurrentUserAdmin = user?.role_id === 1 || String(user?.role_id) === "1";
+      return isCurrentUserAdmin ? `Partenaire` : 'Support DATALYS';
     }
-    
-    // Fallback: Utilisateur + ID
-    return userId ? `Utilisateur ${userId}` : 'Utilisateur inconnu';
+
+    return 'Utilisateur inconnu';
   };
   
   // États pour les projets
@@ -180,19 +183,6 @@ const ModernMessagesInterface: React.FC = () => {
     loadUserNames(); // Charger les noms d'utilisateurs pour l'affichage
   }, []);
   
-  // Mettre à jour la conversation sélectionnée quand les conversations changent
-  useEffect(() => {
-    if (selectedConversation && conversations.length > 0) {
-      const updatedConversation = conversations.find(conv => conv.id === selectedConversation.id);
-      if (updatedConversation && updatedConversation !== selectedConversation) {
-        // Vérifier si le contenu a changé (nouveau message)
-        const hasNewMessages = updatedConversation.messages.length !== selectedConversation.messages.length;
-        if (hasNewMessages) {
-          setSelectedConversation(updatedConversation);
-        }
-      }
-    }
-  }, [conversations, selectedConversation]);
 
   // Charger les projets
   const loadProjects = async () => {
@@ -323,13 +313,21 @@ const ModernMessagesInterface: React.FC = () => {
       //   console.warn('⚠️ Impossible de récupérer les notifications:', notifError);
       // }
       
+      // Filtrer les messages supprimés (soft delete)
+      messages = messages.filter((message: any) => {
+        if (message.is_deleted) return false;
+        if (message.deleted_by_sender) return false;
+        if (message.deleted_by_recipient) return false;
+        return true;
+      });
+
       // Récupérer les messages marqués comme lus depuis localStorage
       const readMessagesKey = `readMessages_user_${user?.id}`;
       const readMessageIds = new Set(JSON.parse(localStorage.getItem(readMessagesKey) || '[]'));
 
       // Organiser les messages en conversations
       const conversationsMap = new Map<string, Conversation>();
-      
+
       messages.forEach((message: any) => {
         // Grouper par thread_ticket_number (lie les réponses au ticket parent)
         // Si thread_ticket_number est absent, utiliser incident_number (message racine)
@@ -418,9 +416,9 @@ const ModernMessagesInterface: React.FC = () => {
       
       setConversations(conversationsArray);
       
-      // Sélectionner la première conversation par défaut
+      // Sélectionner la première conversation par défaut et charger le thread complet
       if (conversationsArray.length > 0 && !selectedConversation) {
-        setSelectedConversation(conversationsArray[0]);
+        handleSelectConversation(conversationsArray[0]);
       }
       
     } catch (error) {
@@ -430,35 +428,64 @@ const ModernMessagesInterface: React.FC = () => {
     }
   };
 
-  const handleSelectConversation = (conversation: Conversation) => {
-    // Marquer tous les messages de cette conversation comme lus (côté frontend uniquement)
+  const handleSelectConversation = async (conversation: Conversation) => {
+    // Charger le thread complet pour voir les messages de tous les participants
+    const firstMessage = conversation.messages[0];
+    const parentId = Number(firstMessage?.parent_id) || Number(firstMessage?.id);
+
+    let fullMessages = conversation.messages;
+
+    if (parentId && !isNaN(parentId)) {
+      try {
+        const threadResponse = await messagesService.getConversationThread(parentId, 0, 100);
+        if (threadResponse.items && threadResponse.items.length > 0) {
+          fullMessages = threadResponse.items;
+        }
+      } catch (error) {
+        console.error('Erreur chargement thread complet:', error);
+        // Fallback : garder les messages déjà chargés
+      }
+    }
+
+    // Filtrer les messages supprimés (soft delete)
+    fullMessages = fullMessages.filter((message: any) => {
+      if (message.is_deleted) return false;
+      if (message.deleted_by_sender) return false;
+      if (message.deleted_by_recipient) return false;
+      return true;
+    });
+
+    // Marquer tous les messages comme lus
+    const updatedMessages = fullMessages.map((message: any) => {
+      return {
+        ...message,
+        is_read: true,
+        read_at: message.read_at || new Date().toISOString()
+      };
+    }).sort((a: any, b: any) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
     const updatedConversation = {
       ...conversation,
       unreadCount: 0,
-      messages: conversation.messages.map(message => {
-        // Toujours marquer tous les messages comme lus quand on ouvre la conversation
-        return {
-          ...message,
-          is_read: true,
-          read_at: message.read_at || new Date().toISOString()
-        };
-      })
+      messages: updatedMessages
     };
 
-    // Sauvegarder l'état "lu" en localStorage pour persister après rechargement
+    // Sauvegarder l'état "lu" en localStorage
     const readMessagesKey = `readMessages_user_${user?.id}`;
     const currentReadMessages = JSON.parse(localStorage.getItem(readMessagesKey) || '[]');
-    const messageIds = conversation.messages.map(m => m.id);
+    const messageIds = updatedMessages.map((m: any) => m.id);
     const updatedReadMessages = [...new Set([...currentReadMessages, ...messageIds])];
     localStorage.setItem(readMessagesKey, JSON.stringify(updatedReadMessages));
-    
-    // Mettre à jour la liste des conversations pour refléter les changements
-    setConversations(prevConversations => 
-      prevConversations.map(conv => 
+
+    // Mettre à jour la liste des conversations
+    setConversations(prevConversations =>
+      prevConversations.map(conv =>
         conv.id === conversation.id ? updatedConversation : conv
       )
     );
-    
+
     setSelectedConversation(updatedConversation);
     if (isMobile) {
       setShowConversationDetail(true);
@@ -493,8 +520,12 @@ const ModernMessagesInterface: React.FC = () => {
       });
       
       setReplyText("");
-      
-      await loadMessages(); // Recharger pour voir la nouvelle réponse
+
+      // Recharger la liste et le thread complet de la conversation actuelle
+      await loadMessages();
+      if (selectedConversation) {
+        await handleSelectConversation(selectedConversation);
+      }
       
     } catch (error) {
       console.error('Erreur envoi réponse:', error);
@@ -599,42 +630,31 @@ const ModernMessagesInterface: React.FC = () => {
       const result = await messagesService.deleteMessage(parseInt(messageToDelete.id));
       
       if (result.success) {
-        // Mettre à jour l'état local
-        setConversations(prevConversations => 
-          prevConversations.map(conv => {
-            if (conv.id === selectedConversation?.id) {
-              // Retirer le message supprimé de la conversation
-              const updatedMessages = conv.messages.filter(m => m.id !== messageToDelete.id);
-              
-              if (updatedMessages.length === 0) {
-                // Si plus de messages, la conversation sera supprimée
-                return null;
-              }
-              
-              // Mettre à jour le dernier message
-              const newLastMessage = updatedMessages[updatedMessages.length - 1];
-              
-              return {
-                ...conv,
-                messages: updatedMessages,
-                lastMessage: newLastMessage,
-                updatedAt: newLastMessage.updated_at || newLastMessage.created_at
-              };
-            }
-            return conv;
-          }).filter((conv): conv is Conversation => conv !== null) // Filter avec type guard
-        );
-
-        // Si la conversation sélectionnée n'a plus de messages, la désélectionner
+        // Retirer le message supprimé de la conversation sélectionnée
         if (selectedConversation) {
-          const updatedConv = conversations.find(c => c.id === selectedConversation.id);
-          const hasMessages = updatedConv ? updatedConv.messages.filter(m => m.id !== messageToDelete.id).length > 0 : false;
-          
-          if (!hasMessages) {
+          const updatedMessages = selectedConversation.messages.filter(m => m.id !== messageToDelete.id);
+
+          if (updatedMessages.length === 0) {
+            // Plus de messages : supprimer la conversation
+            setConversations(prev => prev.filter(c => c.id !== selectedConversation.id));
             setSelectedConversation(null);
             if (isMobile) {
               setShowConversationDetail(false);
             }
+          } else {
+            const newLastMessage = updatedMessages[updatedMessages.length - 1];
+            const updatedConversation = {
+              ...selectedConversation,
+              messages: updatedMessages,
+              lastMessage: newLastMessage,
+              updatedAt: newLastMessage.updated_at || newLastMessage.created_at
+            };
+
+            // Mettre à jour les deux états en même temps
+            setSelectedConversation(updatedConversation);
+            setConversations(prev =>
+              prev.map(c => c.id === selectedConversation.id ? updatedConversation : c)
+            );
           }
         }
         
