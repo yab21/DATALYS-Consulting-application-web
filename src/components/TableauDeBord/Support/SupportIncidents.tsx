@@ -559,35 +559,36 @@ const SupportIncidents: React.FC = () => {
   }, [showNotification]);
 
   const loadUsers = useCallback(async () => {
-    // Ne charger les utilisateurs que pour les admins
-    if (!isPartner()) {
-      try {
-        setLoadingUsers(true);
-        const response = await UsersService.getUsersByCriteria({ size: 1000 });
-        const allUsers = response.items || [];
-        
-        // Filtrer les utilisateurs pour éviter les doublons de noms
-        const uniqueUsersMap = new Map();
-        allUsers.forEach((user: UserType) => {
-          if (!uniqueUsersMap.has(user.name)) {
-            uniqueUsersMap.set(user.name, user);
-          }
-        });
-        const uniqueUsers = Array.from(uniqueUsersMap.values());
-        
-        setUsers(uniqueUsers);
-        console.log('📋 Utilisateurs chargés:', uniqueUsers.length);
-      } catch (error) {
-        console.error('❌ Erreur lors du chargement des utilisateurs:', error);
-        showNotification(simpleNotificationHelpers.error(
-          "Erreur",
-          "Impossible de charger la liste des utilisateurs"
-        ));
-      } finally {
-        setLoadingUsers(false);
-      }
+    // Ne charger les utilisateurs que pour les admins (pas les partenaires)
+    if (isPartner() || user?.partner_id || (user?.role_id !== 1 && String(user?.role_id) !== "1")) {
+      return;
     }
-  }, [showNotification, isPartner]);
+    try {
+      setLoadingUsers(true);
+      const response = await UsersService.getUsersByCriteria({ size: 1000 });
+      const allUsers = response.items || [];
+
+      // Filtrer les utilisateurs pour éviter les doublons de noms
+      const uniqueUsersMap = new Map();
+      allUsers.forEach((u: UserType) => {
+        if (!uniqueUsersMap.has(u.name)) {
+          uniqueUsersMap.set(u.name, u);
+        }
+      });
+      const uniqueUsers = Array.from(uniqueUsersMap.values());
+
+      setUsers(uniqueUsers);
+      console.log('📋 Utilisateurs chargés:', uniqueUsers.length);
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des utilisateurs:', error);
+      showNotification(simpleNotificationHelpers.error(
+        "Erreur",
+        "Impossible de charger la liste des utilisateurs"
+      ));
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [showNotification, isPartner, user]);
 
   const loadData = useCallback(async () => {
     try {

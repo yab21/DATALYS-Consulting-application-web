@@ -44,7 +44,7 @@ interface GererIncidentProps {
 
 const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
   const router = useRouter();
-  const { } = useAuth();
+  const { user, isPartner } = useAuth();
   const { showNotification } = useSimpleNotifications();
 
   // States
@@ -170,13 +170,17 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
   };
 
   const loadUsers = async () => {
+    // Ne charger les utilisateurs que pour les admins
+    if (isPartner() || user?.partner_id || (user?.role_id !== 1 && String(user?.role_id) !== "1")) {
+      return;
+    }
     try {
       setLoadingUsers(true);
-      const response = await UsersService.getUsersByCriteria({ 
+      const response = await UsersService.getUsersByCriteria({
         size: 100,
         data: { is_active: true }
       });
-      
+
       if (response && response.items) {
         setUsers(response.items);
       }

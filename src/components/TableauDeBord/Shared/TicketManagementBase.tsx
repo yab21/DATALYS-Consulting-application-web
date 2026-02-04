@@ -182,6 +182,10 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
   };
 
   const loadUsers = async () => {
+    // Ne charger les utilisateurs que pour les admins
+    if (user?.partner_id || (user?.role_id !== 1 && String(user?.role_id) !== "1")) {
+      return;
+    }
     try {
       const usersData = await UsersService.getUsersByCriteria();
       setUsers(Array.isArray(usersData?.data) ? usersData.data : []);

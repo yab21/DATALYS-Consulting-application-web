@@ -17,7 +17,7 @@ import {
 import { AlertTriangle, Plus } from "lucide-react";
 import { IncidentsService, type CreateIncidentData } from "@/services/incidents";
 import { type Project } from "@/services/projects";
-import { UsersService, type User } from "@/services/users";
+import { type User } from "@/services/users";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 
 interface CreateIncidentModalProps {
@@ -58,24 +58,10 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
     resolution_notes: ""
   });
 
-  // Charger les utilisateurs
+  // Les partenaires n'ont pas accès à l'API utilisateurs
   const loadUsers = async () => {
-    try {
-      setLoadingUsers(true);
-      const response = await UsersService.getUsersByCriteria({
-        index: 0,
-        size: 100,
-        data: { is_active: true }
-      });
-      
-      if (response && response.items) {
-        setUsers(response.items);
-      }
-    } catch (error) {
-      console.error('Erreur chargement utilisateurs:', error);
-    } finally {
-      setLoadingUsers(false);
-    }
+    // Skip - les partenaires n'ont pas les permissions pour charger les utilisateurs
+    return;
   };
 
   // Réinitialiser le formulaire et charger les données quand le modal s'ouvre
