@@ -145,6 +145,7 @@ const GestionMessages: React.FC = () => {
       setSending(true);
       await messagesService.replyToMessage({
         parent_id: parseInt(selectedMessage.id),
+        title: selectedMessage.title || 'Réponse',
         description: replyText.trim()
       });
 
@@ -164,8 +165,10 @@ const GestionMessages: React.FC = () => {
     try {
       setSending(true);
 
+      const originalMessage = messages.find(m => m.id === messageId);
       await messagesService.replyToMessage({
         parent_id: parseInt(messageId),
+        title: originalMessage?.title || 'Réponse',
         description: replyText.trim()
       });
 

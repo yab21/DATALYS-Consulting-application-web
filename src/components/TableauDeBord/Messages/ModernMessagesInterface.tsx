@@ -16,23 +16,18 @@ import {
   SelectItem,
   Textarea,
   ScrollShadow,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
 } from "@heroui/react";
 import { motion } from "framer-motion";
-import { 
-  Search, 
-  Send, 
-  MessageCircle, 
-  AlertTriangle, 
+import {
+  Search,
+  Send,
+  MessageCircle,
+  AlertTriangle,
   Clock,
   CheckCircle,
   Plus,
   ArrowLeft,
   Bug,
-  MoreVertical,
   Trash2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -336,8 +331,9 @@ const ModernMessagesInterface: React.FC = () => {
       const conversationsMap = new Map<string, Conversation>();
       
       messages.forEach((message: any) => {
-        // Grouper par numéro de ticket (incident_number)
-        const conversationKey = message.incident_number;
+        // Grouper par thread_ticket_number (lie les réponses au ticket parent)
+        // Si thread_ticket_number est absent, utiliser incident_number (message racine)
+        const conversationKey = message.thread_ticket_number || message.incident_number;
         
         // Nettoyer le titre pour éviter les "Réponse: " multiples
         let originalTitle = message.title || 'Sans titre';
@@ -349,7 +345,7 @@ const ModernMessagesInterface: React.FC = () => {
         if (!conversationsMap.has(conversationKey)) {
           conversationsMap.set(conversationKey, {
             id: conversationKey,
-            title: message.incident_number, // Titre = numéro du ticket
+            title: conversationKey, // Titre = numéro du ticket thread
             subtitle: originalTitle, // Sous-titre = titre original nettoyé
             lastMessage: message,
             unreadCount: 0,
@@ -357,7 +353,7 @@ const ModernMessagesInterface: React.FC = () => {
             messages: [],
             updatedAt: message.updated_at || new Date().toISOString(),
             // Informations du ticket
-            incident_number: message.incident_number,
+            incident_number: conversationKey,
             priority: message.priority,
             priority_label: message.priority_label,
             status: message.status,
@@ -486,16 +482,13 @@ const ModernMessagesInterface: React.FC = () => {
       const parentId = Number(firstMessage?.parent_id) || Number(firstMessage?.id);
 
       if (!parentId || isNaN(parentId)) {
-        console.error('Impossible de déterminer le parent_id pour la réponse', {
-          conversationId: selectedConversation.id,
-          firstMessageId: firstMessage?.id,
-          firstMessageParentId: firstMessage?.parent_id
-        });
+        console.error('Impossible de déterminer le parent_id pour la réponse');
         return;
       }
 
       await messagesService.replyToMessage({
         parent_id: parentId,
+        title: selectedConversation.subtitle || selectedConversation.title,
         description: replyText.trim()
       });
       
@@ -972,32 +965,15 @@ const ModernMessagesInterface: React.FC = () => {
                             <div className={`w-1.5 h-1.5 rounded-full ${getPriorityColor(message.priority)}`} />
                           </div>
                           
-                          {/* Menu contextuel pour supprimer */}
+                          {/* Icône suppression visible au survol */}
                           {canDeleteMessage(message) && (
-                            <div className="opacity-100 transition-opacity">
-                              <Dropdown>
-                                <DropdownTrigger>
-                                  <Button
-                                    isIconOnly
-                                    variant="light"
-                                    size="sm"
-                                    className={`min-w-unit-6 h-unit-6 bg-red-100 border border-red-300 ${isMyMessage ? 'text-red-600 hover:text-red-800 hover:bg-red-200' : 'text-red-600 hover:text-red-800 hover:bg-red-200'}`}
-                                  >
-                                    <MoreVertical className="h-3 w-3" />
-                                  </Button>
-                                </DropdownTrigger>
-                                <DropdownMenu aria-label="Actions du message">
-                                  <DropdownItem
-                                    key="delete"
-                                    color="danger"
-                                    startContent={<Trash2 className="h-4 w-4" />}
-                                    onPress={() => openDeleteModal(message)}
-                                  >
-                                    Supprimer le message
-                                  </DropdownItem>
-                                </DropdownMenu>
-                              </Dropdown>
-                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openDeleteModal(message); }}
+                              className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 ${isMyMessage ? 'text-white/60 hover:text-red-200' : 'text-gray-400 hover:text-red-500'}`}
+                              title="Supprimer le message"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                           )}
                         </div>
                         <p className="text-sm leading-relaxed">

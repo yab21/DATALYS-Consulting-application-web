@@ -110,6 +110,7 @@ export interface GetConversationThreadRequest {
 
 export interface ReplyMessageRequest {
   parent_id: number;
+  title: string;
   description: string;
 }
 
@@ -669,6 +670,7 @@ class MessagesService {
     try {
       return await this.replyToMessage({
         parent_id: data.parent_id,
+        title: data.title || `Réponse incident #${data.incident_id}`,
         description: data.description
       });
     } catch (error) {
