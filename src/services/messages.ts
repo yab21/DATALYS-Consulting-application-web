@@ -150,10 +150,13 @@ class MessagesService {
   // Récupérer le token d'authentification
   private getAuthHeaders() {
     const token = SecureStorage.getItem('authToken');
-    return {
-      'Authorization': `Bearer ${token}`,
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json'
     };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
   }
 
   /**

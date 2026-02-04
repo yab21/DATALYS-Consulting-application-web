@@ -328,7 +328,12 @@ const ModernMessagesInterface: React.FC = () => {
 
       // Récupérer les messages marqués comme lus depuis localStorage
       const readMessagesKey = `readMessages_user_${user?.id}`;
-      const readMessageIds = new Set(JSON.parse(localStorage.getItem(readMessagesKey) || '[]'));
+      let readMessageIds: Set<any>;
+      try {
+        readMessageIds = new Set(JSON.parse(localStorage.getItem(readMessagesKey) || '[]'));
+      } catch {
+        readMessageIds = new Set();
+      }
 
       // Détecter les messages broadcast (même titre, description, created_by, created_at)
       // et leur assigner un même conversation key pour les regrouper
@@ -1131,6 +1136,7 @@ const ModernMessagesInterface: React.FC = () => {
                     label="Sujet"
                     placeholder="Entrez le sujet de votre message..."
                     value={newMessage.title}
+                    maxLength={200}
                     onChange={(e) => setNewMessage({...newMessage, title: e.target.value})}
                     isRequired
                   />
@@ -1229,6 +1235,7 @@ const ModernMessagesInterface: React.FC = () => {
                     label="Message"
                     placeholder="Décrivez votre message..."
                     value={newMessage.description}
+                    maxLength={5000}
                     onChange={(e) => setNewMessage({...newMessage, description: e.target.value})}
                     minRows={3}
                     isRequired
