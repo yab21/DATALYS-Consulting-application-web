@@ -395,24 +395,24 @@ const ListeUtilisateurs: React.FC = () => {
       </motion.div>
 
       {/* Statistiques étendues */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {[
           {
-            title: "Total Utilisateurs",
+            title: "Total",
             value: stats.totalUsers,
             icon: <Users className="h-5 w-5" />,
             color: "bg-[#4ba9b7]", 
             textColor: "text-[#4ba9b7]"
           },
           {
-            title: "Utilisateurs Actifs",
+            title: "Actifs",
             value: stats.activeUsers,
             icon: <UserCheck className="h-5 w-5" />,
             color: "bg-green-500",
             textColor: "text-green-600"
           },
           {
-            title: "Utilisateurs Inactifs", 
+            title: "Inactifs",
             value: stats.inactiveUsers,
             icon: <UserX className="h-5 w-5" />,
             color: "bg-orange-500",
@@ -433,7 +433,7 @@ const ListeUtilisateurs: React.FC = () => {
             textColor: "text-purple-600"
           },
           {
-            title: "Actifs Aujourd'hui",
+            title: "Actifs auj.",
             value: stats.recentActivity,
             icon: <Clock className="h-5 w-5" />,
             color: "bg-blue-500",
@@ -447,17 +447,17 @@ const ListeUtilisateurs: React.FC = () => {
             transition={{ delay: index * 0.1 }}
           >
             <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardBody className="p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">
                       {stat.title}
                     </p>
                     <p className={`text-2xl font-bold ${stat.textColor} dark:text-white`}>
                       {stat.value}
                     </p>
                   </div>
-                  <div className={`${stat.color} rounded-lg p-3 text-white`}>
+                  <div className={`${stat.color} rounded-lg p-2.5 text-white flex-shrink-0`}>
                     {stat.icon}
                   </div>
                 </div>

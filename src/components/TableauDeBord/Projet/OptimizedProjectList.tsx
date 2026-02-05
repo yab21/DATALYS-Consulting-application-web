@@ -589,42 +589,42 @@ const OptimizedProjectList: React.FC = () => {
           const stats = calculateProjectStats(projects);
           const projectStatsCards = [
             {
-              title: "Total Projets",
+              title: "Total",
               value: stats.totalProjects,
               icon: <FolderOpen className="h-5 w-5" />,
               color: "bg-[#4ba9b7]",
               textColor: "text-[#4ba9b7]"
             },
             {
-              title: "Projets Actifs", 
+              title: "Actifs",
               value: stats.activeProjects,
               icon: <CheckCircle className="h-5 w-5" />,
               color: "bg-green-500",
               textColor: "text-green-600"
             },
             {
-              title: "Projets Inactifs",
+              title: "Inactifs",
               value: stats.inactiveProjects,
               icon: <Clock className="h-5 w-5" />,
               color: "bg-orange-500", 
               textColor: "text-orange-600"
             },
             {
-              title: "Nouveaux ce Mois",
+              title: "Nouveaux",
               value: stats.recentProjects,
               icon: <Plus className="h-5 w-5" />,
               color: "bg-blue-500",
               textColor: "text-blue-600"
             },
             {
-              title: "Partenaires Actifs",
+              title: "Partenaires",
               value: stats.partnersWithProjects,
               icon: <Users className="h-5 w-5" />,
               color: "bg-purple-500",
               textColor: "text-purple-600"
             },
             {
-              title: "Projets/Partenaire",
+              title: "Moy./Part.",
               value: stats.avgProjectsPerPartner,
               icon: <Calendar className="h-5 w-5" />,
               color: "bg-indigo-500", 

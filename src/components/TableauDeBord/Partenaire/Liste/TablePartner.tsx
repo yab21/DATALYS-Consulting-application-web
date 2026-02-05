@@ -607,45 +607,45 @@ const TablePartner: React.FC = () => {
       </motion.div>
 
       {/* Statistiques étendues */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {[
           {
-            title: "Total Partenaires",
+            title: "Total",
             value: stats.totalPartners,
             icon: <UserCheck className="h-5 w-5" />,
             color: "bg-[#4ba9b7]",
             textColor: "text-[#4ba9b7]"
           },
           {
-            title: "Partenaires Actifs",
+            title: "Actifs",
             value: stats.activePartners, 
             icon: <UserCheck className="h-5 w-5" />,
             color: "bg-green-500",
             textColor: "text-green-600"
           },
           {
-            title: "Partenaires Inactifs",
+            title: "Inactifs",
             value: stats.inactivePartners,
             icon: <UserX className="h-5 w-5" />,
             color: "bg-orange-500",
             textColor: "text-orange-600"
           },
           {
-            title: "Nouveaux ce Mois", 
+            title: "Nouveaux",
             value: stats.newPartners,
             icon: <Plus className="h-5 w-5" />,
             color: "bg-blue-500",
             textColor: "text-blue-600"
           },
           {
-            title: "Avec Projets",
+            title: "Avec projets",
             value: stats.partnersWithProjects,
             icon: <Shield className="h-5 w-5" />,
             color: "bg-purple-500", 
             textColor: "text-purple-600"
           },
           {
-            title: "Projets Moyens",
+            title: "Moy. projets",
             value: stats.avgProjectsPerPartner,
             icon: <Calendar className="h-5 w-5" />,
             color: "bg-indigo-500",
@@ -659,17 +659,17 @@ const TablePartner: React.FC = () => {
             transition={{ delay: index * 0.1 }}
           >
             <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardBody className="p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">
                       {stat.title}
                     </p>
                     <p className={`text-2xl font-bold ${stat.textColor} dark:text-white`}>
                       {stat.value}
                     </p>
                   </div>
-                  <div className={`${stat.color} rounded-lg p-3 text-white`}>
+                  <div className={`${stat.color} rounded-lg p-2.5 text-white flex-shrink-0`}>
                     {stat.icon}
                   </div>
                 </div>
