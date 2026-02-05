@@ -40,6 +40,7 @@ class RealtimeNotificationService {
   private pollingFrequency = 30000; // 30 secondes
   private lastPollTime: Date | null = null;
   private isPolling = false;
+  private currentUserId: number | null = null;
   private callbacks: Set<(notifications: AdvancedNotification[]) => void> = new Set();
   private errorCallbacks: Set<(error: Error) => void> = new Set();
 
@@ -51,9 +52,10 @@ class RealtimeNotificationService {
   startPolling(userId: number) {
     if (this.isPolling) return;
 
+    this.currentUserId = userId;
     this.isPolling = true;
     this.pollNotifications(userId);
-    
+
     this.pollInterval = setInterval(() => {
       this.pollNotifications(userId);
     }, this.pollingFrequency);
@@ -72,20 +74,14 @@ class RealtimeNotificationService {
   }
 
   // Récupérer les notifications non lues depuis l'API
-  private async pollNotifications(userId: number) {
+  private async pollNotifications(_userId: number) {
     try {
       const response = await fetch(buildApiUrl('/notifications/unread'), {
         method: 'POST',
         headers: getDefaultHeaders(),
         body: JSON.stringify({
           index: 0,
-          size: 50,
-          data: {
-            user_id: userId,
-            ...(this.lastPollTime && { 
-              created_after: this.lastPollTime.toISOString() 
-            })
-          }
+          size: 50
         })
       });
 
@@ -281,12 +277,12 @@ class RealtimeNotificationService {
         } else {
           // Fréquence normale quand la page est visible
           this.pollingFrequency = 30000; // 30 secondes
-          
-          // Redémarrer le polling si nécessaire
-          if (this.isPolling && this.pollInterval) {
-            this.stopPolling();
-            // Note: startPolling devra être appelé avec l'userId depuis le composant
-          }
+        }
+
+        // Redémarrer le polling avec la nouvelle fréquence
+        if (this.isPolling && this.currentUserId) {
+          this.stopPolling();
+          this.startPolling(this.currentUserId);
         }
       });
     }

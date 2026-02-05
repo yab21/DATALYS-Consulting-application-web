@@ -138,6 +138,7 @@ const ModernMessagesInterface: React.FC = () => {
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const selectedConversationRef = useRef<Conversation | null>(null);
 
   // États pour suppression
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -182,12 +183,36 @@ const ModernMessagesInterface: React.FC = () => {
     }
   }, [isAdmin]);
 
+  // Synchroniser le ref avec le state
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
+
   // Charger et organiser les messages en conversations
   useEffect(() => {
     loadMessages();
-    loadUserNames(); // Charger les noms d'utilisateurs pour l'affichage
+    loadUserNames();
   }, []);
-  
+
+  // Polling : recharger les messages toutes les 15 secondes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadMessages();
+    }, 15000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadMessages();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
 
   // Charger les projets
   const loadProjects = async () => {
@@ -457,9 +482,54 @@ const ModernMessagesInterface: React.FC = () => {
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       
       setConversations(conversationsArray);
-      
-      // Sélectionner la première conversation par défaut et charger le thread complet
-      if (conversationsArray.length > 0 && !selectedConversation) {
+
+      // Si une conversation est déjà sélectionnée, rafraîchir son thread
+      const currentSelected = selectedConversationRef.current;
+      if (currentSelected) {
+        const updatedConv = conversationsArray.find(c => c.id === currentSelected.id);
+        if (updatedConv) {
+          // Recharger le thread complet sans changer la sélection
+          const firstMessage = updatedConv.messages[0];
+          const parentId = Number(firstMessage?.parent_id) || Number(firstMessage?.id);
+          if (parentId && !isNaN(parentId)) {
+            try {
+              const threadResponse = await messagesService.getConversationThread(parentId, 0, 100);
+              if (threadResponse.items && threadResponse.items.length > 0) {
+                let fullMessages = threadResponse.items.filter((m: any) =>
+                  !m.is_deleted && !m.deleted_by_sender && !m.deleted_by_recipient
+                );
+                const readMessagesKey = `readMessages_user_${user?.id}`;
+                let readIds: Set<any>;
+                try {
+                  readIds = new Set(JSON.parse(localStorage.getItem(readMessagesKey) || '[]'));
+                } catch {
+                  readIds = new Set();
+                }
+                const updatedMessages = fullMessages.map((m: any) => ({
+                  ...m,
+                  is_read: true,
+                  read_at: m.read_at || new Date().toISOString()
+                })).sort((a: any, b: any) =>
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
+                // Sauvegarder les IDs lus
+                const currentRead = JSON.parse(localStorage.getItem(readMessagesKey) || '[]');
+                const msgIds = updatedMessages.map((m: any) => m.id);
+                localStorage.setItem(readMessagesKey, JSON.stringify([...new Set([...currentRead, ...msgIds])]));
+
+                setSelectedConversation(prev => prev?.id === updatedConv.id ? {
+                  ...updatedConv,
+                  unreadCount: 0,
+                  messages: updatedMessages
+                } : prev);
+              }
+            } catch (error) {
+              // Silencieux en cas d'erreur de polling
+            }
+          }
+        }
+      } else if (conversationsArray.length > 0) {
+        // Sélectionner la première conversation par défaut
         handleSelectConversation(conversationsArray[0]);
       }
       

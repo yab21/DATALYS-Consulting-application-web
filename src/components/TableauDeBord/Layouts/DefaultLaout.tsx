@@ -8,6 +8,7 @@ import { NotificationProvider } from "@/context/NotificationContext";
 import { NotificationProvider as SimpleNotificationProvider } from "@/components/UI/Notifications/NotificationProvider";
 import { AdvancedNotificationProvider } from "@/components/UI/Notifications/AdvancedNotificationProvider";
 import FCMInitializer from "@/components/UI/Notifications/FCMInitializer";
+import NotificationBridge from "@/components/UI/Notifications/NotificationBridge";
 import ErrorBoundary from "@/components/UI/ErrorBoundary/ErrorBoundary";
 
 export default function DefaultLayout({
@@ -20,6 +21,7 @@ export default function DefaultLayout({
     <ErrorBoundary>
       <AdvancedNotificationProvider>
         <FCMInitializer />
+        <NotificationBridge />
         <SimpleNotificationProvider>
           <NotificationProvider>
           {/* <!-- ===== Page Wrapper Star ===== --> */}
