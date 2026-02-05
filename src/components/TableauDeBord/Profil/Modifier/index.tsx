@@ -6,6 +6,7 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/react";
 import { Select, SelectItem } from "@heroui/react";
 import { domaines } from "./domaineData";
+import { Eye, EyeOff } from "lucide-react";
 import { useSimpleNotifications } from "@/context/NotificationContext";
 
 const ModifierCompte = () => {
@@ -21,6 +22,8 @@ const ModifierCompte = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const { addNotification } = useSimpleNotifications();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,7 +268,7 @@ const ModifierCompte = () => {
                 }}
               />
               <Input
-                type="password"
+                type={isPasswordVisible ? "text" : "password"}
                 label="Mot de passe"
                 variant="bordered"
                 placeholder="Entrer votre mot de passe"
@@ -274,6 +277,20 @@ const ModifierCompte = () => {
                 size="lg"
                 onChange={handleChange}
                 required
+                endContent={
+                  <button
+                    type="button"
+                    onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                    className="focus:outline-none"
+                    aria-label={isPasswordVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    {isPasswordVisible ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                }
                 classNames={{
                   input:
                     "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",
@@ -283,7 +300,7 @@ const ModifierCompte = () => {
                 }}
               />
               <Input
-                type="password"
+                type={isConfirmPasswordVisible ? "text" : "password"}
                 label="Confirmer le mot de passe"
                 variant="bordered"
                 placeholder="Veuillez confirmer votre mot de passe"
@@ -292,6 +309,20 @@ const ModifierCompte = () => {
                 size="lg"
                 onChange={handleChange}
                 required
+                endContent={
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
+                    className="focus:outline-none"
+                    aria-label={isConfirmPasswordVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    {isConfirmPasswordVisible ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                }
                 classNames={{
                   input:
                     "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white dark:bg-gray-800",

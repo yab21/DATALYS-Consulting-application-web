@@ -29,6 +29,7 @@ import {
   UserCheck,
   UserX,
   Eye,
+  EyeOff,
   Edit,
   Trash2,
 } from "lucide-react";
@@ -73,6 +74,7 @@ const UserModals: React.FC<UserModalsProps> = ({
     password: ''
   });
   
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [toggleLoading, setToggleLoading] = useState(false);
@@ -387,10 +389,24 @@ const UserModals: React.FC<UserModalsProps> = ({
                   <Input
                     label="Nouveau mot de passe"
                     placeholder="Laisser vide pour conserver l'ancien mot de passe"
-                    type="password"
+                    type={isPasswordVisible ? "text" : "password"}
                     value={editForm.password || ''}
                     onValueChange={(value) => handleEditFormChange('password', value)}
                     description="Optionnel - Laisser vide pour ne pas modifier le mot de passe"
+                    endContent={
+                      <button
+                        type="button"
+                        onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                        className="focus:outline-none"
+                        aria-label={isPasswordVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                      >
+                        {isPasswordVisible ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    }
                   />
                 </div>
               </div>

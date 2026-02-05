@@ -11,7 +11,7 @@ import {
   Input,
   Divider,
 } from "@heroui/react";
-import { Save, Mail, User, Edit } from "lucide-react";
+import { Save, Mail, User, Edit, Eye, EyeOff } from "lucide-react";
 import { UsersService } from "@/services/users";
 import { useAuth } from "@/hooks/useAuth";
 import { extractBackendMessage } from "@/lib/error-handler";
@@ -52,6 +52,7 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
   
   const [editLoading, setEditLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   // Initialiser le formulaire avec les données de l'utilisateur
   useEffect(() => {
@@ -182,10 +183,24 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
                 <Input
                   label="Nouveau mot de passe"
                   placeholder="Laisser vide pour conserver l'ancien mot de passe"
-                  type="password"
+                  type={isPasswordVisible ? "text" : "password"}
                   value={editForm.password || ''}
                   onValueChange={(value) => handleEditFormChange('password', value)}
                   description="Optionnel - Laisser vide pour ne pas modifier le mot de passe"
+                  endContent={
+                    <button
+                      type="button"
+                      onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                      className="focus:outline-none"
+                      aria-label={isPasswordVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    >
+                      {isPasswordVisible ? (
+                        <EyeOff className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-400" />
+                      )}
+                    </button>
+                  }
                 />
               </div>
             </div>
