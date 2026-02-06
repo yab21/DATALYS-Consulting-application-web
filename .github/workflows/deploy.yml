@@ -226,6 +226,9 @@ jobs:
             cd ${{ env.DEPLOY_PATH }}
             if [ -f scripts/disk-cleanup.sh ]; then
               chmod +x scripts/disk-cleanup.sh
+              # Créer le fichier log avec les permissions appropriées
+              sudo touch /var/log/disk-cleanup.log
+              sudo chown ubuntu:ubuntu /var/log/disk-cleanup.log
               nohup scripts/disk-cleanup.sh > /var/log/disk-cleanup.log 2>&1 &
               echo 'Script de nettoyage lancé en arrière-plan depuis le répertoire déployé'
             else
