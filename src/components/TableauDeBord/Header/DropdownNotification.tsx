@@ -13,6 +13,7 @@ import {
   cn,
 } from "@heroui/react";
 import { useAdvancedNotifications } from "@/components/UI/Notifications/AdvancedNotificationProvider";
+import { realtimeNotificationService } from "@/services/realtime-notifications";
 import {
   Bell,
   Check,
@@ -40,15 +41,27 @@ const DropdownNotification = () => {
   const notifying = unreadCount > 0;
 
   // Adapters pour compatibilité avec l'ancien système
-  const adaptNotification = (item: any) => ({
-    ...item,
-    body: item.message || 'Notification',
-    read: item.isRead || false,
-    priority: item.priority || 'medium',
-    category: item.category || 'system',
-    timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
-    link: item.relatedId ? `/tableaudebord/messages/${item.relatedId}` : '#'
-  });
+  const adaptNotification = (item: any) => {
+    // Construire le lien avec paramètre pour ouvrir la bonne conversation
+    let link = '/tableaudebord';
+    if (item.category === 'communication' || item.type === 'message') {
+      // Passer l'ID du message ou parent pour sélectionner la conversation
+      const messageId = item.metadata?.parentId || item.metadata?.backendId;
+      link = messageId
+        ? `/tableaudebord/messages?open=${messageId}`
+        : '/tableaudebord/messages';
+    }
+
+    return {
+      ...item,
+      body: item.message || 'Notification',
+      read: item.isRead || false,
+      priority: item.priority || 'medium',
+      category: item.category || 'system',
+      timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
+      link
+    };
+  };
 
   // Détecter le mode sombre
   useEffect(() => {
@@ -74,10 +87,21 @@ const DropdownNotification = () => {
     // Auto-activer les notifications temps réel à l'ouverture (simulé)
   };
 
-  const deleteNotification = (e: React.MouseEvent, notificationId: string) => {
+  const deleteNotification = async (e: React.MouseEvent, notificationId: string, backendId?: number) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Supprimer localement
     hideNotification(notificationId);
+
+    // Marquer comme lu sur le backend pour qu'elle ne revienne pas
+    if (backendId) {
+      try {
+        await realtimeNotificationService.markAsRead(backendId);
+      } catch (error) {
+        console.error('Erreur marquage notification comme lue:', error);
+      }
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -406,7 +430,18 @@ const DropdownNotification = () => {
                     <Link
                       href={item.link || "#"}
                       className="block"
-                      onClick={() => hideNotification(item.id)}
+                      onClick={async () => {
+                        // Marquer comme lu localement
+                        hideNotification(item.id);
+                        // Marquer comme lu sur le backend
+                        if (item.metadata?.backendId) {
+                          try {
+                            await realtimeNotificationService.markAsRead(item.metadata.backendId);
+                          } catch (error) {
+                            console.error('Erreur marquage notification:', error);
+                          }
+                        }
+                      }}
                     >
                       <Card shadow="none" className="bg-transparent">
                         <CardBody className="gap-3 p-0">
@@ -497,7 +532,7 @@ const DropdownNotification = () => {
                       "flex-shrink-0 self-start opacity-60 transition-all duration-200 hover:opacity-100",
                       getThemeClasses.deleteButton,
                     )}
-                    onClick={(e) => deleteNotification(e, item.id)}
+                    onClick={(e) => deleteNotification(e, item.id, item.metadata?.backendId)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

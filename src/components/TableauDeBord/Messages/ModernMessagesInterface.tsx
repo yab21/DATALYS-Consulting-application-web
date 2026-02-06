@@ -188,6 +188,32 @@ const ModernMessagesInterface: React.FC = () => {
     loadUserNames();
   }, []);
 
+  // Ouvrir automatiquement une conversation depuis le paramètre URL ?open=
+  useEffect(() => {
+    if (loading || conversations.length === 0) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const openMessageId = urlParams.get('open');
+
+    if (openMessageId) {
+      // Chercher la conversation qui contient ce message
+      const targetConversation = conversations.find(conv =>
+        conv.messages.some(m =>
+          String(m.id) === openMessageId ||
+          String((m as any).parent_id) === openMessageId
+        )
+      );
+
+      if (targetConversation && targetConversation.id !== selectedConversation?.id) {
+        handleSelectConversation(targetConversation);
+      }
+
+      // Nettoyer l'URL après ouverture
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [loading, conversations]);
+
 
 
   // Charger les projets
