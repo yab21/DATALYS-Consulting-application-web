@@ -960,14 +960,11 @@ const ModernMessagesInterface: React.FC = () => {
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 mt-1">
-                            {getTypeIcon(conversation.lastMessage.type, conversation.isIncidentChat)}
-                          </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <h3 className="font-semibold text-blue-600 dark:text-blue-400 text-sm">
-                                  🎫 {conversation.title}
+                                  {conversation.title}
                                 </h3>
                                 <Chip 
                                   size="sm" 
@@ -999,10 +996,10 @@ const ModernMessagesInterface: React.FC = () => {
                                   {conversation.status}
                                 </Chip>
                                 <span className="text-xs text-gray-400">
-                                  💬 {conversation.messages.length} msg
+                                  {conversation.messages.length} msg
                                 </span>
                                 {conversation.sla_resolution_status === 'depasse' && (
-                                  <span className="text-xs text-red-500">⏰ SLA dépassé</span>
+                                  <span className="text-xs text-red-500"> SLA dépassé</span>
                                 )}
                               </div>
                               {conversation.unreadCount > 0 && (
@@ -1044,7 +1041,7 @@ const ModernMessagesInterface: React.FC = () => {
                         <div className="space-y-2">
                           <div className="flex items-center gap-3 flex-wrap">
                             <h2 className="font-bold text-blue-600 dark:text-blue-400 text-lg">
-                              🎫 {selectedConversation.title}
+                              {selectedConversation.title}
                             </h2>
                             <Chip 
                               size="sm" 
@@ -1062,7 +1059,7 @@ const ModernMessagesInterface: React.FC = () => {
                             </Chip>
                             {selectedConversation.sla_resolution_status === 'depasse' && (
                               <Chip size="sm" color="danger" variant="flat">
-                                ⏰ SLA dépassé
+                                 SLA dépassé
                               </Chip>
                             )}
                           </div>

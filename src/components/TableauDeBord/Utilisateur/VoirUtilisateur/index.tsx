@@ -236,7 +236,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
               </div>
 
               {/* Statistiques de l'utilisateur */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -260,20 +260,6 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                       <p className="text-sm text-gray-600 dark:text-gray-400">Statut</p>
                       <p className="text-lg font-semibold text-gray-900 dark:text-white">
                         {user.is_active ? "Actif" : "Inactif"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <UserIcon className="w-5 h-5 text-[#4ba9b7]" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Partenaire</p>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {user.partner_name || "Aucun"}
                       </p>
                     </div>
                   </div>
