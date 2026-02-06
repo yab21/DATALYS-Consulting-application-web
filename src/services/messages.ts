@@ -797,6 +797,39 @@ class MessagesService {
   }
 
   /**
+   * Envoyer un message à tous les admins (pour les partenaires)
+   * Endpoint: POST /messages/send-to-admins
+   */
+  async sendMessageToAdmins(data: {
+    title: string;
+    description: string;
+    priority?: string;
+  }): Promise<{ items: Message[]; count: number; message: string; sender: { id: number; name: string } }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/messages/send-to-admins`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          title: data.title,
+          description: data.description,
+          priority: data.priority || 'P3'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de l\'envoi du message aux administrateurs');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur envoi message aux admins:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
    * Supprimer un message
    */
   async deleteMessage(messageId: number): Promise<{ success: boolean; code: number; message: string }> {

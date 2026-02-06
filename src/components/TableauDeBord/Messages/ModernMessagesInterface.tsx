@@ -641,21 +641,46 @@ const ModernMessagesInterface: React.FC = () => {
     }
   };
 
+  // Vérifier si l'utilisateur est un partenaire (non-admin)
+  const isPartner = (): boolean => {
+    return user?.role_id !== 1 && String(user?.role_id) !== "1";
+  };
+
+  // Mapper la priorité frontend vers le format backend (P0-P4)
+  const mapPriorityToBackend = (priority: string): string => {
+    switch (priority) {
+      case "critique": return "P0";
+      case "haute": return "P1";
+      case "moyenne": return "P3";
+      case "faible": return "P4";
+      default: return "P3";
+    }
+  };
+
   const handleSendNewMessage = async () => {
     if (!newMessage.title.trim() || !newMessage.description.trim()) return;
 
     try {
       setSendingNewMessage(true);
-      
-      if (newMessage.recipient_type === "all_partners") {
-        // Broadcast à tous les utilisateurs
+
+      // Pour les partenaires, utiliser le nouvel endpoint send-to-admins
+      if (isPartner()) {
+        const result = await messagesService.sendMessageToAdmins({
+          title: newMessage.title.trim(),
+          description: newMessage.description.trim(),
+          priority: mapPriorityToBackend(newMessage.priority)
+        });
+
+        console.log(`✅ Message envoyé à ${result.count} administrateur(s)`);
+      } else if (newMessage.recipient_type === "all_partners") {
+        // Broadcast à tous les utilisateurs (admin seulement)
         await messagesService.broadcastMessage({
           title: newMessage.title.trim(),
           description: newMessage.description.trim(),
           recipient_ids: "all"
         });
       } else {
-        // Message normal ou vers un utilisateur spécifique
+        // Message normal ou vers un utilisateur spécifique (admin seulement)
         const messageData: CreateMessageRequest = {
           title: newMessage.title.trim(),
           description: newMessage.description.trim(),
@@ -670,7 +695,7 @@ const ModernMessagesInterface: React.FC = () => {
 
         await messagesService.sendMessage(messageData);
       }
-      
+
       // Réinitialiser le formulaire
       setNewMessage({
         title: "",
@@ -682,13 +707,13 @@ const ModernMessagesInterface: React.FC = () => {
         incident_id: "",
         expert_id: ""
       });
-      
+
       setShowNewMessageModal(false);
       // Rechargement avec un petit délai pour s'assurer que le backend a traité
       setTimeout(async () => {
         await loadMessages();
       }, 500);
-      
+
     } catch (error) {
       console.error('Erreur envoi nouveau message:', error);
     } finally {
@@ -1197,6 +1222,18 @@ const ModernMessagesInterface: React.FC = () => {
               
               <ModalBody>
                 <div className="space-y-4">
+                  {/* Message informatif pour les partenaires */}
+                  {isPartner() && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                        <MessageCircle className="h-5 w-5" />
+                        <p className="text-sm font-medium">
+                          Votre message sera envoyé à tous les administrateurs DATALYS.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <Input
                     label="Sujet"
                     placeholder="Entrez le sujet de votre message..."
@@ -1223,7 +1260,7 @@ const ModernMessagesInterface: React.FC = () => {
                   </Select>
 
                   {/* Section Destinataires - seulement pour les admins */}
-                  {(user?.role_id === 1 || String(user?.role_id) === "1") && (
+                  {!isPartner() && (
                     <div className="space-y-4">
                       <Select
                         label="Destinataires"
@@ -1237,7 +1274,7 @@ const ModernMessagesInterface: React.FC = () => {
                         <SelectItem key="specific_partner">Utilisateur spécifique</SelectItem>
                         <SelectItem key="all_partners">Tous les utilisateurs</SelectItem>
                       </Select>
-                      
+
                       {/* Sélection de l'utilisateur spécifique */}
                       {newMessage.recipient_type === "specific_partner" && (
                         <Select
@@ -1266,8 +1303,8 @@ const ModernMessagesInterface: React.FC = () => {
                             </SelectItem>
                           ) : (
                             users.map((user) => (
-                              <SelectItem 
-                                key={user.id.toString()} 
+                              <SelectItem
+                                key={user.id.toString()}
                                 textValue={`${user.name} (${user.email})`}
                               >
                                 {user.name} ({user.email})
@@ -1279,22 +1316,25 @@ const ModernMessagesInterface: React.FC = () => {
                     </div>
                   )}
 
-                  <Select
-                    label="Projet"
-                    placeholder="Sélectionner un projet (optionnel)"
-                    selectedKeys={newMessage.project_id ? [newMessage.project_id] : []}
-                    onSelectionChange={(keys) => {
-                      const projectId = Array.from(keys)[0] as string;
-                      setNewMessage({...newMessage, project_id: projectId || ""});
-                    }}
-                    isLoading={loadingProjects}
-                  >
-                    {projects.map((project) => (
-                      <SelectItem key={project.id.toString()} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
-                        {project.title} {project.partner_name ? `(${project.partner_name})` : ''}
-                      </SelectItem>
-                    ))}
-                  </Select>
+                  {/* Sélection de projet - seulement pour les admins */}
+                  {!isPartner() && (
+                    <Select
+                      label="Projet"
+                      placeholder="Sélectionner un projet (optionnel)"
+                      selectedKeys={newMessage.project_id ? [newMessage.project_id] : []}
+                      onSelectionChange={(keys) => {
+                        const projectId = Array.from(keys)[0] as string;
+                        setNewMessage({...newMessage, project_id: projectId || ""});
+                      }}
+                      isLoading={loadingProjects}
+                    >
+                      {projects.map((project) => (
+                        <SelectItem key={project.id.toString()} textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ''}`}>
+                          {project.title} {project.partner_name ? `(${project.partner_name})` : ''}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  )}
 
                   <Textarea
                     label="Message"
@@ -1318,7 +1358,7 @@ const ModernMessagesInterface: React.FC = () => {
                   isDisabled={!newMessage.title.trim() || !newMessage.description.trim()}
                   onPress={handleSendNewMessage}
                 >
-                  Envoyer Message
+                  {isPartner() ? "Envoyer aux Administrateurs" : "Envoyer Message"}
                 </Button>
               </ModalFooter>
             </>
