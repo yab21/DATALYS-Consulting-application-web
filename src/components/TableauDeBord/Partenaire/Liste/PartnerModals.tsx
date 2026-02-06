@@ -678,7 +678,9 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   selectedKeys={editForm.country_code ? [editForm.country_code] : []}
                   onSelectionChange={(keys) => {
                     const value = Array.from(keys)[0] as string;
-                    handleEditFormChange('country_code', value);
+                    if (value) {
+                      handleEditFormChange('country_code', value);
+                    }
                   }}
                   startContent={<Globe className="h-4 w-4" />}
                   isRequired
