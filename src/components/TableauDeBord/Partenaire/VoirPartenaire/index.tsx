@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardBody, CardHeader, Tab, Tabs, Spinner, Chip, Button } from '@heroui/react';
-import { ArrowLeft, Building, Mail, Phone, MapPin, Calendar, User, FileText, Folder as FolderIcon, Eye, AlertTriangle, Headphones } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Card, CardBody, CardHeader, Tab, Tabs, Spinner, Chip, Button, Input, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Tooltip } from '@heroui/react';
+import { ArrowLeft, Building, Mail, Phone, MapPin, Calendar, User, FileText, Folder as FolderIcon, FolderOpen, Eye, AlertTriangle, Headphones, Search, Grid, List, ArrowUp, ArrowDown, HardDrive, Image, Video, Music, Archive, Code, FileSpreadsheet, Presentation } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { partnersService, Partner } from '@/services/partners';
@@ -37,7 +38,48 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   const [loadingStats, setLoadingStats] = useState(false);
   const [logoError, setLogoError] = useState(false);
 
+  // États pour le gestionnaire de fichiers/dossiers
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
   const partnerId = parseInt(id);
+
+  // Fonction pour obtenir l'icône de fichier
+  const getFileIconComponent = (fileName: string): React.ReactElement => {
+    const extension = fileName?.split('.').pop()?.toLowerCase() || '';
+    const iconProps = { className: "w-6 h-6" };
+
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(extension)) {
+      return <Image {...iconProps} className="w-6 h-6 text-green-500" />;
+    }
+    if (['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'].includes(extension)) {
+      return <Video {...iconProps} className="w-6 h-6 text-purple-500" />;
+    }
+    if (['mp3', 'wav', 'flac', 'aac', 'ogg'].includes(extension)) {
+      return <Music {...iconProps} className="w-6 h-6 text-pink-500" />;
+    }
+    if (extension === 'pdf') {
+      return <FileText {...iconProps} className="w-6 h-6 text-red-500" />;
+    }
+    if (['doc', 'docx'].includes(extension)) {
+      return <FileText {...iconProps} className="w-6 h-6 text-blue-600" />;
+    }
+    if (['xls', 'xlsx', 'csv'].includes(extension)) {
+      return <FileSpreadsheet {...iconProps} className="w-6 h-6 text-green-600" />;
+    }
+    if (['ppt', 'pptx'].includes(extension)) {
+      return <Presentation {...iconProps} className="w-6 h-6 text-orange-500" />;
+    }
+    if (['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'py', 'java', 'cpp', 'c', 'php'].includes(extension)) {
+      return <Code {...iconProps} className="w-6 h-6 text-cyan-500" />;
+    }
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
+      return <Archive {...iconProps} className="w-6 h-6 text-amber-500" />;
+    }
+    return <FileText {...iconProps} className="w-6 h-6 text-gray-500" />;
+  };
 
   // Function pour corriger les URLs d'images
   const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
@@ -270,6 +312,74 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
+  // Filtrer et trier les fichiers
+  const filteredAndSortedFiles = useMemo(() => {
+    let filtered = files;
+
+    if (searchTerm.trim()) {
+      filtered = files.filter(file =>
+        file.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'date':
+          comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          break;
+        case 'size':
+          comparison = (a.size || 0) - (b.size || 0);
+          break;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [files, searchTerm, sortBy, sortOrder]);
+
+  // Filtrer et trier les dossiers
+  const filteredAndSortedFolders = useMemo(() => {
+    let filtered = folders;
+
+    if (searchTerm.trim()) {
+      filtered = folders.filter(folder =>
+        folder.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'date':
+          comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          break;
+        default:
+          comparison = a.name.localeCompare(b.name);
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [folders, searchTerm, sortBy, sortOrder]);
+
+  // Statistiques des fichiers
+  const fileStats = useMemo(() => ({
+    totalFiles: files.length,
+    totalSize: files.reduce((acc, file) => acc + (file.size || 0), 0)
+  }), [files]);
+
+  // Statistiques des dossiers
+  const folderStats = useMemo(() => ({
+    totalFolders: folders.length
+  }), [folders]);
 
   if (loading) {
     return (
@@ -654,8 +764,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                 </div>
               </Tab>
 
-              <Tab 
-                key="documents" 
+              <Tab
+                key="documents"
                 title={
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5" />
@@ -668,34 +778,166 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                     <div className="flex justify-center py-8">
                       <Spinner size="md" />
                     </div>
-                  ) : files.length > 0 ? (
-                    <div className="space-y-3">
-                      {files.map((file) => (
-                        <div key={file.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900">{file.name}</h4>
-                              <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                                <span>{file.extension.toUpperCase()}</span>
-                                <span>{formatFileSize(file.size)}</span>
-                                <span>{formatDate(file.created_at)}</span>
-                              </div>
-                            </div>
+                  ) : (
+                    <>
+                      {/* Statistiques */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <HardDrive className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-600">Racine</span>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <FileText className="w-4 h-4" />
+                            <span>{fileStats.totalFiles} fichier{fileStats.totalFiles !== 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <HardDrive className="w-4 h-4" />
+                            <span>{formatFileSize(fileStats.totalSize)}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <FileText className="mx-auto text-gray-400 mb-3" size={48} />
-                      <p className="text-gray-500">Aucun document trouvé pour ce partenaire</p>
-                    </div>
+                      </div>
+
+                      {/* Barre d'outils */}
+                      <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600 mb-6">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 max-w-md">
+                            <Input
+                              placeholder="Rechercher des fichiers..."
+                              value={searchTerm}
+                              onValueChange={setSearchTerm}
+                              startContent={<Search className="w-4 h-4 text-gray-400" />}
+                              size="sm"
+                              classNames={{
+                                input: "bg-transparent",
+                                inputWrapper: "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                              }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Tooltip content="Vue grille">
+                              <Button
+                                size="sm"
+                                variant={viewMode === 'grid' ? 'solid' : 'flat'}
+                                isIconOnly
+                                onPress={() => setViewMode('grid')}
+                              >
+                                <Grid className="w-4 h-4" />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Vue liste">
+                              <Button
+                                size="sm"
+                                variant={viewMode === 'list' ? 'solid' : 'flat'}
+                                isIconOnly
+                                onPress={() => setViewMode('list')}
+                              >
+                                <List className="w-4 h-4" />
+                              </Button>
+                            </Tooltip>
+                            <Dropdown>
+                              <DropdownTrigger>
+                                <Button size="sm" variant="flat" endContent={<ArrowDown className="w-3 h-3" />}>
+                                  Trier par
+                                </Button>
+                              </DropdownTrigger>
+                              <DropdownMenu
+                                selectedKeys={[sortBy]}
+                                onSelectionChange={(keys) => setSortBy(Array.from(keys)[0] as any)}
+                                selectionMode="single"
+                              >
+                                <DropdownItem key="name">Nom</DropdownItem>
+                                <DropdownItem key="date">Date</DropdownItem>
+                                <DropdownItem key="size">Taille</DropdownItem>
+                              </DropdownMenu>
+                            </Dropdown>
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              isIconOnly
+                              onPress={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                            >
+                              {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contenu */}
+                      {filteredAndSortedFiles.length > 0 ? (
+                        <div className={viewMode === 'grid'
+                          ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+                          : "space-y-2"
+                        }>
+                          <AnimatePresence mode="popLayout">
+                            {filteredAndSortedFiles.map((file, index) => (
+                              <motion.div
+                                key={file.id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ delay: index * 0.02 }}
+                              >
+                                {viewMode === 'grid' ? (
+                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                                    <div className="text-center">
+                                      <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg group-hover:scale-105 transition-transform duration-200">
+                                        {getFileIconComponent(file.name)}
+                                      </div>
+                                      <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-1">
+                                        {file.name}
+                                      </h4>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                        <p>{file.extension?.toUpperCase() || 'N/A'} • {formatFileSize(file.size)}</p>
+                                        <p>{formatDate(file.created_at)}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                        {getFileIconComponent(file.name)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium text-gray-900 dark:text-white truncate">
+                                          {file.name}
+                                        </h4>
+                                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                                          <span>{file.extension?.toUpperCase() || 'N/A'}</span>
+                                          <span>{formatFileSize(file.size)}</span>
+                                          <span>{formatDate(file.created_at)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <FileText className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                            {searchTerm ? 'Aucun résultat' : 'Aucun document'}
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            {searchTerm
+                              ? `Aucun fichier ne correspond à "${searchTerm}"`
+                              : 'Aucun document trouvé pour ce partenaire'}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </Tab>
 
-              <Tab 
-                key="folders" 
+              <Tab
+                key="folders"
                 title={
                   <div className="flex items-center gap-3">
                     <FolderIcon className="w-5 h-5" />
@@ -708,34 +950,175 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                     <div className="flex justify-center py-8">
                       <Spinner size="md" />
                     </div>
-                  ) : folders.length > 0 ? (
-                    <div className="space-y-3">
-                      {folders.map((folder) => (
-                        <div key={folder.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900">{folder.name}</h4>
-                              <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                                <span>Chemin: {folder.path}</span>
-                                <span>{formatDate(folder.created_at)}</span>
-                              </div>
-                            </div>
-                            <Chip
-                              color={folder.is_active ? "success" : "warning"}
-                              variant="flat"
-                              size="sm"
-                            >
-                              {folder.is_active ? "Actif" : "Inactif"}
-                            </Chip>
+                  ) : (
+                    <>
+                      {/* Statistiques */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <HardDrive className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-600">Racine</span>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <FolderIcon className="w-4 h-4" />
+                            <span>{folderStats.totalFolders} dossier{folderStats.totalFolders !== 1 ? 's' : ''}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <FolderIcon className="mx-auto text-gray-400 mb-3" size={48} />
-                      <p className="text-gray-500">Aucun dossier trouvé pour ce partenaire</p>
-                    </div>
+                      </div>
+
+                      {/* Barre d'outils */}
+                      <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600 mb-6">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 max-w-md">
+                            <Input
+                              placeholder="Rechercher des dossiers..."
+                              value={searchTerm}
+                              onValueChange={setSearchTerm}
+                              startContent={<Search className="w-4 h-4 text-gray-400" />}
+                              size="sm"
+                              classNames={{
+                                input: "bg-transparent",
+                                inputWrapper: "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                              }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Tooltip content="Vue grille">
+                              <Button
+                                size="sm"
+                                variant={viewMode === 'grid' ? 'solid' : 'flat'}
+                                isIconOnly
+                                onPress={() => setViewMode('grid')}
+                              >
+                                <Grid className="w-4 h-4" />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Vue liste">
+                              <Button
+                                size="sm"
+                                variant={viewMode === 'list' ? 'solid' : 'flat'}
+                                isIconOnly
+                                onPress={() => setViewMode('list')}
+                              >
+                                <List className="w-4 h-4" />
+                              </Button>
+                            </Tooltip>
+                            <Dropdown>
+                              <DropdownTrigger>
+                                <Button size="sm" variant="flat" endContent={<ArrowDown className="w-3 h-3" />}>
+                                  Trier par
+                                </Button>
+                              </DropdownTrigger>
+                              <DropdownMenu
+                                selectedKeys={[sortBy]}
+                                onSelectionChange={(keys) => setSortBy(Array.from(keys)[0] as any)}
+                                selectionMode="single"
+                              >
+                                <DropdownItem key="name">Nom</DropdownItem>
+                                <DropdownItem key="date">Date</DropdownItem>
+                              </DropdownMenu>
+                            </Dropdown>
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              isIconOnly
+                              onPress={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                            >
+                              {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contenu */}
+                      {filteredAndSortedFolders.length > 0 ? (
+                        <div className={viewMode === 'grid'
+                          ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+                          : "space-y-2"
+                        }>
+                          <AnimatePresence mode="popLayout">
+                            {filteredAndSortedFolders.map((folder, index) => (
+                              <motion.div
+                                key={folder.id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ delay: index * 0.02 }}
+                              >
+                                {viewMode === 'grid' ? (
+                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                                    <div className="text-center">
+                                      {/* Design de dossier orange */}
+                                      <div className="relative w-[100px] h-[80px] mx-auto mb-3 cursor-pointer group-hover:scale-105 transition-transform duration-200">
+                                        {/* Folder Tab */}
+                                        <div className="absolute top-0 left-0 w-[40px] h-[12px] bg-[#F59E0B] rounded-t-md" />
+                                        {/* Folder Body */}
+                                        <div className="absolute top-[8px] left-0 w-full h-[72px] bg-gradient-to-b from-[#FCD34D] to-[#F59E0B] rounded-lg shadow-sm" />
+                                        {/* Inner content */}
+                                        <div className="absolute inset-0 top-[20px] flex items-center justify-center">
+                                          <div className="flex items-center gap-1.5 text-[11px] text-gray-700/80 font-medium">
+                                            <FolderOpen className="w-3 h-3 opacity-70" />
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-1">
+                                        {folder.name}
+                                      </h4>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                                        <p>{formatDate(folder.created_at)}</p>
+                                      </div>
+                                      {!folder.is_active && (
+                                        <Chip size="sm" color="warning" variant="flat" className="mt-2">
+                                          Inactif
+                                        </Chip>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-10 h-10 flex items-center justify-center bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                                        <FolderIcon className="w-6 h-6 text-amber-500" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium text-gray-900 dark:text-white truncate">
+                                          {folder.name}
+                                        </h4>
+                                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                                          <span>{folder.path}</span>
+                                          <span>{formatDate(folder.created_at)}</span>
+                                        </div>
+                                      </div>
+                                      <Chip
+                                        color={folder.is_active ? "success" : "warning"}
+                                        variant="flat"
+                                        size="sm"
+                                      >
+                                        {folder.is_active ? "Actif" : "Inactif"}
+                                      </Chip>
+                                    </div>
+                                  </div>
+                                )}
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <FolderIcon className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                            {searchTerm ? 'Aucun résultat' : 'Aucun dossier'}
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            {searchTerm
+                              ? `Aucun dossier ne correspond à "${searchTerm}"`
+                              : 'Aucun dossier trouvé pour ce partenaire'}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </Tab>
