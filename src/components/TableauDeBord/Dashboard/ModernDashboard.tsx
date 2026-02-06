@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useTopBarProgress } from "@/hooks/useTopBarProgress";
 import { useRouter } from 'next/navigation';
@@ -97,7 +97,88 @@ const ModernDashboard: React.FC = () => {
   const { showNotification } = useSimpleNotifications();
   const { finish } = useTopBarProgress();
   const router = useRouter();
-  
+
+  // Fonction utilitaire pour corriger les URLs d'images (adaptée pour HTTPS backend direct)
+  const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
+    if (!url || url.trim() === '') return undefined;
+
+    // Nettoyer l'URL
+    const cleanUrl = url.trim();
+
+    // Ignorer les URLs placeholder ou de test
+    if (cleanUrl.includes('example.com') || cleanUrl.includes('placeholder') || cleanUrl.includes('test.com')) {
+      return undefined;
+    }
+
+    // Nouveau format d'upload via /files/serve/ avec backend HTTPS direct
+    if (cleanUrl.includes('/files/serve/')) {
+      // Si c'est déjà une URL complète HTTPS, la garder telle quelle
+      if (cleanUrl.startsWith('https://applicationweb.datalysconsulting.com/files/serve/')) {
+        return cleanUrl;
+      }
+
+      // Si c'est un chemin /files/serve/, le convertir en URL complète HTTPS
+      if (cleanUrl.startsWith('/files/serve/')) {
+        return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
+      }
+
+      // Si c'est un chemin files/serve/ relatif, ajouter le domaine
+      if (cleanUrl.startsWith('files/serve/')) {
+        return `https://applicationweb.datalysconsulting.com/${cleanUrl}`;
+      }
+
+      // Si c'est une URL complète avec /files/serve/, la convertir vers HTTPS
+      if (cleanUrl.includes('/files/serve/')) {
+        const pathMatch = cleanUrl.match(/\/files\/serve\/(.+)$/);
+        if (pathMatch) {
+          return `https://applicationweb.datalysconsulting.com/files/serve/${pathMatch[1]}`;
+        }
+      }
+    }
+
+    // Ancien format avec serveur d'images statiques - convertir vers HTTPS
+    if (cleanUrl.includes('82.112.253.137:8082')) {
+      return cleanUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com/api');
+    }
+
+    // URLs avec ancien localhost - convertir vers HTTPS
+    if (cleanUrl.includes('localhost:8081') || cleanUrl.includes('82.112.253.137:8081')) {
+      const pathMatch = cleanUrl.match(/\/uploads\/logos\/(.+)$/);
+      if (pathMatch) {
+        const filename = pathMatch[1];
+        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+      }
+    }
+
+    // URLs relatives /uploads/ - utiliser l'ancien système d'images statiques
+    if (cleanUrl.startsWith('/uploads/logos/')) {
+      const filename = cleanUrl.replace('/uploads/logos/', '');
+      return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+    }
+
+    // URLs relatives backend - convertir vers URL complète HTTPS
+    if (cleanUrl.startsWith('/') && !cleanUrl.startsWith('/uploads/') && !cleanUrl.startsWith('/files/serve/')) {
+      return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
+    }
+
+    // Si c'est une URL absolue HTTPS valide, la retourner telle quelle
+    if (cleanUrl.startsWith('https://')) {
+      return cleanUrl;
+    }
+
+    // Convertir les URLs HTTP vers HTTPS
+    if (cleanUrl.startsWith('http://')) {
+      return cleanUrl.replace('http://', 'https://');
+    }
+
+    // Pour les autres URLs relatives, les préfixer avec le domaine HTTPS
+    if (cleanUrl.startsWith('/')) {
+      return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
+    }
+
+    return cleanUrl;
+  }, []);
+
   // États principaux
   const [stats, setStats] = useState<DashboardStats>({
     projects: { total: 0, active: 0, completed: 0, pending: 0, growth: 0 },
@@ -1157,15 +1238,29 @@ const ModernDashboard: React.FC = () => {
                         <TableRow key={partner.partner_id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <Avatar
-                                src={partner.logo_url}
-                                name={partner.partner_name}
-                                size="sm"
-                                className="bg-[#4ba9b7] text-white"
-                                showFallback
-                              />
+                              {fixImageUrl(partner.logo_url) ? (
+                                <div className="w-12 h-12 rounded-md border border-gray-200 overflow-hidden bg-white flex items-center justify-center p-1 shadow-sm flex-shrink-0">
+                                  <img
+                                    src={fixImageUrl(partner.logo_url)!}
+                                    alt={`Logo ${partner.partner_name}`}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-bold text-white">${partner.partner_name?.charAt(0) || 'P'}</span>`;
+                                      (e.target as HTMLImageElement).parentElement!.className = 'w-12 h-12 rounded-md bg-[#4ba9b7] flex items-center justify-center flex-shrink-0';
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <Avatar
+                                  name={partner.partner_name}
+                                  size="md"
+                                  className="bg-[#4ba9b7] text-white font-bold flex-shrink-0"
+                                  showFallback
+                                />
+                              )}
                               <div>
-                                <p 
+                                <p
                                   className="font-semibold text-gray-900 cursor-pointer hover:text-[#4ba9b7] transition-colors"
                                   onClick={() => handleViewPartner(partner.partner_id)}
                                 >
@@ -1178,14 +1273,14 @@ const ModernDashboard: React.FC = () => {
                             <Chip
                               size="sm"
                               variant="flat"
-                              color={partner.active_projects > 0 ? "success" : "default"}
+                              color={partner.is_active ? "success" : "default"}
                               startContent={
-                                partner.active_projects > 0 ? 
+                                partner.is_active ?
                                 <div className="w-2 h-2 rounded-full bg-green-500"></div> :
                                 <div className="w-2 h-2 rounded-full bg-gray-400"></div>
                               }
                             >
-                              {partner.active_projects > 0 ? 'Actif' : 'Inactif'}
+                              {partner.is_active ? 'Actif' : 'Inactif'}
                             </Chip>
                           </TableCell>
                           <TableCell>

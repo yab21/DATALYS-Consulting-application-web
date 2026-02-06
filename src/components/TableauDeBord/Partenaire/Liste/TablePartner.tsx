@@ -820,7 +820,7 @@ const TablePartner: React.FC = () => {
                       
                       if (isValid && !hasError) {
                         return (
-                          <div className="w-12 h-12 rounded-lg border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-md border border-gray-200 overflow-hidden bg-white flex items-center justify-center p-1.5 shadow-sm">
                             <img
                               src={fixedUrl!}
                               alt={`Logo ${partner.name}`}
@@ -838,9 +838,9 @@ const TablePartner: React.FC = () => {
                       } else {
                         return (
                           <Avatar
-                            size="md"
+                            size="lg"
                             name={partner.name.charAt(0)}
-                            className="bg-gradient-to-br from-[#4ba9b7] to-[#6bb6c7] text-white font-bold"
+                            className="bg-gradient-to-br from-[#4ba9b7] to-[#6bb6c7] text-white font-bold text-lg"
                           />
                         );
                       }

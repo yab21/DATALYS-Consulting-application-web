@@ -306,6 +306,43 @@ class PartnersService {
     }
   }
 
+  // Supprimer le logo d'un partenaire
+  async deletePartnerLogo(partnerId: number): Promise<{ success: boolean; deleted_logo?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/partners/delete-logo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.token}`,
+        },
+        body: JSON.stringify({
+          partner_id: partnerId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erreur suppression logo:', errorText);
+        throw new Error(`Erreur suppression logo: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.code === 200) {
+        return {
+          success: true,
+          deleted_logo: result.data?.deleted_logo
+        };
+      } else {
+        throw new Error(result.message?.message || 'Erreur lors de la suppression du logo');
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression du logo:', error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
 
   // Création avec JSON - format direct selon l'API
   private async createPartnerWithJSON(partnerData: CreatePartnerFormData): Promise<PartnerApiResponse<Partner[]>> {
