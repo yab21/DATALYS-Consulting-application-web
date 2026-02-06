@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  BarChart3, 
-  Users, 
-  Calendar, 
-  FileText, 
-  Activity, 
+import {
+  BarChart3,
+  Users,
+  Calendar,
+  FileText,
   Clock,
   Target,
   FolderOpen,
@@ -43,7 +42,6 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
     foldersCount: 0,
     incidentsCount: 0,
     teamMembersCount: 0,
-    lastActivity: "Il y a 2 heures",
     loading: true
   });
 
@@ -276,130 +274,84 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
         </div>
 
         {/* Informations détaillées harmonisées */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Carte des informations principales */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-            className="xl:col-span-2"
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="bg-gradient-to-r from-[#4ba9b7] to-[#3d8b96] p-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <Target className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">
-                      Informations du projet
-                    </h2>
-                    <p className="text-blue-100 text-sm">
-                      Détails essentiels et métadonnées
-                    </p>
-                  </div>
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-gradient-to-r from-[#4ba9b7] to-[#3d8b96] p-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Target className="w-5 h-5 text-white" />
                 </div>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                        <Target className="w-4 h-4 text-[#4ba9b7]" />
-                      </div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Nom du projet</span>
-                    </div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {project.intitule}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                        <Users className="w-4 h-4 text-[#4ba9b7]" />
-                      </div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Partenaire</span>
-                    </div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {project.societe}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-[#4ba9b7]" />
-                      </div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Créé le</span>
-                    </div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {project.createdAt.toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-[#4ba9b7]" />
-                      </div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Durée</span>
-                    </div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {projectAge} jour{projectAge !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Activité récente harmonisée */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 h-full overflow-hidden">
-              <div className="bg-gradient-to-r from-[#4ba9b7] to-[#3d8b96] p-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">
-                      Activité récente
-                    </h3>
-                    <p className="text-blue-100 text-sm">
-                      Actions et événements
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 flex items-center justify-center flex-1">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Activity className="w-8 h-8 text-[#4ba9b7]" />
-                  </div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                    Historique complet
-                  </h4>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    Consultez l'onglet "Activité" pour voir tous les événements du projet
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    Informations du projet
+                  </h2>
+                  <p className="text-blue-100 text-sm">
+                    Détails essentiels et métadonnées
                   </p>
-                  <div className="inline-flex items-center gap-2 text-[#4ba9b7] font-medium">
-                    <span>Voir l'activité</span>
-                    <Activity className="w-4 h-4" />
-                  </div>
                 </div>
               </div>
             </div>
-          </motion.div>
-        </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                      <Target className="w-4 h-4 text-[#4ba9b7]" />
+                    </div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Nom du projet</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {project.intitule}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                      <Users className="w-4 h-4 text-[#4ba9b7]" />
+                    </div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Partenaire</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {project.societe}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-[#4ba9b7]" />
+                    </div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Créé le</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {project.createdAt.toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-[#4ba9b7]" />
+                    </div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Durée</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {projectAge} jour{projectAge !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Description du projet si disponible */}
         {project.description && (
