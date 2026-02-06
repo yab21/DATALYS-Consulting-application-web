@@ -288,13 +288,21 @@ const ModernDashboard: React.FC = () => {
             const totalProjects = partnerStatsData.reduce((sum: number, p: any) => sum + (p.total_projects || 0), 0);
             const activeProjects = partnerStatsData.reduce((sum: number, p: any) => sum + (p.active_projects || 0), 0);
             const completedProjects = totalProjects - activeProjects;
-            
-            // Calculer les totaux incidents par priorité
-            const totalIncidents = Object.values(incidentPriorityData).reduce((sum: number, count: any) => sum + (count || 0), 0);
-            const criticalIncidents = incidentPriorityData.critique || 0;
+
+            // Calculer les partenaires actifs (basé sur is_active, pas sur active_projects)
+            const activePartners = partnerStatsData.filter((p: any) => p.is_active === true).length;
+
+            // Calculer les totaux incidents depuis recent_incidents
+            const totalIncidents = recentIncidents.length;
+            // Incidents critiques = priorité P0 ou P1
+            const criticalIncidents = recentIncidents.filter((i: any) => ['P0', 'P1'].includes(i.priority)).length;
             const openIncidents = recentIncidents.filter((i: any) => ['nouveau', 'ouvert', 'en_cours'].includes(i.status)).length;
             const resolvedIncidents = recentIncidents.filter((i: any) => ['resolu', 'ferme'].includes(i.status)).length;
-            
+
+            // Calculer les messages depuis recent_activity
+            const totalMessages = recentActivity.filter((a: any) => a.entity_type === 'message').length;
+            const unreadMessages = recentIncidents.filter((i: any) => !i.is_read && i.type === 'message').length;
+
             // Convertir pour le format local
             setStats({
               projects: {
@@ -306,7 +314,7 @@ const ModernDashboard: React.FC = () => {
               },
               partners: {
                 total: partnerStatsData.length,
-                active: partnerStatsData.filter((p: any) => p.active_projects > 0).length,
+                active: activePartners,
                 new_this_month: 0,
                 growth: 0,
               },
@@ -317,8 +325,8 @@ const ModernDashboard: React.FC = () => {
                 growth: 0,
               },
               messages: {
-                total: recentActivity.filter((a: any) => ['message', 'notification'].includes(a.entity_type)).length,
-                unread: recentIncidents.filter((i: any) => !i.is_read).length,
+                total: totalMessages,
+                unread: unreadMessages,
                 support_tickets: recentIncidents.filter((i: any) => i.type === 'support').length,
                 growth: 0,
               },
@@ -1117,7 +1125,7 @@ const ModernDashboard: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
             >
               {/* Carte Projets */}
               <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
@@ -1184,24 +1192,6 @@ const ModernDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Carte Messages */}
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 rounded-md bg-purple-50">
-                    <MessageCircle className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">{stats.messages.total}</div>
-                    <div className="text-xs text-gray-500 uppercase">Messages</div>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Non lus</span>
-                    <span className="text-gray-900 font-medium">{stats.messages.unread}</span>
-                  </div>
-                </div>
-              </div>
             </motion.div>
 
             {/* 2. Vue d'ensemble des Partenaires - Table Responsive */}
