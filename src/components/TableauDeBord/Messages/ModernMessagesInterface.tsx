@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   CardBody,
@@ -38,6 +38,8 @@ import messagesService, {
 import { UsersService, User } from "@/services/users";
 import { ProjectsService, Project } from "@/services/projects";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { useSSE } from "@/hooks/useSSE";
+import { SSENotification } from "@/services/sse-service";
 
 // Types pour les conversations groupées par tickets
 interface Conversation {
@@ -68,7 +70,11 @@ interface Conversation {
 const ModernMessagesInterface: React.FC = () => {
   const { user, isAdmin } = useAuth();
   const { showNotification } = useSimpleNotifications();
-  
+
+  // Référence pour accéder à loadMessages dans le callback SSE
+  const loadMessagesRef = useRef<(() => Promise<void>) | null>(null);
+  const selectedConversationRef = useRef<Conversation | null>(null);
+
   // États principaux
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -143,6 +149,24 @@ const ModernMessagesInterface: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // SSE pour le temps réel - rafraîchir quand un nouveau message arrive
+  const handleSSENotification = useCallback((notification: SSENotification) => {
+    if (notification.type === 'message') {
+      console.log('📩 Nouveau message reçu via SSE, rafraîchissement...');
+      loadMessagesRef.current?.();
+    }
+  }, []);
+
+  useSSE({
+    autoConnect: true,
+    onNotification: handleSSENotification
+  });
+
+  // Synchroniser selectedConversationRef
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -505,6 +529,9 @@ const ModernMessagesInterface: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Assigner la ref pour que le callback SSE puisse appeler loadMessages
+  loadMessagesRef.current = loadMessages;
 
   const handleSelectConversation = async (conversation: Conversation) => {
     // Charger le thread complet pour voir les messages de tous les participants
