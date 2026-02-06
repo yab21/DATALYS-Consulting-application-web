@@ -261,7 +261,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
           modifiedAt: new Date(file.updated_at || file.created_at),
           parentId: file.folder_id?.toString() || null,
           path: file.original_name || file.name || 'Fichier sans nom',
-          file_url: (file as any).file_url || '', // Cast temporaire
+          file_url: file.file_path || '', // file_path contient file_url de l'API après le mapping
           folder_id: file.folder_id,
           isShared: file.is_public || false
         }));
@@ -526,25 +526,56 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
     }
   }, [uploadingFiles, currentFolder, projectId, user?.id, onFileUpload, showNotification, onUploadClose, loadFilesAndFolders]);
 
+  // Corriger l'URL d'un fichier
+  const fixFileUrl = useCallback((url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+
+    let fixedUrl = url;
+
+    // Corriger /api/files/serve/ -> /files/serve/
+    if (fixedUrl.includes('/api/files/serve/')) {
+      fixedUrl = fixedUrl.replace('/api/files/serve/', '/files/serve/');
+    }
+
+    // S'assurer que l'URL est complète avec le domaine
+    if (fixedUrl.startsWith('/files/serve/')) {
+      fixedUrl = `https://applicationweb.datalysconsulting.com${fixedUrl}`;
+    }
+
+    // Convertir les anciennes URLs
+    if (fixedUrl.includes('82.112.253.137:8082')) {
+      fixedUrl = fixedUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com');
+    }
+
+    return fixedUrl;
+  }, []);
+
   // Voir un fichier - ouvre dans une nouvelle fenêtre
   const handlePreview = useCallback(async (file: FileItem) => {
     try {
-      if (file.file_url) {
-        // Ouvrir directement l'URL du fichier
-        window.open(file.file_url, '_blank');
-      } else {
-        // Utiliser l'API viewFile - cette fonction ouvre directement le fichier
-        await projectFilesService.viewFile(Number(file.id), file.name, file.file_url);
+      console.log('📖 [PREVIEW] - Fichier:', file.name, 'URL:', file.file_url);
+
+      if (file.file_url && file.file_url.trim() !== '') {
+        const correctedUrl = fixFileUrl(file.file_url);
+        console.log('📖 [PREVIEW] - URL corrigée:', correctedUrl);
+        if (correctedUrl) {
+          window.open(correctedUrl, '_blank');
+          return;
+        }
       }
+
+      // Fallback: utiliser le service viewFile qui gère plusieurs cas
+      console.log('📖 [PREVIEW] - Fallback: utilisation du service viewFile');
+      await projectFilesService.viewFile(Number(file.id), file.name, file.file_url);
     } catch (error) {
       console.error('Erreur lors de l\'ouverture du fichier:', error);
       showNotification({
         title: 'Erreur',
-        message: 'Impossible d\'ouvrir le fichier',
+        message: 'Impossible d\'ouvrir le fichier. Le fichier n\'existe peut-être pas sur le serveur.',
         type: 'error'
       });
     }
-  }, [showNotification]);
+  }, [showNotification, fixFileUrl]);
 
   // Filtrer et trier les éléments
   const filteredAndSortedItems = useMemo(() => {
@@ -820,36 +851,61 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                       {viewMode === 'grid' ? (
                         // Vue grille harmonisée
                         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group relative">
-                          {/* Action buttons pour les dossiers - Seulement au survol */}
-                          {item.type === 'folder' && (
-                            <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                              <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 rounded-md shadow-lg p-0.5 border border-gray-200 dark:border-gray-600">
-                                <button
-                                  className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingFolder(item);
-                                    setNewFolderName(item.name);
-                                    setNewFolderDescription('');
-                                    onEditFolderOpen();
-                                  }}
-                                  title="Modifier"
-                                >
-                                  <Settings className="w-3 h-3" />
-                                </button>
-                                <button
-                                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteFolder(item);
-                                  }}
-                                  title="Supprimer"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
+                          {/* Action buttons - Seulement au survol */}
+                          <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 rounded-md shadow-lg p-0.5 border border-gray-200 dark:border-gray-600">
+                              {item.type === 'folder' ? (
+                                <>
+                                  <button
+                                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingFolder(item);
+                                      setNewFolderName(item.name);
+                                      setNewFolderDescription('');
+                                      onEditFolderOpen();
+                                    }}
+                                    title="Modifier"
+                                  >
+                                    <Settings className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteFolder(item);
+                                    }}
+                                    title="Supprimer"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePreview(item);
+                                    }}
+                                    title="Voir"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteFile(item);
+                                    }}
+                                    title="Supprimer"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </>
+                              )}
                             </div>
-                          )}
+                          </div>
                           
                           <div 
                             className="text-center"
@@ -892,10 +948,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                             <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-1">
                               {item.name}
                             </h4>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                              {item.type === 'file' && (
-                                <p>{formatFileSize(item.size || 0)}</p>
-                              )}
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
                               <p>{item.modifiedAt.toLocaleDateString('fr-FR')}</p>
                             </div>
                             {item.isShared && (
@@ -920,9 +973,9 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                                 {item.name}
                               </h4>
                               <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                                <span>
-                                  {item.type === 'folder' ? (
-                                    item.loadingStats ? (
+                                {item.type === 'folder' && (
+                                  <span>
+                                    {item.loadingStats ? (
                                       <span className="flex items-center gap-1">
                                         <div className="w-3 h-3 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
                                         Chargement...
@@ -931,11 +984,9 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                                       `${item.stats.subfolders} dossier${item.stats.subfolders !== 1 ? 's' : ''} • ${item.stats.files} fichier${item.stats.files !== 1 ? 's' : ''}`
                                     ) : (
                                       'Dossier'
-                                    )
-                                  ) : (
-                                    formatFileSize(item.size || 0)
-                                  )}
-                                </span>
+                                    )}
+                                  </span>
+                                )}
                                 <span>{item.modifiedAt.toLocaleDateString('fr-FR')}</span>
                               </div>
                             </div>
@@ -1017,7 +1068,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
             <Input
               label="Nom du dossier"
               placeholder="Saisissez le nom du dossier"
-             
+              value={newFolderName}
               onValueChange={setNewFolderName}
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && !newFolderDescription && handleCreateFolder()}
@@ -1025,7 +1076,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
             <Input
               label="Description (optionnel)"
               placeholder="Décrivez le contenu de ce dossier"
-             
+              value={newFolderDescription}
               onValueChange={setNewFolderDescription}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
             />
@@ -1063,14 +1114,14 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
             <Input
               label="Nom du dossier"
               placeholder="Saisissez le nom du dossier"
-             
+              value={newFolderName}
               onValueChange={setNewFolderName}
               autoFocus
             />
             <Input
               label="Description (optionnel)"
               placeholder="Décrivez le contenu de ce dossier"
-             
+              value={newFolderDescription}
               onValueChange={setNewFolderDescription}
               onKeyDown={(e) => e.key === 'Enter' && handleEditFolder()}
             />

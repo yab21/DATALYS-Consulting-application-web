@@ -898,16 +898,32 @@ export class ProjectFilesService {
     try {
       console.log(`📖 [VIEW FILE] - Ouverture du fichier: ${fileName} (ID: ${fileId})`);
       console.log(`📖 [VIEW FILE] - File URL fournie: ${fileUrl}`);
-      
+
+      // Si pas de fileUrl, utiliser l'endpoint download comme fallback
+      if (!fileUrl) {
+        console.log(`📖 [VIEW FILE] - Pas de file_url, utilisation de /files/download/${fileId}`);
+        const response = await securedFetch(`/files/download/${fileId}`, {
+          method: 'GET',
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, '_blank');
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+          }, 1000);
+          return;
+        } else {
+          throw new Error(`Erreur lors de l'ouverture du fichier ${fileName}`);
+        }
+      }
+
       // Utiliser l'endpoint /files/serve/{file_url} comme dans Postman
       let viewUrl: string;
-      if (fileUrl) {
-        // Nettoyer le file_url (enlever les slashes de début)
-        const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-        viewUrl = `${baseUrl}/files/serve/${cleanFileUrl}`;
-      } else {
-        throw new Error('file_url manquant pour visualiser le fichier');
-      }
+      // Nettoyer le file_url (enlever les slashes de début)
+      const cleanFileUrl = fileUrl.replace(/^\/+/, '');
+      viewUrl = `${baseUrl}/files/serve/${cleanFileUrl}`;
       
       console.log(`📖 [VIEW FILE] - URL finale: ${viewUrl}`);
       

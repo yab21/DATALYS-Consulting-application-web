@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardBody, CardHeader, Tab, Tabs, Spinner, Chip, Button, Input, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Tooltip } from '@heroui/react';
-import { ArrowLeft, Building, Mail, Phone, MapPin, Calendar, User, FileText, Folder as FolderIcon, FolderOpen, Eye, AlertTriangle, Headphones, Search, Grid, List, ArrowUp, ArrowDown, HardDrive, Image, Video, Music, Archive, Code, FileSpreadsheet, Presentation } from 'lucide-react';
+import { Card, CardBody, CardHeader, Tab, Tabs, Spinner, Chip, Button, Input, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/react';
+import { ArrowLeft, ArrowRight, Building, Mail, Phone, MapPin, Calendar, User, FileText, Folder as FolderIcon, FolderOpen, Eye, AlertTriangle, Headphones, Search, Grid, List, ArrowUp, ArrowDown, HardDrive, Image, Video, Music, Archive, Code, FileSpreadsheet, Presentation, MoreVertical, Trash2, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
@@ -13,6 +13,8 @@ import { foldersService, Folder } from '@/services/folders';
 import { extractBackendMessage } from '@/lib/error-handler';
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { PartnerStatsService, PartnerStats } from '@/services/partnerStats';
+import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
+import { useAuth } from '@/context/AuthContext';
 
 interface VoirPartenaireProps {
   id: string;
@@ -20,6 +22,8 @@ interface VoirPartenaireProps {
 
 const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   const router = useRouter();
+  const { user } = useAuth();
+  const { showNotification } = useSimpleNotifications();
   const [loading, setLoading] = useState(true);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -43,6 +47,13 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // États pour les modals de suppression
+  const { isOpen: isDeleteFileModalOpen, onOpen: onDeleteFileModalOpen, onClose: onDeleteFileModalClose } = useDisclosure();
+  const { isOpen: isDeleteFolderModalOpen, onOpen: onDeleteFolderModalOpen, onClose: onDeleteFolderModalClose } = useDisclosure();
+  const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const partnerId = parseInt(id);
 
@@ -271,7 +282,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
 
   const handleTabChange = async (key: string) => {
     setActiveTab(key);
-    
+
     switch (key) {
       case 'projects':
         if (projects.length === 0) {
@@ -296,6 +307,124 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
         break;
     }
   };
+
+  // Corriger l'URL d'un fichier
+  const fixFileUrl = useCallback((url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+
+    let fixedUrl = url;
+
+    // Corriger /api/files/serve/ -> /files/serve/
+    if (fixedUrl.includes('/api/files/serve/')) {
+      fixedUrl = fixedUrl.replace('/api/files/serve/', '/files/serve/');
+    }
+
+    // S'assurer que l'URL est complète avec le domaine
+    if (fixedUrl.startsWith('/files/serve/')) {
+      fixedUrl = `https://applicationweb.datalysconsulting.com${fixedUrl}`;
+    }
+
+    // Convertir les anciennes URLs
+    if (fixedUrl.includes('82.112.253.137:8082')) {
+      fixedUrl = fixedUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com');
+    }
+
+    return fixedUrl;
+  }, []);
+
+  // Prévisualiser un fichier
+  const handlePreviewFile = useCallback((file: ProjectFile) => {
+    if (file.file_url) {
+      const correctedUrl = fixFileUrl(file.file_url);
+      if (correctedUrl) {
+        window.open(correctedUrl, '_blank');
+      } else {
+        showNotification({
+          title: 'Erreur',
+          message: 'URL du fichier invalide',
+          type: 'error'
+        });
+      }
+    } else {
+      showNotification({
+        title: 'Erreur',
+        message: 'URL du fichier non disponible',
+        type: 'error'
+      });
+    }
+  }, [showNotification, fixFileUrl]);
+
+  // Ouvrir le modal de suppression de fichier
+  const openDeleteFileModal = useCallback((file: ProjectFile) => {
+    setFileToDelete(file);
+    onDeleteFileModalOpen();
+  }, [onDeleteFileModalOpen]);
+
+  // Confirmer la suppression d'un fichier
+  const confirmDeleteFile = useCallback(async () => {
+    if (!fileToDelete || !user) return;
+
+    try {
+      setIsDeleting(true);
+      await filesService.deleteFile(fileToDelete.id, user.id);
+
+      showNotification({
+        title: 'Succès',
+        message: `Fichier "${fileToDelete.name}" supprimé avec succès`,
+        type: 'success'
+      });
+
+      // Mettre à jour la liste des fichiers
+      setFiles(prev => prev.filter(f => f.id !== fileToDelete.id));
+      onDeleteFileModalClose();
+      setFileToDelete(null);
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      showNotification({
+        title: 'Erreur',
+        message: extractBackendMessage(error),
+        type: 'error'
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [fileToDelete, user, showNotification, onDeleteFileModalClose]);
+
+  // Ouvrir le modal de suppression de dossier
+  const openDeleteFolderModal = useCallback((folder: Folder) => {
+    setFolderToDelete(folder);
+    onDeleteFolderModalOpen();
+  }, [onDeleteFolderModalOpen]);
+
+  // Confirmer la suppression d'un dossier
+  const confirmDeleteFolder = useCallback(async () => {
+    if (!folderToDelete || !user) return;
+
+    try {
+      setIsDeleting(true);
+      await foldersService.deleteFolder(folderToDelete.id, user.id);
+
+      showNotification({
+        title: 'Succès',
+        message: `Dossier "${folderToDelete.name}" supprimé avec succès`,
+        type: 'success'
+      });
+
+      // Mettre à jour la liste des dossiers
+      setFolders(prev => prev.filter(f => f.id !== folderToDelete.id));
+      onDeleteFolderModalClose();
+      setFolderToDelete(null);
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      showNotification({
+        title: 'Erreur',
+        message: extractBackendMessage(error),
+        type: 'error'
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [folderToDelete, user, showNotification, onDeleteFolderModalClose]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -716,8 +845,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                 </div>
               </Tab>
 
-              <Tab 
-                key="projects" 
+              <Tab
+                key="projects"
                 title={
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5" />
@@ -731,34 +860,98 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       <Spinner size="md" />
                     </div>
                   ) : projects.length > 0 ? (
-                    <div className="space-y-3">
-                      {projects.map((project) => (
-                        <div key={project.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium text-gray-900">{project.title}</h4>
-                              {project.description && (
-                                <p className="text-sm text-gray-600 mt-1">{project.description}</p>
-                              )}
-                              <p className="text-xs text-gray-500 mt-2">
-                                Créé le {formatDate(project.created_at)}
-                              </p>
-                            </div>
-                            <Chip
-                              color={project.is_active ? "success" : "warning"}
-                              variant="flat"
-                              size="sm"
-                            >
-                              {project.is_active ? "Actif" : "Inactif"}
-                            </Chip>
+                    <>
+                      {/* Statistiques */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-600">{projects.length} projet{projects.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span>{projects.filter(p => p.is_active).length} actif{projects.filter(p => p.is_active).length > 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                            <span>{projects.filter(p => !p.is_active).length} inactif{projects.filter(p => !p.is_active).length > 1 ? 's' : ''}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+
+                      {/* Grille de projets */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <AnimatePresence mode="popLayout">
+                          {projects.map((project, index) => (
+                            <motion.div
+                              key={project.id}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.9 }}
+                              transition={{ delay: index * 0.02 }}
+                            >
+                              <div
+                                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+                                onClick={() => router.push(`/tableaudebord/projet/pageprojet/${project.id}`)}
+                              >
+                                <div className="flex items-start gap-3">
+                                  {/* Icône du projet */}
+                                  <div className="w-12 h-12 bg-gradient-to-br from-[#4ba9b7] to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+                                    <FileText className="w-6 h-6 text-white" />
+                                  </div>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <h4 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-[#4ba9b7] transition-colors">
+                                        {project.title}
+                                      </h4>
+                                      <Chip
+                                        color={project.is_active ? "success" : "warning"}
+                                        variant="flat"
+                                        size="sm"
+                                        className="flex-shrink-0"
+                                      >
+                                        {project.is_active ? "Actif" : "Inactif"}
+                                      </Chip>
+                                    </div>
+
+                                    {project.description && (
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                                        {project.description}
+                                      </p>
+                                    )}
+
+                                    <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                                      <Calendar className="w-3 h-3" />
+                                      <span>{formatDate(project.created_at)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Barre de navigation au survol */}
+                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center justify-between text-xs text-gray-500">
+                                    <span>Cliquez pour voir le projet</span>
+                                    <ArrowRight className="w-4 h-4 text-[#4ba9b7]" />
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                    </>
                   ) : (
-                    <div className="text-center py-8">
-                      <FileText className="mx-auto text-gray-400 mb-3" size={48} />
-                      <p className="text-gray-500">Aucun projet associé à ce partenaire</p>
+                    <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        Aucun projet
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Aucun projet associé à ce partenaire
+                      </p>
                     </div>
                   )}
                 </div>
@@ -879,8 +1072,33 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                 transition={{ delay: index * 0.02 }}
                               >
                                 {viewMode === 'grid' ? (
-                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group">
-                                    <div className="text-center">
+                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group relative">
+                                    {/* Boutons d'action au survol */}
+                                    <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                      <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 rounded-md shadow-lg p-0.5 border border-gray-200 dark:border-gray-600">
+                                        <button
+                                          className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handlePreviewFile(file);
+                                          }}
+                                          title="Voir"
+                                        >
+                                          <Eye className="w-3 h-3" />
+                                        </button>
+                                        <button
+                                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openDeleteFileModal(file);
+                                          }}
+                                          title="Supprimer"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="text-center" onClick={() => handlePreviewFile(file)}>
                                       <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg group-hover:scale-105 transition-transform duration-200">
                                         {getFileIconComponent(file.name)}
                                       </div>
@@ -888,7 +1106,13 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                         {file.name}
                                       </h4>
                                       <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                                        <p>{file.extension?.toUpperCase() || 'N/A'} • {formatFileSize(file.size)}</p>
+                                        {(file.extension || file.size > 0) && (
+                                          <p>
+                                            {file.extension?.toUpperCase()}
+                                            {file.extension && file.size > 0 && ' • '}
+                                            {file.size > 0 && formatFileSize(file.size)}
+                                          </p>
+                                        )}
                                         <p>{formatDate(file.created_at)}</p>
                                       </div>
                                     </div>
@@ -896,19 +1120,47 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                 ) : (
                                   <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
                                     <div className="flex items-center gap-4">
-                                      <div className="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                      <div
+                                        className="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                                        onClick={() => handlePreviewFile(file)}
+                                      >
                                         {getFileIconComponent(file.name)}
                                       </div>
-                                      <div className="flex-1 min-w-0">
+                                      <div className="flex-1 min-w-0" onClick={() => handlePreviewFile(file)}>
                                         <h4 className="font-medium text-gray-900 dark:text-white truncate">
                                           {file.name}
                                         </h4>
                                         <div className="flex items-center gap-4 text-sm text-gray-500">
-                                          <span>{file.extension?.toUpperCase() || 'N/A'}</span>
-                                          <span>{formatFileSize(file.size)}</span>
+                                          {file.extension && <span>{file.extension.toUpperCase()}</span>}
+                                          {file.size > 0 && <span>{formatFileSize(file.size)}</span>}
                                           <span>{formatDate(file.created_at)}</span>
                                         </div>
                                       </div>
+                                      <Dropdown>
+                                        <DropdownTrigger>
+                                          <Button size="sm" variant="light" isIconOnly className="text-gray-400 hover:text-gray-600">
+                                            <MoreVertical className="w-4 h-4" />
+                                          </Button>
+                                        </DropdownTrigger>
+                                        <DropdownMenu>
+                                          <DropdownItem
+                                            key="view"
+                                            startContent={<Eye className="w-4 h-4" />}
+                                            onPress={() => handlePreviewFile(file)}
+                                          >
+                                            Voir
+                                          </DropdownItem>
+                                          <DropdownItem
+                                            key="delete"
+                                            startContent={<Trash2 className="w-4 h-4" />}
+                                            className="text-danger"
+                                            color="danger"
+                                            onPress={() => openDeleteFileModal(file)}
+                                          >
+                                            Supprimer
+                                          </DropdownItem>
+                                        </DropdownMenu>
+                                      </Dropdown>
                                     </div>
                                   </div>
                                 )}
@@ -1046,7 +1298,22 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                 transition={{ delay: index * 0.02 }}
                               >
                                 {viewMode === 'grid' ? (
-                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group relative">
+                                    {/* Bouton supprimer au survol */}
+                                    <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                      <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 rounded-md shadow-lg p-0.5 border border-gray-200 dark:border-gray-600">
+                                        <button
+                                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openDeleteFolderModal(folder);
+                                          }}
+                                          title="Supprimer"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </div>
                                     <div className="text-center">
                                       {/* Design de dossier orange */}
                                       <div className="relative w-[100px] h-[80px] mx-auto mb-3 cursor-pointer group-hover:scale-105 transition-transform duration-200">
@@ -1096,6 +1363,24 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                       >
                                         {folder.is_active ? "Actif" : "Inactif"}
                                       </Chip>
+                                      <Dropdown>
+                                        <DropdownTrigger>
+                                          <Button size="sm" variant="light" isIconOnly className="text-gray-400 hover:text-gray-600">
+                                            <MoreVertical className="w-4 h-4" />
+                                          </Button>
+                                        </DropdownTrigger>
+                                        <DropdownMenu>
+                                          <DropdownItem
+                                            key="delete"
+                                            startContent={<Trash2 className="w-4 h-4" />}
+                                            className="text-danger"
+                                            color="danger"
+                                            onPress={() => openDeleteFolderModal(folder)}
+                                          >
+                                            Supprimer
+                                          </DropdownItem>
+                                        </DropdownMenu>
+                                      </Dropdown>
                                     </div>
                                   </div>
                                 )}
@@ -1126,6 +1411,120 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
           </CardBody>
         </Card>
       </div>
+
+      {/* Modal de confirmation de suppression de fichier */}
+      <Modal isOpen={isDeleteFileModalOpen} onClose={onDeleteFileModalClose}>
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-100">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <span>Supprimer le fichier</span>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-start gap-3">
+                  <div className="p-1 rounded-full bg-red-100 dark:bg-red-900/40">
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
+                      Attention : Suppression définitive
+                    </h3>
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      Cette action est irréversible. Le fichier sera définitivement supprimé.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {fileToDelete && (
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Fichier à supprimer :</strong> {fileToDelete.name}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="flat"
+              onPress={onDeleteFileModalClose}
+              isDisabled={isDeleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="danger"
+              onPress={confirmDeleteFile}
+              isLoading={isDeleting}
+            >
+              Supprimer définitivement
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de confirmation de suppression de dossier */}
+      <Modal isOpen={isDeleteFolderModalOpen} onClose={onDeleteFolderModalClose}>
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-100">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <span>Supprimer le dossier</span>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-start gap-3">
+                  <div className="p-1 rounded-full bg-red-100 dark:bg-red-900/40">
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
+                      Attention : Suppression définitive
+                    </h3>
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      Cette action est irréversible. Tous les fichiers et sous-dossiers contenus dans ce dossier seront également supprimés.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {folderToDelete && (
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Dossier à supprimer :</strong> {folderToDelete.name}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="flat"
+              onPress={onDeleteFolderModalClose}
+              isDisabled={isDeleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="danger"
+              onPress={confirmDeleteFolder}
+              isLoading={isDeleting}
+            >
+              Supprimer définitivement
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };
