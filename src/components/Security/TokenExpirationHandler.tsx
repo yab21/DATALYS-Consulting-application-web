@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, ReactNode } from 'react';
+import { useEffect, ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { setRedirectCallback, setupGlobalInterceptor } from '@/lib/api-interceptor';
+import { setRedirectCallback, setupGlobalInterceptor, resetInterceptorState } from '@/lib/api-interceptor';
 import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
 import { ERROR_MESSAGES } from '@/lib/error-messages';
 
@@ -19,32 +19,38 @@ export const TokenExpirationHandler: React.FC<TokenExpirationHandlerProps> = ({ 
   const router = useRouter();
   const { logout, isAuthenticated } = useAuth();
   const { showNotification } = useSimpleNotifications();
+  const redirectingRef = useRef(false);
 
   useEffect(() => {
     // Configurer l'intercepteur global
     setupGlobalInterceptor();
-    
+
     // Configurer le callback de redirection pour l'intercepteur API
     const handleTokenExpiration = () => {
-      console.warn('🔒 Token expiré détecté - Configuration de la redirection');
-      
+      // Éviter les redirections multiples
+      if (redirectingRef.current) {
+        console.warn('🔒 Redirection déjà en cours, ignorée');
+        return;
+      }
+      redirectingRef.current = true;
+
+      console.warn('🔒 Token expiré détecté - Redirection IMMÉDIATE');
+
+      // Déconnexion silencieuse (sans notification car on redirige)
       if (isAuthenticated) {
-        console.warn('Token expiré, déconnexion automatique');
         logout();
       }
-      
-      // Notification à l'utilisateur
+
+      // Notification rapide à l'utilisateur
       showNotification({
         type: "warning",
         title: "Session expirée",
-        message: ERROR_MESSAGES.AUTH.SESSION_EXPIRED,
-        duration: 5000,
+        message: ERROR_MESSAGES.AUTH.SESSION_EXPIRED || "Votre session a expiré. Veuillez vous reconnecter.",
+        duration: 3000,
       });
-      
-      // Délai pour permettre à la notification de s'afficher
-      setTimeout(() => {
-        router.push('/connexion');
-      }, 1000);
+
+      // Redirection IMMÉDIATE
+      router.push('/connexion?expired=true');
     };
 
     setRedirectCallback(handleTokenExpiration);
@@ -74,12 +80,21 @@ export const TokenExpirationHandler: React.FC<TokenExpirationHandlerProps> = ({ 
     // Cleanup function
     return () => {
       setRedirectCallback(() => {});
+      redirectingRef.current = false;
       if (typeof window !== 'undefined') {
         window.removeEventListener('token-expired', handleTokenExpiredEvent as EventListener);
         window.removeEventListener('global-error-notification', handleGlobalErrorNotification as EventListener);
       }
     };
   }, [router, logout, isAuthenticated, showNotification]);
+
+  // Réinitialiser l'état de l'intercepteur quand l'utilisateur se reconnecte
+  useEffect(() => {
+    if (isAuthenticated) {
+      redirectingRef.current = false;
+      resetInterceptorState();
+    }
+  }, [isAuthenticated]);
 
   // Surveiller les erreurs globales liées à l'authentification (niveau de sécurité supplémentaire)
   useEffect(() => {

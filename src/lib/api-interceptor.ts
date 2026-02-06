@@ -2,6 +2,7 @@
 
 import { errorHandler } from "./error-handler";
 import { SecureStorage } from "./secure-storage";
+import { API_CONFIG } from "./api-config";
 
 // Types pour les réponses d'erreur
 interface ApiErrorResponse {
@@ -10,12 +11,20 @@ interface ApiErrorResponse {
   code?: number;
 }
 
+// Erreur spécifique pour l'expiration de token
+export class TokenExpiredError extends Error {
+  constructor(message: string = 'Session expirée') {
+    super(message);
+    this.name = 'TokenExpiredError';
+  }
+}
+
 class ApiInterceptor {
   private static instance: ApiInterceptor;
   private redirectCallback: (() => void) | null = null;
   private tokenExpirationHandled: boolean = false;
   private lastTokenExpirationTime: number = 0;
-  
+  private redirectInProgress: boolean = false;
 
   private constructor() {
     this.setupGlobalErrorHandler();
@@ -169,21 +178,25 @@ class ApiInterceptor {
   /**
    * Gérer l'expiration du token
    */
-  private handleTokenExpiration() {
+  private handleTokenExpiration(): void {
     const now = Date.now();
-    
-    // Protection contre les multiples appels simultanés
-    if (this.tokenExpirationHandled || (now - this.lastTokenExpirationTime) < 5000) {
+
+    // Protection contre les multiples appels simultanés (fenêtre de 3 secondes)
+    if (this.redirectInProgress || (now - this.lastTokenExpirationTime) < 3000) {
       console.warn("🔒 Expiration token déjà en cours de traitement, ignorée");
       return;
     }
 
+    this.redirectInProgress = true;
     this.tokenExpirationHandled = true;
     this.lastTokenExpirationTime = now;
 
     console.warn(
-      "🔒 Token expiré détecté - Nettoyage et redirection en cours...",
+      "🔒 Token expiré détecté - Nettoyage et redirection IMMÉDIATE...",
     );
+
+    // Nettoyer toutes les données d'authentification IMMÉDIATEMENT
+    this.cleanupAuthData();
 
     // Émettre un événement global pour notifier tous les composants
     if (typeof window !== "undefined") {
@@ -195,60 +208,81 @@ class ApiInterceptor {
       }));
     }
 
-    // Nettoyer toutes les données d'authentification
+    // Redirection IMMÉDIATE (pas de délai)
+    if (typeof window !== "undefined") {
+      // Appeler le callback de redirection si défini
+      if (this.redirectCallback) {
+        this.redirectCallback();
+      } else {
+        // Redirection par défaut immédiate
+        window.location.href = "/connexion?expired=true";
+      }
+    }
+  }
+
+  /**
+   * Nettoyer toutes les données d'authentification
+   */
+  private cleanupAuthData(): void {
+    // Nettoyer via SecureStorage
     SecureStorage.removeItem("authToken");
     SecureStorage.removeItem("refreshToken");
     SecureStorage.removeItem("userInfo");
     SecureStorage.removeItem("userProfile");
     SecureStorage.removeItem("permissions");
-    
+
     // Nettoyer également le localStorage si des données y sont stockées
     if (typeof window !== "undefined") {
-      const keysToRemove = [];
+      const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && (key.includes('auth') || key.includes('token') || key.includes('user'))) {
+        if (key && (key.includes('auth') || key.includes('token') || key.includes('user') || key.includes('session'))) {
           keysToRemove.push(key);
         }
       }
       keysToRemove.forEach(key => localStorage.removeItem(key));
-    }
 
-    // Afficher UNE SEULE notification à l'utilisateur
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent('global-error-notification', {
-        detail: {
-          type: 'warning',
-          title: 'Session expirée',
-          message: 'Votre session a expiré. Vous allez être redirigé vers la page de connexion.',
-          persistent: true,
-          id: 'token-expiration-' + now // ID unique pour éviter les doublons
-        }
-      }));
-    }
-
-    // Délai court pour permettre à la notification de s'afficher
-    setTimeout(() => {
-      // Appeler le callback de redirection si défini
-      if (this.redirectCallback) {
-        this.redirectCallback();
-      } else {
-        // Redirection par défaut
-        if (typeof window !== "undefined") {
-          window.location.href = "/connexion";
+      // Nettoyer sessionStorage aussi
+      const sessionKeysToRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.includes('auth') || key.includes('token') || key.includes('user') || key.includes('session'))) {
+          sessionKeysToRemove.push(key);
         }
       }
-    }, 1000);
+      sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+    }
+  }
+
+  /**
+   * Vérifier si une redirection pour expiration est en cours
+   */
+  public isRedirectInProgress(): boolean {
+    return this.redirectInProgress;
+  }
+
+  /**
+   * Réinitialiser l'état de l'intercepteur (utile après une nouvelle connexion)
+   */
+  public resetState(): void {
+    this.tokenExpirationHandled = false;
+    this.redirectInProgress = false;
+    this.lastTokenExpirationTime = 0;
   }
 
   /**
    * Intercepter les réponses fetch
    */
   public async interceptResponse(response: Response): Promise<Response> {
+    // Si une redirection est déjà en cours, ne pas traiter la réponse
+    if (this.redirectInProgress) {
+      throw new TokenExpiredError('Redirection en cours suite à expiration de session');
+    }
+
     if (!response.ok) {
       let errorData: any = {};
       let isJsonError = false;
-      
+
       try {
         errorData = await response.clone().json();
         isJsonError = true;
@@ -263,12 +297,8 @@ class ApiInterceptor {
       // PRIORITÉ 1: Vérifier l'expiration de token AVANT tout
       if (this.isTokenExpired(errorData, response.status, response.url)) {
         this.handleTokenExpiration();
-        // Marquer les données d'erreur comme gérées pour éviter la double notification
-        errorData.handled = true;
-        // Créer une nouvelle réponse qui sera traitée comme handled
-        const handledResponse = response.clone();
-        (handledResponse as any).errorHandled = true;
-        return handledResponse;
+        // Lancer une erreur spécifique pour empêcher le composant d'afficher son propre message
+        throw new TokenExpiredError('Votre session a expiré. Redirection vers la page de connexion...');
       }
 
       // PRIORITÉ 2: Traitement des autres erreurs seulement si ce n'est pas un token expiré
@@ -307,25 +337,34 @@ class ApiInterceptor {
   public setupGlobalInterceptor() {
     if (typeof window !== "undefined" && !(window.fetch as any).__intercepted) {
       const originalFetch = window.fetch;
+      const self = this;
 
       window.fetch = async (
         input: RequestInfo | URL,
         init?: RequestInit,
       ): Promise<Response> => {
+        // Si une redirection est déjà en cours, rejeter immédiatement
+        if (self.redirectInProgress) {
+          throw new TokenExpiredError('Session expirée - redirection en cours');
+        }
+
         try {
           const response = await originalFetch(input, init);
-          return await this.interceptResponse(response);
+          return await self.interceptResponse(response);
         } catch (error) {
-          console.error("Erreur lors de la requête interceptée:", error);
+          // Si c'est déjà une TokenExpiredError, la propager
+          if (error instanceof TokenExpiredError) {
+            throw error;
+          }
 
           const url = typeof input === "string" ? input : input.toString();
-          const isApiCall = url.includes("/api/") || url.includes("dashboard");
+          const isApiCall = url.includes("/api/") || url.includes("dashboard") || url.includes(API_CONFIG?.BASE_URL || '');
 
           // Vérifier si l'erreur réseau pourrait indiquer un token expiré
-          if (isApiCall && this.isNetworkErrorRelatedToAuth(error)) {
+          if (isApiCall && self.isNetworkErrorRelatedToAuth(error)) {
             console.log('🔒 Erreur réseau pouvant indiquer un token expiré');
-            this.handleTokenExpiration();
-            return Promise.reject(error);
+            self.handleTokenExpiration();
+            throw new TokenExpiredError('Session expirée suite à erreur réseau');
           }
 
           // Log l'erreur réseau mais ne pas déclencher de notification automatique
@@ -343,6 +382,7 @@ class ApiInterceptor {
 
       // Marquer comme intercepté pour éviter les doubles intercepteurs
       (window.fetch as any).__intercepted = true;
+      console.log('✅ Intercepteur global fetch configuré');
     }
   }
 
@@ -455,5 +495,16 @@ export const setRedirectCallback = (callback: () => void) =>
 
 export const setupGlobalInterceptor = () =>
   apiInterceptor.setupGlobalInterceptor();
+
+export const resetInterceptorState = () =>
+  apiInterceptor.resetState();
+
+export const isRedirectInProgress = () =>
+  apiInterceptor.isRedirectInProgress();
+
+// Fonction utilitaire pour vérifier si une erreur est une TokenExpiredError
+export const isTokenExpiredError = (error: any): boolean => {
+  return error instanceof TokenExpiredError || error?.name === 'TokenExpiredError';
+};
 
 export default apiInterceptor;

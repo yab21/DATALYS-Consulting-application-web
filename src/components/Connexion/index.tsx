@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Input, Checkbox } from "@heroui/react";
@@ -18,12 +18,13 @@ import {
   Users,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthService } from "@/services/auth";
 import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { useTopBarProgress } from "@/hooks/useTopBarProgress";
 import VerificationMFA from "@/components/Auth/VerificationMFA";
+import { resetInterceptorState } from "@/lib/api-interceptor";
 
 interface LoginForm {
   identifier: string;
@@ -38,15 +39,36 @@ const Connexion: React.FC = () => {
   const [showMFA, setShowMFA] = useState(false);
   const [pendingIdentifier, setPendingIdentifier] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const { start, finish } = useTopBarProgress();
-  
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>();
+
+  // Afficher un message si l'utilisateur a été redirigé suite à une expiration de session
+  useEffect(() => {
+    const expired = searchParams.get('expired');
+    if (expired === 'true') {
+      // Réinitialiser l'état de l'intercepteur
+      resetInterceptorState();
+
+      // Afficher la notification
+      showNotification(simpleNotificationHelpers.warning(
+        "Session expirée",
+        "Votre session a expiré. Veuillez vous reconnecter."
+      ));
+
+      // Nettoyer l'URL sans recharger la page
+      const url = new URL(window.location.href);
+      url.searchParams.delete('expired');
+      window.history.replaceState({}, '', url.pathname);
+    }
+  }, [searchParams, showNotification]);
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
