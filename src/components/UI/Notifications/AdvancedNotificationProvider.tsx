@@ -116,7 +116,7 @@ export function AdvancedNotificationProvider({
   const [notifications, setNotifications] = useState<AdvancedNotification[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
-    soundEnabled: false,
+    soundEnabled: true,
     desktopEnabled: true,
     emailEnabled: false,
     categories: {
@@ -134,8 +134,16 @@ export function AdvancedNotificationProvider({
     },
   });
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const permissions = usePermissions();
+
+  // Initialiser AudioContext pour les sons de notification
+  const initAudioContext = useCallback(() => {
+    if (typeof window !== 'undefined' && !audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return audioContextRef.current;
+  }, []);
 
   // Charger les notifications depuis le localStorage au démarrage
   useEffect(() => {
@@ -179,22 +187,46 @@ export function AdvancedNotificationProvider({
     }
   }, [settings, persistToStorage]);
 
-  // Initialiser l'audio pour les notifications (désactivé)
-  useEffect(() => {
-    // Son désactivé par défaut - pas de chargement de fichier audio
-    if (settings.soundEnabled) {
-      audioRef.current = new Audio('/sounds/notification.mp3');
-      audioRef.current.volume = 0.3;
-    }
-  }, [settings.soundEnabled]);
-
+  // Fonction pour jouer un son de notification avec Web Audio API
   const playNotificationSound = useCallback(() => {
-    if (settings.soundEnabled && audioRef.current) {
-      audioRef.current.play().catch(() => {
-        // Ignore errors (audio might not be available)
-      });
+    if (!settings.soundEnabled) return;
+
+    try {
+      const audioContext = initAudioContext();
+      if (!audioContext) return;
+
+      // Reprendre le contexte si suspendu (politique autoplay des navigateurs)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      // Créer un oscillateur pour un son de notification agréable
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Son de notification : deux tons courts
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // La5
+      oscillator.frequency.setValueAtTime(1174.66, audioContext.currentTime + 0.1); // Ré6
+
+      oscillator.type = 'sine';
+
+      // Envelope du volume pour un son doux
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.02);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.12);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.25);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.25);
+
+    } catch (error) {
+      console.warn('Erreur lors de la lecture du son de notification:', error);
     }
-  }, [settings.soundEnabled]);
+  }, [settings.soundEnabled, initAudioContext]);
 
   const showDesktopNotification = useCallback((notification: AdvancedNotification) => {
     if (!settings.desktopEnabled || typeof window === 'undefined') return;
