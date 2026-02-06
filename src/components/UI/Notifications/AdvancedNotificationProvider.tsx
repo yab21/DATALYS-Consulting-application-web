@@ -135,6 +135,7 @@ export function AdvancedNotificationProvider({
   });
 
   const audioContextRef = useRef<AudioContext | null>(null);
+  const audioInitializedRef = useRef(false);
   const permissions = usePermissions();
 
   // Initialiser AudioContext pour les sons de notification
@@ -144,6 +145,36 @@ export function AdvancedNotificationProvider({
     }
     return audioContextRef.current;
   }, []);
+
+  // Initialiser l'audio dès la première interaction utilisateur
+  useEffect(() => {
+    if (typeof window === 'undefined' || audioInitializedRef.current) return;
+
+    const handleFirstInteraction = () => {
+      if (audioInitializedRef.current) return;
+
+      const ctx = initAudioContext();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      audioInitializedRef.current = true;
+
+      // Retirer les listeners après initialisation
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+    document.addEventListener('touchstart', handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, [initAudioContext]);
 
   // Charger les notifications depuis le localStorage au démarrage
   useEffect(() => {
