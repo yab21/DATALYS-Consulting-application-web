@@ -344,10 +344,19 @@ const ModernMessagesInterface: React.FC = () => {
       // }
       
       // Filtrer les messages supprimés (soft delete)
+      // La logique doit tenir compte de QUI a supprimé et QUI consulte
       messages = messages.filter((message: any) => {
         if (message.is_deleted) return false;
-        if (message.deleted_by_sender) return false;
-        if (message.deleted_by_recipient) return false;
+
+        const isCurrentUserSender = String(message.created_by) === String(user?.id);
+        const isCurrentUserRecipient = String(message.recipient_id) === String(user?.id);
+
+        // Si je suis l'expéditeur et que j'ai supprimé ce message → cacher pour moi
+        if (isCurrentUserSender && message.deleted_by_sender) return false;
+
+        // Si je suis le destinataire et que j'ai supprimé ce message → cacher pour moi
+        if (isCurrentUserRecipient && message.deleted_by_recipient) return false;
+
         return true;
       });
 
@@ -495,9 +504,14 @@ const ModernMessagesInterface: React.FC = () => {
             try {
               const threadResponse = await messagesService.getConversationThread(parentId, 0, 100);
               if (threadResponse.items && threadResponse.items.length > 0) {
-                let fullMessages = threadResponse.items.filter((m: any) =>
-                  !m.is_deleted && !m.deleted_by_sender && !m.deleted_by_recipient
-                );
+                let fullMessages = threadResponse.items.filter((m: any) => {
+                  if (m.is_deleted) return false;
+                  const isSender = String(m.created_by) === String(user?.id);
+                  const isRecipient = String(m.recipient_id) === String(user?.id);
+                  if (isSender && m.deleted_by_sender) return false;
+                  if (isRecipient && m.deleted_by_recipient) return false;
+                  return true;
+                });
                 const readMessagesKey = `readMessages_user_${user?.id}`;
                 let readIds: Set<any>;
                 try {
@@ -562,8 +576,10 @@ const ModernMessagesInterface: React.FC = () => {
     // Filtrer les messages supprimés (soft delete)
     fullMessages = fullMessages.filter((message: any) => {
       if (message.is_deleted) return false;
-      if (message.deleted_by_sender) return false;
-      if (message.deleted_by_recipient) return false;
+      const isSender = String(message.created_by) === String(user?.id);
+      const isRecipient = String(message.recipient_id) === String(user?.id);
+      if (isSender && message.deleted_by_sender) return false;
+      if (isRecipient && message.deleted_by_recipient) return false;
       return true;
     });
 
