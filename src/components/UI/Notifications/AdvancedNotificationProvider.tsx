@@ -196,7 +196,12 @@ export function AdvancedNotificationProvider({
       
       if (savedSettings) {
         try {
-          setSettings(JSON.parse(savedSettings));
+          const parsed = JSON.parse(savedSettings);
+          // Migration: forcer soundEnabled à true (ancienne valeur par défaut était false)
+          setSettings({
+            ...parsed,
+            soundEnabled: true
+          });
         } catch (error) {
           console.error('Error loading settings from storage:', error);
         }
@@ -220,15 +225,27 @@ export function AdvancedNotificationProvider({
 
   // Fonction pour jouer un son de notification avec Web Audio API
   const playNotificationSound = useCallback(() => {
-    if (!settings.soundEnabled) return;
+    console.log('🔔 playNotificationSound appelé, soundEnabled:', settings.soundEnabled);
+
+    if (!settings.soundEnabled) {
+      console.log('🔇 Son désactivé dans les paramètres');
+      return;
+    }
 
     try {
       const audioContext = initAudioContext();
-      if (!audioContext) return;
+      if (!audioContext) {
+        console.log('❌ AudioContext non disponible');
+        return;
+      }
+
+      console.log('🎵 AudioContext state:', audioContext.state);
 
       // Reprendre le contexte si suspendu (politique autoplay des navigateurs)
       if (audioContext.state === 'suspended') {
-        audioContext.resume();
+        audioContext.resume().then(() => {
+          console.log('✅ AudioContext repris');
+        });
       }
 
       // Créer un oscillateur pour un son de notification agréable
@@ -253,6 +270,8 @@ export function AdvancedNotificationProvider({
 
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.25);
+
+      console.log('✅ Son de notification joué');
 
     } catch (error) {
       console.warn('Erreur lors de la lecture du son de notification:', error);

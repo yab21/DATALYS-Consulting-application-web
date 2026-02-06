@@ -1158,9 +1158,11 @@ const ModernDashboard: React.FC = () => {
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar
+                                src={partner.logo_url}
                                 name={partner.partner_name}
                                 size="sm"
                                 className="bg-[#4ba9b7] text-white"
+                                showFallback
                               />
                               <div>
                                 <p 
