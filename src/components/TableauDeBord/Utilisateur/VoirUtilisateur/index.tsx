@@ -8,6 +8,7 @@ import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { UsersService, User } from '@/services/users';
 import { projectsService, Project } from '@/services/projects';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import LoadingState from "@/components/UI/Loading/LoadingState";
 
 interface VoirUtilisateurProps {
@@ -43,6 +44,10 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
 
       setUser(userData);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       const message = extractBackendMessage(error);
       setError(message);
     } finally {
@@ -60,6 +65,10 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
         setProjects(projectsData);
       }
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       const message = extractBackendMessage(error);
       setError(message);
     } finally {

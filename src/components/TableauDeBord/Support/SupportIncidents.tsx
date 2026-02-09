@@ -59,6 +59,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import { IncidentsService, type Incident as ApiIncident, type IncidentCriteria, type CreateIncidentData, type UpdateIncidentData } from "@/services/incidents";
 import { projectsService, type Project } from "@/services/projects";
 import { UsersService, type User as UserType } from "@/services/users";
@@ -531,6 +532,7 @@ const SupportIncidents: React.FC = () => {
       setPartners(allPartners);
       console.log('📋 Partenaires chargés:', allPartners.length);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement des partenaires:', error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -548,6 +550,7 @@ const SupportIncidents: React.FC = () => {
       setProjects(allProjects);
       console.log('📋 Projets chargés:', allProjects.length);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement des projets:', error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -580,6 +583,7 @@ const SupportIncidents: React.FC = () => {
       setUsers(uniqueUsers);
       console.log('📋 Utilisateurs chargés:', uniqueUsers.length);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement des utilisateurs:', error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -622,6 +626,7 @@ const SupportIncidents: React.FC = () => {
       setTickets(supportTickets);
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement des tickets support:', error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur de chargement",
@@ -708,6 +713,7 @@ const SupportIncidents: React.FC = () => {
       resetCreateForm();
       await loadData();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors de la création:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -740,6 +746,7 @@ const SupportIncidents: React.FC = () => {
       setSelectedTicket(null);
       await loadData();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors de la modification:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -772,6 +779,7 @@ const SupportIncidents: React.FC = () => {
       setSelectedTicket(null);
       await loadData();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors de la suppression:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",

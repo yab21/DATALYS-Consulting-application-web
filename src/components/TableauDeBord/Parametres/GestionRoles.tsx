@@ -42,6 +42,7 @@ import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNoti
 import { RolesService, Role } from "@/services/roles";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface RoleStats {
   totalRoles: number;
@@ -130,6 +131,7 @@ const GestionRoles: React.FC = () => {
           throw new Error('Format de réponse inattendu de l\'API');
         }
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error("Erreur lors du chargement des rôles:", error);
         const message = extractBackendMessage(error);
         showNotification({
@@ -302,6 +304,7 @@ const GestionRoles: React.FC = () => {
           break;
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'action sur le rôle:', error);
       const message = extractBackendMessage(error);
       showNotification({

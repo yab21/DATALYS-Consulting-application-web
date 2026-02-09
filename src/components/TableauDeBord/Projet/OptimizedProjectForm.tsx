@@ -16,6 +16,7 @@ import { projectsService, CreateProjectFormData } from "@/services/projects";
 import { FolderPlus, Users, Shield, Save, ArrowLeft, FileText } from "lucide-react";
 import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
 import Link from "next/link";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Interface pour le formulaire
 interface ProjectFormData {
@@ -91,6 +92,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
         setPartners(partnersData);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors du chargement des partenaires:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -183,6 +185,7 @@ const OptimizedProjectForm: React.FC<OptimizedProjectFormProps> = ({
       }
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors de la soumission:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur",

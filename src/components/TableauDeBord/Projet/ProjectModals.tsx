@@ -30,6 +30,7 @@ import {
 import { projectsService, Project, CreateProjectFormData } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface ProjectModalsProps {
   isOpen: boolean;
@@ -94,6 +95,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
         }));
         setPartners(partnersList);
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error('Erreur lors du chargement des partenaires:', error);
       }
     };
@@ -160,8 +162,9 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
         onError?.(extractBackendMessage(result));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur modification:', error);
-      
+
       onError?.(extractBackendMessage(error));
     } finally {
       setEditLoading(false);
@@ -184,8 +187,9 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
         onError?.(extractBackendMessage(result));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur suppression:', error);
-      
+
       onError?.(extractBackendMessage(error));
     } finally {
       setDeleteLoading(false);
@@ -233,8 +237,9 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
         onError?.(extractBackendMessage(result));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur création:', error);
-      
+
       onError?.(extractBackendMessage(error));
     } finally {
       setCreateLoading(false);

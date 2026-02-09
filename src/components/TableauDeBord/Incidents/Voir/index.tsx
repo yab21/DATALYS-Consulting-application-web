@@ -11,7 +11,7 @@ import { ProfessionalCard, MetricCard, ProfessionalButton } from "@/components/U
 import { Incident, IncidentsService } from "@/services/incidents";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { getContextualErrorMessage } from '@/lib/error-messages';
-import { apiInterceptor } from '@/lib/api-interceptor';
+import { apiInterceptor, isTokenExpiredError } from '@/lib/api-interceptor';
 import IncidentFiles from "./IncidentFiles";
 import { 
   AlertTriangle, 
@@ -78,9 +78,14 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
         }
         
       } catch (error) {
+        // Relancer les erreurs de token expiré pour la redirection globale
+        if (isTokenExpiredError(error)) {
+          throw error;
+        }
+
         console.error("❌ Erreur lors du chargement de l'incident:", error);
-        
-        // Vérifier d'abord si c'est une erreur de token expiré
+
+        // Vérifier si c'est une erreur de token expiré (backup)
         apiInterceptor.handleApiError(error);
 
         // Générer le message d'erreur approprié

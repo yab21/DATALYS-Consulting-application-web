@@ -33,6 +33,7 @@ import {
   Trash2
 } from "lucide-react";
 import { validateFileImmediately } from '@/lib/upload-security-immediate';
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface IncidentFilesModalProps {
   isOpen: boolean;
@@ -81,6 +82,7 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
         setFiles(response.data.files);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       showNotification({
         type: 'error',
         title: 'Erreur',
@@ -179,6 +181,7 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
       setUploadFiles([]);
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       showNotification({
         type: 'error',
         title: 'Erreur',
@@ -201,6 +204,7 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
         message: 'Fichier ouvert dans un nouvel onglet'
       });
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       showNotification({
         type: 'error',
         title: 'Erreur',
@@ -240,6 +244,7 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
         });
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       showNotification({
         type: 'error',
         title: 'Erreur',

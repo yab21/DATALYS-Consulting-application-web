@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Bell, X, CheckCircle, AlertTriangle, Info, MessageSquare } from "lucide-react";
 import messagesService from "@/services/messages";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 const SimpleDropdownNotification = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -77,6 +78,7 @@ const SimpleDropdownNotification = () => {
           setIsLoadingApi(false);
         }
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error('Erreur générale chargement notifications:', error);
         setApiError('Erreur de chargement');
         setIsLoadingApi(false);
@@ -140,6 +142,7 @@ const SimpleDropdownNotification = () => {
         console.warn('Erreur sauvegarde localStorage:', storageError);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur suppression notification:', error);
     }
   };

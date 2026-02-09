@@ -22,6 +22,7 @@ import { Permission } from "@/lib/permissions";
 import { PermissionGuard } from "@/components/Security/PermissionGuard";
 import { ArrowLeft, Save, Building, Mail, Phone, ChevronDown } from "lucide-react";
 import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Types
 interface PartnerForm {
@@ -263,8 +264,9 @@ const AjouterPartenaire: React.FC = () => {
         throw new Error(result.message?.message || "Erreur lors de la création");
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de la création:", error);
-      
+
       let errorTitle = "Erreur";
       let errorMessage = "Erreur inconnue";
       

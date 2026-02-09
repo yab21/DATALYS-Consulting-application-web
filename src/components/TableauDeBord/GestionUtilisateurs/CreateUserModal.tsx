@@ -28,6 +28,7 @@ import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { UsersService, CreateUserData } from "@/services/users";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Types pour le formulaire
 interface UserFormData {
@@ -157,6 +158,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
       onUserCreated();
 
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error);
 
       showNotification({

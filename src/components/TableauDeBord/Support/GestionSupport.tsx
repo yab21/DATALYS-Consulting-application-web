@@ -38,6 +38,7 @@ import { useRouter } from 'next/navigation';
 import { IncidentsService, type Incident, type IncidentCriteria } from "@/services/incidents";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { useAuth } from "@/context/AuthContext";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 const GestionSupport: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -90,6 +91,7 @@ const GestionSupport: React.FC = () => {
       setIncidents(apiIncidents);
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement des tickets support:', error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur de chargement",

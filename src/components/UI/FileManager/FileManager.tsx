@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
 import { filesService } from '@/services/files';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { useAuth } from '@/context/AuthContext';
 import FilePreview from '@/components/UI/FilePreview/FilePreview';
 
@@ -343,6 +344,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
           );
           console.log('🔍 Fichiers chargés depuis l\'API:', apiFiles);
         } catch (error) {
+          if (isTokenExpiredError(error)) throw error;
           console.error('❌ Erreur chargement fichiers API:', error);
         }
       }
@@ -382,8 +384,9 @@ export const FileManager: React.FC<FileManagerProps> = ({
       setFolders([]);
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur chargement fichiers:', error);
-      
+
       // Fallback vers des données mockées pour la démo
       const mockFiles: FileItem[] = [
         {
@@ -518,6 +521,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
         duration: 3000,
       });
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur téléchargement:', error);
       showNotification({
         type: 'error',
@@ -640,14 +644,15 @@ export const FileManager: React.FC<FileManagerProps> = ({
 
           return response;
         } catch (error) {
+          if (isTokenExpiredError(error)) throw error;
           console.error(`Erreur upload ${file.name}:`, error);
-          
+
           setUploads(prev => prev.map(upload =>
             upload.fileId === progressItem.fileId
               ? { ...upload, status: 'error', error: 'Erreur upload' }
               : upload
           ));
-          
+
           throw error;
         }
       });
@@ -676,6 +681,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
       });
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur upload:', error);
       showNotification({
         type: 'error',
@@ -716,6 +722,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
       setNewFolderName('');
       onCreateFolderClose();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur création dossier:', error);
       showNotification({
         type: 'error',
@@ -768,6 +775,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
       setSelectedFiles(new Set());
       onDeleteClose();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur suppression:', error);
       showNotification({
         type: 'error',

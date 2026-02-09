@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { 
   Card, 
   CardBody, 
@@ -59,6 +60,7 @@ export default function NotificationPermissionCard({
         onPermissionDenied?.();
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la demande de permission:', error);
       setPermissionStatus('denied');
       onPermissionDenied?.();

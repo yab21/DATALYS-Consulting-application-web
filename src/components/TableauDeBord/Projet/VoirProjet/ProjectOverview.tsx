@@ -16,6 +16,7 @@ import { projectFilesService } from "@/services/projectFiles";
 import { IncidentsService } from "@/services/incidents";
 import { projectPartnersService } from "@/services/projectPartners";
 import { useAuth } from "@/context/AuthContext";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface ProjectOverviewProps {
   project: {
@@ -90,6 +91,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
               })));
             }
           } catch (error) {
+            if (isTokenExpiredError(error)) throw error;
             console.error(`❌ [DEBUG FIX] - Erreur lors du comptage des fichiers du dossier "${folder.name}" (ID: ${folder.id}):`, error);
             folderFileCounts[folder.id] = 0;
           }
@@ -123,6 +125,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
             console.log('✅ [DEBUG FIX] - Incidents trouvés:', incidentsCount);
           }
         } catch (error) {
+          if (isTokenExpiredError(error)) throw error;
           console.warn('❌ [DEBUG FIX] - Erreur lors du chargement des incidents:', error);
         }
 
@@ -142,6 +145,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
             console.warn('❌ [DEBUG FIX] - Pas d\'utilisateur connecté pour charger l\'équipe');
           }
         } catch (error) {
+          if (isTokenExpiredError(error)) throw error;
           console.error('❌ [DEBUG FIX] - Erreur détaillée lors du chargement de l\'équipe:', {
             error,
             errorMessage: error instanceof Error ? error.message : String(error),
@@ -149,7 +153,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
             userId: user?.id,
             projectId: project.id
           });
-          
+
           // Pour l'instant, on met 0 au lieu d'une valeur factice
           teamMembersCount = 0;
           console.log('⚠️ [DEBUG FIX] - Équipe définie à 0 à cause de l\'erreur API');
@@ -173,6 +177,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
           loading: false
         }));
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error('Erreur lors du chargement des statistiques du projet:', error);
         setProjectStats(prev => ({ ...prev, loading: false }));
       }

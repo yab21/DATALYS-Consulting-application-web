@@ -26,6 +26,7 @@ import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNoti
 import { UsersService, CreateUserData } from "@/services/users";
 import { partnersService, Partner as PartnerType } from "@/services/partners";
 import { useRouter } from "next/navigation";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import Link from "next/link";
 import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/components/UI/Professional";
 
@@ -113,6 +114,7 @@ const AjouterUtilisateur: React.FC = () => {
           setPartners(partnersData.filter(p => p.is_active && !p.is_deleted));
         }
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error("Erreur lors du chargement des partenaires:", error);
         // En cas d'erreur, afficher un message mais pas bloquer
         showNotification({
@@ -234,15 +236,16 @@ const AjouterUtilisateur: React.FC = () => {
         throw new Error(errorMessage);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors de la création:", error);
-      
+
       let errorMessage = "Impossible de créer l'utilisateur";
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === 'object' && error && 'message' in error) {
         errorMessage = typeof error.message === 'string' ? error.message : errorMessage;
       }
-      
+
       showNotification({
         type: "error",
         title: "Erreur",

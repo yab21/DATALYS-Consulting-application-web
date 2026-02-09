@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SecureStorage } from '@/lib/secure-storage';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { 
   Modal, 
   ModalContent, 
@@ -106,8 +107,9 @@ const FilePreview: React.FC<FilePreviewProps> = ({ isOpen, onClose, file, baseUr
       console.log('✅ Fichier récupéré avec succès');
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la récupération du fichier:', error);
-      
+
       // Fallback: générer du contenu local en cas d'erreur
       console.log('🔄 Fallback vers prévisualisation locale');
       const mimeType = file.mime_type.toLowerCase();
@@ -346,6 +348,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ isOpen, onClose, file, baseUr
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du téléchargement:', error);
     }
   };

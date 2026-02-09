@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { 
   Input, 
   Button, 
@@ -116,6 +117,7 @@ export default function AdvancedSearch({
       setTotal(response.total);
       onResults?.(response.results, response.total);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la recherche:', error);
       setResults([]);
       setTotal(0);
@@ -170,6 +172,7 @@ export default function AdvancedSearch({
       onSaveModalClose();
       setSaveName('');
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la sauvegarde:', error);
     }
   };

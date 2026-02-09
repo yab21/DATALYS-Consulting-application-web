@@ -18,7 +18,7 @@ import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNoti
 import CreateIncidentModal from "../Incidents/CreateIncidentModal";
 import { Building2, FolderOpen, Calendar, Users, TrendingUp, AlertTriangle, Mail, Phone, MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
 import { getContextualErrorMessage } from '@/lib/error-messages';
-import { apiInterceptor } from '@/lib/api-interceptor';
+import { apiInterceptor, isTokenExpiredError } from '@/lib/api-interceptor';
 
 // Types utilisant les vraies interfaces des services API
 interface Partner {
@@ -145,11 +145,16 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
         }
         
       } catch (error) {
+        // Relancer les erreurs de token expiré pour la redirection globale
+        if (isTokenExpiredError(error)) {
+          throw error;
+        }
+
         console.error("❌ Erreur lors du chargement du partenaire:", error);
-        
-        // Vérifier d'abord si c'est une erreur de token expiré
+
+        // Vérifier si c'est une erreur de token expiré (backup)
         apiInterceptor.handleApiError(error);
-        
+
         // Générer le message d'erreur approprié
         const errorMessage = getContextualErrorMessage(error, {
           operation: 'load',
@@ -208,6 +213,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
       }
       
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       console.error("❌ Erreur lors du chargement des incidents:", error);
       showNotification({
         type: "warning",
@@ -291,6 +300,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ partnerId }) => {
       setProjects(partnerProjects || []);
       
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       console.error("❌ Erreur lors du chargement des projets:", error);
       showNotification({
         type: "warning",

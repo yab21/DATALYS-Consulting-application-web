@@ -40,6 +40,7 @@ import { ProjectsService, Project } from "@/services/projects";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { useSSE } from "@/hooks/useSSE";
 import { SSENotification } from "@/services/sse-service";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Types pour les conversations groupées par tickets
 interface Conversation {
@@ -250,6 +251,7 @@ const ModernMessagesInterface: React.FC = () => {
         setProjects(projectsResult);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement des projets:', error);
       setProjects([]);
     } finally {
@@ -281,6 +283,7 @@ const ModernMessagesInterface: React.FC = () => {
         setUserNamesMap(namesMap);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement des noms d\'utilisateurs (peut être normal pour les partenaires):', error);
       // Pour les partenaires, nous nous appuierons sur les données des messages eux-mêmes
     }
@@ -320,6 +323,7 @@ const ModernMessagesInterface: React.FC = () => {
       setUsers(allUsers);
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement des utilisateurs:', error);
       setUsers([]);
     } finally {
@@ -524,6 +528,7 @@ const ModernMessagesInterface: React.FC = () => {
       }
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement des messages:', error);
     } finally {
       setLoading(false);
@@ -547,6 +552,7 @@ const ModernMessagesInterface: React.FC = () => {
           fullMessages = threadResponse.items;
         }
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error('Erreur chargement thread complet:', error);
         // Fallback : garder les messages déjà chargés
       }
@@ -635,6 +641,7 @@ const ModernMessagesInterface: React.FC = () => {
       }
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur envoi réponse:', error);
     } finally {
       setSending(false);
@@ -715,6 +722,7 @@ const ModernMessagesInterface: React.FC = () => {
       }, 500);
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur envoi nouveau message:', error);
     } finally {
       setSendingNewMessage(false);
@@ -800,6 +808,7 @@ const ModernMessagesInterface: React.FC = () => {
         throw new Error(result.message || 'Erreur lors de la suppression');
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la suppression:', error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur de suppression",

@@ -33,6 +33,7 @@ import { Partner, UpdatePartnerFormData, CreatePartnerData, CreatePartnerFormDat
 import { useAuth } from "@/context/AuthContext";
 import { extractBackendMessage } from "@/lib/error-handler";
 import { validateFileImmediately } from '@/lib/upload-security-immediate';
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface PartnerModalsProps {
   isOpen: boolean;
@@ -208,6 +209,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         onSuccess?.('Logo supprimé avec succès');
         // Ne pas appeler onRefresh() ici pour éviter de fermer le modal
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error('Erreur suppression logo:', error);
         onError?.('Erreur lors de la suppression du logo');
       } finally {
@@ -302,8 +304,9 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         onError?.(extractBackendMessage(result) || result.message?.message);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur modification:', error);
-      
+
       onError?.(extractBackendMessage(error));
     } finally {
       setEditLoading(false);
@@ -327,8 +330,9 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         onError?.(extractBackendMessage(result) || result.message?.message);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur suppression:', error);
-      
+
       onError?.(extractBackendMessage(error));
     } finally {
       setDeleteLoading(false);
@@ -381,6 +385,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         onError?.(extractBackendMessage(result) || result.message?.message);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur création:', error);
 
       // Afficher la notification d'erreur

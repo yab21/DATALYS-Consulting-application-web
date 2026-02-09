@@ -10,6 +10,7 @@ import { ProfessionalCard, ProfessionalButton, SectionHeader } from "@/component
 import Link from "next/link";
 import { UsersService, ChangePasswordData } from "@/services/users";
 import { useAuth } from "@/context/AuthContext";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 const ChangerMotDePasse = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -131,8 +132,9 @@ const ChangerMotDePasse = () => {
       }
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors du changement de mot de passe:", error);
-      
+
       let errorMessage = "Une erreur s'est produite lors du changement de mot de passe";
       
       if (error instanceof Error) {

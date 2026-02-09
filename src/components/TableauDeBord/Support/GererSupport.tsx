@@ -35,6 +35,7 @@ import { UsersService, type User } from "@/services/users";
 import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import IncidentFiles from "../Incidents/Voir/IncidentFiles";
 
@@ -153,6 +154,7 @@ const GererSupport: React.FC<GererSupportProps> = ({ id }) => {
             const userData = await UsersService.getUserById(data.user_id);
             setAssignedUser(userData);
           } catch (error) {
+            if (isTokenExpiredError(error)) throw error;
             console.error("Erreur lors du chargement de l'utilisateur assigné:", error);
           } finally {
             setLoadingAssignedUser(false);
@@ -162,6 +164,7 @@ const GererSupport: React.FC<GererSupportProps> = ({ id }) => {
         setError("Ticket non trouvé");
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || "Impossible de charger le ticket";
       setError(errorMessage);
     } finally {
@@ -185,6 +188,7 @@ const GererSupport: React.FC<GererSupportProps> = ({ id }) => {
         setUsers(response.items);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors du chargement des utilisateurs:", error);
     } finally {
       setLoadingUsers(false);
@@ -210,6 +214,7 @@ const GererSupport: React.FC<GererSupportProps> = ({ id }) => {
         ));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || "Impossible de sauvegarder les notes";
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -242,15 +247,16 @@ const GererSupport: React.FC<GererSupportProps> = ({ id }) => {
             const userData = await UsersService.getUserById(newUserId);
             setAssignedUser(userData);
           } catch (error) {
+            if (isTokenExpiredError(error)) throw error;
             console.error("Erreur lors du chargement du nouvel utilisateur assigné:", error);
           } finally {
             setLoadingAssignedUser(false);
           }
         }
-        
+
         // Réinitialiser la sélection
         setSelectedUserId("");
-        
+
         const successMessage = extractBackendMessage(result) || result?.message || "Ticket réaffecté avec succès";
         showNotification(simpleNotificationHelpers.success(
           "Succès",
@@ -258,6 +264,7 @@ const GererSupport: React.FC<GererSupportProps> = ({ id }) => {
         ));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || "Impossible de réaffecter le ticket";
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -288,6 +295,7 @@ const GererSupport: React.FC<GererSupportProps> = ({ id }) => {
         ));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || "Impossible de modifier la priorité";
       showNotification(simpleNotificationHelpers.error(
         "Erreur",

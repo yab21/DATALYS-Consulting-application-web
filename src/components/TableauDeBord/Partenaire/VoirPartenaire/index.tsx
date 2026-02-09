@@ -11,6 +11,7 @@ import { projectsService, Project } from '@/services/projects';
 import { filesService, ProjectFile } from '@/services/files';
 import { foldersService, Folder } from '@/services/folders';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { PartnerStatsService, PartnerStats } from '@/services/partnerStats';
 import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
@@ -189,6 +190,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       // Charger les statistiques après avoir récupéré les données du partenaire
       loadPartnerStats(partnerData);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       const message = extractBackendMessage(error);
       setError(message);
     } finally {
@@ -210,6 +215,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       
       setStats(statistics);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       console.error('❌ Erreur lors du chargement des statistiques:', error);
       // Garder les valeurs par défaut en cas d'erreur
     } finally {
@@ -225,6 +234,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       const projectsData = await projectsService.getProjectsByPartner(partner.name);
       setProjects(projectsData);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       const message = extractBackendMessage(error);
       setError(message);
     } finally {
@@ -248,6 +261,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
 
       setFiles(allFiles);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       const message = extractBackendMessage(error);
       setError(message);
     } finally {
@@ -273,6 +290,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
 
       setFolders(allFolders);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       const message = extractBackendMessage(error);
       setError(message);
     } finally {
@@ -379,6 +400,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       onDeleteFileModalClose();
       setFileToDelete(null);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       console.error('Erreur lors de la suppression:', error);
       showNotification({
         title: 'Erreur',
@@ -415,6 +440,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       onDeleteFolderModalClose();
       setFolderToDelete(null);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       console.error('Erreur lors de la suppression:', error);
       showNotification({
         title: 'Erreur',

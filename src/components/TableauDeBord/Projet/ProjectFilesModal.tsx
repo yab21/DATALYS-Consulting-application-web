@@ -36,6 +36,7 @@ import {
   ProjectFile,
   FolderStats,
 } from '@/services/projectFiles';
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Types
 interface Project {
@@ -230,6 +231,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
             stats
           };
         } catch (error) {
+          if (isTokenExpiredError(error)) throw error;
           console.error(`❌ [DEBUG LOADING STATS] - Erreur stats pour dossier ${folder.name} (ID: ${folder.id}):`, {
             error: error instanceof Error ? error.message : error,
             stack: error instanceof Error ? error.stack : undefined,
@@ -239,7 +241,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
               parent_folder_id: folder.parent_folder_id
             }
           });
-          
+
           return {
             ...folder,
             loadingStats: false,
@@ -282,24 +284,25 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       });
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ [DEBUG LOAD FOLDER] - Erreur lors du chargement:', {
         error: error instanceof Error ? error.message : error,
         stack: error instanceof Error ? error.stack : undefined,
         currentFolderId,
         projectId: project.id
       });
-      
+
       // Déterminer le type d'erreur pour un message plus précis
       const isServerError = error instanceof Error && error.message.includes('500');
       const isNetworkError = error instanceof Error && (error.message.includes('fetch') || error.message.includes('network'));
-      
+
       let errorMessage = 'Impossible de charger les données du dossier';
       if (isServerError) {
         errorMessage = 'Erreur serveur temporaire. Veuillez réessayer dans quelques instants.';
       } else if (isNetworkError) {
         errorMessage = 'Problème de connexion. Vérifiez votre connexion internet.';
       }
-      
+
       showNotification({
         type: 'error',
         title: 'Erreur de chargement',
@@ -466,16 +469,17 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         throw new Error('Erreur lors de la création');
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('🔍 [DEBUG CREATION DOSSIER] - Exception:', error);
-      
+
       // Analyser le type d'erreur pour afficher un message approprié
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       const isPermissionError = errorMessage.includes('permissions') || errorMessage.includes('Permission denied');
-      
+
       showNotification({
         type: 'error',
         title: isPermissionError ? 'Erreur de permissions' : 'Erreur',
-        message: isPermissionError 
+        message: isPermissionError
           ? 'Problème de permissions sur le serveur. Contactez l\'administrateur système pour corriger les droits d\'écriture du répertoire de fichiers.'
           : 'Impossible de créer le dossier. Vérifiez que le dossier parent existe.'
       });
@@ -538,6 +542,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
 
       loadCurrentFolder();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       showNotification({
         type: 'error',
         title: 'Erreur',
@@ -573,6 +578,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       
       console.log('✅ [DEBUG VIEW FILE] - Fichier ouvert avec succès');
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ [DEBUG VIEW FILE] - Erreur:', error);
       showNotification({
         type: 'error',
@@ -599,6 +605,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         throw new Error('Échec de la suppression');
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       showNotification({
         type: 'error',
         title: 'Erreur',
@@ -658,6 +665,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         throw new Error('Erreur lors de la modification');
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       showNotification({
         type: 'error',
         title: 'Erreur',
@@ -690,6 +698,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
         throw new Error('Erreur lors de la suppression');
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       showNotification({
         type: 'error',
         title: 'Erreur',

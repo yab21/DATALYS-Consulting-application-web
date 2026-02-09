@@ -25,6 +25,7 @@ import { IncidentsService, Incident } from '@/services/incidents';
 import { projectsService, Project } from '@/services/projects';
 import { UsersService, User } from '@/services/users';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import IncidentFiles from "../../Incidents/Voir/IncidentFiles";
 
@@ -63,6 +64,10 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
 
       setTicket(ticketData);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       const message = extractBackendMessage(error);
       setError(message);
     } finally {
@@ -79,6 +84,10 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
       const foundProject = allProjects.find(p => p.id === ticket.project_id);
       setProject(foundProject || null);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       console.error('Erreur lors du chargement du projet:', error);
     } finally {
       setLoadingProject(false);
@@ -93,6 +102,10 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
       const userData = await UsersService.getUserById(ticket.user_id);
       setAssignedUser(userData);
     } catch (error) {
+      // Relancer les erreurs de token expiré pour la redirection globale
+      if (isTokenExpiredError(error)) {
+        throw error;
+      }
       console.error('Erreur lors du chargement de l\'utilisateur assigné:', error);
     } finally {
       setLoadingUser(false);

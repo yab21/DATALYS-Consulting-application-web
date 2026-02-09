@@ -46,6 +46,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { projectPartnersService, ProjectPartner } from "@/services/projectPartners";
 import LoadingState from "@/components/UI/Loading/LoadingState";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface ProjectTeamProps {
   projectId: string;
@@ -105,6 +106,7 @@ const ProjectTeam: React.FC<ProjectTeamProps> = ({ projectId, projectName }) => 
         setTeamMembers(members);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement de l\'équipe:', error);
       setTeamMembers([]);
     } finally {
@@ -137,6 +139,7 @@ const ProjectTeam: React.FC<ProjectTeamProps> = ({ projectId, projectName }) => 
         setIsInviteModalOpen(false);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'ajout du membre:', error);
     }
   };
@@ -148,6 +151,7 @@ const ProjectTeam: React.FC<ProjectTeamProps> = ({ projectId, projectName }) => 
       await projectPartnersService.removePartnerFromProject(permissionId, user.id);
       await loadTeamMembers();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la suppression du membre:', error);
     }
   };

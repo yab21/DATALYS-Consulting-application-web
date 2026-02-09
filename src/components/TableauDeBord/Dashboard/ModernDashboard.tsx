@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import { dashboardService } from "@/services/dashboard";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { ProfessionalCard } from "@/components/UI/Professional";
@@ -365,6 +366,7 @@ const ModernDashboard: React.FC = () => {
           }
           
         } catch (error) {
+          if (isTokenExpiredError(error)) throw error;
           console.error('❌ Erreur lors du chargement du dashboard admin:', error);
           // Fallback sur des données par défaut en cas d'erreur
           setStats({
@@ -491,7 +493,8 @@ const ModernDashboard: React.FC = () => {
             throw new Error("Réponse API invalide");
           }
         } catch (error) {
-          
+          if (isTokenExpiredError(error)) throw error;
+
           // Afficher une notification d'erreur plus informative
           showNotification({
             type: "error",
@@ -524,6 +527,7 @@ const ModernDashboard: React.FC = () => {
         ([]);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
     } finally {
       setLoading(false);
     }

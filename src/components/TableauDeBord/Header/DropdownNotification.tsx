@@ -14,6 +14,7 @@ import {
 } from "@heroui/react";
 import { useAdvancedNotifications } from "@/components/UI/Notifications/AdvancedNotificationProvider";
 import { realtimeNotificationService } from "@/services/realtime-notifications";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import {
   Bell,
   Check,
@@ -99,6 +100,7 @@ const DropdownNotification = () => {
       try {
         await realtimeNotificationService.markAsRead(backendId);
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error('Erreur marquage notification comme lue:', error);
       }
     }
@@ -438,6 +440,7 @@ const DropdownNotification = () => {
                           try {
                             await realtimeNotificationService.markAsRead(item.metadata.backendId);
                           } catch (error) {
+                            if (isTokenExpiredError(error)) throw error;
                             console.error('Erreur marquage notification:', error);
                           }
                         }

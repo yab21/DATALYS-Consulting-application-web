@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useNetworkSync } from '@/hooks/useNetworkSync';
 import { useRequestQueue } from '@/lib/request-queue';
@@ -281,12 +282,13 @@ export function useNetworkFetch() {
       
       return response;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       // Si erreur réseau et hors ligne, ajouter à la queue
       if (!isOnline || (error as Error).message.includes('fetch')) {
         console.log('📋 Ajout à la queue:', url);
         return enqueue(url, options, priority);
       }
-      
+
       // Autres erreurs, propager
       throw error;
     }

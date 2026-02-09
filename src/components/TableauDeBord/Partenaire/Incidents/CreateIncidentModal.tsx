@@ -19,6 +19,7 @@ import { IncidentsService, type CreateIncidentData } from "@/services/incidents"
 import { type Project } from "@/services/projects";
 import { type User } from "@/services/users";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface CreateIncidentModalProps {
   partnerId: string;
@@ -108,6 +109,7 @@ const CreateIncidentModal: React.FC<CreateIncidentModalProps> = ({
       onIncidentCreated?.();
       
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur création incident:", error);
       showNotification(simpleNotificationHelpers.error(
         "Erreur de création",

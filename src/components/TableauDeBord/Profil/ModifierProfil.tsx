@@ -15,6 +15,7 @@ import { Save, Mail, User, Edit, Eye, EyeOff } from "lucide-react";
 import { UsersService } from "@/services/users";
 import { useAuth } from "@/hooks/useAuth";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface UserData {
   name: string;
@@ -115,6 +116,7 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
         setError(errorMessage);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || 'Une erreur est survenue lors de la modification du profil';
       setError(errorMessage);
     } finally {

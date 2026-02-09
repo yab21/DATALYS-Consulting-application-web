@@ -35,6 +35,7 @@ import { UsersService, type User } from "@/services/users";
 import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import IncidentFiles from "./Voir/IncidentFiles";
 
@@ -153,6 +154,7 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
             const userData = await UsersService.getUserById(data.user_id);
             setAssignedUser(userData);
           } catch (error) {
+            if (isTokenExpiredError(error)) throw error;
             console.error("Erreur lors du chargement de l'utilisateur assigné:", error);
           } finally {
             setLoadingAssignedUser(false);
@@ -162,6 +164,7 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
         setError("Incident non trouvé");
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || "Impossible de charger l'incident";
       setError(errorMessage);
     } finally {
@@ -185,6 +188,7 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
         setUsers(response.items);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors du chargement des utilisateurs:", error);
     } finally {
       setLoadingUsers(false);
@@ -199,6 +203,7 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
       const userData = await UsersService.getUserById(incident.user_id);
       setAssignedUser(userData);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors du chargement de l'utilisateur assigné:", error);
     } finally {
       setLoadingAssignedUser(false);
@@ -224,6 +229,7 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
         ));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || "Impossible de sauvegarder les notes";
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -256,6 +262,7 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
             const userData = await UsersService.getUserById(newUserId);
             setAssignedUser(userData);
           } catch (error) {
+            if (isTokenExpiredError(error)) throw error;
             console.error("Erreur lors du chargement du nouvel utilisateur assigné:", error);
           } finally {
             setLoadingAssignedUser(false);
@@ -272,6 +279,7 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
         ));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || "Impossible de réaffecter l'incident";
       showNotification(simpleNotificationHelpers.error(
         "Erreur",
@@ -302,6 +310,7 @@ const GererIncident: React.FC<GererIncidentProps> = ({ id }) => {
         ));
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = extractBackendMessage(error) || "Impossible de modifier la priorité";
       showNotification(simpleNotificationHelpers.error(
         "Erreur",

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { SecureStorage } from '@/lib/secure-storage';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import {
   Button,
   Card,
@@ -128,6 +129,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       console.log(`📁 Dossiers chargés:`, foldersData);
       setFolders(foldersData);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement des dossiers:', error);
       addNotification({
         title: "Erreur",
@@ -150,6 +152,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       );
       setAllFolders(allFoldersData);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement de tous les dossiers:', error);
     }
   }, [projectId, user]);
@@ -216,6 +219,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       await loadAllFolders();
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la création du dossier:', error);
       addNotification({
         title: "Erreur",
@@ -249,6 +253,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       await loadFolders(currentFolder?.id || null);
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la modification du dossier:', error);
       addNotification({
         title: "Erreur",
@@ -278,6 +283,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       await loadFolders(currentFolder?.id || null);
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la suppression du dossier:', error);
       addNotification({
         title: "Erreur",
@@ -433,6 +439,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       setSingleFileSubfolder('files');
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'upload du fichier:', error);
       addNotification({
         title: "Erreur d'upload",
@@ -509,6 +516,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       await loadAllFolders();
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'upload des fichiers:', error);
       addNotification({
         title: "Erreur d'upload",
@@ -532,6 +540,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
       setPendingFiles([]);
       onUploadClose();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       // L'erreur est déjà gérée dans les fonctions d'upload
     }
   };

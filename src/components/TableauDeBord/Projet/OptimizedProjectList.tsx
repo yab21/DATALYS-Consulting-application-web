@@ -43,7 +43,7 @@ import { useAuth } from "@/context/AuthContext";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { getContextualErrorMessage } from '@/lib/error-messages';
-import { apiInterceptor } from '@/lib/api-interceptor';
+import { apiInterceptor, isTokenExpiredError } from '@/lib/api-interceptor';
 import ProjectModals from "./ProjectModals";
 import ProjectFilesModal from "./ProjectFilesModal";
 
@@ -241,6 +241,7 @@ const OptimizedProjectList: React.FC = () => {
       
       return filteredProjects;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors du chargement des projets (fallback):", error);
       return [];
     }
@@ -347,6 +348,7 @@ const OptimizedProjectList: React.FC = () => {
             partnerProjects = await projectsService.getPartnerProjects(user.partner_id);
             console.log(`✅ Projets du partenaire chargés: ${partnerProjects.length}`);
           } catch (error) {
+            if (isTokenExpiredError(error)) throw error;
             console.warn("⚠️ Erreur avec l'endpoint partenaire, fallback vers l'endpoint général");
             // Fallback vers l'endpoint général si l'endpoint partenaire échoue
             partnerProjects = await loadProjectsWithFallback(user);
@@ -369,14 +371,15 @@ const OptimizedProjectList: React.FC = () => {
       }
       
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors du chargement:", error);
-      
+
       // Ne pas afficher de notification si l'erreur a déjà été gérée par l'intercepteur
       if ((error as any)?.errorHandled) {
         console.log("Erreur déjà gérée par l'intercepteur, pas de notification supplémentaire");
         return;
       }
-      
+
       // Gestion spécifique des erreurs d'authentification
       if (error.message && error.message.includes('401')) {
         // Pour les partenaires, une erreur 401 peut indiquer un problème de permissions

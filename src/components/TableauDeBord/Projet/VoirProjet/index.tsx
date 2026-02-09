@@ -13,6 +13,7 @@ import {
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { projectsService } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import ProjectOverview from "./ProjectOverview";
@@ -89,10 +90,12 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
         }
         
       } catch (error) {
+        // Relancer les erreurs de token expiré pour la redirection globale
+        if (isTokenExpiredError(error)) {
+          throw error;
+        }
+
         console.error('Erreur lors du chargement du projet:', error);
-        
-        // Afficher une erreur plutôt qu'un projet factice
-        console.error('Projet non trouvé, redirection vers la liste des projets');
         // Ne pas créer de projet factice
         
       } finally {

@@ -43,6 +43,7 @@ import {
   CheckCircle,
   Search
 } from "lucide-react";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface IncidentFilesProps {
   incidentId: number;
@@ -198,6 +199,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
       }
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors du chargement des fichiers:", error);
       showNotification({
         type: "error",
@@ -239,6 +241,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
       }
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors du rechargement des fichiers:", error);
       setFiles([]);
     } finally {
@@ -301,7 +304,8 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
             throw new Error(result.message);
           }
         } catch (error) {
-          setUploadProgress(prev => prev.map((item, i) => 
+          if (isTokenExpiredError(error)) throw error;
+          setUploadProgress(prev => prev.map((item, i) =>
             i === index ? { ...item, status: 'error' } : item
           ));
           throw error;
@@ -335,6 +339,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
       }
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de l'upload:", error);
       showNotification({
         type: "error",
@@ -375,6 +380,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
         duration: 3000,
       });
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors du téléchargement:", error);
       showNotification({
         type: "error",
@@ -393,6 +399,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
         setPreviewFile(file);
         setShowPreviewModal(true);
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error('❌ Erreur lors de la prévisualisation:', error);
         showNotification({
           type: "error",
@@ -446,6 +453,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
         });
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la suppression:', error);
       showNotification({
         type: "error",

@@ -47,6 +47,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import PartnerModals from "./PartnerModals";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Interface pour la gestion des modals
 interface ModalState {
@@ -278,6 +279,7 @@ const TablePartner: React.FC = () => {
         avgProjectsPerPartner
       };
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       return {
         totalPartners: partners.length,
         activePartners: partners.filter(p => p.is_active).length,

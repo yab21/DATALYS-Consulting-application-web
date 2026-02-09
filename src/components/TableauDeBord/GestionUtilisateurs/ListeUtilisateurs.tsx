@@ -46,6 +46,7 @@ import Link from "next/link";
 import UserModals from "./UserModals";
 import CreateUserModal from "./CreateUserModal";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Types pour la gestion des utilisateurs (utilise le type du service)
 type User = UserType;
@@ -243,6 +244,7 @@ const ListeUtilisateurs: React.FC = () => {
         setStats(extendedStats);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors du chargement des utilisateurs:", error);
       const message = extractBackendMessage(error);
       showNotification({

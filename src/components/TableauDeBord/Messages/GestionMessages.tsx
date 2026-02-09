@@ -42,6 +42,7 @@ import messagesService, {
   Message,
   CreateMessageRequest
 } from "@/services/messages";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Types pour l'état local - Stats supprimées
 
@@ -120,6 +121,7 @@ const GestionMessages: React.FC = () => {
       const response = await messagesService.getMyMessages(0, 50);
       setMessages(response.items || []);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur chargement messages:', error);
       setMessages([]);
     } finally {
@@ -132,6 +134,7 @@ const GestionMessages: React.FC = () => {
       const response = await messagesService.getConversationThread(parseInt(messageId));
       setConversationMessages(response.items || []);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur chargement conversation:', error);
       setConversationMessages([]);
     }
@@ -153,6 +156,7 @@ const GestionMessages: React.FC = () => {
       loadConversation(selectedMessage.id);
       setReplyText("");
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur réponse:', error);
     } finally {
       setSending(false);
@@ -175,6 +179,7 @@ const GestionMessages: React.FC = () => {
       // Recharger tous les messages pour avoir la liste à jour
       await loadMessages();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur réponse inline:', error);
     } finally {
       setSending(false);
@@ -189,6 +194,7 @@ const GestionMessages: React.FC = () => {
       // Recharger les messages pour avoir l'état à jour
       await loadMessages();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur marquage lu:', error);
     }
   };
@@ -224,6 +230,7 @@ const GestionMessages: React.FC = () => {
       await loadMessages();
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur envoi nouveau message:', error);
     } finally {
       setSendingNewMessage(false);

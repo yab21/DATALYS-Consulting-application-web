@@ -61,6 +61,7 @@ import {
   type UpdateIncidentData,
 } from "@/services/incidents";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import { projectsService, type Project } from "@/services/projects";
 import { UsersService, type User as UserType } from "@/services/users";
 import IncidentFilesModal from "./IncidentFilesModal";
@@ -307,6 +308,7 @@ const GestionIncidents: React.FC = () => {
           uniqueProjects.length,
         );
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error("❌ Erreur lors du chargement des projets:", error);
         setProjects([]);
       } finally {
@@ -336,6 +338,7 @@ const GestionIncidents: React.FC = () => {
 
             allUsers = [...usersList];
           } catch (error) {
+            if (isTokenExpiredError(error)) throw error;
             console.error("Erreur chargement utilisateurs:", error);
           }
         }
@@ -364,6 +367,7 @@ const GestionIncidents: React.FC = () => {
 
           allUsers = [...allUsers, ...partnersAsUsers];
         } catch (error) {
+          if (isTokenExpiredError(error)) throw error;
           console.error("Erreur chargement partenaires:", error);
         }
 
@@ -378,6 +382,7 @@ const GestionIncidents: React.FC = () => {
 
         setUsers(uniqueUsers);
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error("Erreur lors du chargement des utilisateurs:", error);
         setUsers([]);
       } finally {
@@ -495,6 +500,7 @@ const GestionIncidents: React.FC = () => {
 
         setStats(newStats);
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error("Erreur lors du chargement des incidents:", error);
 
         // Afficher un message d'erreur à l'utilisateur
@@ -928,6 +934,7 @@ const GestionIncidents: React.FC = () => {
       setIncidents(convertedIncidents);
       setFilteredIncidents(convertedIncidents);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de la réouverture de l'incident:", error);
       showNotification({
         type: "error",
@@ -967,6 +974,7 @@ const GestionIncidents: React.FC = () => {
       // Recharger la liste des incidents
       await refreshIncidents();
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de la mise en attente:", error);
       const errorMessage = extractBackendMessage(error);
       showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
@@ -1003,6 +1011,7 @@ const GestionIncidents: React.FC = () => {
       // Recharger la liste des incidents
       await refreshIncidents();
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de la clôture:", error);
       const errorMessage = extractBackendMessage(error);
       showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
@@ -1152,6 +1161,7 @@ const GestionIncidents: React.FC = () => {
         simpleNotificationHelpers.success("Succès", successMessage),
       );
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de la création de l'incident:", error);
 
       const errorMessage = extractBackendMessage(error);
@@ -1215,6 +1225,7 @@ const GestionIncidents: React.FC = () => {
         simpleNotificationHelpers.success("Succès", successMessage),
       );
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de la modification de l'incident:", error);
 
       const errorMessage = extractBackendMessage(error);
@@ -1250,6 +1261,7 @@ const GestionIncidents: React.FC = () => {
         simpleNotificationHelpers.success("Succès", successMessage),
       );
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de la suppression de l'incident:", error);
 
       const errorMessage = extractBackendMessage(error);
@@ -1325,6 +1337,7 @@ const GestionIncidents: React.FC = () => {
       );
       console.log("✅ Export terminé avec succès");
     } catch (error: any) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de l'export:", error);
       const errorMessage = extractBackendMessage(error);
       showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));

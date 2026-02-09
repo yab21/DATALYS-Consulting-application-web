@@ -37,6 +37,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { dashboardService, DashboardAdminResponse, RecentActivity } from "@/services/dashboard";
 import LoadingState from "@/components/UI/Loading/LoadingState";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface ProjectActivityProps {
   projectId: string;
@@ -153,6 +154,7 @@ const ProjectActivity: React.FC<ProjectActivityProps> = ({ projectId, projectNam
         }
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement des activités:', error);
       setActivities([]);
     } finally {

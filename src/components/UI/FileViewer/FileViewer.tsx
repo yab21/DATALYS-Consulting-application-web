@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { ProjectFile, filesService } from '@/services/files';
 import { useAuth } from '@/context/AuthContext';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { useSimpleNotifications } from '@/context/NotificationContext';
 
 interface FileViewerProps {
@@ -96,6 +97,7 @@ const FileViewer: React.FC<FileViewerProps> = ({
       console.log('Fichiers chargés depuis l\'API:', filesData);
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement des fichiers:', error);
       addNotification({
         title: "Erreur",
@@ -105,7 +107,7 @@ const FileViewer: React.FC<FileViewerProps> = ({
         category: "system",
         read: false,
       });
-      
+
       // En cas d'erreur API, afficher un message mais ne pas bloquer l'interface
       setFiles([]);
     } finally {
@@ -144,6 +146,7 @@ const FileViewer: React.FC<FileViewerProps> = ({
         read: false,
       });
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur téléchargement:', error);
       addNotification({
         title: "Erreur",
@@ -191,6 +194,7 @@ const FileViewer: React.FC<FileViewerProps> = ({
       await loadFiles();
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur suppression:', error);
       addNotification({
         title: "Erreur",

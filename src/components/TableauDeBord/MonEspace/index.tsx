@@ -29,6 +29,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { projectsService, Project } from "@/services/projects";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import Link from "next/link";
@@ -210,6 +211,7 @@ const MonEspacePartenaire: React.FC = () => {
           });
         }
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error("Erreur lors du chargement des données partner:", error);
         showNotification({
           type: "error",

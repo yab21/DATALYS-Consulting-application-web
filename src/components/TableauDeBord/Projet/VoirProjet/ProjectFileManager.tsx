@@ -47,6 +47,7 @@ import {
 import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
 import { projectFilesService, FolderStats } from '@/services/projectFiles';
 import { useAuth } from '@/context/AuthContext';
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Types
 interface FileItem {
@@ -188,6 +189,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       console.log('✅ Statistiques chargées:', stats);
       return stats;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement des statistiques:', error);
       return null;
     }
@@ -292,6 +294,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       setFiles([...formattedFiles, ...localUploadedFiles]);
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors du chargement des fichiers';
       showNotification({
@@ -366,6 +369,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       onCreateFolderClose();
       loadFilesAndFolders();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la création du dossier:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création du dossier';
       showNotification({
@@ -404,6 +408,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       onEditFolderClose();
       loadFilesAndFolders();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la modification du dossier:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la modification du dossier';
       showNotification({
@@ -448,6 +453,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       setItemToDelete(null);
       loadFilesAndFolders();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la suppression:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la suppression';
       showNotification({
@@ -515,6 +521,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       onUploadClose();
       loadFilesAndFolders();
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'upload:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'upload';
       showNotification({
@@ -568,6 +575,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       console.log('📖 [PREVIEW] - Fallback: utilisation du service viewFile');
       await projectFilesService.viewFile(Number(file.id), file.name, file.file_url);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'ouverture du fichier:', error);
       showNotification({
         title: 'Erreur',

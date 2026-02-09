@@ -37,6 +37,7 @@ import { UsersService, User as UserType } from "@/services/users";
 import { UserRole } from "@/lib/permissions";
 import { useAuth } from "@/context/AuthContext";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface UserModalsProps {
   isOpen: boolean;
@@ -124,6 +125,7 @@ const UserModals: React.FC<UserModalsProps> = ({
         onError?.(extractBackendMessage(result) || result.message);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       onError?.(extractBackendMessage(error));
     } finally {
       setEditLoading(false);
@@ -146,6 +148,7 @@ const UserModals: React.FC<UserModalsProps> = ({
         onError?.(extractBackendMessage(result) || result.message);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       onError?.(extractBackendMessage(error));
     } finally {
       setDeleteLoading(false);
@@ -168,6 +171,7 @@ const UserModals: React.FC<UserModalsProps> = ({
         onError?.(extractBackendMessage(result) || result.message);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       onError?.(extractBackendMessage(error));
     } finally {
       setToggleLoading(false);

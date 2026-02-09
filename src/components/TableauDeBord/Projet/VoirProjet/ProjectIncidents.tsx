@@ -40,6 +40,7 @@ import { motion } from "framer-motion";
 import { IncidentsService } from "@/services/incidents";
 import { useAuth } from "@/context/AuthContext";
 import LoadingState from "@/components/UI/Loading/LoadingState";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 interface ProjectIncidentsProps {
   projectId: string;
@@ -122,6 +123,7 @@ const ProjectIncidents: React.FC<ProjectIncidentsProps> = ({ projectId, projectN
         setIncidents([]);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du chargement des incidents:', error);
       setIncidents([]);
     } finally {
@@ -164,6 +166,7 @@ const ProjectIncidents: React.FC<ProjectIncidentsProps> = ({ projectId, projectN
         setIsCreateModalOpen(false);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la création de l\'incident:', error);
     }
   };
