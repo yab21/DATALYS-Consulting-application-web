@@ -5,6 +5,7 @@
 
 import { SecureStorage } from '@/lib/secure-storage';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError, TokenExpiredError } from '@/lib/api-interceptor';
 
 // Interfaces TypeScript pour les fichiers d'incidents
 export interface IncidentFile {
@@ -117,6 +118,11 @@ class IncidentFilesService {
         },
       });
 
+      // Gérer les erreurs 401 (token expiré)
+      if (response.status === 401) {
+        throw new TokenExpiredError('Session expirée');
+      }
+
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}`;
         try {
@@ -131,10 +137,33 @@ class IncidentFilesService {
       const data = await response.json();
       return data;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error(`Erreur dans makeRequest (${endpoint}):`, error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
+  }
+
+  /**
+   * Construire l'URL de service pour un fichier
+   * Gère différents formats d'URL retournés par l'API
+   */
+  private buildFileServeUrl(fileUrl: string): string {
+    // Nettoyer l'URL des slashes en début
+    let cleanPath = fileUrl.replace(/^\/+/, '');
+
+    // Si l'URL contient déjà le baseUrl, l'extraire
+    if (cleanPath.includes('/files/serve/')) {
+      cleanPath = cleanPath.split('/files/serve/').pop() || cleanPath;
+    }
+
+    // Construire l'URL finale
+    const serveUrl = `${this.baseUrl}/files/serve/${cleanPath}`;
+
+    console.log('🔗 [buildFileServeUrl] URL originale:', fileUrl);
+    console.log('🔗 [buildFileServeUrl] URL finale:', serveUrl);
+
+    return serveUrl;
   }
 
   /**
@@ -209,6 +238,7 @@ class IncidentFilesService {
       return await uploadPromise;
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error(`Erreur lors de l'upload du fichier ${file.name}:`, error);
       const message = extractBackendMessage(error);
       return {
@@ -304,6 +334,7 @@ class IncidentFilesService {
       };
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error(`Erreur lors de la récupération des fichiers de l'incident ${incidentId}:`, error);
       const message = extractBackendMessage(error);
       return {
@@ -326,26 +357,21 @@ class IncidentFilesService {
    */
   async downloadIncidentFile(fileUrl: string, fileName?: string): Promise<void> {
     try {
-      // Nettoyer l'URL et s'assurer qu'elle utilise le bon format pour la nouvelle API
-      const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      
-      // La nouvelle API attend le format: /files/serve/incidents/incident_X/filename
-      let finalUrl = cleanFileUrl;
-      if (!cleanFileUrl.startsWith('incidents/')) {
-        finalUrl = cleanFileUrl;
-      }
-      
-      const downloadUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
-      
+      const downloadUrl = this.buildFileServeUrl(fileUrl);
+
       console.log('📥 Téléchargement du fichier:', downloadUrl);
-      console.log('🔑 Headers d\'authentification:', this.getAuthHeaders());
-      
+      console.log('🔑 Headers d\'authentification présents:', !!SecureStorage.getItem('authToken'));
+
       const response = await fetch(downloadUrl, {
         headers: this.getAuthHeaders(),
       });
 
       console.log('📊 Statut de la réponse:', response.status);
-      console.log('📋 Headers de la réponse:', Object.fromEntries(response.headers.entries()));
+
+      // Gérer les erreurs 401
+      if (response.status === 401) {
+        throw new TokenExpiredError('Session expirée');
+      }
 
       if (!response.ok) {
         throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
@@ -354,13 +380,13 @@ class IncidentFilesService {
       const blob = await response.blob();
       console.log('📦 Taille du blob téléchargé:', blob.size, 'bytes');
       console.log('🏷️ Type du blob:', blob.type);
-      
+
       if (blob.size === 0) {
         throw new Error('Le fichier téléchargé est vide');
       }
-      
+
       const filename = fileName || this.getFilenameFromResponse(response) || `incident_file_${Date.now()}`;
-      
+
       // Créer un lien de téléchargement
       const downloadLink = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -369,14 +395,15 @@ class IncidentFilesService {
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      
+
       // Nettoyer après un délai pour s'assurer que le téléchargement a commencé
       setTimeout(() => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(downloadLink);
       }, 100);
-      
+
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du téléchargement:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -387,37 +414,17 @@ class IncidentFilesService {
    * Obtenir l'URL de prévisualisation d'un fichier
    */
   getFilePreviewUrl(fileUrl: string): string {
-    const cleanPath = fileUrl.replace(/^\/+/, '');
-    
-    // S'assurer que l'URL utilise le bon format pour la nouvelle API
-    let finalUrl = cleanPath;
-    if (!cleanPath.startsWith('incidents/')) {
-      finalUrl = cleanPath;
-    }
-    
-    return `${this.baseUrl}/files/serve/${finalUrl}`;
+    return this.buildFileServeUrl(fileUrl);
   }
 
   /**
    * Obtenir l'URL de prévisualisation avec authentification
    */
   getAuthenticatedFileUrl(fileUrl: string): string {
-    const token = SecureStorage.getItem('authToken');
-    const cleanPath = fileUrl.replace(/^\/+/, '');
-    
-    // S'assurer que l'URL utilise le bon format pour la nouvelle API
-    let finalUrl = cleanPath;
-    if (!cleanPath.startsWith('incidents/')) {
-      finalUrl = cleanPath;
-    }
-    
-    // S'assurer que l'URL est correctement formée
-    const baseUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
-    
-    console.log('🔗 URL authentifiée générée:', baseUrl);
-    console.log('🔑 Token présent:', !!token);
-    
-    return baseUrl;
+    const url = this.buildFileServeUrl(fileUrl);
+    console.log('🔗 URL authentifiée générée:', url);
+    console.log('🔑 Token présent:', !!SecureStorage.getItem('authToken'));
+    return url;
   }
 
   /**
@@ -427,32 +434,28 @@ class IncidentFilesService {
     try {
       console.log(`📖 [VIEW INCIDENT FILE] - Ouverture du fichier: ${fileName}`);
       console.log(`📖 [VIEW INCIDENT FILE] - File URL fournie: ${fileUrl}`);
-      
-      // Nettoyer l'URL et s'assurer qu'elle utilise le bon format pour la nouvelle API
-      const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      
-      // La nouvelle API attend le format: /files/serve/incidents/incident_X/filename
-      let finalUrl = cleanFileUrl;
-      if (!cleanFileUrl.startsWith('incidents/')) {
-        finalUrl = cleanFileUrl;
-      }
-      
-      const viewUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
-      
+
+      const viewUrl = this.buildFileServeUrl(fileUrl);
+
       console.log(`📖 [VIEW INCIDENT FILE] - URL finale: ${viewUrl}`);
-      
+
       const response = await fetch(viewUrl, {
         method: 'GET',
         headers: this.getAuthHeaders()
       });
 
+      // Gérer les erreurs 401
+      if (response.status === 401) {
+        throw new TokenExpiredError('Session expirée');
+      }
+
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        
+
         // Ouvrir dans un nouvel onglet au lieu d'utiliser iframe (évite CSP)
         window.open(url, '_blank');
-        
+
         // Nettoyer l'URL après un délai pour permettre l'ouverture
         setTimeout(() => {
           window.URL.revokeObjectURL(url);
@@ -461,6 +464,7 @@ class IncidentFilesService {
         throw new Error(`Erreur lors de l'ouverture du fichier: ${response.status}`);
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error(`❌ Erreur lors de l'ouverture du fichier ${fileName}:`, error);
       throw error;
     }
@@ -472,22 +476,18 @@ class IncidentFilesService {
    */
   async createPreviewBlob(fileUrl: string): Promise<string> {
     try {
-      // Nettoyer l'URL et s'assurer qu'elle utilise le bon format pour la nouvelle API
-      const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      
-      // La nouvelle API attend le format: /files/serve/incidents/incident_X/filename
-      let finalUrl = cleanFileUrl;
-      if (!cleanFileUrl.startsWith('incidents/')) {
-        finalUrl = cleanFileUrl;
-      }
-      
-      const previewUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
-      
-      console.log('🔗 URL de prévisualisation (corrigée):', previewUrl);
-      
+      const previewUrl = this.buildFileServeUrl(fileUrl);
+
+      console.log('🔗 URL de prévisualisation:', previewUrl);
+
       const response = await fetch(previewUrl, {
         headers: this.getAuthHeaders()
       });
+
+      // Gérer les erreurs 401
+      if (response.status === 401) {
+        throw new TokenExpiredError('Session expirée');
+      }
 
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
@@ -495,10 +495,11 @@ class IncidentFilesService {
 
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
-      
+
       console.log('📄 Blob URL créé pour prévisualisation:', blobUrl);
       return blobUrl;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la création du blob:', error);
       throw error;
     }
@@ -509,28 +510,25 @@ class IncidentFilesService {
    */
   async getFileSize(fileUrl: string): Promise<number> {
     try {
-      // Nettoyer l'URL et s'assurer qu'elle utilise le bon format pour la nouvelle API
-      const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      
-      // S'assurer que l'URL utilise le bon format pour la nouvelle API
-      let finalUrl = cleanFileUrl;
-      if (!cleanFileUrl.startsWith('incidents/')) {
-        finalUrl = cleanFileUrl;
-      }
-      
-      const headUrl = `${this.baseUrl}/files/serve/${finalUrl}`;
-      
+      const headUrl = this.buildFileServeUrl(fileUrl);
+
       const response = await fetch(headUrl, {
         method: 'HEAD',
         headers: this.getAuthHeaders()
       });
-      
+
+      // Gérer les erreurs 401
+      if (response.status === 401) {
+        throw new TokenExpiredError('Session expirée');
+      }
+
       if (response.ok) {
         const contentLength = response.headers.get('Content-Length');
         return contentLength ? parseInt(contentLength, 10) : 0;
       }
       return 0;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération de la taille du fichier:', error);
       return 0;
     }
@@ -632,6 +630,7 @@ class IncidentFilesService {
       };
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error(`❌ Erreur lors de la suppression du fichier ${fileId}:`, error);
       const message = extractBackendMessage(error);
       return {
