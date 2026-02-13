@@ -714,33 +714,41 @@ export class ProjectFilesService {
         cacheKey
       });
 
-      // Récupérer les sous-dossiers
-      const folders = await this.getFolders(folderId, projectId);
-      const subfolders = folders.length;
-      
-      console.log('🔍 [DEBUG STATS] - Sous-dossiers trouvés:', {
-        count: subfolders,
-        folders: folders.map(f => ({ id: f.id, name: f.name, parent_folder_id: f.parent_folder_id }))
+      // Récupérer les sous-dossiers directs
+      const directFolders = await this.getFolders(folderId, projectId);
+
+      console.log('🔍 [DEBUG STATS] - Sous-dossiers directs trouvés:', {
+        count: directFolders.length,
+        folders: directFolders.map(f => ({ id: f.id, name: f.name, parent_folder_id: f.parent_folder_id }))
       });
 
-      // Récupérer les fichiers
-      const files = await this.getFiles(folderId, projectId);
-      const filesCount = files.length;
-      
-      console.log('🔍 [DEBUG STATS] - Fichiers trouvés:', {
-        count: filesCount,
-        files: files.map(f => ({ 
-          id: f.id, 
-          name: f.original_name, 
+      // Récupérer les fichiers directs
+      const directFiles = await this.getFiles(folderId, projectId);
+
+      console.log('🔍 [DEBUG STATS] - Fichiers directs trouvés:', {
+        count: directFiles.length,
+        files: directFiles.map(f => ({
+          id: f.id,
+          name: f.original_name,
           folder_id: f.folder_id,
           project_id: f.project_id,
           incident_id: f.incident_id
         }))
       });
 
+      // Comptage récursif : parcourir chaque sous-dossier
+      let totalSubfolders = directFolders.length;
+      let totalFiles = directFiles.length;
+
+      for (const folder of directFolders) {
+        const childStats = await this.getFolderStats(folder.id, projectId);
+        totalSubfolders += childStats.subfolders;
+        totalFiles += childStats.files;
+      }
+
       const stats: FolderStats = {
-        subfolders,
-        files: filesCount,
+        subfolders: totalSubfolders,
+        files: totalFiles,
         timestamp: Date.now()
       };
 

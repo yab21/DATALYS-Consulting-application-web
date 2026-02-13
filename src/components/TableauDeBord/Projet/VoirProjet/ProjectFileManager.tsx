@@ -144,11 +144,13 @@ const getFileIconComponent = (type: string, fileName?: string): React.ReactEleme
   return <FileText {...iconProps} className="w-6 h-6 text-gray-500" />;
 };
 
+const EMPTY_UPLOADED_FILES: any[] = [];
+
 const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   projectId,
   projectName,
   onFileUpload,
-  uploadedFiles = [],
+  uploadedFiles = EMPTY_UPLOADED_FILES,
   refreshKey = 0
 }) => {
   const { user } = useAuth();

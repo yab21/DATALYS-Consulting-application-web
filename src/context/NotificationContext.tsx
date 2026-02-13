@@ -44,18 +44,31 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  // État pour le temps réel sera ajouté plus tard si nécessaire
-
-  // Les notifications sont maintenant générées uniquement par les actions utilisateur réelles
-  // Plus de notifications de démo ou de test
-
-  // Le système temps réel sera implémenté avec de vraies notifications du backend
-  // Plus de simulation de notifications aléatoires
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('datalys-notifications');
+      if (stored) {
+        return JSON.parse(stored).map((n: any) => ({
+          ...n,
+          timestamp: new Date(n.timestamp),
+        }));
+      }
+    } catch { }
+    return [];
+  });
 
   // Fonctions utilitaires
   const generateId = (): string => {
     return `notif_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  };
+
+  // Synchroniser avec localStorage et notifier la cloche
+  const syncToLocalStorage = (updated: Notification[]) => {
+    try {
+      localStorage.setItem('datalys-notifications', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('datalys-notification-update'));
+    } catch { }
   };
 
   const addNotification = (notificationData: Omit<Notification, 'id' | 'timestamp'>) => {
@@ -65,41 +78,51 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       timestamp: new Date(),
     };
 
-    setNotifications(prev => [newNotification, ...prev]);
+    setNotifications(prev => {
+      const updated = [newNotification, ...prev].slice(0, 50);
+      syncToLocalStorage(updated);
+      return updated;
+    });
 
     // Notifier le navigateur si permission accordée
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(newNotification.title, {
+      new window.Notification(newNotification.title, {
         body: newNotification.body,
         icon: '/images/logo.png',
         tag: newNotification.id,
       });
     }
-
-    // Auto-supprimer les notifications anciennes (plus de 50)
-    setNotifications(prev => prev.slice(0, 50));
   };
 
   const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(notif =>
+    setNotifications(prev => {
+      const updated = prev.map(notif =>
         notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
+      );
+      syncToLocalStorage(updated);
+      return updated;
+    });
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notif => ({ ...notif, read: true }))
-    );
+    setNotifications(prev => {
+      const updated = prev.map(notif => ({ ...notif, read: true }));
+      syncToLocalStorage(updated);
+      return updated;
+    });
   };
 
   const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
+    setNotifications(prev => {
+      const updated = prev.filter(notif => notif.id !== id);
+      syncToLocalStorage(updated);
+      return updated;
+    });
   };
 
   const clearAll = () => {
     setNotifications([]);
+    syncToLocalStorage([]);
   };
 
   const getNotificationsByCategory = (category: string): Notification[] => {

@@ -2,20 +2,20 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardBody, CardHeader, Tab, Tabs, Spinner, Chip, Button, Input, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Tooltip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/react';
-import { ArrowLeft, ArrowRight, Building, Mail, Phone, MapPin, Calendar, User, FileText, Folder as FolderIcon, FolderOpen, Eye, AlertTriangle, Headphones, Search, Grid, List, ArrowUp, ArrowDown, HardDrive, Image, Video, Music, Archive, Code, FileSpreadsheet, Presentation, MoreVertical, Trash2, Download } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building, Mail, Phone, MapPin, Calendar, User, FileText, Folder as FolderIcon, Eye, AlertTriangle, Headphones, Search, Grid, List, ArrowUp, ArrowDown, HardDrive, Image, Video, Music, Archive, Code, FileSpreadsheet, Presentation, MoreVertical, Trash2, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { partnersService, Partner } from '@/services/partners';
 import { projectsService, Project } from '@/services/projects';
 import { filesService, ProjectFile } from '@/services/files';
-import { foldersService, Folder } from '@/services/folders';
 import { extractBackendMessage } from '@/lib/error-handler';
 import { isTokenExpiredError } from '@/lib/api-interceptor';
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { PartnerStatsService, PartnerStats } from '@/services/partnerStats';
 import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
 import { useAuth } from '@/context/AuthContext';
+import ProjectFileManager from '@/components/TableauDeBord/Projet/VoirProjet/ProjectFileManager';
 
 interface VoirPartenaireProps {
   id: string;
@@ -29,12 +29,11 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   const [partner, setPartner] = useState<Partner | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [files, setFiles] = useState<ProjectFile[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
-  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [stats, setStats] = useState<PartnerStats>({
     projectsCount: 0,
     incidentsCount: 0,
@@ -51,9 +50,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
 
   // États pour les modals de suppression
   const { isOpen: isDeleteFileModalOpen, onOpen: onDeleteFileModalOpen, onClose: onDeleteFileModalClose } = useDisclosure();
-  const { isOpen: isDeleteFolderModalOpen, onOpen: onDeleteFolderModalOpen, onClose: onDeleteFolderModalClose } = useDisclosure();
   const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
-  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const partnerId = parseInt(id);
@@ -272,35 +269,6 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     }
   };
 
-  const loadFolders = async () => {
-    if (!partner || projects.length === 0) return;
-
-    try {
-      setLoadingFolders(true);
-      const allFolders: Folder[] = [];
-      
-      for (const project of projects) {
-        const projectFolders = await foldersService.getFoldersByProject(
-          project.id,
-          null,
-          1 // userId placeholder
-        );
-        allFolders.push(...projectFolders);
-      }
-
-      setFolders(allFolders);
-    } catch (error) {
-      // Relancer les erreurs de token expiré pour la redirection globale
-      if (isTokenExpiredError(error)) {
-        throw error;
-      }
-      const message = extractBackendMessage(error);
-      setError(message);
-    } finally {
-      setLoadingFolders(false);
-    }
-  };
-
   const handleTabChange = async (key: string) => {
     setActiveTab(key);
 
@@ -319,11 +287,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
         }
         break;
       case 'folders':
-        if (folders.length === 0 && projects.length === 0) {
+        if (projects.length === 0) {
           await loadProjects();
-        }
-        if (folders.length === 0 && projects.length > 0) {
-          await loadFolders();
         }
         break;
     }
@@ -415,46 +380,6 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     }
   }, [fileToDelete, user, showNotification, onDeleteFileModalClose]);
 
-  // Ouvrir le modal de suppression de dossier
-  const openDeleteFolderModal = useCallback((folder: Folder) => {
-    setFolderToDelete(folder);
-    onDeleteFolderModalOpen();
-  }, [onDeleteFolderModalOpen]);
-
-  // Confirmer la suppression d'un dossier
-  const confirmDeleteFolder = useCallback(async () => {
-    if (!folderToDelete || !user) return;
-
-    try {
-      setIsDeleting(true);
-      await foldersService.deleteFolder(folderToDelete.id, user.id);
-
-      showNotification({
-        title: 'Succès',
-        message: `Dossier "${folderToDelete.name}" supprimé avec succès`,
-        type: 'success'
-      });
-
-      // Mettre à jour la liste des dossiers
-      setFolders(prev => prev.filter(f => f.id !== folderToDelete.id));
-      onDeleteFolderModalClose();
-      setFolderToDelete(null);
-    } catch (error) {
-      // Relancer les erreurs de token expiré pour la redirection globale
-      if (isTokenExpiredError(error)) {
-        throw error;
-      }
-      console.error('Erreur lors de la suppression:', error);
-      showNotification({
-        title: 'Erreur',
-        message: extractBackendMessage(error),
-        type: 'error'
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [folderToDelete, user, showNotification, onDeleteFolderModalClose]);
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -500,44 +425,11 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     return filtered;
   }, [files, searchTerm, sortBy, sortOrder]);
 
-  // Filtrer et trier les dossiers
-  const filteredAndSortedFolders = useMemo(() => {
-    let filtered = folders;
-
-    if (searchTerm.trim()) {
-      filtered = folders.filter(folder =>
-        folder.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      switch (sortBy) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case 'date':
-          comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          break;
-        default:
-          comparison = a.name.localeCompare(b.name);
-      }
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    return filtered;
-  }, [folders, searchTerm, sortBy, sortOrder]);
-
   // Statistiques des fichiers
   const fileStats = useMemo(() => ({
     totalFiles: files.length,
     totalSize: files.reduce((acc, file) => acc + (file.size || 0), 0)
   }), [files]);
-
-  // Statistiques des dossiers
-  const folderStats = useMemo(() => ({
-    totalFolders: folders.length
-  }), [folders]);
 
   if (loading) {
     return (
@@ -1222,217 +1114,97 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                 title={
                   <div className="flex items-center gap-3">
                     <FolderIcon className="w-5 h-5" />
-                    <span>Dossiers ({folders.length})</span>
+                    <span>Dossiers</span>
                   </div>
                 }
               >
                 <div className="p-6">
-                  {loadingFolders ? (
+                  {loadingProjects ? (
                     <div className="flex justify-center py-8">
                       <Spinner size="md" />
                     </div>
-                  ) : (
+                  ) : projects.length > 0 ? (
                     <>
-                      {/* Statistiques */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <HardDrive className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">Racine</span>
-                        </div>
-                        <div className="flex items-center gap-6 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <FolderIcon className="w-4 h-4" />
-                            <span>{folderStats.totalFolders} dossier{folderStats.totalFolders !== 1 ? 's' : ''}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Barre d'outils */}
-                      <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600 mb-6">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex-1 max-w-md">
-                            <Input
-                              placeholder="Rechercher des dossiers..."
-                              value={searchTerm}
-                              onValueChange={setSearchTerm}
-                              startContent={<Search className="w-4 h-4 text-gray-400" />}
-                              size="sm"
-                              classNames={{
-                                input: "bg-transparent",
-                                inputWrapper: "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                      {/* Sélecteur de projet */}
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Sélectionnez un projet pour gérer ses dossiers et fichiers
+                        </label>
+                        <div className="max-w-md">
+                          <Dropdown>
+                            <DropdownTrigger>
+                              <Button
+                                variant="bordered"
+                                className="w-full justify-between text-left"
+                                endContent={<ArrowDown className="w-4 h-4 text-gray-400" />}
+                              >
+                                {selectedProjectId
+                                  ? projects.find(p => String(p.id) === selectedProjectId)?.title || 'Projet sélectionné'
+                                  : 'Choisir un projet...'}
+                              </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu
+                              selectionMode="single"
+                              selectedKeys={selectedProjectId ? [selectedProjectId] : []}
+                              onSelectionChange={(keys) => {
+                                const selected = Array.from(keys)[0] as string;
+                                setSelectedProjectId(selected || null);
                               }}
-                            />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Tooltip content="Vue grille">
-                              <Button
-                                size="sm"
-                                variant={viewMode === 'grid' ? 'solid' : 'flat'}
-                                isIconOnly
-                                onPress={() => setViewMode('grid')}
-                              >
-                                <Grid className="w-4 h-4" />
-                              </Button>
-                            </Tooltip>
-                            <Tooltip content="Vue liste">
-                              <Button
-                                size="sm"
-                                variant={viewMode === 'list' ? 'solid' : 'flat'}
-                                isIconOnly
-                                onPress={() => setViewMode('list')}
-                              >
-                                <List className="w-4 h-4" />
-                              </Button>
-                            </Tooltip>
-                            <Dropdown>
-                              <DropdownTrigger>
-                                <Button size="sm" variant="flat" endContent={<ArrowDown className="w-3 h-3" />}>
-                                  Trier par
-                                </Button>
-                              </DropdownTrigger>
-                              <DropdownMenu
-                                selectedKeys={[sortBy]}
-                                onSelectionChange={(keys) => setSortBy(Array.from(keys)[0] as any)}
-                                selectionMode="single"
-                              >
-                                <DropdownItem key="name">Nom</DropdownItem>
-                                <DropdownItem key="date">Date</DropdownItem>
-                              </DropdownMenu>
-                            </Dropdown>
-                            <Button
-                              size="sm"
-                              variant="flat"
-                              isIconOnly
-                              onPress={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                             >
-                              {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-                            </Button>
-                          </div>
+                              {projects.map((project) => (
+                                <DropdownItem key={String(project.id)} textValue={project.title}>
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-[#4ba9b7]" />
+                                    <span>{project.title}</span>
+                                    <Chip
+                                      size="sm"
+                                      color={project.is_active ? "success" : "warning"}
+                                      variant="flat"
+                                      className="ml-auto"
+                                    >
+                                      {project.is_active ? "Actif" : "Inactif"}
+                                    </Chip>
+                                  </div>
+                                </DropdownItem>
+                              ))}
+                            </DropdownMenu>
+                          </Dropdown>
                         </div>
                       </div>
 
-                      {/* Contenu */}
-                      {filteredAndSortedFolders.length > 0 ? (
-                        <div className={viewMode === 'grid'
-                          ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
-                          : "space-y-2"
-                        }>
-                          <AnimatePresence mode="popLayout">
-                            {filteredAndSortedFolders.map((folder, index) => (
-                              <motion.div
-                                key={folder.id}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                transition={{ delay: index * 0.02 }}
-                              >
-                                {viewMode === 'grid' ? (
-                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group relative">
-                                    {/* Bouton supprimer au survol */}
-                                    <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                      <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 rounded-md shadow-lg p-0.5 border border-gray-200 dark:border-gray-600">
-                                        <button
-                                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            openDeleteFolderModal(folder);
-                                          }}
-                                          title="Supprimer"
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                    <div className="text-center">
-                                      {/* Design de dossier orange */}
-                                      <div className="relative w-[100px] h-[80px] mx-auto mb-3 cursor-pointer group-hover:scale-105 transition-transform duration-200">
-                                        {/* Folder Tab */}
-                                        <div className="absolute top-0 left-0 w-[40px] h-[12px] bg-[#F59E0B] rounded-t-md" />
-                                        {/* Folder Body */}
-                                        <div className="absolute top-[8px] left-0 w-full h-[72px] bg-gradient-to-b from-[#FCD34D] to-[#F59E0B] rounded-lg shadow-sm" />
-                                        {/* Inner content */}
-                                        <div className="absolute inset-0 top-[20px] flex items-center justify-center">
-                                          <div className="flex items-center gap-1.5 text-[11px] text-gray-700/80 font-medium">
-                                            <FolderOpen className="w-3 h-3 opacity-70" />
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-1">
-                                        {folder.name}
-                                      </h4>
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        <p>{formatDate(folder.created_at)}</p>
-                                      </div>
-                                      {!folder.is_active && (
-                                        <Chip size="sm" color="warning" variant="flat" className="mt-2">
-                                          Inactif
-                                        </Chip>
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
-                                    <div className="flex items-center gap-4">
-                                      <div className="w-10 h-10 flex items-center justify-center bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                                        <FolderIcon className="w-6 h-6 text-amber-500" />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <h4 className="font-medium text-gray-900 dark:text-white truncate">
-                                          {folder.name}
-                                        </h4>
-                                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                                          <span>{folder.path}</span>
-                                          <span>{formatDate(folder.created_at)}</span>
-                                        </div>
-                                      </div>
-                                      <Chip
-                                        color={folder.is_active ? "success" : "warning"}
-                                        variant="flat"
-                                        size="sm"
-                                      >
-                                        {folder.is_active ? "Actif" : "Inactif"}
-                                      </Chip>
-                                      <Dropdown>
-                                        <DropdownTrigger>
-                                          <Button size="sm" variant="light" isIconOnly className="text-gray-400 hover:text-gray-600">
-                                            <MoreVertical className="w-4 h-4" />
-                                          </Button>
-                                        </DropdownTrigger>
-                                        <DropdownMenu>
-                                          <DropdownItem
-                                            key="delete"
-                                            startContent={<Trash2 className="w-4 h-4" />}
-                                            className="text-danger"
-                                            color="danger"
-                                            onPress={() => openDeleteFolderModal(folder)}
-                                          >
-                                            Supprimer
-                                          </DropdownItem>
-                                        </DropdownMenu>
-                                      </Dropdown>
-                                    </div>
-                                  </div>
-                                )}
-                              </motion.div>
-                            ))}
-                          </AnimatePresence>
-                        </div>
+                      {/* Gestionnaire de fichiers du projet sélectionné */}
+                      {selectedProjectId ? (
+                        <ProjectFileManager
+                          key={selectedProjectId}
+                          projectId={selectedProjectId}
+                          projectName={projects.find(p => String(p.id) === selectedProjectId)?.title || ''}
+                        />
                       ) : (
                         <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
                           <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center mx-auto mb-4">
                             <FolderIcon className="w-8 h-8 text-gray-400" />
                           </div>
                           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                            {searchTerm ? 'Aucun résultat' : 'Aucun dossier'}
+                            Sélectionnez un projet
                           </h3>
                           <p className="text-gray-600 dark:text-gray-400">
-                            {searchTerm
-                              ? `Aucun dossier ne correspond à "${searchTerm}"`
-                              : 'Aucun dossier trouvé pour ce partenaire'}
+                            Choisissez un projet dans le menu ci-dessus pour accéder à ses dossiers et fichiers
                           </p>
                         </div>
                       )}
                     </>
+                  ) : (
+                    <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <FolderIcon className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        Aucun projet
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Aucun projet associé à ce partenaire
+                      </p>
+                    </div>
                   )}
                 </div>
               </Tab>
@@ -1498,62 +1270,6 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
         </ModalContent>
       </Modal>
 
-      {/* Modal de confirmation de suppression de dossier */}
-      <Modal isOpen={isDeleteFolderModalOpen} onClose={onDeleteFolderModalClose}>
-        <ModalContent>
-          <ModalHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-100">
-                <Trash2 className="w-5 h-5 text-red-600" />
-              </div>
-              <span>Supprimer le dossier</span>
-            </div>
-          </ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                <div className="flex items-start gap-3">
-                  <div className="p-1 rounded-full bg-red-100 dark:bg-red-900/40">
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
-                      Attention : Suppression définitive
-                    </h3>
-                    <p className="text-sm text-red-700 dark:text-red-300">
-                      Cette action est irréversible. Tous les fichiers et sous-dossiers contenus dans ce dossier seront également supprimés.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {folderToDelete && (
-                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    <strong>Dossier à supprimer :</strong> {folderToDelete.name}
-                  </p>
-                </div>
-              )}
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="flat"
-              onPress={onDeleteFolderModalClose}
-              isDisabled={isDeleting}
-            >
-              Annuler
-            </Button>
-            <Button
-              color="danger"
-              onPress={confirmDeleteFolder}
-              isLoading={isDeleting}
-            >
-              Supprimer définitivement
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </>
   );
 };
