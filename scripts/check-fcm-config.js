@@ -52,11 +52,9 @@ let allPassed = true;
 checks.forEach(check => {
   const passed = check.test(check.value);
   const status = passed ? '✅' : '❌';
-  const display = check.sensitive && check.value
-    ? `${check.value.substring(0, 4)}****`
-    : (!check.sensitive && check.value) ? check.value : 'Non défini';
+  const isSet = check.value ? 'Défini' : 'Non défini';
 
-  console.log(`${status} ${check.name}: ${display}`);
+  console.log(`${status} ${check.name}: ${isSet} - ${passed ? 'Valide' : 'Invalide'}`);
   
   if (!passed) {
     allPassed = false;

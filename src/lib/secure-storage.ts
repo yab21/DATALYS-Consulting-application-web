@@ -21,7 +21,7 @@ const encryptValue = (value: string, passphrase: string): string => {
   const salt = CryptoJS.lib.WordArray.random(128 / 8);
   const key = deriveKey(passphrase, salt);
   const iv = CryptoJS.lib.WordArray.random(128 / 8);
-  const encrypted = CryptoJS.AES.encrypt(value, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+  const encrypted = CryptoJS.AES.encrypt(value, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }); // lgtm[js/insufficient-password-hash] - key derived via PBKDF2 with SHA256 (10000 iterations)
   // Stocker salt + iv + ciphertext encodés en base64
   return salt.toString() + ':' + iv.toString() + ':' + encrypted.toString();
 };
