@@ -57,7 +57,7 @@
     "react-select": "^5.8.0",
     "react-table": "^7.8.0",
     "react-window": "^1.8.11",
-    "react-window-infinite-loader": "^1.0.10",
+    "react-window-infinite-loader": "^2.0.1",
     "regenerator-runtime": "^0.14.1",
     "zod": "^4.0.17",
     "zustand": "^5.0.7"
