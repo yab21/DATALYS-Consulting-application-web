@@ -27,7 +27,7 @@
     "@heroui/select": "^2.4.30",
     "@heroui/table": "^2.2.29",
     "@heroui/tabs": "^2.2.26",
-    "@heroui/user": "^2.2.24",
+    "@heroui/user": "^2.2.25",
     "@hookform/resolvers": "^5.2.1",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nprogress": "^0.2.3",
