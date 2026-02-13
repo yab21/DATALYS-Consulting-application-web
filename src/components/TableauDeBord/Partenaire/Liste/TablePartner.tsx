@@ -147,11 +147,17 @@ const TablePartner: React.FC = () => {
     // Nettoyer l'URL
     const cleanUrl = url.trim();
     
-    // Ignorer les URLs placeholder ou de test
-    if (cleanUrl.includes('example.com') || cleanUrl.includes('placeholder') || cleanUrl.includes('test.com')) {
-      return undefined;
+    // Ignorer les URLs placeholder ou de test (validation par hostname exact)
+    try {
+      const urlObj = new URL(cleanUrl, 'https://placeholder.local');
+      const hostname = urlObj.hostname.toLowerCase();
+      if (hostname === 'example.com' || hostname === 'test.com' || hostname.includes('placeholder')) {
+        return undefined;
+      }
+    } catch {
+      // URL relative, continuer le traitement
     }
-    
+
     // Nouveau format d'upload via /files/serve/ avec backend HTTPS direct
     if (cleanUrl.includes('/files/serve/')) {
       // Si c'est déjà une URL complète HTTPS, la garder telle quelle
@@ -232,11 +238,17 @@ const TablePartner: React.FC = () => {
     
     const cleanUrl = url.trim();
     
-    // Ignorer les URLs placeholder ou de test
-    if (cleanUrl.includes('example.com') || cleanUrl.includes('placeholder') || cleanUrl.includes('test.com')) {
-      return false;
+    // Ignorer les URLs placeholder ou de test (validation par hostname exact)
+    try {
+      const urlObj = new URL(cleanUrl, 'https://placeholder.local');
+      const hostname = urlObj.hostname.toLowerCase();
+      if (hostname === 'example.com' || hostname === 'test.com' || hostname.includes('placeholder')) {
+        return false;
+      }
+    } catch {
+      // URL relative, continuer le traitement
     }
-    
+
     // Accepter les URLs relatives (commençant par /)
     if (cleanUrl.startsWith('/')) return true;
     

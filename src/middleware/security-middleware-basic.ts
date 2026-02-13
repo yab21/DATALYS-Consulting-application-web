@@ -4,13 +4,16 @@ import { NextRequest, NextResponse } from 'next/server';
  * Middleware de sécurité basique pour protection immédiate
  */
 export class SecurityMiddleware {
-  // Patterns XSS de base
+  // Patterns XSS de base (utilisation de DOMPurify recommandée pour le HTML complet)
   private static readonly XSS_PATTERNS = [
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    /javascript:/gi,
+    /<\s*script/gi,
+    /javascript\s*:/gi,
     /on\w+\s*=/gi,
-    /<iframe/gi,
-    /vbscript:/gi
+    /<\s*iframe/gi,
+    /vbscript\s*:/gi,
+    /data\s*:\s*text\/html/gi,
+    /<\s*embed/gi,
+    /<\s*object/gi,
   ];
 
   // Patterns SQL Injection de base

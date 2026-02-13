@@ -109,7 +109,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
       const urlObj = new URL(url);
       
       // Exemple pour Cloudinary
-      if (urlObj.hostname.includes('cloudinary.com')) {
+      if (urlObj.hostname === 'cloudinary.com' || urlObj.hostname.endsWith('.cloudinary.com')) {
         return url.replace('/upload/', `/upload/q_${quality},f_auto/`);
       }
 

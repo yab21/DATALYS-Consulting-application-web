@@ -657,7 +657,10 @@ export class ErrorHandler {
     if (typeof window !== 'undefined') {
       let sessionId = sessionStorage.getItem('sessionId');
       if (!sessionId) {
-        sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        const randomBytes = new Uint8Array(8);
+        crypto.getRandomValues(randomBytes);
+        const randomHex = Array.from(randomBytes, b => b.toString(16).padStart(2, '0')).join('');
+        sessionId = `session_${Date.now()}_${randomHex}`;
         sessionStorage.setItem('sessionId', sessionId);
       }
       return sessionId;
