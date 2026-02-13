@@ -5,6 +5,9 @@ on:
     branches: [develop]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: "20.x"
   SERVER_HOST: "152.228.130.133"

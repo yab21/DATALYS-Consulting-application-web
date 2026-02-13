@@ -37,14 +37,14 @@ const config = {
 
 // Vérifications
 const checks = [
-  { name: 'API Key', value: config.apiKey, test: (v) => v && v.startsWith('AIza') },
-  { name: 'Auth Domain', value: config.authDomain, test: (v) => v && v.includes('.firebaseapp.com') },
+  { name: 'API Key', value: config.apiKey, sensitive: true, test: (v) => v && v.startsWith('AIza') },
+  { name: 'Auth Domain', value: config.authDomain, sensitive: false, test: (v) => v && v.endsWith('.firebaseapp.com') },
   { name: 'Project ID', value: config.projectId, test: (v) => v === 'datalys-consulting-backend' },
-  { name: 'Storage Bucket', value: config.storageBucket, test: (v) => v && v.includes('.firebasestorage.app') },
-  { name: 'Messaging Sender ID', value: config.messagingSenderId, test: (v) => v === '838991252517' },
-  { name: 'App ID', value: config.appId, test: (v) => v && v.includes('web:') },
-  { name: 'Measurement ID', value: config.measurementId, test: (v) => v && v.startsWith('G-') },
-  { name: 'VAPID Key', value: config.vapidKey, test: (v) => v && v.length > 80 && v.startsWith('B') }
+  { name: 'Storage Bucket', value: config.storageBucket, sensitive: false, test: (v) => v && v.endsWith('.firebasestorage.app') },
+  { name: 'Messaging Sender ID', value: config.messagingSenderId, sensitive: true, test: (v) => v === '838991252517' },
+  { name: 'App ID', value: config.appId, sensitive: true, test: (v) => v && v.includes('web:') },
+  { name: 'Measurement ID', value: config.measurementId, sensitive: true, test: (v) => v && v.startsWith('G-') },
+  { name: 'VAPID Key', value: config.vapidKey, sensitive: true, test: (v) => v && v.length > 80 && v.startsWith('B') }
 ];
 
 let allPassed = true;
@@ -52,10 +52,10 @@ let allPassed = true;
 checks.forEach(check => {
   const passed = check.test(check.value);
   const status = passed ? '✅' : '❌';
-  const display = check.name === 'VAPID Key' && check.value 
-    ? `${check.value.substring(0, 20)}...` 
-    : check.value || 'Non défini';
-  
+  const display = check.sensitive && check.value
+    ? `${check.value.substring(0, 4)}****`
+    : (!check.sensitive && check.value) ? check.value : 'Non défini';
+
   console.log(`${status} ${check.name}: ${display}`);
   
   if (!passed) {

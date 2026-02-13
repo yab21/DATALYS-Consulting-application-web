@@ -7,6 +7,50 @@ import CryptoJS from 'crypto-js';
 // Clé de chiffrement depuis variable d'environnement (NEXT_PUBLIC_STORAGE_KEY dans .env)
 const STORAGE_KEY = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_STORAGE_KEY : undefined;
 
+// Dérivation de clé sécurisée avec PBKDF2 (au lieu du MD5 par défaut de CryptoJS)
+const PBKDF2_ITERATIONS = 10000;
+const deriveKey = (passphrase: string, salt: CryptoJS.lib.WordArray): CryptoJS.lib.WordArray => {
+  return CryptoJS.PBKDF2(passphrase, salt, {
+    keySize: 256 / 32,
+    iterations: PBKDF2_ITERATIONS,
+    hasher: CryptoJS.algo.SHA256
+  });
+};
+
+const encryptValue = (value: string, passphrase: string): string => {
+  const salt = CryptoJS.lib.WordArray.random(128 / 8);
+  const key = deriveKey(passphrase, salt);
+  const iv = CryptoJS.lib.WordArray.random(128 / 8);
+  const encrypted = CryptoJS.AES.encrypt(value, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+  // Stocker salt + iv + ciphertext encodés en base64
+  return salt.toString() + ':' + iv.toString() + ':' + encrypted.toString();
+};
+
+const decryptValue = (stored: string, passphrase: string): string | null => {
+  try {
+    // Nouveau format: salt:iv:ciphertext
+    if (stored.includes(':')) {
+      const parts = stored.split(':');
+      if (parts.length === 3) {
+        const salt = CryptoJS.enc.Hex.parse(parts[0]);
+        const iv = CryptoJS.enc.Hex.parse(parts[1]);
+        const ciphertext = parts[2];
+        const key = deriveKey(passphrase, salt);
+        const decrypted = CryptoJS.AES.decrypt(ciphertext, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+        const result = decrypted.toString(CryptoJS.enc.Utf8);
+        if (result && result.length > 0) return result;
+        return null;
+      }
+    }
+    // Ancien format: fallback vers CryptoJS.AES.decrypt simple pour rétrocompatibilité
+    const decrypted = CryptoJS.AES.decrypt(stored, passphrase);
+    const result = decrypted.toString(CryptoJS.enc.Utf8);
+    return (result && result.length > 0) ? result : null;
+  } catch {
+    return null;
+  }
+};
+
 if (typeof window !== 'undefined' && !STORAGE_KEY) {
   console.warn('⚠️ NEXT_PUBLIC_STORAGE_KEY non définie. Le chiffrement du stockage local est désactivé.');
 }
@@ -22,8 +66,8 @@ export class SecureStorage {
 
     if (this.encryptionKey) {
       try {
-        // Chiffrer la valeur
-        const encrypted = CryptoJS.AES.encrypt(value, this.encryptionKey).toString();
+        // Chiffrer la valeur avec PBKDF2 + AES-CBC
+        const encrypted = encryptValue(value, this.encryptionKey);
 
         // Stocker avec flag de chiffrement
         localStorage.setItem(key, encrypted);
@@ -41,8 +85,10 @@ export class SecureStorage {
       }
     }
 
-    // Stockage sans chiffrement (clé non définie ou erreur)
-    localStorage.setItem(key, value);
+    // Stockage avec encodage base64 (clé de chiffrement non définie ou erreur)
+    const encoded = btoa(unescape(encodeURIComponent(value)));
+    localStorage.setItem(key, encoded);
+    localStorage.setItem(key + '_encoded', 'true');
     localStorage.removeItem(key + '_encrypted');
 
     if (key === 'authToken' || key === 'userInfo') {
@@ -62,37 +108,38 @@ export class SecureStorage {
     const isEncrypted = localStorage.getItem(key + '_encrypted') === 'true';
 
     if (isEncrypted && this.encryptionKey) {
-      try {
-        // Tentative de déchiffrement
-        const decrypted = CryptoJS.AES.decrypt(value, this.encryptionKey);
-        const result = decrypted.toString(CryptoJS.enc.Utf8);
-        
-        if (result && result.length > 0) {
-          if (process.env.NODE_ENV === 'development') console.log(`SecureStorage: ${key} déchiffré`);
-          return result;
-        } else {
-          console.warn(`⚠️ SecureStorage: Échec du déchiffrement pour ${key}, nettoyage et fallback`);
-          // Nettoyer les données corrompues
-          localStorage.removeItem(key + '_encrypted');
-          // Si les données semblent être du JSON non chiffré, les retourner
-          try {
-            JSON.parse(value);
-            return value;
-          } catch {
-            // Sinon, forcer la déconnexion
-            this.removeItem(key);
-            return null;
-          }
-        }
-      } catch (error) {
-        console.warn(`⚠️ SecureStorage: Erreur de déchiffrement pour ${key}:`, error);
-        // Nettoyer les données corrompues et forcer nouveau login
+      // Tentative de déchiffrement (supporte ancien et nouveau format)
+      const result = decryptValue(value, this.encryptionKey);
+
+      if (result) {
+        if (process.env.NODE_ENV === 'development') console.log(`SecureStorage: ${key} déchiffré`);
+        return result;
+      } else {
+        console.warn(`⚠️ SecureStorage: Échec du déchiffrement pour ${key}, nettoyage et fallback`);
+        // Nettoyer les données corrompues
         localStorage.removeItem(key + '_encrypted');
-        this.removeItem(key);
-        return null;
+        // Si les données semblent être du JSON non chiffré, les retourner
+        try {
+          JSON.parse(value);
+          return value;
+        } catch {
+          // Sinon, forcer la déconnexion
+          this.removeItem(key);
+          return null;
+        }
       }
     } else {
-      // Données non chiffrées (ancien format) - rétrocompatibilité
+      // Données encodées en base64 ou ancien format non chiffré - rétrocompatibilité
+      const isEncoded = localStorage.getItem(key + '_encoded') === 'true';
+      if (isEncoded) {
+        try {
+          const decoded = decodeURIComponent(escape(atob(value)));
+          if (process.env.NODE_ENV === 'development') console.log(`SecureStorage: ${key} lu (décodé)`);
+          return decoded;
+        } catch {
+          // Fallback si le décodage échoue
+        }
+      }
       if (process.env.NODE_ENV === 'development') console.log(`SecureStorage: ${key} lu (non chiffré)`);
       return value;
     }
@@ -105,7 +152,8 @@ export class SecureStorage {
     if (typeof window === 'undefined') return;
 
     localStorage.removeItem(key);
-    localStorage.removeItem(key + '_encrypted'); // Nettoyer aussi le flag
+    localStorage.removeItem(key + '_encrypted');
+    localStorage.removeItem(key + '_encoded');
     
     // Émettre un événement custom pour les changements d'authentification
     if (key === 'authToken' || key === 'userInfo') {
@@ -193,14 +241,8 @@ export class SecureStorage {
       if (isEncrypted && this.encryptionKey) {
         const value = localStorage.getItem(key);
         if (value) {
-          try {
-            const decrypted = CryptoJS.AES.decrypt(value, this.encryptionKey);
-            const result = decrypted.toString(CryptoJS.enc.Utf8);
-            if (!result || result.length === 0) {
-              if (process.env.NODE_ENV === 'development') console.log(`Nettoyage: Suppression de ${key}`);
-              this.removeItem(key);
-            }
-          } catch (error) {
+          const result = decryptValue(value, this.encryptionKey);
+          if (!result) {
             if (process.env.NODE_ENV === 'development') console.log(`Nettoyage: Suppression de ${key}`);
             this.removeItem(key);
           }
