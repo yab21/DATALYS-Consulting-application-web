@@ -928,10 +928,19 @@ export class ProjectFilesService {
       }
 
       // Utiliser l'endpoint /files/serve/{file_url} comme dans Postman
-      let viewUrl: string;
-      // Nettoyer le file_url (enlever les slashes de début)
-      const cleanFileUrl = fileUrl.replace(/^\/+/, '');
-      viewUrl = `${baseUrl}/files/serve/${cleanFileUrl}`;
+      let cleanFileUrl = fileUrl.replace(/^\/+/, '');
+      // Gérer le cas où file_url contient déjà /files/serve/ ou une URL complète
+      if (cleanFileUrl.startsWith('http://') || cleanFileUrl.startsWith('https://')) {
+        const urlParts = cleanFileUrl.split('/files/serve/');
+        if (urlParts.length > 1) {
+          cleanFileUrl = urlParts[urlParts.length - 1];
+        }
+      } else if (cleanFileUrl.includes('/files/serve/')) {
+        cleanFileUrl = cleanFileUrl.split('/files/serve/').pop() || cleanFileUrl;
+      } else if (cleanFileUrl.startsWith('files/serve/')) {
+        cleanFileUrl = cleanFileUrl.substring('files/serve/'.length);
+      }
+      const viewUrl = `${baseUrl}/files/serve/${cleanFileUrl}`;
       
       console.log(`📖 [VIEW FILE] - URL finale: ${viewUrl}`);
       
