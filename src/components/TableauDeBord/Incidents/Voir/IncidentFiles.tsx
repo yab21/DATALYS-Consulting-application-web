@@ -56,19 +56,36 @@ interface UploadProgress {
 }
 
 // Composant pour la prévisualisation des fichiers
+// Vérifier si un fichier est une image par son type MIME ou son extension
+const isImageFile = (file: IncidentFile): boolean => {
+  if (file.file_type.includes('image')) return true;
+  const ext = file.file_name.split('.').pop()?.toLowerCase() || '';
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'tif', 'ico', 'heic', 'heif'].includes(ext);
+};
+
+// Vérifier si un fichier est un PDF par son type MIME ou son extension
+const isPdfFile = (file: IncidentFile): boolean => {
+  if (file.file_type === 'application/pdf') return true;
+  const ext = file.file_name.split('.').pop()?.toLowerCase() || '';
+  return ext === 'pdf';
+};
+
 const PreviewContent: React.FC<{ file: IncidentFile }> = ({ file }) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let currentBlobUrl: string | null = null;
+
     const loadPreview = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        if (file.file_type.includes('image') || file.file_type === 'application/pdf') {
-          const url = await incidentFilesService.createPreviewBlob(file.file_url);
+
+        if (isImageFile(file) || isPdfFile(file)) {
+          const url = await incidentFilesService.createPreviewBlob(file.file_url, file.file_name);
+          currentBlobUrl = url;
           setBlobUrl(url);
         }
       } catch (err) {
@@ -83,8 +100,8 @@ const PreviewContent: React.FC<{ file: IncidentFile }> = ({ file }) => {
 
     // Nettoyer l'URL du blob quand le composant se démonte
     return () => {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
       }
     };
   }, [file]);
@@ -106,7 +123,7 @@ const PreviewContent: React.FC<{ file: IncidentFile }> = ({ file }) => {
     );
   }
 
-  if (file.file_type.includes('image') && blobUrl) {
+  if (isImageFile(file) && blobUrl) {
     return (
       <div className="flex justify-center">
         <img
@@ -118,7 +135,7 @@ const PreviewContent: React.FC<{ file: IncidentFile }> = ({ file }) => {
     );
   }
 
-  if (file.file_type === 'application/pdf' && blobUrl) {
+  if (isPdfFile(file) && blobUrl) {
     return (
       <div className="flex justify-center">
         <iframe
@@ -393,9 +410,14 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
 
   // Gestionnaire de prévisualisation
   const handlePreview = async (file: IncidentFile) => {
-    if (incidentFilesService.canPreviewFile(file.file_type)) {
+    if (isImageFile(file) || isPdfFile(file) || incidentFilesService.canPreviewFile(file.file_type)) {
       try {
-        console.log('🔍 Prévisualisation du fichier:', file);
+        // PDF : ouvrir dans un nouvel onglet (évite les problèmes CSP avec iframe)
+        if (isPdfFile(file)) {
+          await incidentFilesService.viewIncidentFile(file.file_url, file.file_name);
+          return;
+        }
+        // Images et autres : afficher dans le modal
         setPreviewFile(file);
         setShowPreviewModal(true);
       } catch (error) {
@@ -648,8 +670,8 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
                       if ((e.target as HTMLElement).closest('button')) {
                         return;
                       }
-                      
-                      if (incidentFilesService.canPreviewFile(file.file_type)) {
+
+                      if (isImageFile(file) || isPdfFile(file) || incidentFilesService.canPreviewFile(file.file_type)) {
                         handlePreview(file);
                       } else {
                         handleDownload(file);
@@ -678,7 +700,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
                       
                       {/* Informations du fichier */}
                       <div className="w-full text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                        {file.file_size && file.file_size > 0 && (
+                        {file.file_size > 0 && (
                           <div className="truncate font-medium">
                             {incidentFilesService.formatFileSize(file.file_size)}
                           </div>
@@ -693,7 +715,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
                         className="flex items-center gap-1 w-full justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {incidentFilesService.canPreviewFile(file.file_type) && (
+                        {(isImageFile(file) || isPdfFile(file) || incidentFilesService.canPreviewFile(file.file_type)) && (
                           <Tooltip content="Prévisualiser">
                             <Button
                               isIconOnly

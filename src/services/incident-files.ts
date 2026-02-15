@@ -46,13 +46,26 @@ const mapRawFileToIncidentFile = (rawFile: RawIncidentFile): IncidentFile => {
       'jpeg': 'image/jpeg',
       'png': 'image/png',
       'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'bmp': 'image/bmp',
+      'tiff': 'image/tiff',
+      'tif': 'image/tiff',
+      'ico': 'image/x-icon',
+      'heic': 'image/heic',
+      'heif': 'image/heif',
       'doc': 'application/msword',
       'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'xls': 'application/vnd.ms-excel',
       'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'txt': 'text/plain',
+      'csv': 'text/csv',
       'zip': 'application/zip',
-      'rar': 'application/x-rar-compressed'
+      'rar': 'application/x-rar-compressed',
+      'mp4': 'video/mp4',
+      'mp3': 'audio/mpeg'
     };
     return typeMap[ext] || 'application/octet-stream';
   };
@@ -159,9 +172,6 @@ class IncidentFilesService {
 
     // Construire l'URL finale
     const serveUrl = `${this.baseUrl}/files/serve/${cleanPath}`;
-
-    console.log('🔗 [buildFileServeUrl] URL originale:', fileUrl);
-    console.log('🔗 [buildFileServeUrl] URL finale:', serveUrl);
 
     return serveUrl;
   }
@@ -471,20 +481,18 @@ class IncidentFilesService {
   }
 
   /**
-   * Créer un blob URL pour la prévisualisation (conservé pour compatibilité)
-   * @deprecated Utiliser viewIncidentFile() à la place
+   * Créer un blob URL pour la prévisualisation
+   * Même pattern que projectFiles.ts viewFile
    */
-  async createPreviewBlob(fileUrl: string): Promise<string> {
+  async createPreviewBlob(fileUrl: string, fileName?: string): Promise<string> {
     try {
       const previewUrl = this.buildFileServeUrl(fileUrl);
 
-      console.log('🔗 URL de prévisualisation:', previewUrl);
-
       const response = await fetch(previewUrl, {
+        method: 'GET',
         headers: this.getAuthHeaders()
       });
 
-      // Gérer les erreurs 401
       if (response.status === 401) {
         throw new TokenExpiredError('Session expirée');
       }
@@ -493,14 +501,32 @@ class IncidentFilesService {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
 
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
+      const originalBlob = await response.blob();
 
-      console.log('📄 Blob URL créé pour prévisualisation:', blobUrl);
-      return blobUrl;
+      // Si le serveur retourne application/octet-stream, forcer le bon type MIME
+      // pour que l'iframe/img puisse afficher le contenu
+      if (originalBlob.type === 'application/octet-stream' && fileName) {
+        const ext = fileName.split('.').pop()?.toLowerCase() || '';
+        const mimeMap: Record<string, string> = {
+          'pdf': 'application/pdf',
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'png': 'image/png',
+          'gif': 'image/gif',
+          'webp': 'image/webp',
+          'svg': 'image/svg+xml',
+          'bmp': 'image/bmp',
+        };
+        const correctType = mimeMap[ext];
+        if (correctType) {
+          const correctedBlob = new Blob([originalBlob], { type: correctType });
+          return URL.createObjectURL(correctedBlob);
+        }
+      }
+
+      return URL.createObjectURL(originalBlob);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
-      console.error('❌ Erreur lors de la création du blob:', error);
       throw error;
     }
   }
