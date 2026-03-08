@@ -3,16 +3,13 @@ import Image from "next/image";
 import DarkModeSwitcher from "./DarkModeSwitcher";
 import DropdownNotification from "./DropdownNotification";
 import DropdownUser from "./DropdownUser";
-import { useState } from "react";
+import NavbarSearch from "./NavbarSearch";
 import { motion } from "framer-motion";
 
 const Header = (props: {
   sidebarOpen: string | boolean | undefined;
   setSidebarOpen: (arg0: boolean) => void;
 }) => {
-  // Données utilisateur statiques pour la démo
-  const [userName] = useState({ firstName: "DATALYS", lastName: "Utilisateur" });
-
   return (
     <header className="sticky top-0 z-999 flex w-full border-b border-gray-200 bg-white/80 backdrop-blur-xl dark:border-gray-700 dark:bg-gray-900/80">
       <div className="flex flex-grow items-center justify-between px-4 py-4 shadow-lg shadow-gray-100/50 dark:shadow-gray-900/50 md:px-6 2xl:px-8">
@@ -99,6 +96,11 @@ const Header = (props: {
             </h1>
           </div>
         </motion.div>
+
+        {/* Search */}
+        <div className="hidden sm:block">
+          <NavbarSearch />
+        </div>
 
         <div className="flex items-center justify-normal gap-3 2xsm:gap-4 lg:w-full lg:justify-between xl:w-auto xl:justify-normal">
           <motion.ul

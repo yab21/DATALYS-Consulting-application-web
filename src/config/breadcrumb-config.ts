@@ -179,22 +179,6 @@ export const BREADCRUMB_ROUTES: RouteConfig[] = [
     }
   },
 
-  // Fichiers et dossiers
-  {
-    pattern: '/tableaudebord/lesdossiers',
-    label: 'Gestionnaire de Fichiers',
-    parentRoute: '/tableaudebord'
-  },
-  {
-    pattern: '/tableaudebord/lesdossiers/ajouter',
-    label: 'Ajouter un Dossier',
-    parentRoute: '/tableaudebord/lesdossiers'
-  },
-  {
-    pattern: '/tableaudebord/lesdossiers/voir',
-    label: 'Voir le Dossier',
-    parentRoute: '/tableaudebord/lesdossiers'
-  },
 
   // Recherche
   {

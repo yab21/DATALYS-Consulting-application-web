@@ -232,7 +232,7 @@ const ModernDashboard: React.FC = () => {
       description: "Gérer les documents",
       icon: <Upload className="h-5 w-5" />,
       variant: "success",
-      action: () => window.location.href = "/tableaudebord/lesdossiers",
+      action: () => window.location.href = "/tableaudebord/projet/gerer",
     },
     {
       id: "messages",

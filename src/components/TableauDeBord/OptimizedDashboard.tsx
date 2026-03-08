@@ -499,7 +499,7 @@ const OptimizedDashboard: React.FC = () => {
                 </div>
                 <Button
                   as={Link}
-                  href="/tableaudebord/lesdossiers"
+                  href="/tableaudebord/projet/gerer"
                   variant="bordered"
                   size="sm"
                   className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-all duration-300"

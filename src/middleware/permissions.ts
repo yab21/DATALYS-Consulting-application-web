@@ -11,7 +11,6 @@ export const ROUTE_PERMISSIONS: Record<string, Permission[]> = {
   
   // Routes mixtes (admin + partner avec restrictions)
   '/tableaudebord/projet': [Permission.ACCESS_ALL_PROJECTS, Permission.VIEW_OWN_PROJECTS],
-  '/tableaudebord/lesdossiers': [Permission.ACCESS_ALL_FILES, Permission.CONSULT_OWN_DOCUMENTS],
   '/tableaudebord/incidents': [Permission.VIEW_ALL_INCIDENTS, Permission.REPORT_INCIDENTS_OWN_PROJECTS],
   '/tableaudebord/messages': [Permission.HANDLE_ALL_INCIDENTS, Permission.SEND_MESSAGES_TO_ADMINS],
   '/tableaudebord/recherche': [Permission.COMPLETE_ACTION_HISTORY, Permission.SEARCH_OWN_PROJECTS_ONLY],
