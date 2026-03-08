@@ -152,8 +152,8 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
           <div className="space-y-4">
             {/* Affichage des erreurs */}
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
               </div>
             )}
 
@@ -212,12 +212,12 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
             {/* Informations de rôle (lecture seule) */}
             <div>
               <h4 className="text-lg font-semibold mb-4">Rôle et permissions</h4>
-              <div className="p-4 bg-gray-50 rounded-lg border">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600">
                 <div className="flex items-center gap-2">
                   <Edit className="h-4 w-4 text-[#4ba9b7]" />
-                  <span className="font-medium text-gray-900">Administrateur</span>
+                  <span className="font-medium text-gray-900 dark:text-white">Administrateur</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Accès complet aux fonctionnalités d'administration
                 </p>
               </div>

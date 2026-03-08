@@ -276,7 +276,7 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
       return <FileArchive className="w-6 h-6 text-orange-600" />;
     }
     
-    return <File className="w-6 h-6 text-gray-600" />;
+    return <File className="w-6 h-6 text-gray-600 dark:text-gray-400" />;
   };
 
 
@@ -311,21 +311,21 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
         }}
       >
         <ModalContent>
-          <ModalHeader className="border-b border-gray-200 px-6 py-4">
+          <ModalHeader className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-[#4ba9b7]/10">
                   <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Fichiers de l'incident</h2>
-                  <p className="text-sm text-gray-600">{incidentTitle}</p>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Fichiers de l'incident</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{incidentTitle}</p>
                 </div>
               </div>
               {onToggleFullscreen && (
                 <button
                   onClick={onToggleFullscreen}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                 >
                   {isFullscreen ? (
                     <Minimize2 className="w-4 h-4" />
@@ -366,10 +366,10 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
                     placeholder="Rechercher un fichier..."
                    
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#4ba9b7] focus:border-transparent w-64"
+                    className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4ba9b7] focus:border-transparent w-64"
                   />
                 </div>
-                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
+                <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-md">
                   {filteredFiles.length} fichier(s)
                 </span>
               </div>
@@ -378,12 +378,12 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
             {/* Contenu */}
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="text-gray-500">Chargement des fichiers...</div>
+                <div className="text-gray-500 dark:text-gray-400">Chargement des fichiers...</div>
               </div>
             ) : filteredFiles.length === 0 ? (
               <div className="text-center py-12">
                 <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   {searchTerm ? 'Aucun fichier trouvé' : 'Aucun fichier uploadé pour cet incident'}
                 </p>
               </div>
@@ -392,25 +392,25 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
                 {filteredFiles.map((file) => (
                   <div
                     key={file.id}
-                    className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all"
                   >
                     <div className="flex flex-col items-center text-center space-y-3">
-                      <div className="p-3 rounded-lg bg-gray-50">
+                      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                         {getFileIcon(file.file_name)}
                       </div>
                       
                       <div className="w-full">
-                        <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">
+                        <h3 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-2 mb-1">
                           {file.file_name}
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {formatFileSize(file.file_size)}
                         </p>
                       </div>
                       
                       <div className="flex items-center gap-1 w-full justify-center">
                         <button
-                          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                           onClick={() => handlePreview(file)}
                           title="Prévisualiser"
                         >
@@ -431,10 +431,10 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
             )}
           </ModalBody>
           
-          <ModalFooter className="border-t border-gray-200 px-6 py-4">
+          <ModalFooter className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] transition-colors"
             >
               Fermer
             </button>
@@ -453,31 +453,31 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
         }}
       >
         <ModalContent>
-          <ModalHeader className="border-b border-gray-200 px-6 py-4">
-            <h3 className="text-lg font-semibold text-gray-900">Upload de fichiers</h3>
+          <ModalHeader className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Upload de fichiers</h3>
           </ModalHeader>
           <ModalBody className="p-6">
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {uploadFiles.length} fichier(s) sélectionné(s)
               </p>
               
               {uploadFiles.map((file, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-900 truncate">{file.name}</span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{file.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {formatFileSize(file.size)}
                     </span>
                   </div>
                   
                   {isUploading && (
                     <div className="mt-2">
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
                         <span>Progression</span>
                         <span>{Math.round(uploadProgress[file.name] || 0)}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div 
                           className="bg-[#4ba9b7] h-2 rounded-full transition-all duration-300" 
                           style={{ width: `${uploadProgress[file.name] || 0}%` }}
@@ -489,12 +489,12 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
               ))}
             </div>
           </ModalBody>
-          <ModalFooter className="border-t border-gray-200 px-6 py-4">
+          <ModalFooter className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
             <div className="flex gap-3">
               <button
                 onClick={() => setUploadModal(false)}
                 disabled={isUploading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Annuler
               </button>
@@ -525,28 +525,28 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
         }}
       >
         <ModalContent>
-          <ModalHeader className="border-b border-gray-200 px-6 py-4">
+          <ModalHeader className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-md bg-red-50">
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Confirmer la suppression</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Confirmer la suppression</h3>
             </div>
           </ModalHeader>
           <ModalBody className="p-6">
             <div className="space-y-4">
-              <p className="text-gray-700">
+              <p className="text-gray-700 dark:text-gray-300">
                 Êtes-vous sûr de vouloir supprimer ce fichier ?
               </p>
               {selectedFile && (
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-md bg-white">
+                    <div className="p-2 rounded-md bg-white dark:bg-gray-800">
                       {getFileIcon(selectedFile.file_name)}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{selectedFile.file_name}</p>
-                      <p className="text-sm text-gray-500">{formatFileSize(selectedFile.file_size)}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{selectedFile.file_name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{formatFileSize(selectedFile.file_size)}</p>
                     </div>
                   </div>
                 </div>
@@ -558,12 +558,12 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
               </div>
             </div>
           </ModalBody>
-          <ModalFooter className="border-t border-gray-200 px-6 py-4">
+          <ModalFooter className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteModal(false)}
                 disabled={isDeleting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Annuler
               </button>

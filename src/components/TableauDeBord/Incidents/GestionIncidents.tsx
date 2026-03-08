@@ -1371,26 +1371,26 @@ const GestionIncidents: React.FC = () => {
         {/* Header skeleton */}
         <div className="flex items-start justify-between">
           <div>
-            <div className="mb-2 h-8 w-64 animate-pulse rounded bg-gray-200"></div>
-            <div className="h-4 w-96 animate-pulse rounded bg-gray-200"></div>
+            <div className="mb-2 h-8 w-64 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="h-4 w-96 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
           </div>
           <div className="flex gap-3">
-            <div className="h-10 w-32 animate-pulse rounded bg-gray-200"></div>
-            <div className="h-10 w-40 animate-pulse rounded bg-gray-200"></div>
+            <div className="h-10 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="h-10 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
           </div>
         </div>
 
         {/* Stats skeleton - 6 cartes pour les incidents */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
           {[...Array(6)].map((_, i) => (
-            <Card key={i} className="border border-gray-200 bg-white">
+            <Card key={i} className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <CardBody className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
-                    <div className="h-4 w-20 animate-pulse rounded bg-gray-200"></div>
-                    <div className="h-8 w-16 animate-pulse rounded bg-gray-200"></div>
+                    <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="h-8 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
                   </div>
-                  <div className="h-8 w-8 animate-pulse rounded bg-gray-200"></div>
+                  <div className="h-8 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
                 </div>
               </CardBody>
             </Card>
@@ -1398,13 +1398,13 @@ const GestionIncidents: React.FC = () => {
         </div>
 
         {/* Filters skeleton */}
-        <Card className="border border-gray-200 bg-white">
+        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardBody className="p-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-10 animate-pulse rounded bg-gray-200"
+                  className="h-10 animate-pulse rounded bg-gray-200 dark:bg-gray-700"
                 ></div>
               ))}
             </div>
@@ -1412,13 +1412,13 @@ const GestionIncidents: React.FC = () => {
         </Card>
 
         {/* Table skeleton */}
-        <Card className="border border-gray-200 bg-white">
+        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardBody className="p-0">
             <div className="space-y-4 p-4">
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-16 animate-pulse rounded bg-gray-200"
+                  className="h-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700"
                 ></div>
               ))}
             </div>
@@ -1437,7 +1437,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1461,7 +1461,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1485,7 +1485,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1509,7 +1509,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1533,7 +1533,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1557,7 +1557,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1581,7 +1581,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1607,7 +1607,7 @@ const GestionIncidents: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
       >
-        <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
           <CardBody className="p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-1 gap-4">
@@ -1660,7 +1660,7 @@ const GestionIncidents: React.FC = () => {
                     variant="flat"
                     startContent={<Download className="h-4 w-4" />}
                     onPress={() => setShowExportModal(true)}
-                    className="border-gray-300 hover:bg-gray-50"
+                    className="border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   >
                     Exporter
                   </Button>
@@ -1687,7 +1687,7 @@ const GestionIncidents: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
       >
-        <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
           <CardBody className="p-0">
             {isAdmin() ? (
               // Table pour les admins avec toutes les colonnes
@@ -1770,7 +1770,7 @@ const GestionIncidents: React.FC = () => {
                         <div className="flex items-center gap-2">
                           {incident.assigneA ? (
                             <>
-                              <UserIcon className="h-4 w-4 text-gray-500" />
+                              <UserIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               <span className="text-sm">
                                 {incident.assigneA}
                               </span>
@@ -1830,7 +1830,7 @@ const GestionIncidents: React.FC = () => {
                           <span className="text-sm font-medium">
                             {incident.dateCreation.toLocaleDateString("fr-FR")}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {formatTimeAgo(incident.dateCreation)}
                           </span>
                         </div>
@@ -2055,7 +2055,7 @@ const GestionIncidents: React.FC = () => {
                           <span className="text-sm font-medium">
                             {incident.dateCreation.toLocaleDateString("fr-FR")}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {formatTimeAgo(incident.dateCreation)}
                           </span>
                         </div>
@@ -2237,7 +2237,7 @@ const GestionIncidents: React.FC = () => {
                   <h3 className="text-xl font-bold">
                     {selectedIncident.titre}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {selectedIncident.partnerNom} -{" "}
                     {selectedIncident.projectNom}
                   </p>
@@ -2496,7 +2496,7 @@ const GestionIncidents: React.FC = () => {
                   isReadOnly
                   className="cursor-not-allowed"
                   classNames={{
-                    input: "text-gray-600 bg-gray-50",
+                    input: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50",
                   }}
                 />
 
@@ -2842,7 +2842,7 @@ const GestionIncidents: React.FC = () => {
                     isReadOnly
                     className="cursor-not-allowed"
                     classNames={{
-                      input: "text-gray-600 bg-gray-50",
+                      input: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50",
                     }}
                     description="Le type ne peut pas être modifié"
                   />
@@ -3265,7 +3265,7 @@ const GestionIncidents: React.FC = () => {
                           include_stats: e.target.checked,
                         }))
                       }
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 dark:border-gray-600"
                     />
                     <span className="text-sm">Inclure les statistiques</span>
                   </label>
@@ -3279,7 +3279,7 @@ const GestionIncidents: React.FC = () => {
                           include_details: e.target.checked,
                         }))
                       }
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 dark:border-gray-600"
                     />
                     <span className="text-sm">
                       Inclure les détails complets
@@ -3338,7 +3338,7 @@ const GestionIncidents: React.FC = () => {
                   </span>
                   .
                 </p>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Veuillez expliquer pourquoi la solution proposée ne convient
                   pas.
                 </p>

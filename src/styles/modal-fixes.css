@@ -10,11 +10,11 @@ label[data-slot="label"],
   font-weight: 500 !important;
 }
 
-[data-theme="dark"] .nextui-input label,
-[data-theme="dark"] [data-slot="label"],
-[data-theme="dark"] label[data-slot="label"],
-[data-theme="dark"] .nextui-input-wrapper label,
-[data-theme="dark"] [class*="nextui-input"] label {
+.dark .nextui-input label,
+.dark [data-slot="label"],
+.dark label[data-slot="label"],
+.dark .nextui-input-wrapper label,
+.dark [class*="nextui-input"] label {
   color: #f9fafb !important;
 }
 
@@ -24,24 +24,22 @@ label[data-slot="label"],
   color: #111827 !important;
 }
 
-[data-theme="dark"] .nextui-input input,
-[data-theme="dark"] [data-slot="input"] {
+.dark .nextui-input input,
+.dark [data-slot="input"] {
   color: #f9fafb !important;
 }
 
 /* Select labels - couvre toutes les variantes NextUI */
 .nextui-select label,
-[data-slot="label"],
 .nextui-select-wrapper label,
 [class*="nextui-select"] label {
   color: #111827 !important;
   font-weight: 500 !important;
 }
 
-[data-theme="dark"] .nextui-select label,
-[data-theme="dark"] [data-slot="label"],
-[data-theme="dark"] .nextui-select-wrapper label,
-[data-theme="dark"] [class*="nextui-select"] label {
+.dark .nextui-select label,
+.dark .nextui-select-wrapper label,
+.dark [class*="nextui-select"] label {
   color: #f9fafb !important;
 }
 
@@ -51,8 +49,8 @@ label[data-slot="label"],
   color: #6b7280 !important;
 }
 
-[data-theme="dark"] .nextui-input input::placeholder,
-[data-theme="dark"] [data-slot="input"]::placeholder {
+.dark .nextui-input input::placeholder,
+.dark [data-slot="input"]::placeholder {
   color: #9ca3af !important;
 }
 
@@ -61,7 +59,16 @@ label[data-slot="label"],
   color: #111827 !important;
 }
 
-[data-theme="dark"] .nextui-select [data-slot="trigger"] {
+.dark .nextui-select [data-slot="trigger"] {
+  color: #f9fafb !important;
+}
+
+/* Select value text */
+[data-slot="value"] {
+  color: #111827 !important;
+}
+
+.dark [data-slot="value"] {
   color: #f9fafb !important;
 }
 
@@ -70,7 +77,7 @@ label[data-slot="label"],
   color: #111827 !important;
 }
 
-[data-theme="dark"] .nextui-modal .nextui-modal-content {
+.dark .nextui-modal .nextui-modal-content {
   color: #f9fafb !important;
 }
 
@@ -82,9 +89,9 @@ label[data-slot="label"],
   font-weight: 500 !important;
 }
 
-[data-theme="dark"] .modal-content label,
-[data-theme="dark"] [role="dialog"] label,
-[data-theme="dark"] [data-testid*="modal"] label {
+.dark .modal-content label,
+.dark [role="dialog"] label,
+.dark [data-testid*="modal"] label {
   color: #f9fafb !important;
 }
 
@@ -96,9 +103,20 @@ label[data-slot="label"],
   color: #111827 !important;
 }
 
-[data-theme="dark"] [role="dialog"] h3,
-[data-theme="dark"] [role="dialog"] h2,
-[data-theme="dark"] .modal-header,
-[data-theme="dark"] [data-testid*="modal"] header {
+.dark [role="dialog"] h3,
+.dark [role="dialog"] h2,
+.dark .modal-header,
+.dark [data-testid*="modal"] header {
+  color: #f9fafb !important;
+}
+
+/* Input wrappers dans les modals - fond visible en dark mode */
+.dark [role="dialog"] [data-slot="input-wrapper"] {
+  background-color: rgb(55 65 81) !important;
+  border-color: rgb(75 85 99) !important;
+}
+
+/* Textarea dans les modals */
+.dark [data-slot="input-wrapper"] textarea {
   color: #f9fafb !important;
 }

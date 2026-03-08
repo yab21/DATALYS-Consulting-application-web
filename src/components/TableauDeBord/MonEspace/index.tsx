@@ -459,7 +459,7 @@ const MonEspacePartenaire: React.FC = () => {
 
               {projects.length === 0 && (
                 <div className="py-12 text-center">
-                  <FolderOpen className="mx-auto mb-4 h-16 w-16 text-gray-300 dark:text-gray-600" />
+                  <FolderOpen className="mx-auto mb-4 h-16 w-16 text-gray-300 dark:text-gray-600 dark:text-gray-400" />
                   <h4 className="mb-2 text-lg font-semibold text-gray-600 dark:text-gray-300">
                     Aucun projet assigné
                   </h4>
@@ -557,7 +557,7 @@ const MonEspacePartenaire: React.FC = () => {
                         size="sm"
                         variant="flat"
                         isIconOnly
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                       >
                         <Download className="h-4 w-4" />
                       </Button>

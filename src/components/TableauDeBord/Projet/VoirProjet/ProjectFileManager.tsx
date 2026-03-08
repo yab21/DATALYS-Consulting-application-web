@@ -141,7 +141,7 @@ const getFileIconComponent = (type: string, fileName?: string): React.ReactEleme
   }
   
   // Fichier générique
-  return <FileText {...iconProps} className="w-6 h-6 text-gray-500" />;
+  return <FileText {...iconProps} className="w-6 h-6 text-gray-500 dark:text-gray-400" />;
 };
 
 const EMPTY_UPLOADED_FILES: any[] = [];
@@ -640,7 +640,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[600px]">
       {/* Header harmonisé avec le modal */}
-      <div className="border-b border-gray-200 px-6 py-4 bg-white dark:bg-gray-800">
+      <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-white dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-md bg-[#4ba9b7]/10">
@@ -662,7 +662,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
               startContent={<Upload className="w-4 h-4" />}
               onPress={onUploadOpen}
               isDisabled={!currentFolder}
-              className="text-gray-700 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Uploader
             </Button>
@@ -867,7 +867,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                               {item.type === 'folder' ? (
                                 <>
                                   <button
-                                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                    className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setEditingFolder(item);
@@ -987,7 +987,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                                   <span>
                                     {item.loadingStats ? (
                                       <span className="flex items-center gap-1">
-                                        <div className="w-3 h-3 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                        <div className="w-3 h-3 animate-spin rounded-full border-2 border-gray-300 dark:border-gray-600 border-t-blue-600" />
                                         Chargement...
                                       </span>
                                     ) : item.stats ? (
@@ -1007,7 +1007,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                             )}
                             <Dropdown>
                               <DropdownTrigger>
-                                <Button size="sm" variant="light" isIconOnly className="text-gray-400 hover:text-gray-600">
+                                <Button size="sm" variant="light" isIconOnly className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
                                   <MoreVertical className="w-4 h-4" />
                                 </Button>
                               </DropdownTrigger>
@@ -1229,7 +1229,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                         {getFileIconComponent('file', file.name)}
                         <span className="text-sm font-medium">{file.name}</span>
                       </div>
-                      <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{formatFileSize(file.size)}</span>
                     </div>
                   ))}
                 </div>

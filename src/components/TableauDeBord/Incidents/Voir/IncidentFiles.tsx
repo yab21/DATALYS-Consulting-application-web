@@ -150,7 +150,7 @@ const PreviewContent: React.FC<{ file: IncidentFile }> = ({ file }) => {
   return (
     <div className="text-center py-8">
       <File className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-      <p className="text-gray-600">
+      <p className="text-gray-600 dark:text-gray-400">
         Prévisualisation non disponible pour ce type de fichier
       </p>
     </div>
@@ -547,7 +547,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
     return {
       bgColor: 'bg-gray-50 dark:bg-gray-900/20',
       borderColor: 'border-gray-200 dark:border-gray-800',
-      iconColor: 'text-gray-500',
+      iconColor: 'text-gray-500 dark:text-gray-400',
       gradient: 'from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20'
     };
   };
@@ -802,7 +802,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
               <Upload className="h-5 w-5 text-[#4ba9b7]" />
               <div>
                 <h3 className="text-lg font-semibold">Upload de fichiers</h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {selectedFiles?.length || 0} fichier(s) sélectionné(s)
                 </p>
               </div>
@@ -886,7 +886,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
                   <Eye className="h-5 w-5 text-[#4ba9b7]" />
                   <div>
                     <h3 className="text-lg font-semibold truncate">{previewFile.file_name}</h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       {incidentFilesService.formatFileSize(previewFile.file_size)} • {previewFile.file_type}
                     </p>
                   </div>

@@ -389,8 +389,8 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
       {/* Header avec métriques SLA si support */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{displayTitle}</h1>
-          <p className="text-gray-600 mt-1">{displayDescription}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{displayTitle}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">{displayDescription}</p>
         </div>
         
         <div className="flex gap-3">
@@ -484,7 +484,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                   return (
                     <TableRow key={incident.id}>
                       <TableCell>
-                        <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                        <code className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                           {incident.incident_number}
                         </code>
                       </TableCell>
@@ -492,7 +492,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                         <div>
                           <p className="font-medium">{incident.title}</p>
                           {incident.description && (
-                            <p className="text-sm text-gray-500 truncate max-w-xs">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                               {incident.description}
                             </p>
                           )}
@@ -590,7 +590,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                   return (
                     <TableRow key={incident.id}>
                       <TableCell>
-                        <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                        <code className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                           {incident.incident_number}
                         </code>
                       </TableCell>
@@ -598,7 +598,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                         <div>
                           <p className="font-medium">{incident.title}</p>
                           {incident.description && (
-                            <p className="text-sm text-gray-500 truncate max-w-xs">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                               {incident.description}
                             </p>
                           )}

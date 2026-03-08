@@ -392,12 +392,12 @@ const SkeletonLoader: React.FC = () => (
     {/* Header skeleton */}
     <div className="flex justify-between items-start">
       <div>
-        <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
-        <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-2 animate-pulse"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96 animate-pulse"></div>
       </div>
       <div className="flex gap-3">
-        <div className="h-10 bg-gray-200 rounded w-24 animate-pulse"></div>
-        <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
+        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
       </div>
     </div>
 
@@ -408,10 +408,10 @@ const SkeletonLoader: React.FC = () => (
           <CardBody className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
-                <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
               </div>
-              <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
             </div>
           </CardBody>
         </Card>
@@ -423,7 +423,7 @@ const SkeletonLoader: React.FC = () => (
       <CardBody className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-10 bg-gray-200 rounded animate-pulse"></div>
+            <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           ))}
         </div>
       </CardBody>
@@ -434,7 +434,7 @@ const SkeletonLoader: React.FC = () => (
       <CardBody className="p-0">
         <div className="space-y-4 p-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+            <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           ))}
         </div>
       </CardBody>
@@ -871,8 +871,8 @@ const SupportIncidents: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support Client</h1>
-          <p className="text-gray-600 mt-1">Gestion des demandes de support clients avec suivi SLA</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Support Client</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Gestion des demandes de support clients avec suivi SLA</p>
         </div>
         
         <div className="flex gap-3">
@@ -904,7 +904,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -928,7 +928,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -952,7 +952,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -976,7 +976,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1000,7 +1000,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1024,7 +1024,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1118,7 +1118,7 @@ const SupportIncidents: React.FC = () => {
               {filteredTickets.map((ticket) => (
                 <TableRow key={ticket.id}>
                   <TableCell>
-                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                    <code className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                       {ticket.incident_number}
                     </code>
                   </TableCell>
@@ -1131,7 +1131,7 @@ const SupportIncidents: React.FC = () => {
                         {ticket.titre}
                       </p>
                       {ticket.description && (
-                        <p className="text-sm text-gray-500 truncate max-w-xs">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                           {ticket.description.substring(0, 100)}
                           {ticket.description.length > 100 ? '...' : ''}
                         </p>
@@ -1338,7 +1338,7 @@ const SupportIncidents: React.FC = () => {
                       isReadOnly
                       className="cursor-not-allowed"
                       classNames={{
-                        input: "text-gray-600 bg-gray-50"
+                        input: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50"
                       }}
                     />
                     
@@ -1473,7 +1473,7 @@ const SupportIncidents: React.FC = () => {
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-2">Informations générales</h4>
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Informations générales</h4>
                         <div className="space-y-2">
                           <p><span className="font-medium">Titre:</span> {selectedTicket.titre}</p>
                           <p><span className="font-medium">Client:</span> {selectedTicket.declarant_name}</p>
@@ -1481,7 +1481,7 @@ const SupportIncidents: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-700 mb-2">Statut et priorité</h4>
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Statut et priorité</h4>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">Priorité:</span>
@@ -1516,9 +1516,9 @@ const SupportIncidents: React.FC = () => {
                     </div>
                     
                     <div>
-                      <h4 className="font-semibold text-gray-700 mb-2">Description</h4>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-gray-700">{selectedTicket.description}</p>
+                      <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Description</h4>
+                      <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                        <p className="text-gray-700 dark:text-gray-300">{selectedTicket.description}</p>
                       </div>
                     </div>
                   </div>
@@ -1630,7 +1630,7 @@ const SupportIncidents: React.FC = () => {
                       isReadOnly
                       className="cursor-not-allowed"
                       classNames={{
-                        input: "text-gray-600 bg-gray-50"
+                        input: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50"
                       }}
                       description="Le type ne peut pas être modifié"
                     />
@@ -1765,10 +1765,10 @@ const SupportIncidents: React.FC = () => {
                   <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                     <AlertTriangle className="h-6 w-6 text-red-600" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                     Supprimer le ticket {selectedTicket?.incident_number}
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Cette action est irréversible. Toutes les données associées à ce ticket seront définitivement supprimées.
                   </p>
                 </div>

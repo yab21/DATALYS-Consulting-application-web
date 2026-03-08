@@ -754,7 +754,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
       }}
     >
       <ModalContent className={isFullscreen ? "h-screen max-h-screen" : ""}>
-        <ModalHeader className="border-b border-gray-200 px-6 py-4">
+        <ModalHeader className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex flex-col space-y-3">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-3">
@@ -762,8 +762,8 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                   <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Gestionnaire de fichiers</h2>
-                  <p className="text-sm text-gray-600">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Gestionnaire de fichiers</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {project.title} {project.partner_name && `• ${project.partner_name}`}
                   </p>
                 </div>
@@ -802,7 +802,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                   <BreadcrumbItem
                     key={index}
                     onPress={() => navigateToBreadcrumb(index)}
-                    className={`${index === breadcrumbPath.length - 1 ? "text-[#4ba9b7] font-medium" : "text-gray-600 hover:text-gray-900 cursor-pointer"}`}
+                    className={`${index === breadcrumbPath.length - 1 ? "text-[#4ba9b7] font-medium" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white cursor-pointer"}`}
                   >
                     {item.name}
                   </BreadcrumbItem>
@@ -818,7 +818,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
             <div className="flex items-center gap-3">
               {breadcrumbPath.length > 1 && (
                 <button
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] transition-colors"
                   onClick={goBack}
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -837,7 +837,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                   </button>
                   
                   <button
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     onClick={() => {
                       console.log('🔘 [UPLOAD DEBUG] - Bouton upload cliqué');
                       const input = document.getElementById('file-upload-input') as HTMLInputElement;
@@ -865,10 +865,10 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                   placeholder="Rechercher..."
                  
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#4ba9b7] focus:border-transparent w-64"
+                  className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4ba9b7] focus:border-transparent w-64"
                 />
               </div>
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
+              <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-md">
                 {filteredFolders.length + filteredFiles.length} élément(s)
               </span>
             </div>
@@ -881,7 +881,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                 <span className="text-sm font-medium">
                   Upload en cours... ({uploadFiles.length} fichier(s))
                 </span>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   {Math.round(uploadProgress)}%
                 </span>
               </div>
@@ -942,9 +942,9 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                     {/* Action buttons - Only visible on hover for admins */}
                     {isAdmin() && (
                       <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <div className="flex items-center gap-0.5 bg-white rounded-md shadow-lg p-0.5">
+                        <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 rounded-md shadow-lg p-0.5">
                           <button
-                            className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                            className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditFolder(folder);
@@ -969,7 +969,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                   </div>
                   
                   {/* Folder name - Below the icon */}
-                  <h3 className="font-medium text-xs text-gray-800 line-clamp-2 text-center mt-1 max-w-[100px] px-1">
+                  <h3 className="font-medium text-xs text-gray-800 dark:text-gray-200 line-clamp-2 text-center mt-1 max-w-[100px] px-1">
                     {folder.name}
                   </h3>
                 </div>
@@ -979,28 +979,28 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
               {filteredFiles.map((file) => (
                 <div
                   key={file.id}
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all"
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all"
                 >
                   <div className="flex flex-col items-center text-center space-y-3">
-                    <div className="p-3 rounded-lg bg-gray-50">
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                       <span className="text-2xl">{getFileIcon(file.mime_type || 'application/octet-stream')}</span>
                     </div>
                     
                     <div className="w-full">
-                      <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">
+                      <h3 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-2 mb-1">
                         {file.original_name || 'Fichier sans nom'}
                       </h3>
-                      <p className="text-xs text-gray-500 mb-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                         {formatFileSize(file.file_size)}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {file.created_at ? new Date(file.created_at).toLocaleDateString('fr-FR') : 'Date inconnue'}
                       </p>
                     </div>
                     
                     <div className="flex items-center gap-1 w-full justify-center">
                       <button
-                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                         onClick={() => handleViewFile(file)}
                         title="Aperçu"
                       >
@@ -1059,15 +1059,15 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
           )}
         </ModalBody>
 
-        <ModalFooter className="border-t border-gray-200 px-6 py-4">
+        <ModalFooter className="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex items-center justify-between w-full">
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               {filteredFolders.length} dossier(s) • {filteredFiles.length} fichier(s)
             </div>
             <button
               onClick={onClose}
               disabled={uploading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Fermer
             </button>
@@ -1230,7 +1230,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
                     <strong>Dossier à supprimer :</strong> {selectedFolder.name}
                   </p>
                   {selectedFolder.description && (
-                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {selectedFolder.description}
                     </p>
                   )}

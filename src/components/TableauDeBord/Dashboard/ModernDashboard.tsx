@@ -572,71 +572,71 @@ const ModernDashboard: React.FC = () => {
         {/* Header skeleton */}
         <div className="flex justify-between items-start">
           <div>
-            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96 animate-pulse"></div>
           </div>
           <div className="flex gap-3">
-            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-40 animate-pulse"></div>
           </div>
         </div>
 
         {/* Stats skeleton */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
-                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
-                  <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
                 </div>
-                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Actions rapides skeleton */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-40 mb-4 animate-pulse"></div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
             ))}
           </div>
         </div>
 
         {/* Activity skeleton */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="h-6 bg-gray-200 rounded w-48 mb-4 animate-pulse"></div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4 animate-pulse"></div>
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-4">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse"></div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
           
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="h-6 bg-gray-200 rounded w-48 mb-4 animate-pulse"></div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4 animate-pulse"></div>
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
                     <div className="space-y-1">
-                      <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
-                      <div className="h-3 bg-gray-200 rounded w-20 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
                     </div>
                   </div>
-                  <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
                 </div>
               ))}
             </div>
@@ -653,19 +653,19 @@ const ModernDashboard: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-lg bg-white p-6 mb-6 shadow-sm border border-gray-200"
+          className="relative overflow-hidden rounded-lg bg-white dark:bg-gray-800 p-6 mb-6 shadow-sm border border-gray-200 dark:border-gray-700"
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="mb-4 lg:mb-0">
               <div className="flex items-center gap-4 mb-2">
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                   DATALYS Dashboard
                 </h1>
               </div>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Bonjour, <span className="font-medium">{user?.name}</span> • {isAdmin() ? 'Administrateur' : 'Partenaire'}
               </p>
-              <div className="flex items-center gap-2 text-gray-500 text-sm mt-1">
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mt-1">
                 <Clock className="w-4 h-4" />
                 <span>{new Date().toLocaleDateString('fr-FR', { 
                   weekday: 'long', 
@@ -680,13 +680,13 @@ const ModernDashboard: React.FC = () => {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ba9b7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Actualiser
               </button>
               
-              <div className="flex items-center gap-2 px-4 py-2 text-sm bg-green-50 text-green-700 rounded-md border border-green-200">
+              <div className="flex items-center gap-2 px-4 py-2 text-sm bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-md border border-green-200 dark:border-green-800">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="font-medium">Système Opérationnel</span>
               </div>
@@ -703,7 +703,7 @@ const ModernDashboard: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
                     <div className="w-16 h-16 rounded-lg bg-[#4ba9b7] flex items-center justify-center">
@@ -712,7 +712,7 @@ const ModernDashboard: React.FC = () => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h2 className="text-xl font-bold text-gray-900">
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                         {partnerData.partner.name}
                       </h2>
                       <span className={`px-2 py-1 text-xs font-medium rounded ${
@@ -723,7 +723,7 @@ const ModernDashboard: React.FC = () => {
                         {partnerData.partner.is_active ? "Actif" : "Inactif"}
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center gap-2">
                         <MessageCircle className="w-4 h-4 text-gray-400" />
                         <span>{partnerData.partner.email}</span>
@@ -754,95 +754,95 @@ const ModernDashboard: React.FC = () => {
               className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             >
               {/* Carte Projets */}
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 rounded-md bg-[#4ba9b7]/10">
                     <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">{partnerData.projectStats.total}</div>
-                    <div className="text-xs text-gray-500 uppercase">Projets</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{partnerData.projectStats.total}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Projets</div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Actifs</span>
-                    <span className="text-gray-900 font-medium">{partnerData.projectStats.active}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Actifs</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{partnerData.projectStats.active}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Terminés</span>
-                    <span className="text-gray-900 font-medium">{partnerData.projectStats.completed}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Terminés</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{partnerData.projectStats.completed}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Incidents */}
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 rounded-md bg-red-50">
+                  <div className="p-2 rounded-md bg-red-50 dark:bg-red-900/30">
                     <AlertTriangle className="w-5 h-5 text-red-600" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">{partnerData.incidentStats.total}</div>
-                    <div className="text-xs text-gray-500 uppercase">Incidents</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{partnerData.incidentStats.total}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Incidents</div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Ouverts</span>
-                    <span className="text-gray-900 font-medium">
+                    <span className="text-gray-500 dark:text-gray-400">Ouverts</span>
+                    <span className="text-gray-900 dark:text-white font-medium">
                       {(partnerData.incidentStats.by_status?.nouveau || 0) + (partnerData.incidentStats.by_status?.en_cours || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Critiques</span>
+                    <span className="text-gray-500 dark:text-gray-400">Critiques</span>
                     <span className="text-red-600 font-medium">{partnerData.incidentStats.by_priority?.P0 || 0}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Performance */}
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 rounded-md bg-green-50">
+                  <div className="p-2 rounded-md bg-green-50 dark:bg-green-900/30">
                     <Zap className="w-5 h-5 text-green-600" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">98.5%</div>
-                    <div className="text-xs text-gray-500 uppercase">Uptime</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">98.5%</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Uptime</div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Ce mois</span>
-                    <span className="text-gray-900 font-medium">99.2%</span>
+                    <span className="text-gray-500 dark:text-gray-400">Ce mois</span>
+                    <span className="text-gray-900 dark:text-white font-medium">99.2%</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">SLA</span>
+                    <span className="text-gray-500 dark:text-gray-400">SLA</span>
                     <span className="text-green-600 font-medium">Respecté</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Activité */}
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 rounded-md bg-purple-50">
+                  <div className="p-2 rounded-md bg-purple-50 dark:bg-purple-900/30">
                     <Activity className="w-5 h-5 text-purple-600" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">{partnerData.activitySummary.active_sessions || 12}</div>
-                    <div className="text-xs text-gray-500 uppercase">Sessions</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{partnerData.activitySummary.active_sessions || 12}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Sessions</div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Utilisateurs</span>
-                    <span className="text-gray-900 font-medium">{partnerData.activitySummary.active_users || 8}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Utilisateurs</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{partnerData.activitySummary.active_users || 8}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Pics</span>
-                    <span className="text-gray-900 font-medium">15</span>
+                    <span className="text-gray-500 dark:text-gray-400">Pics</span>
+                    <span className="text-gray-900 dark:text-white font-medium">15</span>
                   </div>
                 </div>
               </div>
@@ -857,28 +857,28 @@ const ModernDashboard: React.FC = () => {
                 className="grid gap-6 lg:grid-cols-3"
               >
                 {/* Statut des Incidents */}
-                <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-indigo-200">
+                <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-indigo-200 dark:border-indigo-800">
                   <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 rounded-lg bg-indigo-100 border border-indigo-200">
+                      <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700">
                         <Target className="w-5 h-5 text-indigo-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-800">Incidents par Statut</h3>
-                        <p className="text-sm text-gray-600">{partnerData.incidentStats.total} au total</p>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Incidents par Statut</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.incidentStats.total} au total</p>
                       </div>
                     </div>
                     <div className="space-y-3">
                       {Object.entries(partnerData.incidentStats.by_status || {}).map(([status, count]: [string, any]) => (
-                        <div key={status} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
+                        <div key={status} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
                           <div className="flex items-center gap-3">
                             <div className={`w-3 h-3 rounded-full ${
                               status === 'nouveau' ? 'bg-blue-500' :
                               status === 'en_cours' ? 'bg-orange-500' :
                               status === 'resolu' ? 'bg-green-500' : 'bg-gray-500'
                             }`}></div>
-                            <span className="text-gray-800 font-medium capitalize">{status.replace('_', ' ')}</span>
+                            <span className="text-gray-800 dark:text-gray-200 font-medium capitalize">{status.replace('_', ' ')}</span>
                           </div>
                           <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
                             status === 'nouveau' ? 'bg-blue-100 text-blue-700' :
@@ -894,28 +894,28 @@ const ModernDashboard: React.FC = () => {
                 </div>
 
                 {/* Priorités */}
-                <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-red-200">
+                <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-red-200 dark:border-red-800">
                   <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-red-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 rounded-lg bg-red-100 border border-red-200">
+                      <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700">
                         <AlertTriangle className="w-5 h-5 text-red-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-800">Par Priorité</h3>
-                        <p className="text-sm text-gray-600">Classification SLA</p>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Par Priorité</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Classification SLA</p>
                       </div>
                     </div>
                     <div className="space-y-3">
                       {Object.entries(partnerData.incidentStats.by_priority || {}).map(([priority, count]: [string, any]) => (
-                        <div key={priority} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
+                        <div key={priority} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
                           <div className="flex items-center gap-3">
                             <div className={`w-3 h-3 rounded-full ${
                               priority === 'P0' ? 'bg-red-500' :
                               priority === 'P1' ? 'bg-orange-500' :
                               priority === 'P2' ? 'bg-yellow-500' : 'bg-green-500'
                             }`}></div>
-                            <span className="text-gray-800 font-medium">{priority}</span>
+                            <span className="text-gray-800 dark:text-gray-200 font-medium">{priority}</span>
                           </div>
                           <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
                             priority === 'P0' ? 'bg-red-100 text-red-700' :
@@ -931,24 +931,24 @@ const ModernDashboard: React.FC = () => {
                 </div>
 
                 {/* Types */}
-                <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-purple-200">
+                <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-purple-200 dark:border-purple-800">
                   <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 rounded-lg bg-purple-100 border border-purple-200">
+                      <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700">
                         <XCircle className="w-5 h-5 text-purple-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-800">Par Catégorie</h3>
-                        <p className="text-sm text-gray-600">Types d'incidents</p>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Par Catégorie</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Types d'incidents</p>
                       </div>
                     </div>
                     <div className="space-y-3">
                       {Object.entries(partnerData.incidentStats.by_type || {}).map(([type, count]: [string, any]) => (
-                        <div key={type} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
+                        <div key={type} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
                           <div className="flex items-center gap-3">
                             <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                            <span className="text-gray-800 font-medium capitalize">{type}</span>
+                            <span className="text-gray-800 dark:text-gray-200 font-medium capitalize">{type}</span>
                           </div>
                           <div className="px-3 py-1 rounded-lg text-sm font-bold bg-purple-100 text-purple-700">
                             {count}
@@ -970,7 +970,7 @@ const ModernDashboard: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-gray-200">
+                  <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-gray-200 dark:border-gray-700">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-gray-50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
                     <div className="relative z-10">
                       <div className="flex items-center gap-3 mb-6">
@@ -978,8 +978,8 @@ const ModernDashboard: React.FC = () => {
                           <FolderOpen className="w-6 h-6 text-[#4ba9b7]" />
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-gray-800">Projets Récents</h3>
-                          <p className="text-sm text-gray-600">{partnerData.recentProjects.length} projets actifs</p>
+                          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Projets Récents</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.recentProjects.length} projets actifs</p>
                         </div>
                       </div>
                       
@@ -990,7 +990,7 @@ const ModernDashboard: React.FC = () => {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 * index }}
-                            className="group p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-[#4ba9b7] transition-all duration-300 cursor-pointer"
+                            className="group p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 hover:border-[#4ba9b7] transition-all duration-300 cursor-pointer"
                             onClick={() => window.location.href = `/tableaudebord/projet/pageprojet/${project.id}`}
                           >
                             <div className="flex items-center justify-between">
@@ -999,10 +999,10 @@ const ModernDashboard: React.FC = () => {
                                   <FolderOpen className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
-                                  <h4 className="font-bold text-gray-800 group-hover:text-[#4ba9b7] transition-colors">
+                                  <h4 className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-[#4ba9b7] transition-colors">
                                     {project.title}
                                   </h4>
-                                  <p className="text-sm text-gray-600">
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">
                                     {new Date(project.created_at).toLocaleDateString('fr-FR', { 
                                       day: 'numeric', 
                                       month: 'short' 
@@ -1019,7 +1019,7 @@ const ModernDashboard: React.FC = () => {
                                 }`}>
                                   {project.is_active ? "✓ Actif" : "Inactif"}
                                 </div>
-                                <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-[#4ba9b7] transition-colors" />
+                                <ExternalLink className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-[#4ba9b7] transition-colors" />
                               </div>
                             </div>
                           </motion.div>
@@ -1027,8 +1027,8 @@ const ModernDashboard: React.FC = () => {
                       </div>
                       
                       {partnerData.recentProjects.length > 3 && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <p className="text-sm text-gray-600 text-center">
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
                             +{partnerData.recentProjects.length - 3} projets supplémentaires
                           </p>
                         </div>
@@ -1045,16 +1045,16 @@ const ModernDashboard: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <div className="relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-sm p-6 shadow-xl border border-red-200">
+                  <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-red-200 dark:border-red-800">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
                     <div className="relative z-10">
                       <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 rounded-xl bg-red-100 border border-red-200">
+                        <div className="p-3 rounded-xl bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700">
                           <AlertTriangle className="w-6 h-6 text-red-600" />
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-gray-800">Incidents Critiques</h3>
-                          <p className="text-sm text-gray-600">{partnerData.recentIncidents.length} incidents récents</p>
+                          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Incidents Critiques</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.recentIncidents.length} incidents récents</p>
                         </div>
                       </div>
                       
@@ -1065,7 +1065,7 @@ const ModernDashboard: React.FC = () => {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 * index }}
-                            className="group p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-red-400 transition-all duration-300 cursor-pointer"
+                            className="group p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 hover:border-red-400 transition-all duration-300 cursor-pointer"
                             onClick={() => window.location.href = `/tableaudebord/incidents/${incident.id}`}
                           >
                             <div className="flex items-start justify-between">
@@ -1078,10 +1078,10 @@ const ModernDashboard: React.FC = () => {
                                   <AlertTriangle className="h-6 w-6 text-white" />
                                 </div>
                                 <div className="flex-1">
-                                  <h4 className="font-bold text-gray-800 group-hover:text-red-600 transition-colors">
+                                  <h4 className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-red-600 transition-colors">
                                     {incident.title}
                                   </h4>
-                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                                     {incident.description}
                                   </p>
                                   <div className="flex items-center gap-4 mt-3">
@@ -1099,22 +1099,22 @@ const ModernDashboard: React.FC = () => {
                                     }`}>
                                       {incident.status}
                                     </div>
-                                    <span className="text-xs text-gray-600">
+                                    <span className="text-xs text-gray-600 dark:text-gray-400">
                                       {formatTimeAgo(incident.created_at)}
                                     </span>
                                   </div>
                                 </div>
                               </div>
                               
-                              <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-red-600 transition-colors" />
+                              <ExternalLink className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 transition-colors" />
                             </div>
                           </motion.div>
                         ))}
                       </div>
                       
                       {partnerData.recentIncidents.length > 3 && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <p className="text-sm text-gray-600 text-center">
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
                             +{partnerData.recentIncidents.length - 3} incidents supplémentaires
                           </p>
                         </div>
@@ -1138,65 +1138,65 @@ const ModernDashboard: React.FC = () => {
               className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
             >
               {/* Carte Projets */}
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="p-2 rounded-md bg-[#4ba9b7]/10">
                     <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">{stats.projects.total}</div>
-                    <div className="text-xs text-gray-500 uppercase">Projets</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.projects.total}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Projets</div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Actifs</span>
-                    <span className="text-gray-900 font-medium">{stats.projects.active}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Actifs</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{stats.projects.active}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Terminés</span>
-                    <span className="text-gray-900 font-medium">{stats.projects.completed}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Terminés</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{stats.projects.completed}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Partenaires */}
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 rounded-md bg-green-50">
+                  <div className="p-2 rounded-md bg-green-50 dark:bg-green-900/30">
                     <Users className="w-5 h-5 text-green-600" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">{stats.partners.total}</div>
-                    <div className="text-xs text-gray-500 uppercase">Partenaires</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.partners.total}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Partenaires</div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Actifs</span>
-                    <span className="text-gray-900 font-medium">{stats.partners.active}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Actifs</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{stats.partners.active}</span>
                   </div>
                 </div>
               </div>
 
               {/* Carte Incidents */}
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 rounded-md bg-red-50">
+                  <div className="p-2 rounded-md bg-red-50 dark:bg-red-900/30">
                     <AlertTriangle className="w-5 h-5 text-red-600" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">{stats.incidents?.total || 0}</div>
-                    <div className="text-xs text-gray-500 uppercase">Incidents</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.incidents?.total || 0}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Incidents</div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Ouverts</span>
-                    <span className="text-gray-900 font-medium">{stats.incidents?.open || 0}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Ouverts</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{stats.incidents?.open || 0}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Critiques</span>
+                    <span className="text-gray-500 dark:text-gray-400">Critiques</span>
                     <span className="text-red-600 font-medium">{stats.incidents?.critical || 0}</span>
                   </div>
                 </div>
@@ -1210,15 +1210,15 @@ const ModernDashboard: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="mb-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-md bg-[#4ba9b7]/10">
                       <Building2 className="w-6 h-6 text-[#4ba9b7]" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900">Partenaires & Projets</h3>
-                      <p className="text-sm text-gray-600">Vue d'ensemble de tous les partenaires</p>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Partenaires & Projets</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Vue d'ensemble de tous les partenaires</p>
                     </div>
                   </div>
                 </div>
@@ -1239,7 +1239,7 @@ const ModernDashboard: React.FC = () => {
                           <TableCell>
                             <div className="flex items-center gap-3">
                               {fixImageUrl(partner.logo_url) ? (
-                                <div className="w-12 h-12 rounded-md border border-gray-200 overflow-hidden bg-white flex items-center justify-center p-1 shadow-sm flex-shrink-0">
+                                <div className="w-12 h-12 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center p-1 shadow-sm flex-shrink-0">
                                   <img
                                     src={fixImageUrl(partner.logo_url)!}
                                     alt={`Logo ${partner.partner_name}`}
@@ -1261,7 +1261,7 @@ const ModernDashboard: React.FC = () => {
                               )}
                               <div>
                                 <p
-                                  className="font-semibold text-gray-900 cursor-pointer hover:text-[#4ba9b7] transition-colors"
+                                  className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-[#4ba9b7] transition-colors"
                                   onClick={() => handleViewPartner(partner.partner_id)}
                                 >
                                   {partner.partner_name}
@@ -1297,7 +1297,7 @@ const ModernDashboard: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                                 <div 
                                   className="bg-[#4ba9b7] h-2 rounded-full" 
                                   style={{ 
@@ -1305,7 +1305,7 @@ const ModernDashboard: React.FC = () => {
                                   }}
                                 ></div>
                               </div>
-                              <span className="text-sm font-medium text-gray-600">
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                                 {partner.total_projects > 0 ? Math.round((partner.active_projects / partner.total_projects) * 100) : 0}%
                               </span>
                             </div>

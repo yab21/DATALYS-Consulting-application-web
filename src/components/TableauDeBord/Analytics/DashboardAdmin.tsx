@@ -512,7 +512,7 @@ const DashboardAdmin: React.FC = () => {
                             partner.activityScore >= 60 ? "warning" : "danger"
                           }
                         />
-                        <p className="text-xs text-gray-500 mt-1">{partner.activityScore}%</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{partner.activityScore}%</p>
                       </div>
                     </div>
                   </div>
@@ -587,7 +587,7 @@ const DashboardAdmin: React.FC = () => {
 
       {/* Activité mensuelle */}
       <motion.div
-        className="rounded-2xl border border-gray-100 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-2xl border border-gray-100 bg-white dark:bg-gray-800 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}

@@ -884,8 +884,8 @@ const ModernMessagesInterface: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 rounded-2xl bg-gray-200 animate-pulse dark:bg-gray-700" />
-        <div className="h-96 rounded-2xl bg-gray-200 animate-pulse dark:bg-gray-700" />
+        <div className="h-32 rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse dark:bg-gray-700" />
+        <div className="h-96 rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse dark:bg-gray-700" />
       </div>
     );
   }
@@ -950,7 +950,7 @@ const ModernMessagesInterface: React.FC = () => {
               {/* Liste des conversations */}
               <ScrollShadow className="flex-1">
                 {filteredConversations.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
+                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                     <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Aucune conversation trouvée</p>
                   </div>
@@ -984,7 +984,7 @@ const ModernMessagesInterface: React.FC = () => {
                                   {conversation.priority}
                                 </Chip>
                               </div>
-                              <span className="text-xs text-gray-500 flex-shrink-0">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                                 {formatTime(conversation.updatedAt)}
                               </span>
                             </div>
@@ -1395,30 +1395,30 @@ const ModernMessagesInterface: React.FC = () => {
                     <Trash2 className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">Supprimer le message</h3>
-                    <p className="text-sm text-gray-600 mt-1">Cette action est irréversible</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Supprimer le message</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Cette action est irréversible</p>
                   </div>
                 </div>
               </ModalHeader>
               
               <ModalBody>
                 <div className="space-y-4">
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 dark:text-gray-300">
                     Êtes-vous sûr de vouloir supprimer ce message ? Cette action ne peut pas être annulée.
                   </p>
                   
                   {messageToDelete && (
-                    <div className="bg-gray-50 rounded-lg p-4 border">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-gray-700">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           {extractUserName(messageToDelete)}
                         </span>
                         <div className={`w-2 h-2 rounded-full ${getPriorityColor(messageToDelete.priority)}`} />
                       </div>
-                      <p className="text-sm text-gray-600 line-clamp-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
                         {messageToDelete.description}
                       </p>
-                      <span className="text-xs text-gray-500 mt-2 block">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 block">
                         {formatTime(messageToDelete.created_at)}
                       </span>
                     </div>

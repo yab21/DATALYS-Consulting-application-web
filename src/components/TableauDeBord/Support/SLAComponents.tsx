@@ -85,7 +85,7 @@ export const SLACountdown: React.FC<SLACountdownProps> = ({
     <Card className="border-l-4 border-l-blue-500">
       <CardBody className="p-4">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-gray-700">Temps de résolution SLA</h4>
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Temps de résolution SLA</h4>
           <Chip 
             color={getStatusColor(slaStatus.resolutionStatus)}
             size="sm"
@@ -115,7 +115,7 @@ export const SLACountdown: React.FC<SLACountdownProps> = ({
           
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
-              <span className="text-gray-500">Prise en charge</span>
+              <span className="text-gray-500 dark:text-gray-400">Prise en charge</span>
               <div className="flex items-center gap-1 mt-1">
                 {slaStatus.interventionStatus === 'ok' ? 
                   <CheckCircle size={12} className="text-green-500" /> :
@@ -129,8 +129,8 @@ export const SLACountdown: React.FC<SLACountdownProps> = ({
               </div>
             </div>
             <div>
-              <span className="text-gray-500">Objectif résolution</span>
-              <div className="mt-1 font-medium text-gray-700">
+              <span className="text-gray-500 dark:text-gray-400">Objectif résolution</span>
+              <div className="mt-1 font-medium text-gray-700 dark:text-gray-300">
                 {formatTime(priorityConfig.sla.resolution)}
               </div>
             </div>
@@ -196,7 +196,7 @@ export const SLAMetrics: React.FC<SLAMetricsProps> = ({ tickets }) => {
     return (
       <Card>
         <CardBody className="text-center p-8">
-          <p className="text-gray-500">Aucune donnée disponible pour les métriques SLA</p>
+          <p className="text-gray-500 dark:text-gray-400">Aucune donnée disponible pour les métriques SLA</p>
         </CardBody>
       </Card>
     );
@@ -229,7 +229,7 @@ export const SLAMetrics: React.FC<SLAMetricsProps> = ({ tickets }) => {
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Conformité SLA</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Conformité SLA</p>
                 <p className="text-2xl font-bold text-green-600">
                   {metrics.slaComplianceRate.toFixed(1)}%
                 </p>
@@ -250,7 +250,7 @@ export const SLAMetrics: React.FC<SLAMetricsProps> = ({ tickets }) => {
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Tickets actifs</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Tickets actifs</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {metrics.activeTickets}
                 </p>
@@ -271,7 +271,7 @@ export const SLAMetrics: React.FC<SLAMetricsProps> = ({ tickets }) => {
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Tickets résolus</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Tickets résolus</p>
                 <p className="text-2xl font-bold text-purple-600">
                   {metrics.resolvedTickets}
                 </p>
@@ -292,12 +292,12 @@ export const SLAMetrics: React.FC<SLAMetricsProps> = ({ tickets }) => {
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total tickets</p>
-                <p className="text-2xl font-bold text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total tickets</p>
+                <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
                   {metrics.totalTickets}
                 </p>
               </div>
-              <Timer className="text-gray-500" size={24} />
+              <Timer className="text-gray-500 dark:text-gray-400" size={24} />
             </div>
           </CardBody>
         </Card>
@@ -312,7 +312,7 @@ export const SLAMetrics: React.FC<SLAMetricsProps> = ({ tickets }) => {
       >
         <Card>
           <CardBody className="p-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
               Délai moyen de résolution par priorité
             </h4>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -351,12 +351,12 @@ export const ClientSatisfactionMetrics: React.FC = () => {
   return (
     <Card>
       <CardBody className="p-4">
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">
+        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
           Satisfaction Client
         </h4>
         <div className="text-center">
           <p className="text-3xl font-bold text-green-600 mb-1">8.5/10</p>
-          <p className="text-sm text-gray-500">Note moyenne post-résolution</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Note moyenne post-résolution</p>
           <div className="mt-3 text-xs text-gray-400">
             Basé sur 45 évaluations ce mois
           </div>

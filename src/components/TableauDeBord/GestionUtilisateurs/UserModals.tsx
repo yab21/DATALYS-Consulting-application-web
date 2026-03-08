@@ -217,7 +217,7 @@ const UserModals: React.FC<UserModalsProps> = ({
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1 pb-4">
             <div className="flex items-center gap-4">
-              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg dark:border-gray-600">
+              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg dark:border-gray-600">
                 <div className="text-2xl font-bold">
                   {user.name.charAt(0).toUpperCase()}
                 </div>

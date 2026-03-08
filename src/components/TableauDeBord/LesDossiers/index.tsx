@@ -23,7 +23,7 @@ const LesDossiers: React.FC = () => {
         Les différents dossiers de DATALYS Consulting
       </h4>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-3 2xl:gap-7.5">
-        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark">
+        <div className="rounded-[10px] bg-white dark:bg-gray-800 p-6 shadow-1 dark:bg-gray-dark">
           <div className="flex h-14.5 w-14.5 items-center justify-center rounded-full bg-[#4aa9b8]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -104,7 +104,7 @@ const LesDossiers: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark">
+        <div className="rounded-[10px] bg-white dark:bg-gray-800 p-6 shadow-1 dark:bg-gray-dark">
           <div className="flex h-14.5 w-14.5 items-center justify-center rounded-full bg-[#4aa9b8]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -185,7 +185,7 @@ const LesDossiers: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark">
+        <div className="rounded-[10px] bg-white dark:bg-gray-800 p-6 shadow-1 dark:bg-gray-dark">
           <div className="flex h-14.5 w-14.5 items-center justify-center rounded-full bg-[#4aa9b8]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -268,7 +268,7 @@ const LesDossiers: React.FC = () => {
         </div>
       </div>
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-3 2xl:gap-7.5">
-        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark">
+        <div className="rounded-[10px] bg-white dark:bg-gray-800 p-6 shadow-1 dark:bg-gray-dark">
           <div className="flex h-14.5 w-14.5 items-center justify-center rounded-full bg-[#4aa9b8]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -349,7 +349,7 @@ const LesDossiers: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark">
+        <div className="rounded-[10px] bg-white dark:bg-gray-800 p-6 shadow-1 dark:bg-gray-dark">
           <div className="flex h-14.5 w-14.5 items-center justify-center rounded-full bg-[#4aa9b8]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -430,7 +430,7 @@ const LesDossiers: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark">
+        <div className="rounded-[10px] bg-white dark:bg-gray-800 p-6 shadow-1 dark:bg-gray-dark">
           <div className="flex h-14.5 w-14.5 items-center justify-center rounded-full bg-[#4aa9b8]">
             <svg
               xmlns="http://www.w3.org/2000/svg"

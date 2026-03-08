@@ -357,7 +357,7 @@ const AjouterUtilisateur: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                      className="text-gray-400 hover:text-gray-600 dark:text-gray-400 focus:outline-none"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -382,7 +382,7 @@ const AjouterUtilisateur: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                      className="text-gray-400 hover:text-gray-600 dark:text-gray-400 focus:outline-none"
                     >
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -481,7 +481,7 @@ const AjouterUtilisateur: React.FC = () => {
             )}
             
             {/* Description du rôle */}
-            <div className="mt-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+            <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 dark:bg-gray-700/50">
               {formData.role_name === "admin" ? (
                 <div>
                   <h5 className="mb-2 font-semibold text-[#3a8a95] dark:text-[#4ba9b7]">
@@ -560,7 +560,7 @@ const AjouterUtilisateur: React.FC = () => {
 
 
           {/* Actions */}
-          <div className="border-t border-gray-200 pt-6 dark:border-gray-600">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6 dark:border-gray-600">
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-end">
               <Link href="/tableaudebord/gestion-utilisateurs">
                 <ProfessionalButton

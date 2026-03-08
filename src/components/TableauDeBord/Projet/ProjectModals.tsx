@@ -265,7 +265,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1 pb-4">
             <div className="flex items-center gap-4">
-              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg dark:border-gray-600">
+              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg dark:border-gray-600">
                 <FolderOpen className="h-8 w-8" />
               </div>
               <div>
@@ -332,7 +332,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
               <Card>
                 <CardBody className="p-4">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-500" />
+                    <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Dernière modification</p>
                       <p className="font-medium">
@@ -539,7 +539,7 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
               </div>
               <div>
                 <h3 className="text-xl font-bold">Nouveau Projet</h3>
-                <p className="text-sm text-gray-600">Créer un nouveau projet</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Créer un nouveau projet</p>
               </div>
             </div>
           </ModalHeader>

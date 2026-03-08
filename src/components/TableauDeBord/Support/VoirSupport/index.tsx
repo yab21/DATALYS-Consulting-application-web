@@ -202,8 +202,8 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
         <Breadcrumb pageName="Erreur" />
         <div className="text-center py-12">
           <div className="text-red-500 text-xl mb-2">⚠️</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Erreur</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <div className="space-x-3">
             <Button
               onPress={loadTicketData}
@@ -229,7 +229,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
       <>
         <Breadcrumb pageName="Ticket introuvable" />
         <div className="text-center py-12">
-          <h3 className="text-lg font-semibold text-gray-600">Ticket introuvable</h3>
+          <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400">Ticket introuvable</h3>
           <p className="text-gray-400 mt-2">Le ticket demandé n'existe pas ou vous n'y avez pas accès.</p>
           <Button
             onPress={() => router.back()}
@@ -403,7 +403,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <FileText className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Numéro de ticket</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Numéro de ticket</p>
                           <p className="font-medium">#{ticket.incident_number}</p>
                         </div>
                       </div>
@@ -411,7 +411,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Headphones className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Type</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Type</p>
                           <p className="font-medium">{ticket.type}</p>
                         </div>
                       </div>
@@ -419,7 +419,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Settings className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Catégorie</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Catégorie</p>
                           <p className="font-medium">{ticket.category}</p>
                         </div>
                       </div>
@@ -427,7 +427,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <UserIcon className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Déclaré par</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Déclaré par</p>
                           <p className="font-medium">{ticket.declarant_name}</p>
                         </div>
                       </div>
@@ -437,7 +437,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Shield className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Priorité</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Priorité</p>
                           <Chip
                             color={getPriorityColor(ticket.priority)}
                             variant="flat"
@@ -452,7 +452,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Activity className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Impact</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Impact</p>
                           <p className="font-medium">{ticket.impact_label}</p>
                         </div>
                       </div>
@@ -460,7 +460,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Building2 className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Domaine</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Domaine</p>
                           <p className="font-medium">{ticket.domain}</p>
                         </div>
                       </div>
@@ -468,7 +468,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Calendar className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Dernière mise à jour</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Dernière mise à jour</p>
                           <p className="font-medium">{formatDate(ticket.updated_at)}</p>
                         </div>
                       </div>
@@ -547,7 +547,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       {loadingUser ? (
                         <div className="flex items-center gap-2">
                           <Spinner size="sm" />
-                          <span className="text-gray-500">Chargement...</span>
+                          <span className="text-gray-500 dark:text-gray-400">Chargement...</span>
                         </div>
                       ) : assignedUser ? (
                         <div className="flex items-center gap-3">
@@ -558,11 +558,11 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                           />
                           <div>
                             <p className="font-medium">{assignedUser.name}</p>
-                            <p className="text-sm text-gray-500">{assignedUser.email}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{assignedUser.email}</p>
                           </div>
                         </div>
                       ) : (
-                        <p className="text-gray-500">Agent {ticket.user_id}</p>
+                        <p className="text-gray-500 dark:text-gray-400">Agent {ticket.user_id}</p>
                       )}
                     </div>
 
@@ -575,18 +575,18 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                       <div className="space-y-3">
                         <div className="flex items-center gap-3 text-sm">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-gray-500">Créé le</span>
+                          <span className="text-gray-500 dark:text-gray-400">Créé le</span>
                           <span className="font-medium">{formatDate(ticket.created_at)}</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
                           <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                          <span className="text-gray-500">Dernière mise à jour</span>
+                          <span className="text-gray-500 dark:text-gray-400">Dernière mise à jour</span>
                           <span className="font-medium">{formatDate(ticket.updated_at)}</span>
                         </div>
                         {ticket.status === 'resolu' && (
                           <div className="flex items-center gap-3 text-sm">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-gray-500">Résolu</span>
+                            <span className="text-gray-500 dark:text-gray-400">Résolu</span>
                             <span className="font-medium">Status: Résolu</span>
                           </div>
                         )}
@@ -637,12 +637,12 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                               <div className="mt-3 space-y-2">
                                 <div className="flex items-center gap-2 text-sm">
                                   <Building2 className="w-4 h-4 text-gray-400" />
-                                  <span className="text-gray-500">Partenaire:</span>
+                                  <span className="text-gray-500 dark:text-gray-400">Partenaire:</span>
                                   <span className="font-medium">{project.partner_name}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">
                                   <Calendar className="w-4 h-4 text-gray-400" />
-                                  <span className="text-gray-500">Créé le:</span>
+                                  <span className="text-gray-500 dark:text-gray-400">Créé le:</span>
                                   <span className="font-medium">{formatDate(project.created_at)}</span>
                                 </div>
                               </div>
@@ -660,7 +660,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                     ) : (
                       <div className="text-center py-8">
                         <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-500">Aucun projet associé trouvé</p>
+                        <p className="text-gray-500 dark:text-gray-400">Aucun projet associé trouvé</p>
                       </div>
                     )}
                   </div>

@@ -87,7 +87,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
       return <Archive {...iconProps} className="w-6 h-6 text-amber-500" />;
     }
-    return <FileText {...iconProps} className="w-6 h-6 text-gray-500" />;
+    return <FileText {...iconProps} className="w-6 h-6 text-gray-500 dark:text-gray-400" />;
   };
 
   // Function pour corriger les URLs d'images
@@ -452,8 +452,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
         <Breadcrumb pageName="Erreur" />
         <div className="text-center py-12">
           <div className="text-red-500 text-xl mb-2">⚠️</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Erreur</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <div className="space-x-3">
             <Button
               onPress={loadPartnerData}
@@ -479,7 +479,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       <>
         <Breadcrumb pageName="Partenaire introuvable" />
         <div className="text-center py-12">
-          <h3 className="text-lg font-semibold text-gray-600">Partenaire introuvable</h3>
+          <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400">Partenaire introuvable</h3>
           <p className="text-gray-400 mt-2">Le partenaire demandé n'existe pas ou vous n'y avez pas accès.</p>
           <Button
             onPress={() => router.back()}
@@ -688,7 +688,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Mail className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Email</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
                           <p className="font-medium">{partner.email}</p>
                         </div>
                       </div>
@@ -696,7 +696,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Phone className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Téléphone</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Téléphone</p>
                           <p className="font-medium">{partner.phone}</p>
                         </div>
                       </div>
@@ -704,7 +704,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <MapPin className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Adresse</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Adresse</p>
                           <p className="font-medium">{partner.address}</p>
                         </div>
                       </div>
@@ -714,7 +714,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Calendar className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Date de création</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Date de création</p>
                           <p className="font-medium">{formatDate(partner.created_at)}</p>
                         </div>
                       </div>
@@ -722,7 +722,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <User className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Statut</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Statut</p>
                           <Chip
                             color={partner.is_active ? "success" : "danger"}
                             variant="flat"
@@ -741,7 +741,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                           <div className="flex items-start space-x-3">
                             <Building className="text-gray-400 mt-1" size={20} />
                             <div>
-                              <p className="text-sm text-gray-500 mb-2">Logo</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Logo</p>
                               <img 
                                 src={fixedLogoUrl} 
                                 alt={`Logo ${partner.name}`}
@@ -757,7 +757,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                           <div className="flex items-start space-x-3">
                             <Building className="text-gray-400 mt-1" size={20} />
                             <div>
-                              <p className="text-sm text-gray-500 mb-2">Logo</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Logo</p>
                               <div className="w-16 h-16 bg-gradient-to-br from-[#4ba9b7] to-blue-600 rounded-lg flex items-center justify-center border">
                                 <span className="text-white font-bold text-xl uppercase">
                                   {partner.name.slice(0, 2)}
@@ -791,10 +791,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       {/* Statistiques */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">{projects.length} projet{projects.length > 1 ? 's' : ''}</span>
+                          <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{projects.length} projet{projects.length > 1 ? 's' : ''}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <span className="w-2 h-2 rounded-full bg-green-500"></span>
                             <span>{projects.filter(p => p.is_active).length} actif{projects.filter(p => p.is_active).length > 1 ? 's' : ''}</span>
@@ -848,7 +848,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                       </p>
                                     )}
 
-                                    <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                                    <div className="flex items-center gap-2 mt-3 text-xs text-gray-500 dark:text-gray-400">
                                       <Calendar className="w-3 h-3" />
                                       <span>{formatDate(project.created_at)}</span>
                                     </div>
@@ -857,7 +857,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
 
                                 {/* Barre de navigation au survol */}
                                 <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <div className="flex items-center justify-between text-xs text-gray-500">
+                                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                     <span>Cliquez pour voir le projet</span>
                                     <ArrowRight className="w-4 h-4 text-[#4ba9b7]" />
                                   </div>
@@ -903,10 +903,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       {/* Statistiques */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <HardDrive className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">Racine</span>
+                          <HardDrive className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Racine</span>
                         </div>
-                        <div className="flex items-center gap-6 text-sm text-gray-600">
+                        <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <FileText className="w-4 h-4" />
                             <span>{fileStats.totalFiles} fichier{fileStats.totalFiles !== 1 ? 's' : ''}</span>
@@ -1057,7 +1057,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                         <h4 className="font-medium text-gray-900 dark:text-white truncate">
                                           {file.name}
                                         </h4>
-                                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                                        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                                           {file.extension && <span>{file.extension.toUpperCase()}</span>}
                                           {file.size > 0 && <span>{formatFileSize(file.size)}</span>}
                                           <span>{formatDate(file.created_at)}</span>
@@ -1065,7 +1065,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                       </div>
                                       <Dropdown>
                                         <DropdownTrigger>
-                                          <Button size="sm" variant="light" isIconOnly className="text-gray-400 hover:text-gray-600">
+                                          <Button size="sm" variant="light" isIconOnly className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
                                             <MoreVertical className="w-4 h-4" />
                                           </Button>
                                         </DropdownTrigger>

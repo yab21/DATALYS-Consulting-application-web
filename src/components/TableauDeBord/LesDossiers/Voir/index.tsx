@@ -26,7 +26,7 @@ const VoirDossier = () => {
     <>
       <Breadcrumb pageName="Les différents fichiers" />
       <div className="mt-5 w-full max-w-full rounded-[10px]">
-        <div className="mt-8 rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <div className="mt-8 rounded-[10px] bg-white dark:bg-gray-800 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <div className="w-full max-w-full p-2">
             <div className="flex w-full justify-start gap-6">
               <h3 className="pt-2 text-[22px] font-medium text-dark dark:text-white">
@@ -43,7 +43,7 @@ const VoirDossier = () => {
                   <th className="px-3 py-3">Action</th>
                 </tr>
               </thead>
-              <tbody className="mb-3 divide-y text-gray-600">
+              <tbody className="mb-3 divide-y text-gray-600 dark:text-gray-400">
                 <tr>
                   <td className="whitespace-nowrap px-3 py-4 text-dark dark:text-white">
                     Revue du cahier de charge du projet 1
@@ -270,7 +270,7 @@ const VoirDossier = () => {
       </div>
       <div className="mt-7 grid grid-cols-5 gap-8">
         <div className="col-span-5 xl:col-span-5">
-          <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+          <div className="rounded-[10px] border border-stroke bg-white dark:bg-gray-800 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
             <div className="border-b border-stroke px-7 py-4 dark:border-dark-3">
               <h3 className="font-medium text-dark dark:text-white">
                 Charger le fichier

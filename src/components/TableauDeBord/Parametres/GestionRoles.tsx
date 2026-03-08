@@ -327,55 +327,55 @@ const GestionRoles: React.FC = () => {
         {/* Header skeleton */}
         <div className="flex justify-between items-start">
           <div>
-            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96 animate-pulse"></div>
           </div>
           <div className="flex gap-3">
-            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-40 animate-pulse"></div>
           </div>
         </div>
 
         {/* Stats skeleton - 3 cartes pour les rôles */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
-                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
                 </div>
-                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Filters skeleton */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="h-10 bg-gray-200 rounded animate-pulse flex-1 max-w-md"></div>
-            <div className="h-10 bg-gray-200 rounded animate-pulse w-40"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-1 max-w-md"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-40"></div>
           </div>
         </div>
 
         {/* Roles cards skeleton */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+                  <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-8 animate-pulse"></div>
                 </div>
                 <div className="space-y-2">
-                  <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                  <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse"></div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
-                  <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
                 </div>
               </div>
             </div>
@@ -403,7 +403,7 @@ const GestionRoles: React.FC = () => {
     <div className="space-y-8">
       {/* En-tête avec statistiques */}
       <motion.div
-        className="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-2xl border border-gray-100 bg-white dark:bg-gray-800 p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -440,7 +440,7 @@ const GestionRoles: React.FC = () => {
 
       {/* Filtres */}
       <motion.div
-        className="rounded-2xl border border-gray-100 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-2xl border border-gray-100 bg-white dark:bg-gray-800 p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
@@ -457,7 +457,7 @@ const GestionRoles: React.FC = () => {
 
       {/* Table des rôles */}
       <motion.div
-        className="rounded-2xl border border-gray-100 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-2xl border border-gray-100 bg-white dark:bg-gray-800 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
@@ -510,7 +510,7 @@ const GestionRoles: React.FC = () => {
                         variant="light"
                         size="sm"
                         isIconOnly
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
@@ -556,7 +556,7 @@ const GestionRoles: React.FC = () => {
 
         {filteredRoles.length === 0 && (
           <div className="py-16 text-center">
-            <Settings className="mx-auto mb-4 h-20 w-20 text-gray-300 dark:text-gray-600" />
+            <Settings className="mx-auto mb-4 h-20 w-20 text-gray-300 dark:text-gray-600 dark:text-gray-400" />
             <h3 className="mb-2 text-xl font-bold text-gray-600 dark:text-gray-300">
               Aucun rôle trouvé
             </h3>
@@ -584,21 +584,21 @@ const GestionRoles: React.FC = () => {
                 {actionType === "view" && selectedRole && (
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Nom</label>
+                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Nom</label>
                       <p className="font-semibold">{selectedRole.name}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Description</label>
+                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Description</label>
                       <p>{selectedRole.description || "Aucune description"}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Statut</label>
+                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Statut</label>
                       <p className="font-semibold">
                         {selectedRole.is_active ? "Actif" : "Inactif"}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Créé le</label>
+                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Créé le</label>
                       <p>{new Date(selectedRole.created_at).toLocaleDateString("fr-FR")}</p>
                     </div>
                   </div>
@@ -633,7 +633,7 @@ const GestionRoles: React.FC = () => {
                     <p className="mb-2 text-lg font-semibold">
                       Êtes-vous sûr de vouloir supprimer ce rôle ?
                     </p>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-400">
                       Le rôle <strong>"{selectedRole.name}"</strong> sera définitivement supprimé.
                       Cette action est irréversible.
                     </p>
@@ -646,7 +646,7 @@ const GestionRoles: React.FC = () => {
                     <p className="mb-2 text-lg font-semibold">
                       {selectedRole.is_active ? "Désactiver" : "Activer"} ce rôle ?
                     </p>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-400">
                       Le rôle <strong>"{selectedRole.name}"</strong> sera {selectedRole.is_active ? "désactivé" : "activé"}.
                     </p>
                   </div>

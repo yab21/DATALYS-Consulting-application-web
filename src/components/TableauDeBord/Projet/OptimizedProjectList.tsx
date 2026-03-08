@@ -487,45 +487,45 @@ const OptimizedProjectList: React.FC = () => {
         {/* Header skeleton */}
         <div className="flex justify-between items-start">
           <div>
-            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96 animate-pulse"></div>
           </div>
           <div className="flex gap-3">
-            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-40 animate-pulse"></div>
           </div>
         </div>
 
         {/* Stats skeleton - 4 cartes pour les projets */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
-                  <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
                 </div>
-                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Filters skeleton */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="h-10 bg-gray-200 rounded animate-pulse flex-1 max-w-md"></div>
-            <div className="h-10 bg-gray-200 rounded animate-pulse w-40"></div>
-            <div className="h-10 bg-gray-200 rounded animate-pulse w-32"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-1 max-w-md"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-40"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
           </div>
         </div>
 
         {/* Table skeleton */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
-              <div className="h-5 bg-gray-200 rounded w-20 animate-pulse"></div>
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
             </div>
           </div>
           <div className="divide-y divide-gray-200">
@@ -533,15 +533,15 @@ const OptimizedProjectList: React.FC = () => {
               <div key={i} className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
                     <div className="space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
-                      <div className="h-3 bg-gray-200 rounded w-32 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
-                    <div className="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-8 animate-pulse"></div>
                   </div>
                 </div>
               </div>
@@ -642,7 +642,7 @@ const OptimizedProjectList: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+              <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <CardBody className="p-3 sm:p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0 flex-1">
@@ -668,7 +668,7 @@ const OptimizedProjectList: React.FC = () => {
 
       {/* Filtres */}
       <motion.div
-        className="rounded-2xl border border-gray-100 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-2xl border border-gray-100 bg-white dark:bg-gray-800 p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800/50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
@@ -765,7 +765,7 @@ const OptimizedProjectList: React.FC = () => {
             emptyContent={
               <div className="flex flex-col items-center gap-2 py-8">
                 <FolderOpen className="w-12 h-12 text-gray-400" />
-                <p className="text-gray-500">Aucun projet trouvé</p>
+                <p className="text-gray-500 dark:text-gray-400">Aucun projet trouvé</p>
               </div>
             }
           >
@@ -781,7 +781,7 @@ const OptimizedProjectList: React.FC = () => {
                     <div className="flex flex-col min-w-0">
                       <Link 
                         href={`/tableaudebord/projet/pageprojet/${project.id}`}
-                        className="font-semibold text-xs sm:text-sm text-gray-900 hover:text-[#4ba9b7] dark:text-white dark:hover:text-[#4ba9b7] hover:underline truncate max-w-[120px] sm:max-w-none transition-colors duration-200"
+                        className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white hover:text-[#4ba9b7] dark:hover:text-[#4ba9b7] hover:underline truncate max-w-[120px] sm:max-w-none transition-colors duration-200"
                       >
                         {project.title}
                       </Link>
@@ -842,7 +842,7 @@ const OptimizedProjectList: React.FC = () => {
                             isIconOnly
                             variant="light" 
                             size="sm"
-                            className="text-gray-500 hover:text-gray-700 min-h-[36px] min-w-[36px]"
+                            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 min-h-[36px] min-w-[36px]"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>

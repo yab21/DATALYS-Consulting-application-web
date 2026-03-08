@@ -46,7 +46,7 @@ export default function DefaultLayout({
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-screen-2xl mx-auto px-4">
                       {/* Section droits d'auteur */}
                       <div className="flex justify-center md:justify-start">
-                        <p className="text-dark text-sm md:text-base">
+                        <p className="text-dark dark:text-gray-300 text-sm md:text-base">
                           All Rights Reserved by
                           <Link
                             className="ml-1 font-medium text-primary"

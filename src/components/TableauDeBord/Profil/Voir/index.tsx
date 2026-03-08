@@ -55,7 +55,7 @@ const VoirProfil = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
                 <div className="relative bg-gradient-to-r from-[#4ba9b7] to-[#3a8a95] px-8 py-12">
                   <div className="flex flex-col items-center text-center text-white sm:flex-row sm:text-left">
                     <div className="relative mb-6 sm:mb-0 sm:mr-8">
@@ -103,23 +103,23 @@ const VoirProfil = () => {
                 </div>
 
                 {/* Stats rapides */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-200">
+                <div className="px-8 py-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">{user.role_id === 1 ? "Admin" : "User"}</div>
-                      <div className="text-sm text-gray-500">Niveau d'accès</div>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.role_id === 1 ? "Admin" : "User"}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Niveau d'accès</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-[#4ba9b7]">
                         {user.is_active ? "Actif" : "Inactif"}
                       </div>
-                      <div className="text-sm text-gray-500">Statut du compte</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Statut du compte</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
                         {Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))}
                       </div>
-                      <div className="text-sm text-gray-500">Jours d'ancienneté</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Jours d'ancienneté</div>
                     </div>
                   </div>
                 </div>
@@ -132,41 +132,41 @@ const VoirProfil = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-[#4ba9b7]/10 rounded-lg">
                     <User className="h-5 w-5 text-[#4ba9b7]" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900">Informations Personnelles</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Informations Personnelles</h2>
                 </div>
 
                 <div className="space-y-4">
                   <div className="group">
-                    <label className="text-sm font-medium text-gray-500 mb-1 block">Nom</label>
-                    <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200 group-hover:border-gray-300 transition-colors">
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 block">Nom</label>
+                    <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 group-hover:border-gray-300 dark:group-hover:border-gray-600 transition-colors">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-[#4ba9b7]" />
-                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{user.name}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="group">
-                    <label className="text-sm font-medium text-gray-500 mb-1 block">Adresse email</label>
-                    <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200 group-hover:border-gray-300 transition-colors">
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 block">Adresse email</label>
+                    <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 group-hover:border-gray-300 dark:group-hover:border-gray-600 transition-colors">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-[#4ba9b7]" />
-                        <p className="font-medium text-gray-900">{user.email}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{user.email}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="group">
-                    <label className="text-sm font-medium text-gray-500 mb-1 block">Membre depuis</label>
-                    <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200 group-hover:border-gray-300 transition-colors">
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 block">Membre depuis</label>
+                    <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 group-hover:border-gray-300 dark:group-hover:border-gray-600 transition-colors">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-[#4ba9b7]" />
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-white">
                           {new Date(user.created_at).toLocaleDateString('fr-FR', {
                             year: 'numeric',
                             month: 'long',

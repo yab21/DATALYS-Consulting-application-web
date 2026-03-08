@@ -236,7 +236,7 @@ const GestionSupport: React.FC = () => {
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total tickets</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total tickets</p>
                 <p className="text-2xl font-bold text-blue-600">{incidents.length}</p>
               </div>
               <Timer className="text-blue-500" size={24} />
@@ -248,7 +248,7 @@ const GestionSupport: React.FC = () => {
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">En cours</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">En cours</p>
                 <p className="text-2xl font-bold text-yellow-600">
                   {incidents.filter(t => t.status === 'en_cours').length}
                 </p>
@@ -262,7 +262,7 @@ const GestionSupport: React.FC = () => {
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Résolus</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Résolus</p>
                 <p className="text-2xl font-bold text-green-600">
                   {incidents.filter(t => t.status === 'resolu').length}
                 </p>
@@ -276,7 +276,7 @@ const GestionSupport: React.FC = () => {
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Critiques</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Critiques</p>
                 <p className="text-2xl font-bold text-red-600">
                   {incidents.filter(t => t.priority === 'P1').length}
                 </p>
@@ -336,7 +336,7 @@ const GestionSupport: React.FC = () => {
               {filteredIncidents.map((incident) => (
                 <TableRow key={incident.id}>
                   <TableCell>
-                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                    <code className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                       {incident.incident_number}
                     </code>
                   </TableCell>
@@ -349,7 +349,7 @@ const GestionSupport: React.FC = () => {
                         {incident.title}
                       </p>
                       {incident.description && (
-                        <p className="text-sm text-gray-500 truncate max-w-xs">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                           {incident.description}
                         </p>
                       )}

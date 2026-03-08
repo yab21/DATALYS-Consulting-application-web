@@ -465,7 +465,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1 pb-4">
             <div className="flex items-center gap-4">
-              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700">
+              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg dark:border-gray-600 dark:bg-gray-700">
                 {partner?.logo_url ? (
                   <img
                     src={fixImageUrl(partner?.logo_url)!}
@@ -536,7 +536,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               <Card>
                 <CardBody className="p-4">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-500" />
+                    <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Créé le</p>
                       <p className="font-medium">
@@ -590,7 +590,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 <label className="block text-sm font-medium mb-2">Logo</label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
+                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
                       {logoPreview ? (
                         <img
                           src={logoPreview}
@@ -646,12 +646,12 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                     />
                     <label
                       htmlFor="logo-upload"
-                      className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-700 dark:hover:bg-gray-600"
+                      className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg"
                     >
                       <Upload className="h-4 w-4" />
                       Changer le logo
                     </label>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG jusqu'à 2MB</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PNG, JPG jusqu'à 2MB</p>
                   </div>
                 </div>
               </div>
@@ -706,7 +706,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       <div className="flex items-center gap-2">
                         <span>{country.flag}</span>
                         <span>{country.code}</span>
-                        <span className="text-gray-500">{country.name}</span>
+                        <span className="text-gray-500 dark:text-gray-400">{country.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -855,7 +855,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               </div>
               <div>
                 <h3 className="text-xl font-bold">Nouveau Partenaire</h3>
-                <p className="text-sm text-gray-600">Créer un nouveau partenaire</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Créer un nouveau partenaire</p>
               </div>
             </div>
           </ModalHeader>
@@ -866,7 +866,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               <div>
                 <label className="block text-sm font-medium mb-2">Logo (optionnel)</label>
                 <div className="flex items-center gap-4">
-                  <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
+                  <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
                     {createLogoPreview ? (
                       <>
                         <img
@@ -900,12 +900,12 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                     />
                     <label
                       htmlFor="create-logo-upload"
-                      className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-700 dark:hover:bg-gray-600"
+                      className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg"
                     >
                       <Upload className="h-4 w-4" />
                       Choisir un logo
                     </label>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG jusqu'à 2MB</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PNG, JPG jusqu'à 2MB</p>
                   </div>
                 </div>
               </div>
@@ -965,7 +965,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       <div className="flex items-center gap-2">
                         <span>{country.flag}</span>
                         <span>{country.code}</span>
-                        <span className="text-gray-500">{country.name}</span>
+                        <span className="text-gray-500 dark:text-gray-400">{country.name}</span>
                       </div>
                     </SelectItem>
                   ))}

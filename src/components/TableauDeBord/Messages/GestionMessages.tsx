@@ -285,26 +285,26 @@ const GestionMessages: React.FC = () => {
         {/* Header skeleton */}
         <div className="flex justify-between items-start">
           <div>
-            <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96 animate-pulse"></div>
           </div>
           <div className="flex gap-3">
-            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-40 animate-pulse"></div>
           </div>
         </div>
 
         {/* Stats skeleton - 4 cartes pour les messages */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="border border-gray-200 bg-white">
+            <Card key={i} className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <CardBody className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
-                    <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
                   </div>
-                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                 </div>
               </CardBody>
             </Card>
@@ -312,15 +312,15 @@ const GestionMessages: React.FC = () => {
         </div>
 
         {/* Filters skeleton */}
-        <Card className="border border-gray-200 bg-white">
+        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardBody className="p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-1 gap-4">
-                <div className="h-10 bg-gray-200 rounded animate-pulse max-w-md flex-1"></div>
-                <div className="h-10 bg-gray-200 rounded animate-pulse w-32"></div>
-                <div className="h-10 bg-gray-200 rounded animate-pulse w-32"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse max-w-md flex-1"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
               </div>
-              <div className="h-10 bg-gray-200 rounded animate-pulse w-40"></div>
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-40"></div>
             </div>
           </CardBody>
         </Card>
@@ -328,20 +328,20 @@ const GestionMessages: React.FC = () => {
         {/* Messages list skeleton */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {[...Array(6)].map((_, i) => (
-            <Card key={i} className="border border-gray-200 bg-white">
+            <Card key={i} className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <CardBody className="p-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
-                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
                     </div>
-                    <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
-                    <div className="h-3 bg-gray-200 rounded w-full animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
                     <div className="flex items-center gap-2 mt-2">
-                      <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
-                      <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
                     </div>
                   </div>
                 </div>
@@ -362,7 +362,7 @@ const GestionMessages: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
       >
-        <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
           <CardBody className="p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-1 gap-4">
@@ -434,7 +434,7 @@ const GestionMessages: React.FC = () => {
         className="space-y-4"
       >
         {filteredMessages.length === 0 ? (
-          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-8 text-center">
               <MessageCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600 dark:text-gray-400">Aucun message trouvé</p>
@@ -480,7 +480,7 @@ const GestionMessages: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">{selectedMessage?.title}</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Conversation avec {selectedMessage?.sender_name}
                   </p>
                 </div>
@@ -514,7 +514,7 @@ const GestionMessages: React.FC = () => {
                             {selectedMessage.priority}
                           </Chip>
                         </div>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                           {formatTimeAgo(selectedMessage.created_at)}
                         </span>
                       </div>
@@ -548,7 +548,7 @@ const GestionMessages: React.FC = () => {
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium">{message.sender_name}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatTimeAgo(message.created_at)}
                         </span>
                       </div>
@@ -783,7 +783,7 @@ const ForumMessageCard: React.FC<ForumMessageCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card className={`border ${!message.is_read ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200 bg-white'} dark:border-gray-700 dark:bg-gray-800 hover:shadow-lg transition-all duration-200`}>
+      <Card className={`border ${!message.is_read ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'} dark:border-gray-700 dark:bg-gray-800 hover:shadow-lg transition-all duration-200`}>
         <CardBody className="p-6">
           {/* En-tête du message */}
           <div className="flex items-start gap-4">
@@ -805,7 +805,7 @@ const ForumMessageCard: React.FC<ForumMessageCardProps> = ({
                   <span className="font-semibold text-gray-900 dark:text-white">
                     {message.sender_name || 'Utilisateur'}
                   </span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     {message.sender_role || 'N/A'}
                   </span>
                   <div className="flex gap-2">
@@ -832,7 +832,7 @@ const ForumMessageCard: React.FC<ForumMessageCardProps> = ({
                     </Chip>
                   </div>
                 </div>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {message.created_at ? formatTimeAgo(message.created_at) : 'N/A'}
                 </span>
               </div>
@@ -883,7 +883,7 @@ const ForumMessageCard: React.FC<ForumMessageCardProps> = ({
                     </Button>
                   )}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   {message.created_at ? new Date(message.created_at).toLocaleDateString("fr-FR", {
                     day: "numeric",
                     month: "short",

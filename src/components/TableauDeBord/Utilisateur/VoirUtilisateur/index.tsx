@@ -131,8 +131,8 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
         <Breadcrumb pageName="Erreur" />
         <div className="text-center py-12">
           <div className="text-red-500 text-xl mb-2">⚠️</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Erreur</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <div className="space-x-3">
             <Button
               onPress={loadUserData}
@@ -158,7 +158,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
       <>
         <Breadcrumb pageName="Utilisateur introuvable" />
         <div className="text-center py-12">
-          <h3 className="text-lg font-semibold text-gray-600">Utilisateur introuvable</h3>
+          <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400">Utilisateur introuvable</h3>
           <p className="text-gray-400 mt-2">L'utilisateur demandé n'existe pas ou vous n'y avez pas accès.</p>
           <Button
             onPress={() => router.back()}
@@ -307,7 +307,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Mail className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Email</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
                           <p className="font-medium">{user.email}</p>
                         </div>
                       </div>
@@ -315,7 +315,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Shield className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Rôle</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Rôle</p>
                           <Chip
                             color={getRoleColor(user.role_id)}
                             variant="flat"
@@ -331,7 +331,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                         <div className="flex items-start space-x-3">
                           <UserIcon className="text-gray-400 mt-1" size={20} />
                           <div>
-                            <p className="text-sm text-gray-500">Partenaire</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Partenaire</p>
                             <p className="font-medium">{user.partner_name}</p>
                           </div>
                         </div>
@@ -342,7 +342,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Calendar className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Date de création</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Date de création</p>
                           <p className="font-medium">{formatDate(user.created_at)}</p>
                         </div>
                       </div>
@@ -350,7 +350,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <Clock className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Dernière mise à jour</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Dernière mise à jour</p>
                           <p className="font-medium">{formatDate(user.updated_at)}</p>
                         </div>
                       </div>
@@ -358,7 +358,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                       <div className="flex items-start space-x-3">
                         <UserIcon className="text-gray-400 mt-1" size={20} />
                         <div>
-                          <p className="text-sm text-gray-500">Statut</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Statut</p>
                           <Chip
                             color={user.is_active ? "success" : "danger"}
                             variant="flat"
@@ -385,7 +385,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                 <div className="p-6">
                   <div className="space-y-4">
                     <div className="border rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                         {getRoleIcon(user.role_id)}
                         Permissions du rôle {getRoleLabel(user.role_id)}
                       </h4>
@@ -402,7 +402,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                           ].map((permission, index) => (
                             <div key={index} className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span className="text-sm text-gray-600">{permission}</span>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">{permission}</span>
                             </div>
                           ))
                         ) : user.role_id === 5 ? (
@@ -417,12 +417,12 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                           ].map((permission, index) => (
                             <div key={index} className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              <span className="text-sm text-gray-600">{permission}</span>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">{permission}</span>
                             </div>
                           ))
                         ) : (
                           // Autres rôles
-                          <div className="text-gray-500">Permissions non définies pour ce rôle</div>
+                          <div className="text-gray-500 dark:text-gray-400">Permissions non définies pour ce rôle</div>
                         )}
                       </div>
                     </div>
@@ -448,14 +448,14 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                     ) : projects.length > 0 ? (
                       <div className="space-y-3">
                         {projects.map((project) => (
-                          <div key={project.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                          <div key={project.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h4 className="font-medium text-gray-900">{project.title}</h4>
+                                <h4 className="font-medium text-gray-900 dark:text-white">{project.title}</h4>
                                 {project.description && (
-                                  <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{project.description}</p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                   Créé le {formatDate(project.created_at)}
                                 </p>
                               </div>
@@ -473,7 +473,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                     ) : (
                       <div className="text-center py-8">
                         <UserIcon className="mx-auto text-gray-400 mb-3" size={48} />
-                        <p className="text-gray-500">Aucun projet associé à cet utilisateur</p>
+                        <p className="text-gray-500 dark:text-gray-400">Aucun projet associé à cet utilisateur</p>
                       </div>
                     )}
                   </div>
