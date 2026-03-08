@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Permission, UserRole } from '@/lib/permissions';
 
-// Configuration des permissions par route
 export const ROUTE_PERMISSIONS: Record<string, Permission[]> = {
   // Routes admin uniquement
   '/tableaudebord/utilisateur': [Permission.SEARCH_ALL_USERS, Permission.CREATE_USERS],
