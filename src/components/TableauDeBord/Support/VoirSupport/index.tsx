@@ -1,23 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardBody, CardHeader, Tab, Tabs, Spinner, Chip, Button, Avatar } from '@heroui/react';
-import { 
-  ArrowLeft, 
-  Headphones, 
-  Mail, 
-  Calendar, 
-  Shield, 
-  Clock, 
-  Eye, 
-  FileText, 
+import React, { useState, useEffect, useRef } from 'react';
+import { Tab, Tabs, Spinner, Chip, Button } from '@heroui/react';
+import {
+  ArrowLeft,
+  Headphones,
+  Calendar,
+  Clock,
+  Eye,
+  FileText,
   User as UserIcon,
   Building2,
   CheckCircle,
-  XCircle,
-  Settings,
   Activity,
-  MessageCircle
+  MessageCircle,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  Dot,
+  Mail,
+  AlertTriangle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
@@ -28,6 +30,7 @@ import { extractBackendMessage } from '@/lib/error-handler';
 import { isTokenExpiredError } from '@/lib/api-interceptor';
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import IncidentFiles from "../../Incidents/Voir/IncidentFiles";
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface VoirSupportProps {
   id: string;
@@ -43,96 +46,80 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loadingProject, setLoadingProject] = useState(false);
   const [loadingUser, setLoadingUser] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const ticketId = parseInt(id);
 
+  // Fermer dropdown au clic extérieur
   useEffect(() => {
-    loadTicketData();
-  }, [id]);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (expandedCard && cardRefs.current[expandedCard]) {
+        if (!cardRefs.current[expandedCard]!.contains(event.target as Node)) {
+          setExpandedCard(null);
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [expandedCard]);
+
+  useEffect(() => { loadTicketData(); }, [id]);
 
   const loadTicketData = async () => {
     try {
       setLoading(true);
       setError(null);
-
       const ticketData = await IncidentsService.getIncidentById(ticketId);
-      
-      if (!ticketData) {
-        setError('Ticket de support non trouvé');
-        return;
-      }
-
+      if (!ticketData) { setError('Ticket de support non trouvé'); return; }
       setTicket(ticketData);
-    } catch (error) {
-      // Relancer les erreurs de token expiré pour la redirection globale
-      if (isTokenExpiredError(error)) {
-        throw error;
+
+      // Chargement eager du projet et de l'agent assigné
+      if (ticketData.project_id) {
+        loadProjectData(ticketData);
       }
-      const message = extractBackendMessage(error);
-      setError(message);
+      if (ticketData.user_id) {
+        loadAssignedUser(ticketData);
+      }
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      setError(extractBackendMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
-  const loadProjectData = async () => {
-    if (!ticket || !ticket.project_id) return;
-
+  const loadProjectData = async (inc?: Incident) => {
+    const current = inc || ticket;
+    if (!current || !current.project_id) return;
     try {
       setLoadingProject(true);
       const allProjects = await projectsService.getActiveProjects();
-      const foundProject = allProjects.find(p => p.id === ticket.project_id);
+      const foundProject = allProjects.find(p => p.id === current.project_id);
       setProject(foundProject || null);
     } catch (error) {
-      // Relancer les erreurs de token expiré pour la redirection globale
-      if (isTokenExpiredError(error)) {
-        throw error;
-      }
-      console.error('Erreur lors du chargement du projet:', error);
+      if (isTokenExpiredError(error)) throw error;
     } finally {
       setLoadingProject(false);
     }
   };
 
-  const loadAssignedUser = async () => {
-    if (!ticket || !ticket.user_id) return;
-
+  const loadAssignedUser = async (inc?: Incident) => {
+    const current = inc || ticket;
+    if (!current || !current.user_id) return;
     try {
       setLoadingUser(true);
-      const userData = await UsersService.getUserById(ticket.user_id);
+      const userData = await UsersService.getUserById(current.user_id);
       setAssignedUser(userData);
     } catch (error) {
-      // Relancer les erreurs de token expiré pour la redirection globale
-      if (isTokenExpiredError(error)) {
-        throw error;
-      }
-      console.error('Erreur lors du chargement de l\'utilisateur assigné:', error);
+      if (isTokenExpiredError(error)) throw error;
     } finally {
       setLoadingUser(false);
     }
   };
 
-  const handleTabChange = async (key: string) => {
-    setActiveTab(key);
-    
-    if (key === 'project' && !project && ticket?.project_id) {
-      await loadProjectData();
-    }
-    
-    if (key === 'tracking' && !assignedUser && ticket?.user_id) {
-      await loadAssignedUser();
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const formatDateShort = (dateString: string) => new Date(dateString).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -146,15 +133,38 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
     }
   };
 
-  const getStatusColor = (status: string): "primary" | "secondary" | "success" | "warning" | "danger" => {
+  const getStatusStyles = (status: string) => {
     switch (status) {
-      case 'nouveau': return 'primary';
-      case 'en_cours': return 'warning';
-      case 'en_attente': return 'secondary';
-      case 'en_arbitrage': return 'danger';
-      case 'en_pause': return 'secondary';
-      case 'resolu': return 'success';
-      default: return 'secondary';
+      case 'nouveau': return 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'en_cours': return 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400';
+      case 'en_attente': return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+      case 'en_arbitrage': return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+      case 'en_pause': return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+      case 'resolu': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400';
+      default: return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+    }
+  };
+
+  const getStatusDotColor = (status: string) => {
+    switch (status) {
+      case 'nouveau': return 'bg-blue-500';
+      case 'en_cours': return 'bg-amber-500';
+      case 'en_attente': return 'bg-gray-400';
+      case 'en_arbitrage': return 'bg-red-500';
+      case 'en_pause': return 'bg-gray-400';
+      case 'resolu': return 'bg-emerald-500';
+      default: return 'bg-gray-400';
+    }
+  };
+
+  const getPriorityStyles = (priority: string) => {
+    switch (priority) {
+      case 'P0': return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+      case 'P1': return 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'P2': return 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'P3': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400';
+      case 'P4': return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+      default: return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
     }
   };
 
@@ -169,23 +179,111 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
     }
   };
 
-  const getSLAStatusColor = (status: string): "primary" | "secondary" | "success" | "warning" | "danger" => {
-    switch (status) {
-      case 'respecte': return 'success';
-      case 'en_retard': return 'danger';
-      case 'non_applicable': return 'secondary';
-      default: return 'secondary';
-    }
-  };
-
   const getSLAStatusLabel = (status: string) => {
     switch (status) {
       case 'respecte': return 'Respecté';
       case 'en_retard': return 'En retard';
-      case 'non_applicable': return 'Non applicable';
+      case 'non_applicable': return 'N/A';
       default: return status;
     }
   };
+
+  const getSLAStatusColor = (status: string): "success" | "danger" | "secondary" => {
+    switch (status) {
+      case 'respecte': return 'success';
+      case 'en_retard': return 'danger';
+      default: return 'secondary';
+    }
+  };
+
+  // Dropdown
+  const handleCardClick = (label: string) => setExpandedCard(prev => prev === label ? null : label);
+
+  const renderDropdownContent = (label: string) => {
+    if (!ticket) return null;
+    switch (label) {
+      case "Priorité":
+        return (
+          <>
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Niveau</span>
+              <Chip color={getPriorityColor(ticket.priority)} variant="flat" size="sm">{ticket.priority}</Chip>
+            </div>
+            {ticket.priority_label && (
+              <div className="px-4 py-2.5 flex items-center justify-between">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Label</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{ticket.priority_label}</span>
+              </div>
+            )}
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Impact</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{ticket.impact_label || ticket.impact || 'N/A'}</span>
+            </div>
+          </>
+        );
+      case "SLA Réponse":
+        return (
+          <>
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Statut</span>
+              <Chip color={getSLAStatusColor(ticket.sla_prise_en_charge_status)} variant="flat" size="sm">
+                {getSLAStatusLabel(ticket.sla_prise_en_charge_status)}
+              </Chip>
+            </div>
+            {assignedUser && (
+              <div className="px-4 py-2.5 flex items-center justify-between">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Agent assigné</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{assignedUser.name}</span>
+              </div>
+            )}
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Créé le</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">{formatDateShort(ticket.created_at)}</span>
+            </div>
+          </>
+        );
+      case "SLA Résolution":
+        return (
+          <>
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Statut</span>
+              <Chip color={getSLAStatusColor(ticket.sla_resolution_status)} variant="flat" size="sm">
+                {getSLAStatusLabel(ticket.sla_resolution_status)}
+              </Chip>
+            </div>
+            {ticket.status === 'resolu' && (
+              <div className="px-4 py-2.5 flex items-center justify-between">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Résolu</span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Oui</span>
+              </div>
+            )}
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Dernière MAJ</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">{formatDateShort(ticket.updated_at)}</span>
+            </div>
+          </>
+        );
+      case "Échanges":
+        return (
+          <>
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Nombre d&apos;échanges</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-white">{ticket.refusal_count || 0}</span>
+            </div>
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Statut actuel</span>
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusStyles(ticket.status)}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(ticket.status)}`} />
+                {getStatusLabel(ticket.status)}
+              </span>
+            </div>
+          </>
+        );
+      default: return null;
+    }
+  };
+
+  // --- RENDER ---
 
   if (loading) {
     return (
@@ -200,24 +298,15 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
     return (
       <>
         <Breadcrumb pageName="Erreur" />
-        <div className="text-center py-12">
-          <div className="text-red-500 text-xl mb-2">⚠️</div>
+        <div className="text-center py-16">
+          <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Headphones className="w-8 h-8 text-red-500" />
+          </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Erreur</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <div className="space-x-3">
-            <Button
-              onPress={loadTicketData}
-              color="primary"
-              variant="solid"
-            >
-              Réessayer
-            </Button>
-            <Button
-              onPress={() => router.back()}
-              variant="bordered"
-            >
-              Retour
-            </Button>
+          <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">{error}</p>
+          <div className="flex justify-center gap-3">
+            <Button onPress={loadTicketData} color="primary" variant="flat" size="sm">Réessayer</Button>
+            <Button onPress={() => router.back()} variant="bordered" size="sm">Retour</Button>
           </div>
         </div>
       </>
@@ -228,447 +317,441 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
     return (
       <>
         <Breadcrumb pageName="Ticket introuvable" />
-        <div className="text-center py-12">
-          <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400">Ticket introuvable</h3>
-          <p className="text-gray-400 mt-2">Le ticket demandé n'existe pas ou vous n'y avez pas accès.</p>
-          <Button
-            onPress={() => router.back()}
-            variant="bordered"
-            startContent={<ArrowLeft size={16} />}
-            className="mt-4"
-          >
-            Retour
-          </Button>
+        <div className="text-center py-16">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Headphones className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Ticket introuvable</h3>
+          <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">Le ticket demandé n&apos;existe pas ou vous n&apos;y avez pas accès.</p>
+          <Button onPress={() => router.back()} variant="flat" className="mt-6" size="sm">Retour</Button>
         </div>
       </>
     );
   }
 
+  const statCards = [
+    {
+      icon: <AlertTriangle className="w-5 h-5" />,
+      label: "Priorité",
+      value: ticket.priority,
+      iconBg: "bg-red-50 dark:bg-red-900/20",
+      iconColor: "text-red-600 dark:text-red-400",
+      borderActive: "border-red-300 dark:border-red-700"
+    },
+    {
+      icon: <Clock className="w-5 h-5" />,
+      label: "SLA Réponse",
+      value: getSLAStatusLabel(ticket.sla_prise_en_charge_status),
+      iconBg: "bg-blue-50 dark:bg-blue-900/20",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      borderActive: "border-blue-300 dark:border-blue-700"
+    },
+    {
+      icon: <CheckCircle className="w-5 h-5" />,
+      label: "SLA Résolution",
+      value: getSLAStatusLabel(ticket.sla_resolution_status),
+      iconBg: "bg-emerald-50 dark:bg-emerald-900/20",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      borderActive: "border-emerald-300 dark:border-emerald-700"
+    },
+    {
+      icon: <MessageCircle className="w-5 h-5" />,
+      label: "Échanges",
+      value: ticket.refusal_count || 0,
+      iconBg: "bg-orange-50 dark:bg-orange-900/20",
+      iconColor: "text-orange-600 dark:text-orange-400",
+      borderActive: "border-orange-300 dark:border-orange-700"
+    }
+  ];
+
   return (
     <>
       <Breadcrumb pageName={`Ticket: ${ticket.incident_number}`} />
-      
+
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* Bouton de retour */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="flat"
-            startContent={<ArrowLeft className="w-4 h-4" />}
-            onPress={() => router.push('/tableaudebord/support')}
-            className="font-medium"
-          >
-            Retour au support technique
-          </Button>
-        </div>
+        {/* Bouton retour */}
+        <Button
+          variant="light"
+          size="sm"
+          startContent={<ArrowLeft className="w-4 h-4" />}
+          onPress={() => router.push('/tableaudebord/support')}
+          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white -ml-2"
+        >
+          Retour au support technique
+        </Button>
 
-        {/* En-tête du ticket amélioré */}
-        <Card className="bg-white dark:bg-gray-800 shadow-2xl dark:shadow-gray-900/30 border-0 dark:border dark:border-gray-700 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#4ba9b7]/5 via-transparent to-green-500/5 dark:from-[#4ba9b7]/10 dark:to-green-500/10"></div>
-          <CardHeader className="relative pb-8 pt-8 bg-gradient-to-r from-[#4ba9b7]/10 via-transparent to-green-500/10 dark:from-gray-800 dark:to-gray-700">
-            <div className="flex flex-col gap-8 w-full">
-              {/* Header principal */}
-              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-[#4ba9b7] rounded-2xl flex items-center justify-center shadow-xl shadow-green-500/25">
-                      <Headphones className="w-8 h-8 text-white" />
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-3 leading-tight">
-                      {ticket.title}
-                    </h1>
-                    <div className="flex items-center gap-3 mb-2">
-                      <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                      <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold">#{ticket.incident_number}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">
-                        Créé le {formatDate(ticket.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Chip
-                    color={getStatusColor(ticket.status)}
-                    variant="flat"
-                    size="lg"
-                    className="text-sm font-semibold"
-                    startContent={<Activity className="w-4 h-4" />}
-                  >
-                    {getStatusLabel(ticket.status)}
-                  </Chip>
-                  <Chip
-                    color={getPriorityColor(ticket.priority)}
-                    variant="flat"
-                    size="lg"
-                    className="text-sm font-semibold"
-                    startContent={<Shield className="w-4 h-4" />}
-                  >
-                    {ticket.priority}
-                  </Chip>
-                </div>
+        {/* Header ticket */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-[#4ba9b7]/10 dark:bg-[#4ba9b7]/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Headphones className="w-6 h-6 text-[#4ba9b7]" />
               </div>
-
-              {/* Statistiques du ticket */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-green-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Priorité</p>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {ticket.priority}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">SLA Réponse</p>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {getSLAStatusLabel(ticket.sla_prise_en_charge_status)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#4ba9b7]/20 dark:bg-[#4ba9b7]/30 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-[#4ba9b7]" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">SLA Résolution</p>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {getSLAStatusLabel(ticket.sla_resolution_status)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                      <MessageCircle className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Échanges</p>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {ticket.refusal_count || 0}
-                      </p>
-                    </div>
-                  </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {ticket.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-x-1 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    #{ticket.incident_number}
+                  </span>
+                  <Dot className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                  <span className="flex items-center gap-1.5">
+                    <UserIcon className="w-3.5 h-3.5" />
+                    {ticket.declarant_name}
+                  </span>
+                  <Dot className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {formatDateShort(ticket.created_at)}
+                  </span>
                 </div>
               </div>
             </div>
-          </CardHeader>
-        </Card>
 
-        {/* Contenu principal avec onglets améliorés */}
-        <Card className="bg-white dark:bg-gray-800 shadow-2xl dark:shadow-gray-900/30 border-0 dark:border dark:border-gray-700 overflow-hidden">
-          <CardBody className="p-0">
-            <Tabs
-              selectedKey={activeTab}
-              onSelectionChange={(key) => handleTabChange(key as string)}
-              className="w-full"
-              size="lg"
-              classNames={{
-                tabList: "bg-gray-50 dark:bg-gray-700 p-3 gap-3",
-                tab: "data-[selected=true]:bg-white dark:data-[selected=true]:bg-gray-600 data-[selected=true]:shadow-md transition-all duration-200 rounded-lg px-4 py-3",
-                tabContent: "text-gray-600 dark:text-gray-300 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-medium text-sm"
-              }}
-            >
-              <Tab 
-                key="overview" 
-                title={
-                  <div className="flex items-center gap-3">
-                    <Eye className="w-5 h-5" />
-                    <span>Vue d'ensemble</span>
-                  </div>
-                }
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getStatusStyles(ticket.status)}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(ticket.status)}`} />
+                {getStatusLabel(ticket.status)}
+              </span>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getPriorityStyles(ticket.priority)}`}>
+                <AlertTriangle className="w-3 h-3" />
+                {ticket.priority}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stat cards avec dropdowns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {statCards.map((stat) => {
+            const isExpanded = expandedCard === stat.label;
+            return (
+              <div
+                key={stat.label}
+                ref={(el) => { cardRefs.current[stat.label] = el; }}
+                className="relative"
               >
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-start space-x-3">
-                        <FileText className="text-gray-400 mt-1" size={20} />
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Numéro de ticket</p>
-                          <p className="font-medium">#{ticket.incident_number}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-3">
-                        <Headphones className="text-gray-400 mt-1" size={20} />
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Type</p>
-                          <p className="font-medium">{ticket.type}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-3">
-                        <Settings className="text-gray-400 mt-1" size={20} />
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Catégorie</p>
-                          <p className="font-medium">{ticket.category}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start space-x-3">
-                        <UserIcon className="text-gray-400 mt-1" size={20} />
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Déclaré par</p>
-                          <p className="font-medium">{ticket.declarant_name}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-start space-x-3">
-                        <Shield className="text-gray-400 mt-1" size={20} />
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Priorité</p>
-                          <Chip
-                            color={getPriorityColor(ticket.priority)}
-                            variant="flat"
-                            size="sm"
-                            startContent={<Shield className="w-3 h-3" />}
-                          >
-                            {ticket.priority} - {ticket.priority_label}
-                          </Chip>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-3">
-                        <Activity className="text-gray-400 mt-1" size={20} />
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Impact</p>
-                          <p className="font-medium">{ticket.impact_label}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-3">
-                        <Building2 className="text-gray-400 mt-1" size={20} />
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Domaine</p>
-                          <p className="font-medium">{ticket.domain}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-3">
-                        <Calendar className="text-gray-400 mt-1" size={20} />
-                        <div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Dernière mise à jour</p>
-                          <p className="font-medium">{formatDate(ticket.updated_at)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {ticket.description && (
-                    <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Description de la demande</h4>
-                      <p className="text-gray-600 dark:text-gray-300">{ticket.description}</p>
-                    </div>
-                  )}
-
-                  {ticket.resolution_notes && (
-                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                        Résolution apportée
-                      </h4>
-                      <p className="text-gray-600 dark:text-gray-300">{ticket.resolution_notes}</p>
-                    </div>
-                  )}
-                </div>
-              </Tab>
-
-              <Tab 
-                key="tracking" 
-                title={
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5" />
-                    <span>Suivi & SLA</span>
-                  </div>
-                }
-              >
-                <div className="p-6">
-                  <div className="space-y-6">
-                    {/* SLA Status */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="border rounded-lg p-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                          <Clock className="w-5 h-5 text-blue-500" />
-                          SLA Première réponse
-                        </h4>
-                        <Chip
-                          color={getSLAStatusColor(ticket.sla_prise_en_charge_status)}
-                          variant="flat"
-                          size="lg"
-                          startContent={<Clock className="w-4 h-4" />}
-                        >
-                          {getSLAStatusLabel(ticket.sla_prise_en_charge_status)}
-                        </Chip>
-                      </div>
-
-                      <div className="border rounded-lg p-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-500" />
-                          SLA Résolution
-                        </h4>
-                        <Chip
-                          color={getSLAStatusColor(ticket.sla_resolution_status)}
-                          variant="flat"
-                          size="lg"
-                          startContent={<CheckCircle className="w-4 h-4" />}
-                        >
-                          {getSLAStatusLabel(ticket.sla_resolution_status)}
-                        </Chip>
-                      </div>
-                    </div>
-
-                    {/* Agent assigné */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                        <UserIcon className="w-5 h-5 text-[#4ba9b7]" />
-                        Agent support assigné
-                      </h4>
-                      {loadingUser ? (
-                        <div className="flex items-center gap-2">
-                          <Spinner size="sm" />
-                          <span className="text-gray-500 dark:text-gray-400">Chargement...</span>
-                        </div>
-                      ) : assignedUser ? (
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            size="sm"
-                            name={assignedUser.name}
-                            className="bg-[#4ba9b7] text-white"
-                          />
-                          <div>
-                            <p className="font-medium">{assignedUser.name}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{assignedUser.email}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-gray-500 dark:text-gray-400">Agent {ticket.user_id}</p>
-                      )}
-                    </div>
-
-                    {/* Timeline */}
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-[#4ba9b7]" />
-                        Historique du ticket
-                      </h4>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 text-sm">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-gray-500 dark:text-gray-400">Créé le</span>
-                          <span className="font-medium">{formatDate(ticket.created_at)}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                          <span className="text-gray-500 dark:text-gray-400">Dernière mise à jour</span>
-                          <span className="font-medium">{formatDate(ticket.updated_at)}</span>
-                        </div>
-                        {ticket.status === 'resolu' && (
-                          <div className="flex items-center gap-3 text-sm">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-gray-500 dark:text-gray-400">Résolu</span>
-                            <span className="font-medium">Status: Résolu</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Tab>
-
-              <Tab 
-                key="files" 
-                title={
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5" />
-                    <span>Fichiers joints</span>
-                  </div>
-                }
-              >
-                <div className="p-6">
-                  <IncidentFiles incidentId={ticket.id} />
-                </div>
-              </Tab>
-
-              {ticket.project_id && (
-                <Tab 
-                  key="project" 
-                  title={
-                    <div className="flex items-center gap-3">
-                      <Building2 className="w-5 h-5" />
-                      <span>Projet associé</span>
-                    </div>
-                  }
+                <div
+                  onClick={() => handleCardClick(stat.label)}
+                  className={`bg-white dark:bg-gray-800 rounded-xl border p-5 cursor-pointer transition-all duration-200 select-none ${
+                    isExpanded
+                      ? `${stat.borderActive} shadow-md`
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'
+                  }`}
                 >
-                  <div className="p-6">
-                    {loadingProject ? (
-                      <div className="flex justify-center py-8">
-                        <Spinner size="md" />
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 ${stat.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      <span className={stat.iconColor}>{stat.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white leading-none">
+                        {stat.value}
                       </div>
-                    ) : project ? (
-                      <div className="space-y-4">
-                        <div className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">{project.title}</h4>
-                              {project.description && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{project.description}</p>
-                              )}
-                              <div className="mt-3 space-y-2">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Building2 className="w-4 h-4 text-gray-400" />
-                                  <span className="text-gray-500 dark:text-gray-400">Partenaire:</span>
-                                  <span className="font-medium">{project.partner_name}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Calendar className="w-4 h-4 text-gray-400" />
-                                  <span className="text-gray-500 dark:text-gray-400">Créé le:</span>
-                                  <span className="font-medium">{formatDate(project.created_at)}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <Chip
-                              color={project.is_active ? "success" : "warning"}
-                              variant="flat"
-                              size="sm"
-                            >
-                              {project.is_active ? "Actif" : "Inactif"}
-                            </Chip>
-                          </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1">{stat.label}</p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      {isExpanded
+                        ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                        : <ChevronDown className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 right-0 top-full mt-1.5 z-30"
+                    >
+                      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
+                        <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                          {renderDropdownContent(stat.label)}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Onglets */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+          <Tabs
+            selectedKey={activeTab}
+            onSelectionChange={(key) => setActiveTab(key as string)}
+            className="w-full"
+            size="md"
+            classNames={{
+              tabList: "bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 pt-2 gap-2",
+              tab: "data-[selected=true]:bg-white dark:data-[selected=true]:bg-gray-700 data-[selected=true]:border data-[selected=true]:border-gray-200 dark:data-[selected=true]:border-gray-600 data-[selected=true]:border-b-0 rounded-t-lg px-4 py-2.5 transition-colors",
+              tabContent: "text-gray-500 dark:text-gray-400 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white font-medium text-sm"
+            }}
+          >
+            {/* Vue d'ensemble */}
+            <Tab
+              key="overview"
+              title={<div className="flex items-center gap-2"><Eye className="w-4 h-4" /><span>Vue d&apos;ensemble</span></div>}
+            >
+              <div className="p-6 sm:p-8">
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Info className="w-4 h-4 text-[#4ba9b7]" />
+                      Détails du ticket
+                    </h2>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Numéro</dt>
+                        <dd className="text-sm font-semibold text-gray-900 dark:text-white">#{ticket.incident_number}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Type</dt>
+                        <dd className="text-sm font-semibold text-gray-900 dark:text-white">{ticket.type}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Catégorie</dt>
+                        <dd className="text-sm font-semibold text-gray-900 dark:text-white">{ticket.category}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Déclaré par</dt>
+                        <dd className="text-sm font-semibold text-gray-900 dark:text-white">{ticket.declarant_name}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Priorité</dt>
+                        <dd>
+                          <Chip color={getPriorityColor(ticket.priority)} variant="flat" size="sm" startContent={<AlertTriangle className="w-3 h-3" />}>
+                            {ticket.priority}{ticket.priority_label ? ` - ${ticket.priority_label}` : ''}
+                          </Chip>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Impact</dt>
+                        <dd className="text-sm font-semibold text-gray-900 dark:text-white">{ticket.impact_label || 'N/A'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Domaine</dt>
+                        <dd className="text-sm font-semibold text-gray-900 dark:text-white">{ticket.domain || 'N/A'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Dernière mise à jour</dt>
+                        <dd className="text-sm font-semibold text-gray-900 dark:text-white">{formatDate(ticket.updated_at)}</dd>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {ticket.description && (
+                  <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                      <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-[#4ba9b7]" />
+                        Description de la demande
+                      </h2>
+                    </div>
+                    <div className="p-6">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{ticket.description}</p>
+                    </div>
+                  </div>
+                )}
+
+                {ticket.resolution_notes && (
+                  <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                    <div className="px-6 py-4 border-b border-emerald-100 dark:border-emerald-800">
+                      <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        Résolution apportée
+                      </h2>
+                    </div>
+                    <div className="p-6">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{ticket.resolution_notes}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Tab>
+
+            {/* Suivi & SLA */}
+            <Tab
+              key="tracking"
+              title={<div className="flex items-center gap-2"><Clock className="w-4 h-4" /><span>Suivi & SLA</span></div>}
+            >
+              <div className="p-6 sm:p-8 space-y-6">
+                {/* SLA Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-blue-500" />
+                        SLA Première réponse
+                      </h3>
+                    </div>
+                    <div className="p-6">
+                      <Chip color={getSLAStatusColor(ticket.sla_prise_en_charge_status)} variant="flat" size="lg">
+                        {getSLAStatusLabel(ticket.sla_prise_en_charge_status)}
+                      </Chip>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                        SLA Résolution
+                      </h3>
+                    </div>
+                    <div className="p-6">
+                      <Chip color={getSLAStatusColor(ticket.sla_resolution_status)} variant="flat" size="lg">
+                        {getSLAStatusLabel(ticket.sla_resolution_status)}
+                      </Chip>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Agent assigné */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <UserIcon className="w-4 h-4 text-[#4ba9b7]" />
+                      Agent support assigné
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    {loadingUser ? (
+                      <div className="flex items-center gap-2">
+                        <Spinner size="sm" />
+                        <span className="text-sm text-gray-500">Chargement...</span>
+                      </div>
+                    ) : assignedUser ? (
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-[#4ba9b7]/10 dark:bg-[#4ba9b7]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <span className="text-[#4ba9b7] font-bold text-sm uppercase">
+                            {assignedUser.name.slice(0, 2)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{assignedUser.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                            <Mail className="w-3 h-3" />
+                            {assignedUser.email}
+                          </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-500 dark:text-gray-400">Aucun projet associé trouvé</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Agent #{ticket.user_id}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Timeline */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-[#4ba9b7]" />
+                      Historique du ticket
+                    </h3>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">Créé le</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatDate(ticket.created_at)}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" />
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">Dernière MAJ</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatDate(ticket.updated_at)}</span>
+                    </div>
+                    {ticket.status === 'resolu' && (
+                      <div className="flex items-center gap-3">
+                        <span className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0" />
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">Résolu</span>
+                        <Chip color="success" variant="flat" size="sm">Résolu</Chip>
                       </div>
                     )}
                   </div>
-                </Tab>
-              )}
-            </Tabs>
-          </CardBody>
-        </Card>
+                </div>
+              </div>
+            </Tab>
+
+            {/* Fichiers joints */}
+            <Tab
+              key="files"
+              title={<div className="flex items-center gap-2"><FileText className="w-4 h-4" /><span>Fichiers joints</span></div>}
+            >
+              <div className="p-6">
+                <IncidentFiles incidentId={ticket.id} />
+              </div>
+            </Tab>
+
+            {/* Projet associé */}
+            {ticket.project_id && (
+              <Tab
+                key="project"
+                title={<div className="flex items-center gap-2"><Building2 className="w-4 h-4" /><span>Projet associé</span></div>}
+              >
+                <div className="p-6 sm:p-8">
+                  {loadingProject ? (
+                    <div className="flex justify-center py-8"><Spinner size="md" /></div>
+                  ) : project ? (
+                    <div
+                      className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all cursor-pointer group"
+                      onClick={() => router.push(`/tableaudebord/projet/pageprojet/${project.id}`)}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-[#4ba9b7]/10 dark:bg-[#4ba9b7]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Building2 className="w-5 h-5 text-[#4ba9b7]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <h4 className="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-[#4ba9b7] transition-colors">
+                              {project.title}
+                            </h4>
+                            <Chip color={project.is_active ? "success" : "warning"} variant="flat" size="sm" className="flex-shrink-0">
+                              {project.is_active ? "Actif" : "Inactif"}
+                            </Chip>
+                          </div>
+                          {project.description && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{project.description}</p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-400 dark:text-gray-500">
+                            {project.partner_name && (
+                              <span className="flex items-center gap-1.5">
+                                <Building2 className="w-3 h-3" />
+                                {project.partner_name}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1.5">
+                              <Calendar className="w-3 h-3" />
+                              {formatDateShort(project.created_at)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Building2 className="w-7 h-7 text-gray-400" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Projet introuvable</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Le projet associé n&apos;a pas pu être chargé</p>
+                    </div>
+                  )}
+                </div>
+              </Tab>
+            )}
+          </Tabs>
+        </div>
       </div>
     </>
   );
