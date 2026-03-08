@@ -154,17 +154,62 @@ class ProjectPartnersService {
 
   /**
    * Récupérer les partenaires assignés à un projet
-   * CORRECTION: Utiliser l'API users/getByCriteria qui fonctionne réellement
+   * Utilise d'abord l'API user_project_permissions, avec fallback sur le partner_id du projet
    */
   async getProjectPartners(projectId: number, userId: number): Promise<ProjectPartner[]> {
     console.log('🔍 [PROJECT_PARTNERS] - Début getProjectPartners:', { projectId, userId });
-    
-    // Importer le service users qui fonctionne déjà
+
+    // Méthode 1 : Essayer l'API user_project_permissions/getByCriteria
+    // Utilisation d'un fetch direct pour éviter le console.error de makeRequest (endpoint pas toujours disponible)
     try {
+      const requestData: ProjectPartnerListRequest = {
+        user: { id: userId },
+        index: 0,
+        size: 100,
+        data: {
+          project_id: projectId,
+          is_active: true
+        }
+      };
+
+      const response = await fetch(`${this.baseUrl}/user_project_permissions/getByCriteria`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 'success') {
+          const items = data.data || data.items || [];
+          console.log('✅ [PROJECT_PARTNERS] - Permissions projet récupérées:', items.length);
+
+          if (items.length > 0) {
+            return items;
+          }
+        }
+      }
+    } catch {
+      // Silencieux : endpoint optionnel, fallback ci-dessous
+    }
+
+    // Méthode 2 (fallback) : Trouver le partner_id du projet et chercher ses utilisateurs
+    try {
+      const { projectsService } = await import('@/services/projects');
       const { UsersService } = await import('@/services/users');
-      
-      console.log('🔍 [PROJECT_PARTNERS] - Utilisation de UsersService.getUsersByCriteria');
-      
+
+      // Récupérer le projet pour trouver son partner_id
+      const allProjects = await projectsService.getActiveProjects();
+      const targetProject = allProjects.find((p) => p.id === projectId);
+
+      if (!targetProject || !targetProject.partner_id) {
+        console.log('⚠️ [PROJECT_PARTNERS] - Projet sans partner_id, retour tableau vide');
+        return [];
+      }
+
+      console.log('🔍 [PROJECT_PARTNERS] - Fallback: partner_id du projet =', targetProject.partner_id);
+
+      // Récupérer les utilisateurs liés à ce partenaire
       const response = await UsersService.getUsersByCriteria({
         index: 0,
         size: 100,
@@ -173,15 +218,14 @@ class ProjectPartnersService {
         }
       });
 
-      console.log('📥 [PROJECT_PARTNERS] - Réponse API reçue:', response);
-      
       const users = response.items || response.data || [];
-      
-      // Filtrer seulement les utilisateurs partenaires (role_id = 5) pour ce projet
-      const partners = users.filter((user: any) => user.role_id === 5);
-      
-      // Transformer les utilisateurs en ProjectPartner pour l'interface
-      const result: ProjectPartner[] = partners.slice(0, 3).map((user: any) => ({
+
+      // Filtrer les utilisateurs partenaires (role_id = 5) qui appartiennent au partner_id du projet
+      const partners = users.filter(
+        (user: any) => user.role_id === 5 && user.partner_id === targetProject.partner_id
+      );
+
+      const result: ProjectPartner[] = partners.map((user: any) => ({
         id: user.id,
         user_id: user.id,
         project_id: projectId,
@@ -200,9 +244,9 @@ class ProjectPartnersService {
         user_email: user.email,
         role_in_project: 'Partenaire'
       }));
-      
-      console.log('✅ [PROJECT_PARTNERS] - Membres d\'équipe extraits:', result.length, 'partenaires');
-      
+
+      console.log('✅ [PROJECT_PARTNERS] - Membres d\'équipe du projet:', result.length);
+
       return result;
     } catch (error) {
       console.error('❌ [PROJECT_PARTNERS] - Erreur dans getProjectPartners:', {
@@ -210,8 +254,7 @@ class ProjectPartnersService {
         userId,
         error
       });
-      
-      // Retourner un tableau vide en cas d'erreur pour ne pas casser l'interface
+
       return [];
     }
   }
@@ -368,7 +411,7 @@ class ProjectPartnersService {
    * Obtenir les détails d'un partenaire spécifique
    * CORRECTION: Utiliser l'API users/getByCriteria qui fonctionne réellement
    */
-  async getPartnerDetails(partnerId: number, userId: number): Promise<AvailablePartner | null> {
+  async getPartnerDetails(partnerId: number, _userId?: number): Promise<AvailablePartner | null> {
     try {
       const { UsersService } = await import('@/services/users');
       

@@ -67,7 +67,7 @@ import { UsersService, type User as UserType } from "@/services/users";
 import IncidentFilesModal from "./IncidentFilesModal";
 import { partnersService, type Partner } from "@/services/partners";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // Types locaux pour l'interface
 interface Incident {
@@ -183,12 +183,16 @@ const GestionIncidents: React.FC = () => {
   const { hasPermission, user, isAdmin, isPartner } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [filteredIncidents, setFilteredIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("tous");
   const [filterPriority, setFilterPriority] = useState<string>("tous");
+  const [filterProjectId, setFilterProjectId] = useState<string | null>(
+    searchParams.get("project_id"),
+  );
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(
     null,
   );
@@ -544,6 +548,13 @@ const GestionIncidents: React.FC = () => {
   useEffect(() => {
     let filtered = incidents;
 
+    // Filtrage par projet (via URL query param)
+    if (filterProjectId) {
+      filtered = filtered.filter(
+        (incident) => String(incident.project_id) === filterProjectId,
+      );
+    }
+
     // Filtrage par recherche
     if (searchTerm) {
       filtered = filtered.filter(
@@ -574,7 +585,7 @@ const GestionIncidents: React.FC = () => {
     }
 
     setFilteredIncidents(filtered);
-  }, [incidents, searchTerm, filterStatus, filterPriority]);
+  }, [incidents, searchTerm, filterStatus, filterPriority, filterProjectId]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1437,7 +1448,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1461,7 +1472,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1485,7 +1496,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1509,7 +1520,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1533,7 +1544,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1557,7 +1568,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1581,7 +1592,7 @@ const GestionIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1601,13 +1612,29 @@ const GestionIncidents: React.FC = () => {
         </motion.div>
       </div>
 
+      {/* Badge filtre projet actif */}
+      {filterProjectId && (
+        <div className="flex items-center gap-2 px-1">
+          <Chip
+            color="primary"
+            variant="flat"
+            onClose={() => {
+              setFilterProjectId(null);
+              router.replace("/tableaudebord/incidents");
+            }}
+          >
+            Projet : {projects.find((p) => String(p.id) === filterProjectId)?.title || `#${filterProjectId}`}
+          </Chip>
+        </div>
+      )}
+
       {/* Filtres et recherche */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
       >
-        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardBody className="p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-1 gap-4">
@@ -1687,7 +1714,7 @@ const GestionIncidents: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
       >
-        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardBody className="p-0">
             {isAdmin() ? (
               // Table pour les admins avec toutes les colonnes

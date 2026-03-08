@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { SecureStorage } from "@/lib/secure-storage";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
@@ -39,6 +39,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { partnersService, Partner, GetPartnersParams } from "@/services/partners";
@@ -82,6 +83,14 @@ interface PaginationState {
 }
 
 const TablePartner: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [filterProjectId, setFilterProjectId] = useState<string | null>(
+    searchParams.get("project_id"),
+  );
+  const [filterProjectPartnerIds, setFilterProjectPartnerIds] = useState<Set<number>>(new Set());
+  const [filterProjectName, setFilterProjectName] = useState<string>("");
+
   // États pour les données
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,6 +148,29 @@ const TablePartner: React.FC = () => {
     hasPermission,
     canCreate
   } = useAuth();
+
+  // Charger les infos du projet filtré pour trouver le partner_id associé
+  useEffect(() => {
+    const loadProjectFilter = async () => {
+      if (!filterProjectId) return;
+      try {
+        const allProjects = await projectsService.getActiveProjects();
+        const targetProject = allProjects.find(
+          (p) => String(p.id) === filterProjectId,
+        );
+        if (targetProject) {
+          setFilterProjectName(targetProject.title);
+          if (targetProject.partner_id) {
+            setFilterProjectPartnerIds(new Set([targetProject.partner_id]));
+          }
+        }
+      } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
+        console.error("Erreur chargement projet pour filtre:", error);
+      }
+    };
+    loadProjectFilter();
+  }, [filterProjectId]);
 
   // Fonction utilitaire pour corriger les URLs d'images (adaptée pour HTTPS backend direct)
   const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
@@ -422,15 +454,23 @@ const TablePartner: React.FC = () => {
     }
   }, [debouncedSearch, filters.search]);
 
+  // Filtrer les partenaires par projet si un filtre est actif
+  const displayedPartners = useMemo(() => {
+    if (filterProjectId && filterProjectPartnerIds.size > 0) {
+      return partners.filter((p) => filterProjectPartnerIds.has(p.id));
+    }
+    return partners;
+  }, [partners, filterProjectId, filterProjectPartnerIds]);
+
   // Pagination effect pour la pagination côté client
   useEffect(() => {
     const startIndex = (pagination.page - 1) * pagination.rowsPerPage;
     const endIndex = startIndex + pagination.rowsPerPage;
-    setPaginatedPartners(partners.slice(startIndex, endIndex));
-  }, [partners, pagination.page, pagination.rowsPerPage]);
+    setPaginatedPartners(displayedPartners.slice(startIndex, endIndex));
+  }, [displayedPartners, pagination.page, pagination.rowsPerPage]);
 
   // Calculer le nombre total de pages côté client
-  const totalPages = Math.ceil(partners.length / pagination.rowsPerPage);
+  const totalPages = Math.ceil(displayedPartners.length / pagination.rowsPerPage);
 
   // Fonction pour gérer les changements de page
   const handlePageChange = useCallback((page: number) => {
@@ -692,6 +732,24 @@ const TablePartner: React.FC = () => {
           </motion.div>
         ))}
       </div>
+
+      {/* Badge filtre projet actif */}
+      {filterProjectId && filterProjectName && (
+        <div className="flex items-center gap-2 px-1">
+          <Chip
+            color="primary"
+            variant="flat"
+            onClose={() => {
+              setFilterProjectId(null);
+              setFilterProjectPartnerIds(new Set());
+              setFilterProjectName("");
+              router.replace("/tableaudebord/partenaire/liste");
+            }}
+          >
+            Projet : {filterProjectName}
+          </Chip>
+        </div>
+      )}
 
       {/* Filtres */}
       <motion.div

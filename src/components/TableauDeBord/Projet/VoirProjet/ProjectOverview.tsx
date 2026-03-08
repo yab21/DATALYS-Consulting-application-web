@@ -1,20 +1,23 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  BarChart3,
   Users,
-  Calendar,
   FileText,
-  Clock,
-  Target,
   FolderOpen,
-  AlertTriangle
+  AlertTriangle,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
+  Info
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { projectFilesService } from "@/services/projectFiles";
-import { IncidentsService } from "@/services/incidents";
-import { projectPartnersService } from "@/services/projectPartners";
+import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { Chip } from "@heroui/react";
+import { projectFilesService, ProjectFolder } from "@/services/projectFiles";
+import { IncidentsService, Incident } from "@/services/incidents";
+import { projectPartnersService, ProjectPartner } from "@/services/projectPartners";
 import { useAuth } from "@/context/AuthContext";
 import { isTokenExpiredError } from "@/lib/api-interceptor";
 
@@ -29,153 +32,116 @@ interface ProjectOverviewProps {
     progression?: number;
     description?: string;
   };
+  onTabChange?: (tab: string) => void;
 }
 
-const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
+const MAX_DROPDOWN_ITEMS = 5;
+
+const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange }) => {
   const { user } = useAuth();
-  
-  // Calculs de statistiques basées sur les données disponibles
+  const router = useRouter();
+
   const projectAge = Math.floor((new Date().getTime() - project.createdAt.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // État pour les vraies statistiques du projet
+
   const [projectStats, setProjectStats] = useState({
     filesCount: 0,
     foldersCount: 0,
     incidentsCount: 0,
     teamMembersCount: 0,
+    teamError: false,
     loading: true
   });
 
-  // Charger les vraies statistiques du projet
+  const [detailedData, setDetailedData] = useState<{
+    folders: ProjectFolder[];
+    files: { name: string; folder_name: string; folder_id: number }[];
+    incidents: Incident[];
+    teamMembers: ProjectPartner[];
+  }>({
+    folders: [],
+    files: [],
+    incidents: [],
+    teamMembers: []
+  });
+
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Fermer dropdown au clic extérieur
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (expandedCard && cardRefs.current[expandedCard]) {
+        if (!cardRefs.current[expandedCard]!.contains(event.target as Node)) {
+          setExpandedCard(null);
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [expandedCard]);
+
+  // Charger les statistiques
   useEffect(() => {
     const fetchProjectStats = async () => {
       try {
-        console.log('🔄 [DEBUG FIX] - Début du chargement des statistiques pour le projet', project.id);
-        
-        // CORRECTION: Vider le cache avant de compter pour avoir des données fraîches
         projectFilesService.clearStatsCache();
-        console.log('🗑️ [DEBUG FIX] - Cache des statistiques vidé');
-        
-        // Récupérer tous les dossiers du projet
-        console.log('🔍 [DEBUG FIX] - Récupération des dossiers du projet', project.id);
+
         const folders = await projectFilesService.getFolders(null, Number(project.id));
         const foldersCount = folders.length;
-        
-        console.log('📁 [DEBUG FIX] - Dossiers trouvés:', {
-          count: foldersCount,
-          folders: folders.map(f => ({ id: f.id, name: f.name }))
-        });
 
-        // Compter tous les fichiers dans tous les dossiers
         let totalFiles = 0;
-        const folderFileCounts: { [folderId: number]: number } = {};
-        
-        console.log('🔍 [DEBUG FIX] - Début du comptage des fichiers dans', folders.length, 'dossiers');
-        
-        // Compter les fichiers dans chaque dossier
+        const allFiles: { name: string; folder_name: string; folder_id: number }[] = [];
+
         for (const folder of folders) {
           try {
-            console.log(`🔍 [DEBUG FIX] - Comptage fichiers pour dossier "${folder.name}" (ID: ${folder.id})`);
             const files = await projectFilesService.getFiles(folder.id, Number(project.id));
-            const fileCount = files.length;
-            totalFiles += fileCount;
-            folderFileCounts[folder.id] = fileCount;
-            
-            console.log(`✅ [DEBUG FIX] - Dossier "${folder.name}": ${fileCount} fichier(s) trouvé(s)`);
-            
-            if (fileCount > 0) {
-              console.log('📁 [DEBUG FIX] - Détail des fichiers:', files.map(f => ({
-                id: f.id,
-                name: f.original_name,
-                folder_id: f.folder_id
-              })));
-            }
+            totalFiles += files.length;
+            files.forEach(f => {
+              allFiles.push({
+                name: f.original_name || f.name,
+                folder_name: folder.name,
+                folder_id: folder.id
+              });
+            });
           } catch (error) {
             if (isTokenExpiredError(error)) throw error;
-            console.error(`❌ [DEBUG FIX] - Erreur lors du comptage des fichiers du dossier "${folder.name}" (ID: ${folder.id}):`, error);
-            folderFileCounts[folder.id] = 0;
           }
         }
-        
-        console.log('📊 [DEBUG FIX] - Résumé du comptage des fichiers:', {
-          totalFolders: folders.length,
-          totalFiles,
-          detailByFolder: folderFileCounts
-        });
 
-        // Compter également les fichiers à la racine (sans dossier parent)
-        // CORRECTION: Ne pas essayer de compter les fichiers racine avec null
-        // car l'API ne gère pas correctement cette situation
-        console.log('🔍 [DEBUG FIX] - Éviter le comptage des fichiers racine avec null folder_id');
-        // Les fichiers racine seront comptés différemment si nécessaire
-
-        // Charger les vraies données d'incidents
-        console.log('🔍 [DEBUG FIX] - Chargement des incidents pour le projet', project.id);
         let incidentsCount = 0;
+        let incidentsList: Incident[] = [];
         try {
           const incidentsResponse = await IncidentsService.getIncidentsByCriteria({
-            data: {
-              project_id: parseInt(project.id),
-              is_active: true
-            }
+            data: { project_id: parseInt(project.id), is_active: true }
           });
-          
           if (incidentsResponse.code === 200 && incidentsResponse.items) {
             incidentsCount = incidentsResponse.items.length;
-            console.log('✅ [DEBUG FIX] - Incidents trouvés:', incidentsCount);
+            incidentsList = incidentsResponse.items;
           }
         } catch (error) {
           if (isTokenExpiredError(error)) throw error;
-          console.warn('❌ [DEBUG FIX] - Erreur lors du chargement des incidents:', error);
         }
 
-        // Charger les vraies données d'équipe
-        console.log('🔍 [DEBUG FIX] - Chargement de l\'équipe pour le projet', project.id);
         let teamMembersCount = 0;
+        let teamMembersList: ProjectPartner[] = [];
+        let teamError = false;
         try {
           if (user?.id) {
-            console.log('🔍 [DEBUG FIX] - Tentative de récupération équipe avec userId:', user.id, 'projectId:', parseInt(project.id));
             const teamMembers = await projectPartnersService.getProjectPartners(
-              parseInt(project.id), 
-              user.id
+              parseInt(project.id), user.id
             );
             teamMembersCount = teamMembers.length;
-            console.log('✅ [DEBUG FIX] - Membres d\'équipe trouvés:', teamMembersCount, teamMembers);
+            teamMembersList = teamMembers;
           } else {
-            console.warn('❌ [DEBUG FIX] - Pas d\'utilisateur connecté pour charger l\'équipe');
+            teamError = true;
           }
         } catch (error) {
           if (isTokenExpiredError(error)) throw error;
-          console.error('❌ [DEBUG FIX] - Erreur détaillée lors du chargement de l\'équipe:', {
-            error,
-            errorMessage: error instanceof Error ? error.message : String(error),
-            errorStack: error instanceof Error ? error.stack : null,
-            userId: user?.id,
-            projectId: project.id
-          });
-
-          // Pour l'instant, on met 0 au lieu d'une valeur factice
-          teamMembersCount = 0;
-          console.log('⚠️ [DEBUG FIX] - Équipe définie à 0 à cause de l\'erreur API');
+          teamError = true;
         }
 
-        console.log('✅ [DEBUG FIX] - Statistiques finales calculées:', {
-          projectId: project.id,
-          foldersCount,
-          filesCount: totalFiles,
-          incidentsCount,
-          teamMembersCount,
-          message: `Projet: ${foldersCount} dossiers, ${totalFiles} fichiers, ${incidentsCount} incidents, ${teamMembersCount} membres d'équipe`
-        });
-
-        setProjectStats(prev => ({
-          ...prev,
-          filesCount: totalFiles,
-          foldersCount,
-          incidentsCount,
-          teamMembersCount,
-          loading: false
-        }));
+        setDetailedData({ folders, files: allFiles, incidents: incidentsList, teamMembers: teamMembersList });
+        setProjectStats({ filesCount: totalFiles, foldersCount, incidentsCount, teamMembersCount, teamError, loading: false });
       } catch (error) {
         if (isTokenExpiredError(error)) throw error;
         console.error('Erreur lors du chargement des statistiques du projet:', error);
@@ -183,215 +149,312 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
       }
     };
 
-    if (project.id) {
-      fetchProjectStats();
-    }
+    if (project.id) fetchProjectStats();
   }, [project.id, user?.id]);
+
+  const handleViewAll = (label: string) => {
+    switch (label) {
+      case "Dossiers":
+      case "Fichiers":
+        onTabChange?.("files");
+        break;
+      case "Incidents":
+        router.push(`/tableaudebord/incidents?project_id=${project.id}`);
+        break;
+      case "Équipe":
+        router.push(`/tableaudebord/partenaire/liste?project_id=${project.id}`);
+        break;
+    }
+  };
+
+  const handleCardClick = (label: string) => {
+    setExpandedCard(prev => prev === label ? null : label);
+  };
+
+  const getPriorityColor = (priority: string): "danger" | "warning" | "primary" | "default" => {
+    switch (priority) {
+      case 'P0': case 'P1': return 'danger';
+      case 'P2': return 'warning';
+      case 'P3': return 'primary';
+      default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      nouveau: 'Nouveau', en_cours: 'En cours', en_attente: 'En attente',
+      en_arbitrage: 'Arbitrage', en_pause: 'En pause', resolu: 'Résolu'
+    };
+    return labels[status] || status;
+  };
+
+  const getTotalCount = (label: string): number => {
+    switch (label) {
+      case "Dossiers": return detailedData.folders.length;
+      case "Fichiers": return detailedData.files.length;
+      case "Incidents": return detailedData.incidents.length;
+      case "Équipe": return detailedData.teamMembers.length;
+      default: return 0;
+    }
+  };
+
+  const renderDropdownContent = (label: string) => {
+    switch (label) {
+      case "Dossiers": {
+        const items = detailedData.folders.slice(0, MAX_DROPDOWN_ITEMS);
+        if (items.length === 0) return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Aucun dossier</p>;
+        return items.map(folder => (
+          <button
+            key={folder.id}
+            onClick={(e) => { e.stopPropagation(); onTabChange?.("files"); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
+          >
+            <FolderOpen className="w-4 h-4 text-[#4ba9b7] flex-shrink-0" />
+            <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">{folder.name}</span>
+            <ArrowRight className="w-3 h-3 text-gray-300 dark:text-gray-600 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+          </button>
+        ));
+      }
+      case "Fichiers": {
+        const items = detailedData.files.slice(0, MAX_DROPDOWN_ITEMS);
+        if (items.length === 0) return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Aucun fichier</p>;
+        return items.map((file, idx) => (
+          <button
+            key={idx}
+            onClick={(e) => { e.stopPropagation(); onTabChange?.("files"); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
+          >
+            <FileText className="w-4 h-4 text-[#4ba9b7] flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">{file.name}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{file.folder_name}</span>
+            </div>
+            <ArrowRight className="w-3 h-3 text-gray-300 dark:text-gray-600 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0" />
+          </button>
+        ));
+      }
+      case "Incidents": {
+        const items = detailedData.incidents.slice(0, MAX_DROPDOWN_ITEMS);
+        if (items.length === 0) return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Aucun incident</p>;
+        return items.map(incident => (
+          <button
+            key={incident.id}
+            onClick={(e) => { e.stopPropagation(); router.push(`/tableaudebord/incidents/${incident.id}`); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
+          >
+            <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">{incident.title}</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <Chip size="sm" color={getPriorityColor(incident.priority)} variant="flat" className="h-5 text-[10px]">
+                  {incident.priority}
+                </Chip>
+                <Chip size="sm" variant="flat" className="h-5 text-[10px]">
+                  {getStatusLabel(incident.status)}
+                </Chip>
+              </div>
+            </div>
+            <ArrowRight className="w-3 h-3 text-gray-300 dark:text-gray-600 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0" />
+          </button>
+        ));
+      }
+      case "Équipe": {
+        if (projectStats.teamError) {
+          return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Données non disponibles</p>;
+        }
+        const items = detailedData.teamMembers.slice(0, MAX_DROPDOWN_ITEMS);
+        if (items.length === 0) return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Aucun membre</p>;
+        return items.map(member => (
+          <button
+            key={member.id}
+            onClick={(e) => { e.stopPropagation(); router.push(`/tableaudebord/partenaire/${member.user_id}`); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
+          >
+            <div className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                {(member.partner_name || member.user_name || '?').charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">{member.partner_name || member.user_name}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 truncate block">{member.partner_email || member.user_email}</span>
+            </div>
+            <ArrowRight className="w-3 h-3 text-gray-300 dark:text-gray-600 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0" />
+          </button>
+        ));
+      }
+      default:
+        return null;
+    }
+  };
 
   const statisticsCards = [
     {
-      icon: <FolderOpen className="w-6 h-6" />,
+      icon: <FolderOpen className="w-5 h-5" />,
       label: "Dossiers",
       value: projectStats.loading ? "..." : projectStats.foldersCount,
-      color: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50 dark:bg-blue-900/20",
-      iconColor: "text-blue-600 dark:text-blue-400"
+      iconBg: "bg-blue-50 dark:bg-blue-900/20",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      borderActive: "border-blue-300 dark:border-blue-700"
     },
     {
-      icon: <FileText className="w-6 h-6" />,
+      icon: <FileText className="w-5 h-5" />,
       label: "Fichiers",
       value: projectStats.loading ? "..." : projectStats.filesCount,
-      color: "from-green-500 to-green-600",
-      bgColor: "bg-green-50 dark:bg-green-900/20",
-      iconColor: "text-green-600 dark:text-green-400"
+      iconBg: "bg-emerald-50 dark:bg-emerald-900/20",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      borderActive: "border-emerald-300 dark:border-emerald-700"
     },
     {
-      icon: <AlertTriangle className="w-6 h-6" />,
+      icon: <AlertTriangle className="w-5 h-5" />,
       label: "Incidents",
       value: projectStats.incidentsCount,
-      color: "from-orange-500 to-orange-600",
-      bgColor: "bg-orange-50 dark:bg-orange-900/20",
-      iconColor: "text-orange-600 dark:text-orange-400"
+      iconBg: "bg-orange-50 dark:bg-orange-900/20",
+      iconColor: "text-orange-600 dark:text-orange-400",
+      borderActive: "border-orange-300 dark:border-orange-700"
     },
     {
-      icon: <Users className="w-6 h-6" />,
+      icon: <Users className="w-5 h-5" />,
       label: "Équipe",
-      value: projectStats.teamMembersCount,
-      color: "from-purple-500 to-purple-600",
-      bgColor: "bg-purple-50 dark:bg-purple-900/20",
-      iconColor: "text-purple-600 dark:text-purple-400"
+      value: projectStats.teamError ? "N/A" : projectStats.teamMembersCount,
+      iconBg: "bg-violet-50 dark:bg-violet-900/20",
+      iconColor: "text-violet-600 dark:text-violet-400",
+      borderActive: "border-violet-300 dark:border-violet-700"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900">
-      {/* Header avec design moderne - nettoyé */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-10">
-        <div className="px-8 py-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#4ba9b7] to-[#3d8b96] rounded-xl flex items-center justify-center shadow-lg">
-              <BarChart3 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                Vue d'ensemble
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 font-medium">
-                Aperçu complet et détaillé du projet
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="p-6 sm:p-8 space-y-8">
+      {/* Statistiques */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statisticsCards.map((stat) => {
+          const isExpanded = expandedCard === stat.label;
+          const totalCount = getTotalCount(stat.label);
 
-      <div className="px-8 py-8 space-y-12">
-        {/* Statistiques harmonisées avec le style du dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statisticsCards.map((stat, index) => (
-            <motion.div
+          return (
+            <div
               key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow duration-300"
+              ref={(el) => { cardRefs.current[stat.label] = el; }}
+              className="relative"
             >
-              <div className="flex items-center justify-between">
-                <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                  <span className={`${stat.iconColor}`}>
-                    {stat.icon}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {projectStats.loading ? (
-                      <div className="w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    ) : (
-                      stat.value
-                    )}
+              <div
+                onClick={() => handleCardClick(stat.label)}
+                className={`bg-white dark:bg-gray-800 rounded-xl border p-5 cursor-pointer transition-all duration-200 select-none ${
+                  isExpanded
+                    ? `${stat.borderActive} shadow-md`
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 ${stat.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                    <span className={stat.iconColor}>{stat.icon}</span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                    {stat.label}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Informations détaillées harmonisées */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="bg-gradient-to-r from-[#4ba9b7] to-[#3d8b96] p-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Target className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">
-                    Informations du projet
-                  </h2>
-                  <p className="text-blue-100 text-sm">
-                    Détails essentiels et métadonnées
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Target className="w-4 h-4 text-[#4ba9b7]" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white leading-none">
+                      {projectStats.loading ? (
+                        <div className="w-8 h-6 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
+                      ) : (
+                        stat.value
+                      )}
                     </div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Nom du projet</span>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {project.intitule}
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Users className="w-4 h-4 text-[#4ba9b7]" />
-                    </div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Partenaire</span>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {project.societe}
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-[#4ba9b7]" />
-                    </div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Créé le</span>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {project.createdAt.toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Clock className="w-4 h-4 text-[#4ba9b7]" />
-                    </div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Durée</span>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {projectAge} jour{projectAge !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Description du projet si disponible */}
-        {project.description && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="bg-gradient-to-r from-[#4ba9b7] to-[#3d8b96] p-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">
-                      Description du projet
-                    </h3>
-                    <p className="text-blue-100 text-sm">
-                      Informations détaillées
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1">
+                      {stat.label}
                     </p>
                   </div>
+                  <div className="flex-shrink-0">
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <p className="text-lg text-gray-800 dark:text-gray-200 leading-relaxed">
-                    {project.description}
-                  </p>
-                </div>
-              </div>
+
+              {/* Dropdown */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 right-0 top-full mt-1.5 z-30"
+                  >
+                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
+                      <div className="max-h-60 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-700/50">
+                        {renderDropdownContent(stat.label)}
+                      </div>
+                      {totalCount > 0 && (
+                        <div className="border-t border-gray-100 dark:border-gray-700">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleViewAll(stat.label); }}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-[#4ba9b7] hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                          >
+                            Voir tout ({totalCount})
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </motion.div>
-        )}
+          );
+        })}
       </div>
+
+      {/* Détails du projet */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Info className="w-4 h-4 text-[#4ba9b7]" />
+            Informations du projet
+          </h2>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+            <div>
+              <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Nom du projet</dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">{project.intitule}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Partenaire</dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">{project.societe}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Date de création</dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">
+                {project.createdAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Durée</dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">
+                {projectAge} jour{projectAge !== 1 ? 's' : ''}
+              </dd>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Description */}
+      {project.description && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#4ba9b7]" />
+              Description
+            </h2>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              {project.description}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
