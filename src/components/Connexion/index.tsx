@@ -16,11 +16,14 @@ import {
   Zap,
   TrendingUp,
   Users,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthService } from "@/services/auth";
 import { useAuth } from "@/context/AuthContext";
+import useColorMode from "@/hooks/useColorMode";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { useTopBarProgress } from "@/hooks/useTopBarProgress";
 import VerificationMFA from "@/components/Auth/VerificationMFA";
@@ -43,6 +46,7 @@ const Connexion: React.FC = () => {
   const { login } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const { start, finish } = useTopBarProgress();
+  const [colorMode, setColorMode] = useColorMode() as [string, (value: string) => void];
 
   const {
     register,
@@ -190,9 +194,26 @@ const Connexion: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Subtle Background Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.05)_0%,transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.05)_0%,transparent_50%)] dark:bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.08)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.08)_0%,transparent_50%)]"></div>
+
+      {/* Dark Mode Toggle */}
+      <motion.button
+        onClick={() => setColorMode(colorMode === "light" ? "dark" : "light")}
+        className="absolute right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 shadow-md backdrop-blur-sm transition-colors hover:bg-gray-100 dark:bg-gray-800/80 dark:hover:bg-gray-700"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        {colorMode === "dark" ? (
+          <Sun className="h-5 w-5 text-amber-500" />
+        ) : (
+          <Moon className="h-5 w-5 text-gray-600" />
+        )}
+      </motion.button>
 
       <div className="relative flex min-h-screen">
         {/* Left Panel - Brand Section */}
@@ -338,7 +359,14 @@ const Connexion: React.FC = () => {
               width={120}
               height={90}
               alt="DATALYS"
-              className="drop-shadow-lg"
+              className="drop-shadow-lg dark:hidden"
+            />
+            <Image
+              src="/images/logo/logo.png"
+              width={120}
+              height={90}
+              alt="DATALYS"
+              className="hidden drop-shadow-lg dark:block"
             />
           </motion.div>
 
@@ -350,7 +378,7 @@ const Connexion: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {/* Form Card */}
-            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10">
+            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10 dark:bg-gray-800 dark:shadow-gray-900/50">
               {/* Header */}
               <motion.div
                 className="mb-8 text-center"
@@ -358,11 +386,11 @@ const Connexion: React.FC = () => {
                 initial="hidden"
                 animate="visible"
               >
-                <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
+                <h2 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white lg:text-4xl">
                   Connexion
                 </h2>
                 <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
-                <p className="mt-4 text-gray-600">
+                <p className="mt-4 text-gray-600 dark:text-gray-400">
                   Accédez à votre espace entreprise
                 </p>
               </motion.div>
@@ -370,15 +398,15 @@ const Connexion: React.FC = () => {
               {/* Error Message */}
               {error && (
                 <motion.div
-                  className="rounded-lg bg-red-50 p-4 border border-red-200"
+                  className="rounded-lg bg-red-50 p-4 border border-red-200 dark:bg-red-900/20 dark:border-red-800"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <div className="flex items-center gap-3">
-                    <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="h-5 w-5 text-red-500 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-red-700 font-medium">{error}</span>
+                    <span className="text-red-700 dark:text-red-300 font-medium">{error}</span>
                   </div>
                 </motion.div>
               )}
@@ -393,7 +421,7 @@ const Connexion: React.FC = () => {
                   transition={{ delay: 0.5 }}
                 >
                   <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
+                    <label className="mb-2 block text-base font-semibold text-gray-800 dark:text-gray-200">
                       Identifiant
                     </label>
                   </div>
@@ -432,7 +460,7 @@ const Connexion: React.FC = () => {
                   transition={{ delay: 0.6 }}
                 >
                   <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
+                    <label className="mb-2 block text-base font-semibold text-gray-800 dark:text-gray-200">
                       Mot de passe
                     </label>
                   </div>
@@ -462,7 +490,7 @@ const Connexion: React.FC = () => {
                     startContent={<Lock className="h-5 w-5 text-gray-500" />}
                     endContent={
                       <button
-                        className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
+                        className="text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
                         type="button"
                         onClick={toggleVisibility}
                       >
@@ -488,11 +516,11 @@ const Connexion: React.FC = () => {
                     {...register("rememberMe")}
                     id="login-remember-me"
                     classNames={{
-                      base: "text-gray-800",
+                      base: "text-gray-800 dark:text-gray-200",
                       wrapper:
                         "before:border-gray-400 after:bg-primary hover:before:border-primary transition-colors duration-300",
                       label:
-                        "text-gray-800 text-sm font-medium hover:text-gray-900 transition-colors duration-300",
+                        "text-gray-800 dark:text-gray-200 text-sm font-medium hover:text-gray-900 dark:hover:text-white transition-colors duration-300",
                     }}
                   >
                     Se souvenir de moi
@@ -533,13 +561,13 @@ const Connexion: React.FC = () => {
 
               {/* Footer */}
               <motion.div
-                className="mt-8 border-t border-gray-100 pt-6 text-center"
+                className="mt-8 border-t border-gray-100 dark:border-gray-700 pt-6 text-center"
                 variants={itemVariants}
                 initial="hidden"
                 animate="visible"
                 transition={{ delay: 0.9 }}
               >
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   All Rights Reserved by{" "}
                   <Link
                     href="https://www.datalysconsulting.com/"

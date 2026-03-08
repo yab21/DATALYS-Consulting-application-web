@@ -11,9 +11,9 @@ import {
   Button,
   Link,
 } from "@heroui/react";
-import { 
-  Eye, 
-  EyeOff, 
+import {
+  Eye,
+  EyeOff,
   Lock,
   Shield,
   CheckCircle,
@@ -21,9 +21,12 @@ import {
   Zap,
   TrendingUp,
   Users,
-  Mail
+  Mail,
+  Sun,
+  Moon
 } from "lucide-react";
 import { AuthService } from "@/services/auth";
+import useColorMode from "@/hooks/useColorMode";
 import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import VerificationMFA from "@/components/Auth/VerificationMFA";
@@ -39,6 +42,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
   const searchParams = useSearchParams();
   const { loginWithUserData } = useAuth();
   const { showNotification } = useSimpleNotifications();
+  const [colorMode, setColorMode] = useColorMode() as [string, (value: string) => void];
 
   const [formData, setFormData] = useState<PasswordChangeData>({
     email: "",
@@ -197,7 +201,20 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={() => setColorMode(colorMode === "dark" ? "light" : "dark")}
+        className="fixed right-4 top-4 z-50 rounded-full bg-white/80 p-2.5 shadow-lg backdrop-blur-sm transition-all duration-300 hover:bg-white hover:shadow-xl dark:bg-gray-800/80 dark:hover:bg-gray-700"
+        aria-label="Toggle dark mode"
+      >
+        {colorMode === "dark" ? (
+          <Sun className="h-5 w-5 text-yellow-500" />
+        ) : (
+          <Moon className="h-5 w-5 text-gray-600" />
+        )}
+      </button>
+
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.05)_0%,transparent_50%)]"></div>
 
@@ -344,7 +361,14 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
               width={120}
               height={90}
               alt="DATALYS"
-              className="drop-shadow-lg"
+              className="drop-shadow-lg dark:hidden"
+            />
+            <Image
+              src="/images/logo/logo.png"
+              width={120}
+              height={90}
+              alt="DATALYS"
+              className="hidden drop-shadow-lg dark:block"
             />
           </motion.div>
 
@@ -356,7 +380,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {/* Form Card */}
-            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10">
+            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10 dark:bg-gray-800 dark:shadow-gray-900/50">
               {/* Header */}
               <motion.div
                 className="mb-8 text-center"
@@ -364,11 +388,11 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                 initial="hidden"
                 animate="visible"
               >
-                <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
+                <h2 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white lg:text-4xl">
                   Nouveau mot de passe
                 </h2>
                 <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
-                <p className="mt-4 text-gray-600">
+                <p className="mt-4 text-gray-600 dark:text-gray-400">
                   Changez votre mot de passe temporaire
                 </p>
               </motion.div>
@@ -383,7 +407,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                   transition={{ delay: 0.5 }}
                 >
                   <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
+                    <label className="mb-2 block text-base font-semibold text-gray-800 dark:text-gray-200">
                       Adresse email
                     </label>
                   </div>
@@ -417,7 +441,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                   transition={{ delay: 0.6 }}
                 >
                   <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
+                    <label className="mb-2 block text-base font-semibold text-gray-800 dark:text-gray-200">
                       Mot de passe actuel
                     </label>
                   </div>
@@ -441,7 +465,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     startContent={<Lock className="h-5 w-5 text-gray-500" />}
                     endContent={
                       <button
-                        className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
+                        className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none dark:text-gray-400 dark:hover:text-gray-200"
                         type="button"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                       >
@@ -463,7 +487,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                   transition={{ delay: 0.7 }}
                 >
                   <div className="mb-2">
-                    <label className="mb-2 block text-base font-semibold text-gray-800">
+                    <label className="mb-2 block text-base font-semibold text-gray-800 dark:text-gray-200">
                       Nouveau mot de passe
                     </label>
                   </div>
@@ -487,7 +511,7 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
                     startContent={<Lock className="h-5 w-5 text-gray-500" />}
                     endContent={
                       <button
-                        className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none"
+                        className="text-gray-500 transition-colors hover:text-gray-700 focus:outline-none dark:text-gray-400 dark:hover:text-gray-200"
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
                       >
@@ -527,13 +551,13 @@ const ChangerMotDePasseTemporaire: React.FC = () => {
 
               {/* Footer */}
               <motion.div
-                className="mt-8 border-t border-gray-100 pt-6 text-center"
+                className="mt-8 border-t border-gray-100 pt-6 text-center dark:border-gray-700"
                 variants={itemVariants}
                 initial="hidden"
                 animate="visible"
                 transition={{ delay: 1.0 }}
               >
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Besoin d'aide ?{" "}
                   <Link
                     href="/connexion"

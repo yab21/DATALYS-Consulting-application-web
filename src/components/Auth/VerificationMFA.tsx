@@ -8,16 +8,19 @@ import {
   Input,
   Button,
 } from "@heroui/react";
-import { 
+import {
   Shield,
   ArrowRight,
   ArrowLeft,
   Clock,
   CheckCircle,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Sun,
+  Moon
 } from "lucide-react";
 import { AuthService } from "@/services/auth";
+import useColorMode from "@/hooks/useColorMode";
 import { MFAVerificationRequest } from "@/lib/api-config";
 import { useAuth } from "@/context/AuthContext";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
@@ -31,6 +34,7 @@ interface VerificationMFAProps {
 const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack }) => {
   const router = useRouter();
   const { loginWithUserData } = useAuth();
+  const [colorMode, setColorMode] = useColorMode() as [string, (value: string) => void];
   const { showNotification } = useSimpleNotifications();
   const { start, finish } = useTopBarProgress();
 
@@ -247,7 +251,20 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={() => setColorMode(colorMode === "dark" ? "light" : "dark")}
+        className="fixed right-4 top-4 z-50 rounded-full bg-white/80 p-2.5 shadow-lg backdrop-blur-sm transition-all duration-300 hover:bg-white hover:shadow-xl dark:bg-gray-800/80 dark:hover:bg-gray-700"
+        aria-label="Toggle dark mode"
+      >
+        {colorMode === "dark" ? (
+          <Sun className="h-5 w-5 text-yellow-500" />
+        ) : (
+          <Moon className="h-5 w-5 text-gray-600" />
+        )}
+      </button>
+
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.05)_0%,transparent_50%)]"></div>
 
@@ -394,7 +411,14 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
               width={120}
               height={90}
               alt="DATALYS"
-              className="drop-shadow-lg"
+              className="drop-shadow-lg dark:hidden"
+            />
+            <Image
+              src="/images/logo/logo.png"
+              width={120}
+              height={90}
+              alt="DATALYS"
+              className="hidden drop-shadow-lg dark:block"
             />
           </motion.div>
 
@@ -406,7 +430,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {/* Form Card */}
-            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10">
+            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10 dark:bg-gray-800 dark:shadow-gray-900/50">
               {/* Header */}
               <motion.div
                 className="mb-8 text-center"
@@ -414,11 +438,11 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                 initial="hidden"
                 animate="visible"
               >
-                <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
+                <h2 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white lg:text-4xl">
                   Code de vérification
                 </h2>
                 <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
-                <p className="mt-4 text-gray-600">
+                <p className="mt-4 text-gray-600 dark:text-gray-400">
                   Entrez le code à 6 chiffres envoyé à <br />
                   <span className="font-semibold text-primary">{identifier}</span>
                 </p>
@@ -427,7 +451,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
               {/* Error Message */}
               {error && (
                 <motion.div
-                  className="mb-6 rounded-lg bg-red-50 p-4 border border-red-200"
+                  className="mb-6 rounded-lg bg-red-50 p-4 border border-red-200 dark:bg-red-900/20 dark:border-red-800"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
@@ -436,9 +460,9 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                     <div>
-                      <span className="text-red-700 font-medium">{error}</span>
+                      <span className="text-red-700 font-medium dark:text-red-300">{error}</span>
                       {remainingAttempts !== null && (
-                        <p className="text-red-600 text-sm mt-1">
+                        <p className="text-red-600 text-sm mt-1 dark:text-red-400">
                           {remainingAttempts} tentative(s) restante(s)
                         </p>
                       )}
@@ -457,7 +481,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                   transition={{ delay: 0.5 }}
                 >
                   <div className="mb-4">
-                    <label className="mb-4 block text-base font-semibold text-gray-800">
+                    <label className="mb-4 block text-base font-semibold text-gray-800 dark:text-gray-200">
                       Code de vérification
                     </label>
                   </div>
@@ -491,17 +515,17 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                             handlePaste(index, pastedData);
                           }}
                           className={`
-                            w-12 h-14 sm:w-14 sm:h-16 
+                            w-12 h-14 sm:w-14 sm:h-16
                             text-2xl sm:text-3xl font-mono font-bold text-center
-                            rounded-xl border-2 
+                            rounded-xl border-2
                             transition-all duration-300
                             ${
                               codeDigits[index]
-                                ? "border-primary bg-primary/5 text-primary shadow-lg shadow-primary/20"
-                                : "border-gray-300 bg-gray-50 hover:border-gray-400"
+                                ? "border-primary bg-primary/5 text-primary shadow-lg shadow-primary/20 dark:bg-primary/10"
+                                : "border-gray-300 bg-gray-50 hover:border-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:border-gray-500"
                             }
                             focus:outline-none focus:ring-4 focus:ring-primary/30 focus:border-primary
-                            ${error ? "border-red-400 bg-red-50" : ""}
+                            ${error ? "border-red-400 bg-red-50 dark:border-red-600 dark:bg-red-900/20" : ""}
                           `}
                         />
                         
@@ -509,7 +533,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                     ))}
                   </div>
                   
-                  <p className="text-xs text-gray-500 text-center">
+                  <p className="text-xs text-gray-500 text-center dark:text-gray-400">
                     Entrez les 6 chiffres reçus par email
                   </p>
                 </motion.div>
@@ -551,7 +575,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                     variant="ghost"
                     onPress={onBack}
                     isDisabled={isLoading}
-                    className="w-full py-4 text-gray-600 hover:text-gray-800 transition-colors duration-300"
+                    className="w-full py-4 text-gray-600 hover:text-gray-800 transition-colors duration-300 dark:text-gray-400 dark:hover:text-gray-200"
                     size="lg"
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -562,13 +586,13 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
 
               {/* Footer */}
               <motion.div
-                className="mt-8 border-t border-gray-100 pt-6 text-center space-y-4"
+                className="mt-8 border-t border-gray-100 pt-6 text-center space-y-4 dark:border-gray-700"
                 variants={itemVariants}
                 initial="hidden"
                 animate="visible"
                 transition={{ delay: 0.8 }}
               >
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Vérifiez votre boîte email pour le code de vérification
                 </p>
                 
@@ -607,7 +631,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                   </Button>
                   
                   {resendCooldown > 0 && (
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-gray-400 mt-2 dark:text-gray-500">
                       Vous pourrez demander un nouveau code dans {resendCooldown} seconde{resendCooldown > 1 ? 's' : ''}
                     </p>
                   )}

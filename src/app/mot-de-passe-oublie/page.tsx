@@ -15,9 +15,12 @@ import {
   Mail,
   Loader2,
   Key,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AuthService } from "@/services/auth";
+import useColorMode from "@/hooks/useColorMode";
 import {
   useSimpleNotifications,
   simpleNotificationHelpers,
@@ -32,6 +35,7 @@ const MotDePasseOublie = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const { showNotification } = useSimpleNotifications();
+  const [colorMode, setColorMode] = useColorMode() as [string, (value: string) => void];
 
   const {
     register,
@@ -106,9 +110,26 @@ const MotDePasseOublie = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Subtle Background Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.05)_0%,transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.05)_0%,transparent_50%)] dark:bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.08)_0%,transparent_50%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.08)_0%,transparent_50%)]"></div>
+
+      {/* Dark Mode Toggle */}
+      <motion.button
+        onClick={() => setColorMode(colorMode === "light" ? "dark" : "light")}
+        className="absolute right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 shadow-md backdrop-blur-sm transition-colors hover:bg-gray-100 dark:bg-gray-800/80 dark:hover:bg-gray-700"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        {colorMode === "dark" ? (
+          <Sun className="h-5 w-5 text-amber-500" />
+        ) : (
+          <Moon className="h-5 w-5 text-gray-600" />
+        )}
+      </motion.button>
 
       <div className="relative flex min-h-screen">
         {/* Left Panel - Brand Section */}
@@ -255,7 +276,14 @@ const MotDePasseOublie = () => {
               width={100}
               height={100}
               alt="DATALYS"
-              className="drop-shadow-lg"
+              className="drop-shadow-lg dark:hidden"
+            />
+            <Image
+              src="/images/logo/logo.png"
+              width={100}
+              height={100}
+              alt="DATALYS"
+              className="hidden drop-shadow-lg dark:block"
             />
           </motion.div>
 
@@ -267,7 +295,7 @@ const MotDePasseOublie = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {/* Form Card */}
-            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10">
+            <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-blue-900/10 dark:bg-gray-800 dark:shadow-gray-900/50">
               {!emailSent ? (
                 <motion.div
                   initial={{ opacity: 1 }}
@@ -281,11 +309,11 @@ const MotDePasseOublie = () => {
                     initial="hidden"
                     animate="visible"
                   >
-                    <h2 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl">
+                    <h2 className="mb-3 text-3xl font-bold text-gray-900 dark:text-white lg:text-4xl">
                       Mot de passe oublié
                     </h2>
                     <div className="mx-auto h-1 w-16 rounded-full bg-gradient-to-r from-primary to-primary-800"></div>
-                    <p className="mt-4 text-gray-600">
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">
                       Entrez votre adresse email pour recevoir un lien de
                       récupération
                     </p>
@@ -296,7 +324,7 @@ const MotDePasseOublie = () => {
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
+                      className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300"
                     >
                       {errorMessage}
                     </motion.div>
@@ -314,7 +342,7 @@ const MotDePasseOublie = () => {
                       transition={{ delay: 0.5 }}
                     >
                       <div className="mb-2">
-                        <label className="mb-2 block text-base font-semibold text-gray-800">
+                        <label className="mb-2 block text-base font-semibold text-gray-800 dark:text-gray-200">
                           Adresse email
                         </label>
                       </div>
@@ -331,10 +359,10 @@ const MotDePasseOublie = () => {
                         placeholder="entrer@votre-email.com"
                         classNames={{
                           input:
-                            "text-gray-900 placeholder:text-gray-500 pl-10 text-base",
+                            "text-gray-900 placeholder:text-gray-500 pl-10 text-base dark:text-white dark:placeholder:text-gray-400",
                           inputWrapper:
-                            "border-gray-300 bg-white hover:border-blue-400 focus-within:border-blue-500 focus-within:bg-white transition-all duration-300 shadow-sm",
-                          base: "!text-gray-800",
+                            "border-gray-300 bg-white hover:border-blue-400 focus-within:border-blue-500 focus-within:bg-white transition-all duration-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:hover:border-gray-500 dark:focus-within:border-sky-400",
+                          base: "!text-gray-800 dark:!text-gray-200",
                         }}
                         size="lg"
                         radius="lg"
@@ -428,7 +456,7 @@ const MotDePasseOublie = () => {
                   </motion.div>
 
                   <motion.h2
-                    className="mb-4 text-3xl font-bold text-gray-900"
+                    className="mb-4 text-3xl font-bold text-gray-900 dark:text-white"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
@@ -437,7 +465,7 @@ const MotDePasseOublie = () => {
                   </motion.h2>
 
                   <motion.p
-                    className="mb-6 leading-relaxed text-gray-500"
+                    className="mb-6 leading-relaxed text-gray-500 dark:text-gray-400"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
@@ -477,12 +505,12 @@ const MotDePasseOublie = () => {
 
               {/* Footer */}
               <motion.div
-                className="mt-8 border-t border-gray-100 pt-6 text-center"
+                className="mt-8 border-t border-gray-100 dark:border-gray-700 pt-6 text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.2 }}
               >
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   All Rights Reserved by{" "}
                   <Link
                     href="https://www.datalysconsulting.com/"
