@@ -28,6 +28,7 @@ class SSEService {
   private callbacks: Set<SSECallback> = new Set();
   private connectionCallbacks: Set<SSEConnectionCallback> = new Set();
   private isConnected = false;
+  private tokenExpired = false;
 
   private getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_BASE_URL || '';
@@ -44,6 +45,9 @@ class SSEService {
       console.warn('SSE: Pas de token, connexion impossible');
       return;
     }
+
+    // Réinitialiser le flag d'expiration lors d'une nouvelle connexion
+    this.tokenExpired = false;
 
     const baseUrl = this.getBaseUrl();
     const url = `${baseUrl}/events/stream?token=${token}`;
@@ -95,6 +99,27 @@ class SSEService {
           try {
             const data = JSON.parse(messageEvent.data);
             console.error('❌ SSE erreur backend:', data.message);
+
+            // Si le backend renvoie un 401 (token expiré), déclencher la déconnexion
+            if (data.code === 401 || data.message?.toLowerCase().includes('session expir')) {
+              console.warn('🔒 SSE: Token expiré détecté, redirection vers connexion');
+              this.tokenExpired = true;
+
+              // Dispatcher l'événement token-expired pour que TokenExpirationHandler le capte
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('token-expired', {
+                  detail: {
+                    timestamp: new Date().toISOString(),
+                    source: 'sse-service',
+                    reason: data.message
+                  }
+                }));
+              }
+
+              // Couper la connexion SSE sans tenter de reconnexion
+              this.disconnect();
+              return;
+            }
           } catch {
             console.error('❌ SSE erreur:', messageEvent.data);
           }
@@ -102,6 +127,12 @@ class SSEService {
       });
 
       this.eventSource.onerror = (e: Event) => {
+        // Si le token est expiré, ne pas tenter de reconnexion
+        if (this.tokenExpired) {
+          this.disconnect();
+          return;
+        }
+
         // Erreur de connexion native EventSource
         const es = e.target as EventSource;
         if (es.readyState === EventSource.CLOSED) {
@@ -111,6 +142,15 @@ class SSEService {
         } else {
           console.warn('SSE erreur de connexion');
         }
+
+        // Vérifier si le token existe encore avant de tenter la reconnexion
+        const token = SecureStorage.getItem('authToken');
+        if (!token) {
+          console.warn('🔒 SSE: Token supprimé, arrêt des reconnexions');
+          this.disconnect();
+          return;
+        }
+
         this.isConnected = false;
         this.notifyConnectionCallbacks(false);
         this.reconnect();
