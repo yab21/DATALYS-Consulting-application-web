@@ -67,6 +67,26 @@ export interface UpdateIncidentData {
   is_active?: boolean;
   is_read?: boolean;
   resolution_notes?: string;
+  motif_attente?: string;
+}
+
+export interface IncidentHistoryEntry {
+  id: number;
+  incident_id: number;
+  old_status: string | null;
+  new_status: string;
+  action_type: 'status_change' | 'waiting' | 'resolution' | string;
+  comment: string | null;
+  user_name: string;
+  created_at: string;
+}
+
+export interface IncidentHistoryResponse {
+  code: number;
+  incident_number: string;
+  current_status: string;
+  count: number;
+  history: IncidentHistoryEntry[];
 }
 
 export interface IncidentCriteria {
@@ -384,6 +404,14 @@ export class IncidentsService {
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
+  }
+
+  // Récupérer l'historique d'un incident
+  static async getIncidentHistory(incidentId: number): Promise<IncidentHistoryResponse> {
+    return this.makeRequest(
+      `/incidents/${incidentId}/history`,
+      'GET'
+    );
   }
 
   // Récupérer un incident par ID

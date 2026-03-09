@@ -28,7 +28,7 @@ interface ProjectOverviewProps {
     societe: string;
     chefDeProjet: string;
     createdAt: Date;
-    statut: "en_cours" | "termine" | "en_attente" | "suspendu";
+    statut: "en_cours" | "termine" | "en_attente" | "suspendu" | "cloture";
     progression?: number;
     description?: string;
   };

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, CardBody, Tabs, Tab, Button } from "@heroui/react";
+import { Card, CardBody, Tabs, Tab, Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea } from "@heroui/react";
 import {
   FolderOpen,
   Users,
@@ -9,12 +9,17 @@ import {
   Clock,
   ArrowLeft,
   Eye,
-  Dot
+  Dot,
+  Lock,
+  Unlock,
+  XCircle,
 } from "lucide-react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { projectsService } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import { isTokenExpiredError } from "@/lib/api-interceptor";
+import { extractBackendMessage } from "@/lib/error-handler";
+import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import ProjectOverview from "./ProjectOverview";
@@ -27,7 +32,7 @@ interface Project {
   chefDeProjet: string;
   domaine: string[];
   createdAt: Date;
-  statut: "en_cours" | "termine" | "en_attente" | "suspendu";
+  statut: "en_cours" | "termine" | "en_attente" | "suspendu" | "cloture";
   progression?: number;
   budget?: number;
   description?: string;
@@ -48,7 +53,14 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "overview");
   const [fileRefreshKey, setFileRefreshKey] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const { showNotification } = useSimpleNotifications();
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [showReopenModal, setShowReopenModal] = useState(false);
+  const [closureReason, setClosureReason] = useState("");
+  const [isClosing, setIsClosing] = useState(false);
+  const [isReopening, setIsReopening] = useState(false);
+  const [isClosed, setIsClosed] = useState(false);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -59,6 +71,8 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
         const currentProject = projectsData.find(p => p.id.toString() === projectId);
 
         if (currentProject) {
+          const projectClosed = !!currentProject.closed_at;
+          setIsClosed(projectClosed);
           setProject({
             id: projectId,
             intitule: currentProject.title,
@@ -66,7 +80,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
             chefDeProjet: "Non défini",
             domaine: [],
             createdAt: new Date(currentProject.created_at),
-            statut: currentProject.is_active ? "en_cours" : "suspendu",
+            statut: projectClosed ? "cloture" : (currentProject.is_active ? "en_cours" : "suspendu"),
             progression: 0,
             budget: 0,
             description: "",
@@ -132,6 +146,58 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
 
     setFileRefreshKey(prev => prev + 1);
     setTimeout(() => { setUploadedFiles([]); }, 2000);
+  };
+
+  const handleCloseProject = async () => {
+    if (!user || !closureReason.trim()) return;
+    try {
+      setIsClosing(true);
+      const result = await projectsService.closeProject(
+        parseInt(projectId),
+        closureReason.trim(),
+        user.id,
+        user.email,
+      );
+      const successMessage = extractBackendMessage(result) || result?.message?.message;
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
+      setShowCloseModal(false);
+      setClosureReason("");
+      setIsClosed(true);
+      if (project) {
+        setProject({ ...project, statut: "cloture" });
+      }
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      const errorMessage = extractBackendMessage(error);
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
+    } finally {
+      setIsClosing(false);
+    }
+  };
+
+  const handleReopenProject = async () => {
+    if (!user) return;
+    try {
+      setIsReopening(true);
+      const result = await projectsService.reopenProject(
+        parseInt(projectId),
+        user.id,
+        user.email,
+      );
+      const successMessage = extractBackendMessage(result) || result?.message?.message;
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
+      setShowReopenModal(false);
+      setIsClosed(false);
+      if (project) {
+        setProject({ ...project, statut: "en_cours" });
+      }
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      const errorMessage = extractBackendMessage(error);
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
+    } finally {
+      setIsReopening(false);
+    }
   };
 
   if (loading) {
@@ -221,13 +287,39 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
                 project.statut === 'en_cours'
                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                  : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                  : project.statut === 'cloture'
+                    ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
               }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${
-                  project.statut === 'en_cours' ? 'bg-emerald-500' : 'bg-gray-400'
+                  project.statut === 'en_cours' ? 'bg-emerald-500' : project.statut === 'cloture' ? 'bg-red-500' : 'bg-gray-400'
                 }`} />
-                {project.statut === 'en_cours' ? 'Actif' : 'Suspendu'}
+                {project.statut === 'en_cours' ? 'Actif' : project.statut === 'cloture' ? 'Clôturé' : 'Suspendu'}
               </span>
+
+              {/* Boutons clôturer / réouvrir (admin uniquement) */}
+              {isAdmin() && !isClosed && (
+                <Button
+                  size="sm"
+                  color="danger"
+                  variant="flat"
+                  startContent={<Lock className="w-3.5 h-3.5" />}
+                  onPress={() => setShowCloseModal(true)}
+                >
+                  Clôturer
+                </Button>
+              )}
+              {isAdmin() && isClosed && (
+                <Button
+                  size="sm"
+                  color="success"
+                  variant="flat"
+                  startContent={<Unlock className="w-3.5 h-3.5" />}
+                  onPress={() => setShowReopenModal(true)}
+                >
+                  Réouvrir
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -279,6 +371,102 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
           </CardBody>
         </Card>
       </div>
+
+      {/* Modal de clôture du projet */}
+      <Modal
+        isOpen={showCloseModal}
+        onClose={() => {
+          setShowCloseModal(false);
+          setClosureReason("");
+        }}
+        size="lg"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-danger/10 p-2">
+                <Lock className="h-5 w-5 text-danger" />
+              </div>
+              <h3 className="text-xl font-bold">Clôturer le projet</h3>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <p className="text-gray-600 dark:text-gray-400">
+                Vous êtes sur le point de clôturer le projet{" "}
+                <span className="font-semibold">{project?.intitule}</span>.
+                Cette action désactivera le projet.
+              </p>
+              <Textarea
+                label="Raison de la clôture"
+                placeholder="Décrivez pourquoi vous souhaitez clôturer ce projet..."
+                value={closureReason}
+                onChange={(e) => setClosureReason(e.target.value)}
+                minRows={3}
+                isRequired
+              />
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={() => {
+                setShowCloseModal(false);
+                setClosureReason("");
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="danger"
+              startContent={<Lock className="h-4 w-4" />}
+              onPress={handleCloseProject}
+              isDisabled={!closureReason.trim()}
+              isLoading={isClosing}
+            >
+              Clôturer le projet
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de réouverture du projet */}
+      <Modal
+        isOpen={showReopenModal}
+        onClose={() => setShowReopenModal(false)}
+        size="md"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-success/10 p-2">
+                <Unlock className="h-5 w-5 text-success" />
+              </div>
+              <h3 className="text-xl font-bold">Réouvrir le projet</h3>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-gray-600 dark:text-gray-400">
+              Confirmez-vous la réouverture du projet{" "}
+              <span className="font-semibold">{project?.intitule}</span> ?
+              Le projet redeviendra actif.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={() => setShowReopenModal(false)}>
+              Annuler
+            </Button>
+            <Button
+              color="success"
+              startContent={<Unlock className="h-4 w-4" />}
+              onPress={handleReopenProject}
+              isLoading={isReopening}
+            >
+              Réouvrir le projet
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };

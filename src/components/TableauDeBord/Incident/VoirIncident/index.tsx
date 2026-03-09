@@ -18,11 +18,12 @@ import {
   ChevronUp,
   Info,
   Dot,
-  Mail
+  Mail,
+  Edit3,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
-import { IncidentsService, Incident } from '@/services/incidents';
+import { IncidentsService, Incident, type IncidentHistoryEntry } from '@/services/incidents';
 import { projectsService, Project } from '@/services/projects';
 import { UsersService, User } from '@/services/users';
 import { extractBackendMessage } from '@/lib/error-handler';
@@ -46,6 +47,8 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
   const [loadingProject, setLoadingProject] = useState(false);
   const [loadingUser, setLoadingUser] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [history, setHistory] = useState<IncidentHistoryEntry[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const incidentId = parseInt(id);
@@ -73,13 +76,14 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
       if (!incidentData) { setError('Incident non trouvé'); return; }
       setIncident(incidentData);
 
-      // Chargement eager du projet et de l'utilisateur assigné
+      // Chargement eager du projet, de l'utilisateur assigné et de l'historique
       if (incidentData.project_id) {
         loadProjectData(incidentData);
       }
       if (incidentData.user_id) {
         loadAssignedUser(incidentData);
       }
+      loadHistory();
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       setError(extractBackendMessage(error));
@@ -114,6 +118,49 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
       if (isTokenExpiredError(error)) throw error;
     } finally {
       setLoadingUser(false);
+    }
+  };
+
+  const loadHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const response: any = await IncidentsService.getIncidentHistory(incidentId);
+      console.log("📜 Réponse historique brute:", response);
+
+      // Gérer les différents formats de réponse possibles
+      if (response && response.history && Array.isArray(response.history)) {
+        setHistory(response.history);
+      } else if (response && response.data && Array.isArray(response.data)) {
+        setHistory(response.data);
+      } else if (response && response.items && Array.isArray(response.items)) {
+        setHistory(response.items);
+      } else if (Array.isArray(response)) {
+        setHistory(response);
+      } else {
+        console.warn("📜 Format de réponse historique non reconnu:", response);
+        setHistory([]);
+      }
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      console.error("Erreur lors du chargement de l'historique:", error);
+      setHistory([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const getHistoryActionConfig = (actionType: string, newStatus: string) => {
+    switch (actionType) {
+      case 'status_change':
+        return { icon: <Activity className="h-4 w-4 text-primary" />, bgColor: 'bg-primary/10', chipColor: 'primary' as const, label: 'Changement de statut' };
+      case 'waiting':
+        return { icon: <Clock className="h-4 w-4 text-warning" />, bgColor: 'bg-warning/10', chipColor: 'warning' as const, label: 'Mise en attente' };
+      case 'resolution':
+        return { icon: <CheckCircle className="h-4 w-4 text-success" />, bgColor: 'bg-success/10', chipColor: 'success' as const, label: 'Résolution' };
+      default:
+        if (newStatus === 'resolu') return { icon: <CheckCircle className="h-4 w-4 text-success" />, bgColor: 'bg-success/10', chipColor: 'success' as const, label: 'Résolution' };
+        if (newStatus === 'en_attente') return { icon: <Clock className="h-4 w-4 text-warning" />, bgColor: 'bg-warning/10', chipColor: 'warning' as const, label: 'Mise en attente' };
+        return { icon: <Edit3 className="h-4 w-4 text-gray-500" />, bgColor: 'bg-gray-100 dark:bg-gray-700', chipColor: 'default' as const, label: actionType || 'Action' };
     }
   };
 
@@ -153,6 +200,18 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
       case 'en_pause': return 'bg-gray-400';
       case 'resolu': return 'bg-emerald-500';
       default: return 'bg-gray-400';
+    }
+  };
+
+  const getStatusColor = (status: string): "primary" | "secondary" | "success" | "warning" | "danger" => {
+    switch (status) {
+      case 'nouveau': return 'primary';
+      case 'en_cours': return 'warning';
+      case 'en_attente': return 'secondary';
+      case 'en_arbitrage': return 'danger';
+      case 'en_pause': return 'secondary';
+      case 'resolu': return 'success';
+      default: return 'secondary';
     }
   };
 
@@ -749,6 +808,81 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
                 </div>
               </Tab>
             )}
+
+            {/* Historique */}
+            <Tab
+              key="history"
+              title={<div className="flex items-center gap-2"><Activity className="w-4 h-4" /><span>Historique</span></div>}
+            >
+              <div className="p-6 sm:p-8">
+                {loadingHistory ? (
+                  <div className="flex justify-center py-12">
+                    <Spinner size="md" />
+                  </div>
+                ) : history.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                    <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Aucun historique disponible</p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    {/* Ligne verticale de la timeline */}
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
+
+                    <div className="space-y-6">
+                      {history.map((entry) => {
+                        const actionConfig = getHistoryActionConfig(entry.action_type, entry.new_status);
+                        return (
+                          <div key={entry.id} className="relative flex gap-4 pl-2">
+                            {/* Point sur la timeline */}
+                            <div className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${actionConfig.bgColor}`}>
+                              {actionConfig.icon}
+                            </div>
+
+                            {/* Contenu */}
+                            <div className="flex-1 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-900 dark:text-white">
+                                    {entry.user_name}
+                                  </span>
+                                  <Chip size="sm" variant="flat" color={actionConfig.chipColor}>
+                                    {actionConfig.label}
+                                  </Chip>
+                                </div>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {formatDate(entry.created_at)}
+                                </span>
+                              </div>
+
+                              {/* Transition de statut */}
+                              {entry.old_status && (
+                                <div className="mt-2 flex items-center gap-2 text-sm">
+                                  <Chip size="sm" variant="bordered" className="text-gray-500">
+                                    {getStatusLabel(entry.old_status)}
+                                  </Chip>
+                                  <span className="text-gray-400">&rarr;</span>
+                                  <Chip size="sm" variant="flat" color={getStatusColor(entry.new_status)}>
+                                    {getStatusLabel(entry.new_status)}
+                                  </Chip>
+                                </div>
+                              )}
+
+                              {/* Commentaire */}
+                              {entry.comment && (
+                                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                                  {entry.comment}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Tab>
           </Tabs>
         </div>
       </div>

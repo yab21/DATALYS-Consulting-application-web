@@ -22,6 +22,13 @@ export const BREADCRUMB_ROUTES: RouteConfig[] = [
     label: 'Tableau de bord'
   },
 
+  // Documentation
+  {
+    pattern: '/tableaudebord/documentation',
+    label: 'Documentation',
+    parentRoute: '/tableaudebord'
+  },
+
   // Analytics
   {
     pattern: '/tableaudebord/analytics',

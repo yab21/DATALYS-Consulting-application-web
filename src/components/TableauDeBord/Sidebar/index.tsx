@@ -231,6 +231,26 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       children: []
     } as any);
 
+    // Menu Documentation (pour tous les utilisateurs)
+    autresMenu.menuItems.push({
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="fill-current transition-all duration-300 group-hover:scale-110"
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="fill-current"
+            d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m0 2v16h12V4zm2 2h8v2H8zm0 4h8v2H8zm0 4h5v2H8z"
+          />
+        </svg>
+      ),
+      label: "Documentation",
+      route: "/tableaudebord/documentation",
+    });
+
     // Menu Support supprimé - maintenant dans la section GESTION
 
     // Ajouter les menus Admin uniquement pour les admins avec permissions

@@ -203,6 +203,8 @@ const GestionIncidents: React.FC = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [reopenReason, setReopenReason] = useState("");
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [pauseMotif, setPauseMotif] = useState("");
   const [showFilesModal, setShowFilesModal] = useState(false);
 
   // États de loading pour les boutons
@@ -795,8 +797,10 @@ const GestionIncidents: React.FC = () => {
       }
     }
 
-    // Pour les autres champs, pas de validation obligatoire en modification
-    // car ils conservent leurs valeurs existantes
+    // Validation du motif si statut = en_attente
+    if (editForm.status === "en_attente" && (!editForm.motif_attente || !editForm.motif_attente.trim())) {
+      errors.motif_attente = "Le motif de mise en attente est obligatoire";
+    }
 
     setEditFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -904,13 +908,10 @@ const GestionIncidents: React.FC = () => {
         resolution_notes: `${selectedIncident.resolution_notes || ""}\n\n[RÉOUVERTURE - ${new Date().toLocaleString()}] ${reopenReason}`,
       };
 
-      await IncidentsService.updateIncident(updateData, user.id, user.email);
+      const result = await IncidentsService.updateIncident(updateData, user.id, user.email);
 
-      showNotification({
-        type: "success",
-        title: "Incident rouvert",
-        message: "L'incident a été rouvert avec succès",
-      });
+      const successMessage = extractBackendMessage(result) || result?.message;
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
 
       // Fermer le modal et réinitialiser
       setShowReopenModal(false);
@@ -918,69 +919,62 @@ const GestionIncidents: React.FC = () => {
       setSelectedIncident(null);
 
       // Recharger la liste des incidents
-      const criteria: IncidentCriteria = {
-        index: currentPage,
-        size: pageSize,
-        data: {
-          is_active: true,
-          type: "incident",
-          // Pour les partners, filtrer par created_by
-          ...(isPartner() && user && { created_by: user.id }),
-        },
-      };
-
-      const refreshResponse =
-        await IncidentsService.getIncidentsByCriteria(criteria);
-      let apiIncidents: ApiIncident[] = [];
-
-      if (refreshResponse.code === 200 && refreshResponse.items) {
-        apiIncidents = refreshResponse.items;
-      } else if (Array.isArray(refreshResponse)) {
-        apiIncidents = refreshResponse;
-      }
-
-      const convertedIncidents = apiIncidents.map((incident) =>
-        convertApiIncidentToLocal(incident, projects, users),
-      );
-      setIncidents(convertedIncidents);
-      setFilteredIncidents(convertedIncidents);
+      await refreshIncidents();
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       console.error("❌ Erreur lors de la réouverture de l'incident:", error);
-      showNotification({
-        type: "error",
-        title: "Erreur",
-        message: "Impossible de rouvrir l'incident",
-      });
+      const errorMessage = extractBackendMessage(error);
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
     }
   };
 
-  // Fonction pour mettre un incident en attente
-  const handleIncidentPause = async (incident: Incident) => {
-    if (!user) {
+  // Fonction pour ouvrir le modal de mise en attente
+  const handleIncidentPause = (incident: Incident) => {
+    setSelectedIncident(incident);
+    setShowPauseModal(true);
+  };
+
+  // Fonction pour confirmer la mise en attente avec motif
+  const confirmIncidentPause = async () => {
+    if (!user || !selectedIncident) {
       showNotification({
         type: "error",
         title: "Erreur",
-        message: "Utilisateur non connecté",
+        message: "Utilisateur non connecté ou incident non sélectionné",
+      });
+      return;
+    }
+
+    if (!pauseMotif.trim()) {
+      showNotification({
+        type: "warning",
+        title: "Motif requis",
+        message: "Vous devez fournir un motif pour mettre l'incident en attente",
       });
       return;
     }
 
     try {
-      console.log("⏸️ Mise en attente de l'incident:", incident.id);
+      console.log("⏸️ Mise en attente de l'incident:", selectedIncident.id);
 
-      // Préparer les données de mise à jour
+      // Préparer les données de mise à jour avec motif_attente
       const updateData: UpdateIncidentData = {
-        id: parseInt(incident.id),
+        id: parseInt(selectedIncident.id),
         status: "en_attente",
-        resolution_notes: `${incident.resolution_notes || ""}\n\n[MISE EN ATTENTE - ${new Date().toLocaleString()}] Incident mis en attente par ${user.name}`,
+        motif_attente: pauseMotif.trim(),
+        resolution_notes: `${selectedIncident.resolution_notes || ""}\n\n[MISE EN ATTENTE - ${new Date().toLocaleString()}] Motif: ${pauseMotif.trim()} — Par ${user.name}`,
       };
 
       const result = await IncidentsService.updateIncident(updateData, user.id, user.email);
 
       // Utiliser le message de l'API
-      const successMessage = extractBackendMessage(result) || result?.message || "Incident mis en attente avec succès";
+      const successMessage = extractBackendMessage(result) || result?.message;
       showNotification(simpleNotificationHelpers.success("Succès", successMessage));
+
+      // Fermer le modal et réinitialiser
+      setShowPauseModal(false);
+      setPauseMotif("");
+      setSelectedIncident(null);
 
       // Recharger la liste des incidents
       await refreshIncidents();
@@ -1016,7 +1010,7 @@ const GestionIncidents: React.FC = () => {
       const result = await IncidentsService.updateIncident(updateData, user.id, user.email);
 
       // Utiliser le message de l'API
-      const successMessage = extractBackendMessage(result) || result?.message || "Incident clôturé avec succès";
+      const successMessage = extractBackendMessage(result) || result?.message;
       showNotification(simpleNotificationHelpers.success("Succès", successMessage));
 
       // Recharger la liste des incidents
@@ -1167,7 +1161,7 @@ const GestionIncidents: React.FC = () => {
 
       setShowCreateModal(false);
       const successMessage =
-        extractBackendMessage(result) || result?.message || "Opération réussie";
+        extractBackendMessage(result) || result?.message ;
       showNotification(
         simpleNotificationHelpers.success("Succès", successMessage),
       );
@@ -1231,7 +1225,7 @@ const GestionIncidents: React.FC = () => {
       setSelectedIncident(null);
       setEditFormErrors({});
       const successMessage =
-        extractBackendMessage(result) || result?.message || "Opération réussie";
+        extractBackendMessage(result) || result?.message ;
       showNotification(
         simpleNotificationHelpers.success("Succès", successMessage),
       );
@@ -1267,7 +1261,7 @@ const GestionIncidents: React.FC = () => {
       setShowDeleteModal(false);
       setSelectedIncident(null);
       const successMessage =
-        extractBackendMessage(result) || result?.message || "Opération réussie";
+        extractBackendMessage(result) || result?.message ;
       showNotification(
         simpleNotificationHelpers.success("Succès", successMessage),
       );
@@ -3042,6 +3036,24 @@ const GestionIncidents: React.FC = () => {
                   </Select>
                 </div>
 
+                {/* Champ motif conditionnel quand statut = en_attente */}
+                {editForm.status === "en_attente" && (
+                  <Textarea
+                    label="Motif de mise en attente"
+                    placeholder="Indiquez pourquoi cet incident est mis en attente..."
+                    value={editForm.motif_attente || ""}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        motif_attente: e.target.value,
+                      }))
+                    }
+                    minRows={2}
+                    isRequired
+                    description="Ce motif sera enregistré dans l'historique de l'incident."
+                  />
+                )}
+
                 <Textarea
                   label="Notes de résolution (optionnel)"
                   placeholder="Ajoutez des notes sur la résolution de l'incident..."
@@ -3400,6 +3412,78 @@ const GestionIncidents: React.FC = () => {
               isDisabled={!reopenReason.trim()}
             >
               Rouvrir l'incident
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de mise en attente d'incident */}
+      <Modal
+        isOpen={showPauseModal}
+        onClose={() => {
+          setShowPauseModal(false);
+          setPauseMotif("");
+          setSelectedIncident(null);
+        }}
+        size="lg"
+        classNames={{
+          wrapper: "z-[60]",
+          backdrop: "z-[59]",
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-warning/10 p-2">
+                <Pause className="h-5 w-5 text-warning" />
+              </div>
+              <h3 className="text-xl font-bold">Mettre en attente</h3>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Vous êtes sur le point de mettre en attente l&apos;incident{" "}
+                  <span className="font-semibold">
+                    #{selectedIncident?.incident_number}
+                  </span>
+                  .
+                </p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Veuillez indiquer le motif de la mise en attente.
+                </p>
+              </div>
+
+              <Textarea
+                label="Motif de la mise en attente"
+                placeholder="Décrivez pourquoi cet incident est mis en attente..."
+                value={pauseMotif}
+                onChange={(e) => setPauseMotif(e.target.value)}
+                minRows={4}
+                isRequired
+                description="Ce motif sera enregistré dans l'historique de l'incident."
+              />
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={() => {
+                setShowPauseModal(false);
+                setPauseMotif("");
+                setSelectedIncident(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="warning"
+              startContent={<Pause className="h-4 w-4" />}
+              onPress={confirmIncidentPause}
+              isDisabled={!pauseMotif.trim()}
+            >
+              Mettre en attente
             </Button>
           </ModalFooter>
         </ModalContent>

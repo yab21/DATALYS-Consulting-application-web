@@ -3,31 +3,33 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { 
-  Plus, 
-  FolderOpen, 
-  Calendar, 
-  Users, 
-  Edit, 
-  Trash2, 
-  Filter, 
+import {
+  Plus,
+  FolderOpen,
+  Calendar,
+  Users,
+  Edit,
+  Trash2,
+  Filter,
   Search,
   RefreshCw,
   CheckCircle,
   Clock,
-  MoreVertical
+  MoreVertical,
+  Lock,
+  Unlock,
 } from "lucide-react";
-import { 
-  Button, 
-  Chip, 
-  Table, 
-  TableHeader, 
-  TableColumn, 
-  TableBody, 
-  TableRow, 
-  TableCell, 
-  Select, 
-  SelectItem, 
+import {
+  Button,
+  Chip,
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+  Select,
+  SelectItem,
   Input,
   Pagination,
   Avatar,
@@ -36,13 +38,20 @@ import {
   DropdownMenu,
   DropdownItem,
   Card,
-  CardBody
+  CardBody,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Textarea,
 } from "@heroui/react";
 import { projectsService, Project } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { getContextualErrorMessage } from '@/lib/error-messages';
+import { extractBackendMessage } from '@/lib/error-handler';
 import { apiInterceptor, isTokenExpiredError } from '@/lib/api-interceptor';
 import ProjectModals from "./ProjectModals";
 import ProjectFilesModal from "./ProjectFilesModal";
@@ -75,6 +84,14 @@ const OptimizedProjectList: React.FC = () => {
     type: null,
     project: null
   });
+
+  // États pour clôture/réouverture de projet
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [showReopenModal, setShowReopenModal] = useState(false);
+  const [closureReason, setClosureReason] = useState("");
+  const [isClosing, setIsClosing] = useState(false);
+  const [isReopening, setIsReopening] = useState(false);
+  const [selectedProjectForAction, setSelectedProjectForAction] = useState<Project | null>(null);
 
   // État pour le modal de gestion des fichiers
   const [filesModalState, setFilesModalState] = useState<{
@@ -287,7 +304,7 @@ const OptimizedProjectList: React.FC = () => {
         // Utiliser Promise.allSettled pour gérer les erreurs individuellement
         const [partnersResult, projectsResult] = await Promise.allSettled([
           projectsService.getPartnerNames(),
-          projectsService.getActiveProjects()
+          projectsService.getAllProjects()
         ]);
 
         // Gérer les résultats séparément
@@ -448,6 +465,67 @@ const OptimizedProjectList: React.FC = () => {
       type: action,
       project
     });
+  };
+
+  // Fonction pour recharger les projets après clôture/réouverture
+  const reloadProjects = async () => {
+    try {
+      const projectsData = user?.role_id === 1
+        ? await projectsService.getAllProjects()
+        : await projectsService.getActiveProjects();
+      setProjects(projectsData);
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      console.error("Erreur lors du rechargement des projets:", error);
+    }
+  };
+
+  const handleCloseProject = async () => {
+    if (!user || !selectedProjectForAction || !closureReason.trim()) return;
+    try {
+      setIsClosing(true);
+      const result = await projectsService.closeProject(
+        selectedProjectForAction.id,
+        closureReason.trim(),
+        user.id,
+        user.email,
+      );
+      const successMessage = extractBackendMessage(result) || result?.message?.message;
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
+      setShowCloseModal(false);
+      setClosureReason("");
+      setSelectedProjectForAction(null);
+      await reloadProjects();
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      const errorMessage = extractBackendMessage(error);
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
+    } finally {
+      setIsClosing(false);
+    }
+  };
+
+  const handleReopenProject = async () => {
+    if (!user || !selectedProjectForAction) return;
+    try {
+      setIsReopening(true);
+      const result = await projectsService.reopenProject(
+        selectedProjectForAction.id,
+        user.id,
+        user.email,
+      );
+      const successMessage = extractBackendMessage(result) || result?.message?.message;
+      showNotification(simpleNotificationHelpers.success("Succès", successMessage));
+      setShowReopenModal(false);
+      setSelectedProjectForAction(null);
+      await reloadProjects();
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      const errorMessage = extractBackendMessage(error);
+      showNotification(simpleNotificationHelpers.error("Erreur", errorMessage));
+    } finally {
+      setIsReopening(false);
+    }
   };
 
   // Handlers pour les callbacks des modals
@@ -804,12 +882,17 @@ const OptimizedProjectList: React.FC = () => {
                   <div className="flex flex-col gap-1">
                     <Chip
                       className="capitalize"
-                      color={project.is_active ? "success" : "warning"}
+                      color={project.closed_at ? "danger" : project.is_active ? "success" : "warning"}
                       size="sm"
                       variant="flat"
                     >
-                      {project.is_active ? "Actif" : "Inactif"}
+                      {project.closed_at ? "Clôturé" : project.is_active ? "Actif" : "Inactif"}
                     </Chip>
+                    {project.closed_at && project.closure_reason && (
+                      <span className="text-xs text-red-500 dark:text-red-400 italic truncate max-w-[160px]" title={project.closure_reason}>
+                        {project.closure_reason}
+                      </span>
+                    )}
                     {/* Afficher la date sur mobile quand la colonne est masquée */}
                     <span className="text-xs text-gray-500 dark:text-gray-400 md:hidden">
                       {formatDate(project.created_at)}
@@ -855,6 +938,31 @@ const OptimizedProjectList: React.FC = () => {
                           >
                             Modifier
                           </DropdownItem>
+                          {!project.closed_at ? (
+                            <DropdownItem
+                              key="close"
+                              startContent={<Lock className="h-4 w-4" />}
+                              className="text-warning"
+                              onPress={() => {
+                                setSelectedProjectForAction(project);
+                                setShowCloseModal(true);
+                              }}
+                            >
+                              Clôturer
+                            </DropdownItem>
+                          ) : (
+                            <DropdownItem
+                              key="reopen"
+                              startContent={<Unlock className="h-4 w-4" />}
+                              className="text-success"
+                              onPress={() => {
+                                setSelectedProjectForAction(project);
+                                setShowReopenModal(true);
+                              }}
+                            >
+                              Réouvrir
+                            </DropdownItem>
+                          )}
                           <DropdownItem
                             key="delete"
                             startContent={<Trash2 className="h-4 w-4" />}
@@ -893,6 +1001,112 @@ const OptimizedProjectList: React.FC = () => {
           onClose={() => setFilesModalState({ isOpen: false, project: null })}
         />
       )}
+
+      {/* Modal de clôture du projet */}
+      <Modal
+        isOpen={showCloseModal}
+        onClose={() => {
+          setShowCloseModal(false);
+          setClosureReason("");
+          setSelectedProjectForAction(null);
+        }}
+        size="lg"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-danger/10 p-2">
+                <Lock className="h-5 w-5 text-danger" />
+              </div>
+              <h3 className="text-xl font-bold">Clôturer le projet</h3>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <p className="text-gray-600 dark:text-gray-400">
+                Vous êtes sur le point de clôturer le projet{" "}
+                <span className="font-semibold">{selectedProjectForAction?.title}</span>.
+              </p>
+              <Textarea
+                label="Raison de la clôture"
+                placeholder="Décrivez pourquoi vous souhaitez clôturer ce projet..."
+                value={closureReason}
+                onChange={(e) => setClosureReason(e.target.value)}
+                minRows={3}
+                isRequired
+              />
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={() => {
+                setShowCloseModal(false);
+                setClosureReason("");
+                setSelectedProjectForAction(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="danger"
+              startContent={<Lock className="h-4 w-4" />}
+              onPress={handleCloseProject}
+              isDisabled={!closureReason.trim()}
+              isLoading={isClosing}
+            >
+              Clôturer
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal de réouverture du projet */}
+      <Modal
+        isOpen={showReopenModal}
+        onClose={() => {
+          setShowReopenModal(false);
+          setSelectedProjectForAction(null);
+        }}
+        size="md"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-success/10 p-2">
+                <Unlock className="h-5 w-5 text-success" />
+              </div>
+              <h3 className="text-xl font-bold">Réouvrir le projet</h3>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-gray-600 dark:text-gray-400">
+              Confirmez-vous la réouverture du projet{" "}
+              <span className="font-semibold">{selectedProjectForAction?.title}</span> ?
+              Le projet redeviendra actif.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={() => {
+                setShowReopenModal(false);
+                setSelectedProjectForAction(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              color="success"
+              startContent={<Unlock className="h-4 w-4" />}
+              onPress={handleReopenProject}
+              isLoading={isReopening}
+            >
+              Réouvrir
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 };

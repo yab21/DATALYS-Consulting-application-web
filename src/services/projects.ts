@@ -8,10 +8,15 @@ export interface Project {
   id: number;
   title: string;
   description?: string;
-  partner_name?: string; // Nouveau: nom du partenaire
-  partner_id?: number; // Gardé pour compatibilité réponse API
+  partner_name?: string;
+  partner_id?: number;
   is_active: boolean;
   is_deleted: boolean;
+  closed_at?: string | null;
+  closed_by?: number | null;
+  closure_reason?: string | null;
+  reopened_at?: string | null;
+  reopened_by?: number | null;
   created_at: string;
   updated_at: string;
   created_by: number;
@@ -161,6 +166,54 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des projets:", error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Récupérer tous les projets (actifs + clôturés, sans les supprimés)
+   */
+  async getAllProjects(): Promise<Project[]> {
+    try {
+      console.log("📡 Appel API getAllProjects...");
+
+      const requestBody: ProjectByCriteriaRequest = {
+        index: 0,
+        size: 100,
+        data: {},
+      };
+
+      const response = await fetch(buildApiUrl("/projects/getByCriteria"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("📨 Statut de la réponse:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: ProjectApiResponse = await response.json();
+      console.log("✅ Réponse getAllProjects complète:", result);
+
+      if (result.code === 200 && result.items) {
+        const transformedProjects = result.items.map((project: any) => ({
+          ...project,
+          partner_name: project.partner?.name || null,
+        }));
+
+        return transformedProjects;
+      } else {
+        throw new Error(
+          result.message?.message ||
+            "Erreur lors de la récupération des projets",
+        );
+      }
+    } catch (error) {
+      console.error("❌ Erreur lors de la récupération de tous les projets:", error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -328,9 +381,15 @@ export class ProjectsService {
       console.log("📨 Statut de la réponse création:", response.status);
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error("❌ Détails de l'erreur:", errorData);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error("❌ Détails de l'erreur:", errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          console.error("❌ Impossible de parser la réponse d'erreur");
+        }
+        throw new Error(errorMessage);
       }
 
       const result: ProjectApiResponse<Project[]> = await response.json();
@@ -388,9 +447,15 @@ export class ProjectsService {
       console.log("📨 Statut de la réponse mise à jour:", response.status);
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error("❌ Détails de l'erreur:", errorData);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error("❌ Détails de l'erreur:", errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          console.error("❌ Impossible de parser la réponse d'erreur");
+        }
+        throw new Error(errorMessage);
       }
 
       const result: ProjectApiResponse<Project[]> = await response.json();
@@ -440,9 +505,15 @@ export class ProjectsService {
       console.log("📨 Statut de la réponse suppression:", response.status);
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error("❌ Détails de l'erreur:", errorData);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error("❌ Détails de l'erreur:", errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          console.error("❌ Impossible de parser la réponse d'erreur");
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -556,6 +627,110 @@ export class ProjectsService {
         "❌ Erreur lors de la récupération de la map des partenaires:",
         error,
       );
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Clôturer un projet
+   */
+  async closeProject(
+    projectId: number,
+    closureReason: string,
+    userId: number,
+    userEmail?: string,
+  ): Promise<ProjectApiResponse<Project[]>> {
+    try {
+      console.log(`📡 Clôture du projet ${projectId}...`);
+
+      const requestBody = {
+        user: {
+          id: userId,
+          email: userEmail || '',
+        },
+        closure_reason: closureReason,
+      };
+
+      console.log("📋 Données de clôture:", requestBody);
+
+      const response = await fetch(buildApiUrl(`/projects/${projectId}/close`), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("📨 Statut de la réponse clôture:", response.status);
+
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error("❌ Détails de l'erreur:", errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          console.error("❌ Impossible de parser la réponse d'erreur");
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result: ProjectApiResponse<Project[]> = await response.json();
+      console.log("✅ Projet clôturé avec succès:", result);
+
+      return result;
+    } catch (error) {
+      console.error("❌ Erreur lors de la clôture du projet:", error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Réouvrir un projet clôturé
+   */
+  async reopenProject(
+    projectId: number,
+    userId: number,
+    userEmail?: string,
+  ): Promise<ProjectApiResponse<Project[]>> {
+    try {
+      console.log(`📡 Réouverture du projet ${projectId}...`);
+
+      const requestBody = {
+        user: {
+          id: userId,
+          email: userEmail || '',
+        },
+      };
+
+      console.log("📋 Données de réouverture:", requestBody);
+
+      const response = await fetch(buildApiUrl(`/projects/${projectId}/reopen`), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("📨 Statut de la réponse réouverture:", response.status);
+
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error("❌ Détails de l'erreur:", errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          console.error("❌ Impossible de parser la réponse d'erreur");
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result: ProjectApiResponse<Project[]> = await response.json();
+      console.log("✅ Projet réouvert avec succès:", result);
+
+      return result;
+    } catch (error) {
+      console.error("❌ Erreur lors de la réouverture du projet:", error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
