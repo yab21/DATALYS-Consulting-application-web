@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronRight,
   Lock,
+  Unlock,
   FileText,
   Upload,
   Eye,
@@ -31,6 +32,9 @@ import {
   Filter,
   Moon,
   Sun,
+  Clock,
+  History,
+  PauseCircle,
 } from "lucide-react";
 
 // Types
@@ -177,6 +181,7 @@ const Documentation: React.FC = () => {
             <Step number={4}>Si la vérification en deux étapes (MFA) est activée, un code à 6 chiffres sera envoyé à votre email. Saisissez-le pour finaliser la connexion.</Step>
             <InfoBox type="tip">
               Vous pouvez coller le code MFA directement depuis votre presse-papiers — les 6 champs se remplissent automatiquement.
+              Si vous n&apos;avez pas reçu le code, cliquez sur <strong>&quot;Renvoyer le code&quot;</strong> pour recevoir un nouveau code par email.
             </InfoBox>
           </div>
 
@@ -290,6 +295,37 @@ const Documentation: React.FC = () => {
 
           <div>
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              Clôturer un projet <RoleBadge role="admin" />
+            </h4>
+            <p className="mb-2">
+              Un administrateur peut clôturer un projet directement depuis la table des projets.
+            </p>
+            <Step number={1}>Dans la liste des projets, cliquez sur le menu d&apos;actions <strong>(⋮)</strong> du projet concerné.</Step>
+            <Step number={2}>Sélectionnez <strong>&quot;Clôturer&quot;</strong>.</Step>
+            <Step number={3}>Saisissez un <strong>motif de clôture</strong> (obligatoire) expliquant la raison.</Step>
+            <Step number={4}>Confirmez la clôture.</Step>
+            <InfoBox>
+              Le projet clôturé apparaît avec un badge <strong>&quot;Clôturé&quot;</strong> en rouge dans la table, accompagné du motif de clôture.
+            </InfoBox>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              Rouvrir un projet clôturé <RoleBadge role="admin" />
+            </h4>
+            <p className="mb-2">
+              Un projet clôturé peut être rouvert si nécessaire.
+            </p>
+            <Step number={1}>Dans la liste des projets, repérez le projet avec le badge <strong>&quot;Clôturé&quot;</strong>.</Step>
+            <Step number={2}>Cliquez sur le menu d&apos;actions <strong>(⋮)</strong> et sélectionnez <strong>&quot;Rouvrir&quot;</strong>.</Step>
+            <Step number={3}>Confirmez la réouverture.</Step>
+            <InfoBox type="tip">
+              Après réouverture, le projet retrouve son statut <strong>&quot;Actif&quot;</strong> et le motif de clôture est supprimé.
+            </InfoBox>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
               Gestion des fichiers
             </h4>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -327,13 +363,65 @@ const Documentation: React.FC = () => {
               <li><RoleBadge role="partner" /> Voir les incidents liés à vos projets</li>
             </ul>
           </div>
+
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Statuts d&apos;un incident</h4>
+            <p className="mb-2">Un incident peut passer par les statuts suivants :</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li><strong>Ouvert</strong> — L&apos;incident vient d&apos;être créé</li>
+              <li><strong>En cours</strong> — L&apos;incident est en cours de traitement</li>
+              <li><strong>En attente</strong> — L&apos;incident est suspendu (un motif est requis)</li>
+              <li><strong>Résolu</strong> — Le problème a été corrigé</li>
+              <li><strong>Fermé</strong> — L&apos;incident est clôturé définitivement</li>
+            </ul>
+          </div>
+
           <div>
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Détails d&apos;un incident</h4>
-            <p>Cliquez sur un incident pour voir ses détails : statut, priorité, SLA, historique des échanges et fichiers joints.</p>
+            <p className="mb-2">Cliquez sur un incident pour voir sa page complète avec les onglets suivants :</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Détails</strong> — Informations générales, statut, priorité, SLA</li>
+              <li><strong>Commentaires</strong> — Échanges et notes sur l&apos;incident</li>
+              <li><strong>Fichiers</strong> — Documents et pièces jointes</li>
+              <li><strong>Résolution</strong> — Notes et détails de la résolution</li>
+              <li><strong>Historique</strong> — Timeline complète de toutes les actions effectuées sur l&apos;incident (création, changements de statut, modifications, commentaires)</li>
+            </ul>
+            <InfoBox>
+              L&apos;onglet <strong>Historique</strong> affiche une timeline visuelle avec l&apos;auteur, la date et le détail de chaque action.
+            </InfoBox>
           </div>
+
           <div>
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Gérer un incident <RoleBadge role="admin" /></h4>
-            <p>Les administrateurs peuvent modifier le statut, la priorité, ajouter des notes de résolution et joindre des fichiers.</p>
+            <p className="mb-2">Les administrateurs peuvent modifier le statut, la priorité, ajouter des notes de résolution et joindre des fichiers.</p>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              Mettre un incident en attente <RoleBadge role="admin" />
+            </h4>
+            <p className="mb-2">
+              Lorsqu&apos;un incident nécessite une pause (attente d&apos;informations, dépendance externe, etc.), un administrateur peut le passer en statut <strong>&quot;En attente&quot;</strong>.
+            </p>
+            <Step number={1}>Depuis la liste des incidents, cliquez sur <strong>&quot;Mettre en pause&quot;</strong> dans le menu d&apos;actions, ou modifiez l&apos;incident et changez le statut à <strong>&quot;En attente&quot;</strong>.</Step>
+            <Step number={2}>Un champ <strong>&quot;Motif de mise en attente&quot;</strong> apparaît — saisissez la raison (obligatoire).</Step>
+            <Step number={3}>Validez la modification.</Step>
+            <InfoBox type="warning">
+              Le motif d&apos;attente est obligatoire. Vous ne pourrez pas enregistrer le changement sans l&apos;avoir renseigné.
+            </InfoBox>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              Exporter les incidents
+            </h4>
+            <p>
+              Depuis la liste des incidents, vous pouvez exporter les données au format souhaité en cliquant sur le bouton <strong>&quot;Exporter&quot;</strong>.
+              L&apos;export inclut les informations de chaque incident : numéro, titre, statut, priorité, dates et assignation.
+            </p>
+            <InfoBox type="tip">
+              Utilisez les filtres avant d&apos;exporter pour ne récupérer que les incidents qui vous intéressent.
+            </InfoBox>
           </div>
         </div>
       ),
@@ -654,7 +742,7 @@ const Documentation: React.FC = () => {
                 {/* Section header (collapsible) */}
                 <button
                   onClick={() => toggleSection(section.id)}
-                  className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-750"
+                  className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#4ba9b7]/10 text-[#4ba9b7]">
