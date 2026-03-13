@@ -10,6 +10,7 @@ permissions:
 
 env:
   NODE_VERSION: "20.x"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   SERVER_HOST: "152.228.130.133"
   APP_NAME: "datalys-app"
   DEPLOY_PATH: "/var/www/datalys-app-git"
