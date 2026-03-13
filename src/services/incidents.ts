@@ -93,10 +93,14 @@ export interface IncidentHistoryResponse {
 export interface IncidentAttachment {
   id: number;
   note_id: number;
+  incident_id: number;
   file_name: string;
   file_url: string;
   file_type: string;
   file_size: number;
+  author_name: string;
+  created_at: string;
+  created_by: number;
 }
 
 export interface IncidentNote {
@@ -105,6 +109,9 @@ export interface IncidentNote {
   content: string;
   author_name: string;
   created_at: string;
+  created_by: number;
+  updated_at: string;
+  updated_by: number;
   attachments: IncidentAttachment[];
 }
 
@@ -144,7 +151,7 @@ export interface ExportIncidentOptions {
 }
 
 export class IncidentsService {
-  private static async makeRequest<T>(
+  private static async makeRequest(
     endpoint: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
     body?: any

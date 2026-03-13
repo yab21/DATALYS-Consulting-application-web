@@ -28,6 +28,7 @@ import {
 import { useRouter } from 'next/navigation';
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { IncidentsService, Incident, type IncidentHistoryEntry, type IncidentNote } from '@/services/incidents';
+import { incidentFilesService } from '@/services/incident-files';
 import { projectsService, Project } from '@/services/projects';
 import { UsersService, User } from '@/services/users';
 import { extractBackendMessage } from '@/lib/error-handler';
@@ -788,16 +789,15 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
                       {note.attachments && note.attachments.length > 0 && (
                         <div className="flex flex-wrap gap-2 pl-9 pt-1">
                           {note.attachments.map((att) => (
-                            <a
+                            <button
                               key={att.id}
-                              href={att.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              type="button"
+                              onClick={() => incidentFilesService.viewIncidentFile(att.file_url, att.file_name)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                             >
                               <FileText className="w-3.5 h-3.5 flex-shrink-0" />
                               <span className="truncate max-w-[200px]">{att.file_name}</span>
-                            </a>
+                            </button>
                           ))}
                         </div>
                       )}
