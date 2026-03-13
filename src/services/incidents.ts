@@ -150,50 +150,36 @@ export class IncidentsService {
     body?: any
   ): Promise<any> {
     try {
-      console.log(`🌐 Incidents API ${method} ${buildApiUrl(endpoint)}`);
-      console.log('📦 Body:', body);
-      
       const response = await fetch(buildApiUrl(endpoint), {
         method,
         headers: getDefaultHeaders(),
         body: body ? JSON.stringify(body) : undefined,
       });
-      
-      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
 
       let data: any;
       const contentType = response.headers.get('content-type') || '';
       if (contentType.includes('application/json')) {
         data = await response.json();
       } else {
-        // Réponse non-JSON (ex. page HTML d'erreur)
-        const text = await response.text();
-        console.warn('⚠️ Réponse non-JSON:', text.slice(0, 200));
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         return {};
       }
-      console.log('📥 Response data:', data);
 
-      // Vérifier si la réponse contient une erreur même avec un status HTTP 200
       if (data && data.status === "error" && data.message) {
-        console.error('❌ API Error:', data.message);
         throw new Error(data.message);
       }
 
       if (!response.ok) {
-        // Si la réponse contient un message d'erreur, l'utiliser
         if (data && data.message) {
           throw new Error(data.message);
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // Retourner les données
       return data;
     } catch (error) {
-      console.error('❌ Incidents API Error:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -465,7 +451,7 @@ export class IncidentsService {
       const formData = new FormData();
       formData.append('content', content);
       formData.append('user', JSON.stringify({ id: userId }));
-      files.forEach(file => formData.append('files[]', file));
+      files.forEach(file => formData.append('attachments[]', file));
 
       const headers: Record<string, string> = {};
       if (typeof window !== 'undefined') {
@@ -479,10 +465,16 @@ export class IncidentsService {
         body: formData,
       });
 
-      const data = await response.json();
-      if (data?.status === 'error' && data?.message) throw new Error(data.message);
-      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      return data;
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await response.json();
+        if (data?.status === 'error' && data?.message) throw new Error(data.message);
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        return data;
+      } else {
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        return {};
+      }
     } catch (error) {
       const message = extractBackendMessage(error);
       throw new Error(message);

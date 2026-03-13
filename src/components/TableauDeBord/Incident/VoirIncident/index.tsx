@@ -765,6 +765,12 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
                         <Avatar size="sm" name={note.author_name} className="bg-primary text-white flex-shrink-0" />
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">{note.author_name}</span>
                         <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">{formatDate(note.created_at)}</span>
+                        {note.attachments && note.attachments.length > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                            <Paperclip className="w-3 h-3" />
+                            {note.attachments.length}
+                          </span>
+                        )}
                         {user?.role_id === 1 && (
                           <Button
                             isIconOnly
