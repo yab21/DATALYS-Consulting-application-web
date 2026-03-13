@@ -2,6 +2,7 @@ import { API_CONFIG, buildApiUrl, getDefaultHeaders } from '@/lib/api-config';
 import { extractBackendMessage } from '@/lib/error-handler';
 import { securedFetch } from '@/lib/api-interceptor';
 import { UsersService } from '@/services/users';
+import { SecureStorage } from '@/lib/secure-storage';
 
 export interface Incident {
   id: number;
@@ -89,6 +90,24 @@ export interface IncidentHistoryResponse {
   history: IncidentHistoryEntry[];
 }
 
+export interface IncidentAttachment {
+  id: number;
+  note_id: number;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
+}
+
+export interface IncidentNote {
+  id: number;
+  incident_id: number;
+  content: string;
+  author_name: string;
+  created_at: string;
+  attachments: IncidentAttachment[];
+}
+
 export interface IncidentCriteria {
   index?: number;
   size?: number;
@@ -142,15 +161,27 @@ export class IncidentsService {
       
       console.log(`📡 Response status: ${response.status} ${response.statusText}`);
 
-      const data = await response.json();
+      let data: any;
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // Réponse non-JSON (ex. page HTML d'erreur)
+        const text = await response.text();
+        console.warn('⚠️ Réponse non-JSON:', text.slice(0, 200));
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return {};
+      }
       console.log('📥 Response data:', data);
-      
+
       // Vérifier si la réponse contient une erreur même avec un status HTTP 200
       if (data && data.status === "error" && data.message) {
         console.error('❌ API Error:', data.message);
         throw new Error(data.message);
       }
-      
+
       if (!response.ok) {
         // Si la réponse contient un message d'erreur, l'utiliser
         if (data && data.message) {
@@ -158,7 +189,7 @@ export class IncidentsService {
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       // Retourner les données
       return data;
     } catch (error) {
@@ -412,6 +443,57 @@ export class IncidentsService {
       `/incidents/${incidentId}/history`,
       'GET'
     );
+  }
+
+  // Récupérer les notes de résolution d'un incident
+  static async getNotes(incidentId: number): Promise<IncidentNote[]> {
+    try {
+      const response = await this.makeRequest(`/incidents/${incidentId}/notes`, 'GET');
+      if (response?.items && Array.isArray(response.items)) return response.items;
+      if (Array.isArray(response)) return response;
+      if (response?.data && Array.isArray(response.data)) return response.data;
+      return [];
+    } catch (error) {
+      console.error('Erreur lors du chargement des notes:', error);
+      throw error;
+    }
+  }
+
+  // Ajouter une note de résolution (avec pièces jointes optionnelles)
+  static async addNote(incidentId: number, content: string, userId: number, files: File[] = []): Promise<any> {
+    try {
+      const formData = new FormData();
+      formData.append('content', content);
+      formData.append('user', JSON.stringify({ id: userId }));
+      files.forEach(file => formData.append('files[]', file));
+
+      const headers: Record<string, string> = {};
+      if (typeof window !== 'undefined') {
+        const token = SecureStorage.getItem('authToken');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(buildApiUrl(`/incidents/${incidentId}/notes`), {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data?.status === 'error' && data?.message) throw new Error(data.message);
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      return data;
+    } catch (error) {
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  // Supprimer une note de résolution (soft delete)
+  static async deleteNote(incidentId: number, noteId: number, userId: number, userEmail: string): Promise<any> {
+    return this.makeRequest(`/incidents/${incidentId}/notes/${noteId}`, 'DELETE', {
+      user: { id: userId, email: userEmail },
+    });
   }
 
   // Récupérer un incident par ID

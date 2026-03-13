@@ -837,7 +837,7 @@ const GestionIncidents: React.FC = () => {
         break;
       case "manage":
         // Naviguer vers la page de gestion de l'incident
-        router.push(`/tableaudebord/incidents/${incident.id}/gerer`);
+        router.push(`/tableaudebord/incidents/${incident.id}`);
         break;
       case "edit":
         // Pré-remplir le formulaire d'édition
