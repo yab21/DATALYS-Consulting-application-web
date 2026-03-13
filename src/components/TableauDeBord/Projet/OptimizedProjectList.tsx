@@ -882,13 +882,13 @@ const OptimizedProjectList: React.FC = () => {
                   <div className="flex flex-col gap-1">
                     <Chip
                       className="capitalize"
-                      color={project.closed_at ? "danger" : project.is_active ? "success" : "warning"}
+                      color={!project.is_active ? "danger" : "success"}
                       size="sm"
                       variant="flat"
                     >
-                      {project.closed_at ? "Clôturé" : project.is_active ? "Actif" : "Inactif"}
+                      {!project.is_active ? "Clôturé" : "Actif"}
                     </Chip>
-                    {project.closed_at && project.closure_reason && (
+                    {!project.is_active && project.closure_reason && (
                       <span className="text-xs text-red-500 dark:text-red-400 italic truncate max-w-[160px]" title={project.closure_reason}>
                         {project.closure_reason}
                       </span>
@@ -938,7 +938,7 @@ const OptimizedProjectList: React.FC = () => {
                           >
                             Modifier
                           </DropdownItem>
-                          {!project.closed_at ? (
+                          {project.is_active ? (
                             <DropdownItem
                               key="close"
                               startContent={<Lock className="h-4 w-4" />}

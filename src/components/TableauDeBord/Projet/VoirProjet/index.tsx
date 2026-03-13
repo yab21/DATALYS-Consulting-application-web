@@ -71,7 +71,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
         const currentProject = projectsData.find(p => p.id.toString() === projectId);
 
         if (currentProject) {
-          const projectClosed = !!currentProject.closed_at;
+          const projectClosed = !currentProject.is_active;
           setIsClosed(projectClosed);
           setProject({
             id: projectId,
@@ -80,7 +80,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
             chefDeProjet: "Non défini",
             domaine: [],
             createdAt: new Date(currentProject.created_at),
-            statut: projectClosed ? "cloture" : (currentProject.is_active ? "en_cours" : "suspendu"),
+            statut: projectClosed ? "cloture" : "en_cours",
             progression: 0,
             budget: 0,
             description: "",
