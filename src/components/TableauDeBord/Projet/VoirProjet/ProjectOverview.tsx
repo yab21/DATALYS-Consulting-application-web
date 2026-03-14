@@ -38,7 +38,7 @@ interface ProjectOverviewProps {
 const MAX_DROPDOWN_ITEMS = 5;
 
 const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange }) => {
-  const { user } = useAuth();
+  const { user, isPartner } = useAuth();
   const router = useRouter();
 
   const projectAge = Math.floor((new Date().getTime() - project.createdAt.getTime()) / (1000 * 60 * 60 * 24));
@@ -125,19 +125,22 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
         let teamMembersCount = 0;
         let teamMembersList: ProjectPartner[] = [];
         let teamError = false;
-        try {
-          if (user?.id) {
-            const teamMembers = await projectPartnersService.getProjectPartners(
-              parseInt(project.id), user.id
-            );
-            teamMembersCount = teamMembers.length;
-            teamMembersList = teamMembers;
-          } else {
+        // Les partenaires n'ont pas accès à /users/getByCriteria (403)
+        if (!isPartner()) {
+          try {
+            if (user?.id) {
+              const teamMembers = await projectPartnersService.getProjectPartners(
+                parseInt(project.id), user.id
+              );
+              teamMembersCount = teamMembers.length;
+              teamMembersList = teamMembers;
+            } else {
+              teamError = true;
+            }
+          } catch (error) {
+            if (isTokenExpiredError(error)) throw error;
             teamError = true;
           }
-        } catch (error) {
-          if (isTokenExpiredError(error)) throw error;
-          teamError = true;
         }
 
         setDetailedData({ folders, files: allFiles, incidents: incidentsList, teamMembers: teamMembersList });
