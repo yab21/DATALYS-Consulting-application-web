@@ -78,7 +78,7 @@ const VoirProfil = () => {
                           <div className="flex items-center gap-2 px-3 py-2 bg-white/20 backdrop-blur-sm rounded-lg">
                             <Shield className="h-4 w-4" />
                             <span className="text-sm font-medium">
-                              {user.role_id === 1 ? "Administrateur" : "Utilisateur"}
+                              {user.role_id === 1 ? "Administrateur" : user.partner_id ? "Partenaire" : "Utilisateur"}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 px-3 py-2 bg-white/20 backdrop-blur-sm rounded-lg">
@@ -106,7 +106,7 @@ const VoirProfil = () => {
                 <div className="px-8 py-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.role_id === 1 ? "Admin" : "User"}</div>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.role_id === 1 ? "Admin" : user.partner_id ? "Partenaire" : "User"}</div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">Niveau d'accès</div>
                     </div>
                     <div className="text-center">

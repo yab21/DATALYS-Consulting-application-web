@@ -215,10 +215,20 @@ const ModifierProfil: React.FC<ModifierProfilProps> = ({
               <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600">
                 <div className="flex items-center gap-2">
                   <Edit className="h-4 w-4 text-[#4ba9b7]" />
-                  <span className="font-medium text-gray-900 dark:text-white">Administrateur</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {userData.isAdmin
+                      ? "Administrateur"
+                      : currentUser?.partner_id
+                      ? "Partenaire"
+                      : "Utilisateur"}
+                  </span>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Accès complet aux fonctionnalités d'administration
+                  {userData.isAdmin
+                    ? "Accès complet aux fonctionnalités d'administration"
+                    : currentUser?.partner_id
+                    ? "Accès aux fonctionnalités partenaire"
+                    : "Accès aux fonctionnalités standard"}
                 </p>
               </div>
             </div>
