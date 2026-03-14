@@ -28,6 +28,7 @@ import { projectsService, Project } from '@/services/projects';
 import { UsersService, User } from '@/services/users';
 import { extractBackendMessage } from '@/lib/error-handler';
 import { isTokenExpiredError } from '@/lib/api-interceptor';
+import { useAuth } from '@/context/AuthContext';
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import IncidentFiles from "../../Incidents/Voir/IncidentFiles";
 import { AnimatePresence, motion } from 'framer-motion';
@@ -38,6 +39,7 @@ interface VoirSupportProps {
 
 const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
   const router = useRouter();
+  const { isPartner } = useAuth();
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState<Incident | null>(null);
   const [project, setProject] = useState<Project | null>(null);
@@ -107,6 +109,8 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
   const loadAssignedUser = async (inc?: Incident) => {
     const current = inc || ticket;
     if (!current || !current.user_id) return;
+    // Les partenaires n'ont pas accès à /users/getByCriteria (403)
+    if (isPartner()) return;
     try {
       setLoadingUser(true);
       const userData = await UsersService.getUserById(current.user_id);

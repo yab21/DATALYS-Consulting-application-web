@@ -36,6 +36,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 import { IncidentsService, type Incident, type IncidentCriteria } from "@/services/incidents";
+import { projectsService, type Project } from "@/services/projects";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { useAuth } from "@/context/AuthContext";
 import { isTokenExpiredError } from "@/lib/api-interceptor";
@@ -48,9 +49,28 @@ const GestionSupport: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
 
-  const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  const { user, isPartner } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const router = useRouter();
+
+  // Chargement des projets du partenaire
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const allProjects = await projectsService.getActiveProjects();
+        if (isPartner() && user?.partner_id) {
+          setProjects(allProjects.filter(p => p.partner_id === user.partner_id));
+        } else {
+          setProjects(allProjects);
+        }
+      } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
+      }
+    };
+    loadProjects();
+  }, [user?.id]);
 
   // Chargement des données
   useEffect(() => {
@@ -60,7 +80,7 @@ const GestionSupport: React.FC = () => {
   // Filtrage des incidents
   useEffect(() => {
     filterIncidents();
-  }, [incidents, searchTerm, filterStatus, filterPriority]);
+  }, [incidents, projects, searchTerm, filterStatus, filterPriority]);
 
   const loadData = async () => {
     try {
@@ -104,6 +124,12 @@ const GestionSupport: React.FC = () => {
 
   const filterIncidents = () => {
     let filtered = [...incidents];
+
+    // Pour les partenaires : limiter aux tickets de leurs projets uniquement
+    if (isPartner() && projects.length > 0) {
+      const partnerProjectIds = new Set(projects.map(p => p.id));
+      filtered = filtered.filter(incident => partnerProjectIds.has(incident.project_id));
+    }
 
     // Filtrage par terme de recherche
     if (searchTerm.trim()) {

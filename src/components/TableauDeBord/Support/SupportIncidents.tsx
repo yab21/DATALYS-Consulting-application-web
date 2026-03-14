@@ -12,8 +12,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Tabs,
-  Tab,
   Select,
   SelectItem,
   Textarea,
@@ -28,31 +26,25 @@ import {
   DropdownMenu,
   DropdownItem,
   Avatar,
-  Progress,
 } from "@heroui/react";
 import { motion } from "framer-motion";
 import { useRouter } from 'next/navigation';
-import { 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Eye, 
-  Edit, 
-  UserCheck, 
+import {
+  Search,
+  MoreVertical,
+  Edit,
+  UserCheck,
   Clock,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  ArrowUpRight,
-  Calendar,
-  User as UserIcon,
   Timer,
   TrendingUp,
-  Download,
   Plus,
   RefreshCw,
   Trash2,
-  Settings
+  Settings,
+  Headphones
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -62,7 +54,6 @@ import { extractBackendMessage } from "@/lib/error-handler";
 import { isTokenExpiredError } from "@/lib/api-interceptor";
 import { IncidentsService, type Incident as ApiIncident, type IncidentCriteria, type CreateIncidentData, type UpdateIncidentData } from "@/services/incidents";
 import { projectsService, type Project } from "@/services/projects";
-import { UsersService, type User as UserType } from "@/services/users";
 import { partnersService, type Partner } from "@/services/partners";
 
 // Extensions des types pour inclure le statut "en_pause"
@@ -216,33 +207,6 @@ const getPriorityIcon = (priority: string) => {
     case "P3": return "🟢"; // Faible
     case "P4": return "⚪"; // Très faible
     default: return "⚪";
-  }
-};
-
-const getSLAColor = (status: string) => {
-  switch (status) {
-    case "respecte": return "success";
-    case "en_retard": return "danger";
-    case "non_applicable": return "default";
-    default: return "default";
-  }
-};
-
-const getSLAIcon = (status: string) => {
-  switch (status) {
-    case "respecte": return <CheckCircle className="h-3 w-3" />;
-    case "en_retard": return <XCircle className="h-3 w-3" />;
-    case "non_applicable": return <Clock className="h-3 w-3" />;
-    default: return <Clock className="h-3 w-3" />;
-  }
-};
-
-const getSLALabel = (status: string) => {
-  switch (status) {
-    case "respecte": return "Respecté";
-    case "en_retard": return "En retard";
-    case "non_applicable": return "N/A";
-    default: return "N/A";
   }
 };
 
@@ -443,7 +407,7 @@ const SkeletonLoader: React.FC = () => (
 );
 
 const SupportIncidents: React.FC = () => {
-  const { hasPermission, user, isPartner } = useAuth();
+  const { hasPermission, user, isPartner, isAdmin } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const router = useRouter();
   
@@ -455,6 +419,17 @@ const SupportIncidents: React.FC = () => {
   const [filterPriority, setFilterPriority] = useState<string>("tous");
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   
+  // Erreurs de validation du formulaire de création
+  const [createFormErrors, setCreateFormErrors] = useState<Record<string, string>>({});
+
+  const clearCreateFormError = (field: string) => {
+    setCreateFormErrors(prev => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   // États des modales
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -476,7 +451,7 @@ const SupportIncidents: React.FC = () => {
     category: "",
     impact: "",
     domain: "",
-    declarant_name: "",
+    declarant_name: user?.name || "",
     user_id: 0,
     project_id: 0,
     is_active: true,
@@ -499,15 +474,18 @@ const SupportIncidents: React.FC = () => {
     project_id: 0,
     is_active: true,
     is_read: false,
-    resolution_notes: ""
+    resolution_notes: "",
+    motif_attente: ""
   });
+  const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({});
+  const clearEditFormError = (field: string) => {
+    setEditFormErrors(prev => { const next = { ...prev }; delete next[field]; return next; });
+  };
 
   // États pour les données de référence
   const [projects, setProjects] = useState<Project[]>([]);
-  const [users, setUsers] = useState<UserType[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingPartners, setLoadingPartners] = useState(false);
 
 
@@ -516,7 +494,6 @@ const SupportIncidents: React.FC = () => {
     loadData();
     loadPartners();
     loadProjects();
-    loadUsers();
   }, []);
 
   // Filtrage des tickets
@@ -560,39 +537,6 @@ const SupportIncidents: React.FC = () => {
       setLoadingProjects(false);
     }
   }, [showNotification]);
-
-  const loadUsers = useCallback(async () => {
-    // Ne charger les utilisateurs que pour les admins (pas les partenaires)
-    if (isPartner() || user?.partner_id || (user?.role_id !== 1 && String(user?.role_id) !== "1")) {
-      return;
-    }
-    try {
-      setLoadingUsers(true);
-      const response = await UsersService.getUsersByCriteria({ size: 1000 });
-      const allUsers = response.items || [];
-
-      // Filtrer les utilisateurs pour éviter les doublons de noms
-      const uniqueUsersMap = new Map();
-      allUsers.forEach((u: UserType) => {
-        if (!uniqueUsersMap.has(u.name)) {
-          uniqueUsersMap.set(u.name, u);
-        }
-      });
-      const uniqueUsers = Array.from(uniqueUsersMap.values());
-
-      setUsers(uniqueUsers);
-      console.log('📋 Utilisateurs chargés:', uniqueUsers.length);
-    } catch (error) {
-      if (isTokenExpiredError(error)) throw error;
-      console.error('❌ Erreur lors du chargement des utilisateurs:', error);
-      showNotification(simpleNotificationHelpers.error(
-        "Erreur",
-        "Impossible de charger la liste des utilisateurs"
-      ));
-    } finally {
-      setLoadingUsers(false);
-    }
-  }, [showNotification, isPartner, user]);
 
   const loadData = useCallback(async () => {
     try {
@@ -792,6 +736,7 @@ const SupportIncidents: React.FC = () => {
 
   // Fonctions utilitaires
   const resetCreateForm = () => {
+    setCreateFormErrors({});
     setCreateForm({
       title: "",
       description: "",
@@ -815,12 +760,7 @@ const SupportIncidents: React.FC = () => {
   };
 
   const handleManageTicket = (ticketId: string) => {
-    router.push(`/tableaudebord/support/${ticketId}/gerer`);
-  };
-
-  const openViewModal = (ticket: SupportTicket) => {
-    setSelectedTicket(ticket);
-    setShowDetailModal(true);
+    router.push(`/tableaudebord/support/${ticketId}`);
   };
 
   const openEditModal = (ticket: SupportTicket) => {
@@ -879,17 +819,17 @@ const SupportIncidents: React.FC = () => {
           <Button
             color="primary"
             startContent={<RefreshCw size={16} />}
-            onClick={loadData}
+            onPress={loadData}
             isLoading={loading}
           >
             Actualiser
           </Button>
-          
+
           {hasPermission(Permission.HANDLE_ALL_INCIDENTS) && (
             <Button
               color="success"
               startContent={<Plus size={16} />}
-              onClick={() => setShowCreateModal(true)}
+              onPress={() => setShowCreateModal(true)}
             >
               Nouveau Ticket
             </Button>
@@ -904,7 +844,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -928,7 +868,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -952,7 +892,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -976,7 +916,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1000,7 +940,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1024,7 +964,7 @@ const SupportIncidents: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Card className="border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1197,13 +1137,6 @@ const SupportIncidents: React.FC = () => {
                         </DropdownTrigger>
                         <DropdownMenu>
                           <DropdownItem
-                            key="view"
-                            startContent={<Eye size={14} />}
-                            onPress={() => handleViewTicket(ticket.id)}
-                          >
-                            Voir détails
-                          </DropdownItem>
-                          <DropdownItem
                             key="manage"
                             startContent={<Settings size={14} />}
                             onPress={() => handleManageTicket(ticket.id)}
@@ -1238,20 +1171,30 @@ const SupportIncidents: React.FC = () => {
       </Card>
 
       {/* Modal de création */}
-      <Modal 
-        isOpen={showCreateModal} 
-        onOpenChange={setShowCreateModal}
+      <Modal
+        isOpen={showCreateModal}
+        isDismissable={!isCreating}
+        onClose={() => {
+          setShowCreateModal(false);
+          resetCreateForm();
+        }}
         size="2xl"
+        scrollBehavior="inside"
         classNames={{
           wrapper: "z-[100000]",
-          backdrop: "z-[99998]"
+          backdrop: "z-[99998]",
         }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                Créer un nouveau ticket de support
+              <ModalHeader>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <Headphones className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Créer un nouveau ticket de support</h3>
+                </div>
               </ModalHeader>
               <ModalBody>
                 <div className="space-y-4">
@@ -1259,42 +1202,37 @@ const SupportIncidents: React.FC = () => {
                     label="Titre du ticket"
                     placeholder="Ex: Problème de connectivité..."
                     value={createForm.title}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) => {
+                      setCreateForm(prev => ({ ...prev, title: e.target.value }));
+                      clearCreateFormError("title");
+                    }}
                     isRequired
+                    isInvalid={!!createFormErrors.title}
+                    errorMessage={createFormErrors.title}
                   />
 
                   <Textarea
                     label="Description"
                     placeholder="Décrivez le problème en détail..."
                     value={createForm.description}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) => {
+                      setCreateForm(prev => ({ ...prev, description: e.target.value }));
+                      clearCreateFormError("description");
+                    }}
                     minRows={3}
                     isRequired
+                    isInvalid={!!createFormErrors.description}
+                    errorMessage={createFormErrors.description}
                   />
-                  
-                  <Select
+
+                  <Input
                     label="Déclarant du ticket"
-                    placeholder="Sélectionnez l'utilisateur déclarant"
-                    selectedKeys={createForm.declarant_name ? 
-                      [users.find(user => user.name === createForm.declarant_name)?.id.toString() || ''] : []
-                    }
-                    onSelectionChange={(keys) => {
-                      const selectedKey = Array.from(keys)[0] as string;
-                      // Trouver l'utilisateur correspondant pour obtenir son nom
-                      const selectedUser = users.find(user => user.id.toString() === selectedKey);
-                      const userName = selectedUser ? selectedUser.name : '';
-                      setCreateForm(prev => ({ ...prev, declarant_name: userName }));
-                    }}
-                    isLoading={loadingUsers}
-                    isRequired
-                  >
-                    {users.map((user) => (
-                      <SelectItem key={user.id.toString()}>
-                        {user.name} ({user.email})
-                      </SelectItem>
-                    ))}
-                  </Select>
-                  
+                    value={createForm.declarant_name}
+                    isReadOnly
+                    description="Déclarant automatiquement défini (utilisateur connecté)"
+                    variant="bordered"
+                  />
+
                   <div className="grid grid-cols-2 gap-4">
                     <Select
                       label="Assigné à"
@@ -1303,16 +1241,20 @@ const SupportIncidents: React.FC = () => {
                       onSelectionChange={(keys) => {
                         const selected = Array.from(keys)[0] as string;
                         setCreateForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
+                        clearCreateFormError("user_id");
                       }}
                       isLoading={loadingPartners}
+                      isRequired
+                      isInvalid={!!createFormErrors.user_id}
+                      errorMessage={createFormErrors.user_id}
                     >
                       {partners.map((partner) => (
-                        <SelectItem key={partner.id.toString()}>
+                        <SelectItem key={partner.id.toString()} textValue={partner.name}>
                           {partner.name}
                         </SelectItem>
                       ))}
                     </Select>
-                    
+
                     <Select
                       label="Projet"
                       placeholder="Sélectionnez un projet"
@@ -1320,17 +1262,24 @@ const SupportIncidents: React.FC = () => {
                       onSelectionChange={(keys) => {
                         const selected = Array.from(keys)[0] as string;
                         setCreateForm(prev => ({ ...prev, project_id: selected ? parseInt(selected) : 0 }));
+                        clearCreateFormError("project_id");
                       }}
                       isLoading={loadingProjects}
+                      isRequired
+                      isInvalid={!!createFormErrors.project_id}
+                      errorMessage={createFormErrors.project_id}
                     >
                       {projects.map((project) => (
-                        <SelectItem key={project.id.toString()}>
-                          {project.title}
+                        <SelectItem
+                          key={project.id.toString()}
+                          textValue={`${project.title}${project.partner_name ? ` (${project.partner_name})` : ''}`}
+                        >
+                          {project.title}{project.partner_name ? ` (${project.partner_name})` : ''}
                         </SelectItem>
                       ))}
                     </Select>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4">
                     <Input
                       label="Type"
@@ -1341,19 +1290,31 @@ const SupportIncidents: React.FC = () => {
                         input: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50"
                       }}
                     />
-                    
+
                     <Input
                       label="Catégorie"
                       placeholder="Ex: Technique, Fonctionnel..."
                       value={createForm.category}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, category: e.target.value }))}
+                      onChange={(e) => {
+                        setCreateForm(prev => ({ ...prev, category: e.target.value }));
+                        clearCreateFormError("category");
+                      }}
+                      isRequired
+                      isInvalid={!!createFormErrors.category}
+                      errorMessage={createFormErrors.category}
                     />
-                    
+
                     <Select
                       label="Domaine concerné"
                       placeholder="Sélectionnez le domaine"
                       selectedKeys={createForm.domain ? [createForm.domain] : []}
-                      onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }))}
+                      onSelectionChange={(keys) => {
+                        setCreateForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }));
+                        clearCreateFormError("domain");
+                      }}
+                      isRequired
+                      isInvalid={!!createFormErrors.domain}
+                      errorMessage={createFormErrors.domain}
                     >
                       <SelectItem key="reseau">Réseau</SelectItem>
                       <SelectItem key="infrastructure">Infrastructure système</SelectItem>
@@ -1361,43 +1322,34 @@ const SupportIncidents: React.FC = () => {
                       <SelectItem key="energie">Energie</SelectItem>
                     </Select>
                   </div>
-                  
+
                   <Select
                     label="Impact"
-                    placeholder="Sélectionnez l'impact de l'incident"
+                    placeholder="Sélectionnez l'impact du ticket"
                     selectedKeys={createForm.impact ? [createForm.impact] : []}
                     onSelectionChange={(keys) => {
                       const impact = Array.from(keys)[0] as string || "";
                       let priority = createForm.priority;
-                      
-                      // Déterminer automatiquement la criticité selon l'impact
-                      switch(impact) {
-                        case 'arret_service':
-                          priority = 'P0';
-                          break;
-                        case 'service_fortement_degrade':
-                          priority = 'P1';
-                          break;
-                        case 'majeur':
-                          priority = 'P2';
-                          break;
-                        case 'mineur':
-                          priority = 'P4';
-                          break;
-                        default:
-                          priority = 'P3';
+                      switch (impact) {
+                        case 'arret_service': priority = 'P0'; break;
+                        case 'service_fortement_degrade': priority = 'P1'; break;
+                        case 'majeur': priority = 'P2'; break;
+                        case 'mineur': priority = 'P4'; break;
+                        default: priority = 'P3';
                       }
-                      
                       setCreateForm(prev => ({ ...prev, impact, priority }));
+                      clearCreateFormError("impact");
                     }}
                     isRequired
+                    isInvalid={!!createFormErrors.impact}
+                    errorMessage={createFormErrors.impact}
                   >
                     <SelectItem key="arret_service">Arrêt de service</SelectItem>
                     <SelectItem key="service_fortement_degrade">Service fortement dégradé</SelectItem>
                     <SelectItem key="majeur">Majeur</SelectItem>
                     <SelectItem key="mineur">Mineur</SelectItem>
                   </Select>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <Select
                       label="Priorité"
@@ -1410,7 +1362,7 @@ const SupportIncidents: React.FC = () => {
                       <SelectItem key="P3">P3 - Faible</SelectItem>
                       <SelectItem key="P4">P4 - Très faible</SelectItem>
                     </Select>
-                    
+
                     <Select
                       label="Statut"
                       selectedKeys={createForm.status ? [createForm.status] : []}
@@ -1424,7 +1376,7 @@ const SupportIncidents: React.FC = () => {
                       <SelectItem key="resolu">Résolu</SelectItem>
                     </Select>
                   </div>
-                  
+
                   <Textarea
                     label="Notes de résolution (optionnel)"
                     placeholder="Ajoutez des notes sur la résolution du ticket..."
@@ -1435,11 +1387,11 @@ const SupportIncidents: React.FC = () => {
                 </div>
               </ModalBody>
               <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
+                <Button color="danger" variant="light" onPress={onClose} isDisabled={isCreating}>
                   Annuler
                 </Button>
-                <Button 
-                  color="primary" 
+                <Button
+                  color="primary"
                   onPress={handleCreate}
                   isLoading={isCreating}
                   isDisabled={!createForm.title || !createForm.description || !createForm.declarant_name || !createForm.user_id || !createForm.project_id || !createForm.category || !createForm.impact || !createForm.domain}
@@ -1535,214 +1487,255 @@ const SupportIncidents: React.FC = () => {
       </Modal>
 
       {/* Modal d'édition */}
-      <Modal 
-        isOpen={showEditModal} 
-        onOpenChange={setShowEditModal}
-        size="2xl"
-        classNames={{
-          wrapper: "z-[100000]",
-          backdrop: "z-[99998]"
-        }}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Modifier le ticket - {selectedTicket?.incident_number}
-              </ModalHeader>
-              <ModalBody>
-                <div className="space-y-4">
-                  <Input
-                    label="Titre du ticket"
-                    value={editForm.title}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                  />
+      {selectedTicket && (
+        <Modal
+          isOpen={showEditModal}
+          isDismissable={!isUpdating}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditFormErrors({});
+          }}
+          size="2xl"
+          scrollBehavior="inside"
+          classNames={{
+            wrapper: "z-[100000]",
+            backdrop: "z-[99998]"
+          }}
+        >
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-warning/10 p-2">
+                      <Edit className="h-5 w-5 text-warning" />
+                    </div>
+                    <h3 className="text-xl font-bold">Modifier le ticket</h3>
+                  </div>
+                </ModalHeader>
+                <ModalBody>
+                  <div className="space-y-4">
+                    <Input
+                      label="Titre du ticket"
+                      placeholder="Ex: Problème de connectivité..."
+                      value={editForm.title}
+                      onChange={(e) => {
+                        setEditForm(prev => ({ ...prev, title: e.target.value }));
+                        clearEditFormError("title");
+                      }}
+                      isRequired
+                      isInvalid={!!editFormErrors.title}
+                      errorMessage={editFormErrors.title}
+                    />
 
-                  <Textarea
-                    label="Description"
-                    value={editForm.description}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                    minRows={3}
-                  />
-                  
-                  <Select
-                    label="Déclarant du ticket"
-                    placeholder="Sélectionnez l'utilisateur déclarant"
-                    selectedKeys={editForm.declarant_name ? 
-                      [users.find(user => user.name === editForm.declarant_name)?.id.toString() || ''] : []
-                    }
-                    onSelectionChange={(keys) => {
-                      const selectedKey = Array.from(keys)[0] as string;
-                      // Trouver l'utilisateur correspondant pour obtenir son nom
-                      const selectedUser = users.find(user => user.id.toString() === selectedKey);
-                      const userName = selectedUser ? selectedUser.name : '';
-                      setEditForm(prev => ({ ...prev, declarant_name: userName }));
-                    }}
-                    isLoading={loadingUsers}
-                  >
-                    {users.map((user) => (
-                      <SelectItem key={user.id.toString()}>
-                        {user.name} ({user.email})
-                      </SelectItem>
-                    ))}
-                  </Select>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <Select
-                      label="Assigné à"
-                      placeholder="Sélectionnez un partenaire"
-                      selectedKeys={editForm.user_id ? [editForm.user_id.toString()] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string;
-                        setEditForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
+                    <Textarea
+                      label="Description"
+                      placeholder="Décrivez le problème en détail..."
+                      value={editForm.description}
+                      onChange={(e) => {
+                        setEditForm(prev => ({ ...prev, description: e.target.value }));
+                        clearEditFormError("description");
                       }}
-                      isLoading={loadingPartners}
-                    >
-                      {partners.map((partner) => (
-                        <SelectItem key={partner.id.toString()}>
-                          {partner.name}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                    
-                    <Select
-                      label="Projet"
-                      placeholder="Sélectionnez un projet"
-                      selectedKeys={editForm.project_id ? [editForm.project_id.toString()] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string;
-                        setEditForm(prev => ({ ...prev, project_id: selected ? parseInt(selected) : 0 }));
-                      }}
-                      isLoading={loadingProjects}
-                    >
-                      {projects.map((project) => (
-                        <SelectItem key={project.id.toString()}>
-                          {project.title}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4">
+                      minRows={3}
+                      isRequired
+                      isInvalid={!!editFormErrors.description}
+                      errorMessage={editFormErrors.description}
+                    />
+
                     <Input
-                      label="Type"
-                      value={editForm.type}
+                      label="Déclarant du ticket"
+                      value={editForm.declarant_name}
                       isReadOnly
-                      className="cursor-not-allowed"
+                      description="Déclarant ne peut pas être modifié"
+                      variant="bordered"
                       classNames={{
-                        input: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50"
+                        input: "text-gray-700 dark:text-gray-300",
+                        inputWrapper: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                       }}
-                      description="Le type ne peut pas être modifié"
                     />
-                    
-                    <Input
-                      label="Catégorie"
-                      value={editForm.category}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
-                    />
-                    
+
+                    <div className={`grid gap-4 ${isAdmin() ? "grid-cols-2" : "grid-cols-1"}`}>
+                      {isAdmin() && (
+                        <Select
+                          label="Assigné à (Responsable)"
+                          placeholder="Sélectionnez un partenaire"
+                          selectedKeys={editForm.user_id ? [editForm.user_id.toString()] : []}
+                          onSelectionChange={(keys) => {
+                            const selected = Array.from(keys)[0] as string;
+                            setEditForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
+                          }}
+                          isLoading={loadingPartners}
+                          isRequired
+                        >
+                          {partners.map((partner) => (
+                            <SelectItem key={partner.id.toString()} textValue={partner.name}>
+                              {partner.name}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
+
+                      <Select
+                        label="Projet"
+                        placeholder="Sélectionnez le projet"
+                        selectedKeys={editForm.project_id ? [editForm.project_id.toString()] : []}
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0] as string;
+                          setEditForm(prev => ({ ...prev, project_id: selected ? parseInt(selected) : 0 }));
+                        }}
+                        isLoading={loadingProjects}
+                        isRequired
+                      >
+                        {projects.map((project) => (
+                          <SelectItem
+                            key={project.id.toString()}
+                            textValue={`${project.title}${project.partner_name ? ` (${project.partner_name})` : ""}`}
+                          >
+                            {project.title}{project.partner_name ? ` (${project.partner_name})` : ""}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <Input
+                        label="Type"
+                        value={editForm.type}
+                        isReadOnly
+                        className="cursor-not-allowed"
+                        classNames={{
+                          input: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50"
+                        }}
+                        description="Le type ne peut pas être modifié"
+                      />
+
+                      <Input
+                        label="Catégorie"
+                        placeholder="Ex: Technique, Fonctionnel..."
+                        value={editForm.category}
+                        onChange={(e) => {
+                          setEditForm(prev => ({ ...prev, category: e.target.value }));
+                          clearEditFormError("category");
+                        }}
+                        isRequired
+                        isInvalid={!!editFormErrors.category}
+                        errorMessage={editFormErrors.category}
+                      />
+
+                      <Select
+                        label="Domaine concerné"
+                        placeholder="Sélectionnez le domaine"
+                        selectedKeys={editForm.domain ? [editForm.domain] : []}
+                        onSelectionChange={(keys) => {
+                          setEditForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }));
+                          clearEditFormError("domain");
+                        }}
+                        isRequired
+                        isInvalid={!!editFormErrors.domain}
+                        errorMessage={editFormErrors.domain}
+                      >
+                        <SelectItem key="reseau">Réseau</SelectItem>
+                        <SelectItem key="infrastructure">Infrastructure système</SelectItem>
+                        <SelectItem key="cloud">Cloud</SelectItem>
+                        <SelectItem key="energie">Energie</SelectItem>
+                      </Select>
+                    </div>
+
                     <Select
-                      label="Domaine concerné"
-                      placeholder="Sélectionnez le domaine"
-                      selectedKeys={editForm.domain ? [editForm.domain] : []}
-                      onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, domain: Array.from(keys)[0] as string }))}
+                      label="Impact"
+                      placeholder="Sélectionnez l'impact de l'incident"
+                      selectedKeys={editForm.impact ? [editForm.impact] : []}
+                      onSelectionChange={(keys) => {
+                        const impact = Array.from(keys)[0] as string || "";
+                        let priority = editForm.priority;
+                        switch (impact) {
+                          case 'arret_service': priority = 'P0'; break;
+                          case 'service_fortement_degrade': priority = 'P1'; break;
+                          case 'majeur': priority = 'P2'; break;
+                          case 'mineur': priority = 'P4'; break;
+                          default: priority = 'P3';
+                        }
+                        setEditForm(prev => ({ ...prev, impact, priority }));
+                        clearEditFormError("impact");
+                      }}
+                      isRequired
+                      isInvalid={!!editFormErrors.impact}
+                      errorMessage={editFormErrors.impact}
                     >
-                      <SelectItem key="reseau">Réseau</SelectItem>
-                      <SelectItem key="infrastructure">Infrastructure système</SelectItem>
-                      <SelectItem key="cloud">Cloud</SelectItem>
-                      <SelectItem key="energie">Energie</SelectItem>
+                      <SelectItem key="arret_service">Arrêt de service</SelectItem>
+                      <SelectItem key="service_fortement_degrade">Service fortement dégradé</SelectItem>
+                      <SelectItem key="majeur">Majeur</SelectItem>
+                      <SelectItem key="mineur">Mineur</SelectItem>
                     </Select>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Select
+                        label="Priorité (suggérée automatiquement par l'impact)"
+                        selectedKeys={editForm.priority ? [editForm.priority] : []}
+                        onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
+                        isRequired
+                        description="Modifiable manuellement si nécessaire"
+                      >
+                        <SelectItem key="P0">P0 - Arrêt de service (immédiat)</SelectItem>
+                        <SelectItem key="P1">P1 - Haute (dégradation)</SelectItem>
+                        <SelectItem key="P2">P2 - Moyenne</SelectItem>
+                        <SelectItem key="P3">P3 - Faible</SelectItem>
+                        <SelectItem key="P4">P4 - Très faible</SelectItem>
+                      </Select>
+
+                      <Select
+                        label="Statut"
+                        selectedKeys={editForm.status ? [editForm.status] : []}
+                        onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
+                        isRequired
+                      >
+                        <SelectItem key="nouveau">Nouveau</SelectItem>
+                        <SelectItem key="en_cours">En cours</SelectItem>
+                        <SelectItem key="en_attente">En attente</SelectItem>
+                        <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
+                        <SelectItem key="en_pause">En pause</SelectItem>
+                        <SelectItem key="resolu">Résolu</SelectItem>
+                      </Select>
+                    </div>
+
+                    {editForm.status === "en_attente" && (
+                      <Textarea
+                        label="Motif de mise en attente"
+                        placeholder="Indiquez pourquoi ce ticket est mis en attente..."
+                        value={editForm.motif_attente || ""}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, motif_attente: e.target.value }))}
+                        minRows={2}
+                        isRequired
+                        description="Ce motif sera enregistré dans l'historique du ticket."
+                      />
+                    )}
+
+                    <Textarea
+                      label="Notes de résolution (optionnel)"
+                      placeholder="Ajoutez des notes sur la résolution du ticket..."
+                      value={editForm.resolution_notes}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
+                      minRows={2}
+                    />
                   </div>
-                  
-                  <Select
-                    label="Impact"
-                    placeholder="Sélectionnez l'impact de l'incident"
-                    selectedKeys={editForm.impact ? [editForm.impact] : []}
-                    onSelectionChange={(keys) => {
-                      const impact = Array.from(keys)[0] as string || "";
-                      let priority = editForm.priority;
-                      
-                      // Suggérer automatiquement la criticité selon l'impact (mais laisser éditable)
-                      switch(impact) {
-                        case 'arret_service':
-                          priority = 'P0';
-                          break;
-                        case 'service_fortement_degrade':
-                          priority = 'P1';
-                          break;
-                        case 'majeur':
-                          priority = 'P2';
-                          break;
-                        case 'mineur':
-                          priority = 'P4';
-                          break;
-                        default:
-                          priority = 'P3';
-                      }
-                      
-                      setEditForm(prev => ({ ...prev, impact, priority }));
-                    }}
-                    isRequired
+                </ModalBody>
+                <ModalFooter>
+                  <Button variant="light" onPress={onClose} isDisabled={isUpdating}>
+                    Annuler
+                  </Button>
+                  <Button
+                    color="primary"
+                    onPress={handleEdit}
+                    isLoading={isUpdating}
                   >
-                    <SelectItem key="arret_service">Arrêt de service</SelectItem>
-                    <SelectItem key="service_fortement_degrade">Service fortement dégradé</SelectItem>
-                    <SelectItem key="majeur">Majeur</SelectItem>
-                    <SelectItem key="mineur">Mineur</SelectItem>
-                  </Select>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <Select
-                      label="Priorité"
-                      selectedKeys={editForm.priority ? [editForm.priority] : []}
-                      onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, priority: Array.from(keys)[0] as any }))}
-                    >
-                      <SelectItem key="P0">P0 - Arrêt de service (immédiat)</SelectItem>
-                      <SelectItem key="P1">P1 - Haute (dégradation)</SelectItem>
-                      <SelectItem key="P2">P2 - Moyenne</SelectItem>
-                      <SelectItem key="P3">P3 - Faible</SelectItem>
-                      <SelectItem key="P4">P4 - Très faible</SelectItem>
-                    </Select>
-                    
-                    <Select
-                      label="Statut"
-                      selectedKeys={editForm.status ? [editForm.status] : []}
-                      onSelectionChange={(keys) => setEditForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
-                    >
-                      <SelectItem key="nouveau">Nouveau</SelectItem>
-                      <SelectItem key="en_cours">En cours</SelectItem>
-                      <SelectItem key="en_attente">En attente</SelectItem>
-                      <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
-                      <SelectItem key="en_pause">En pause</SelectItem>
-                      <SelectItem key="resolu">Résolu</SelectItem>
-                    </Select>
-                  </div>
-                  
-                  <Textarea
-                    label="Notes de résolution (optionnel)"
-                    placeholder="Ajoutez des notes sur la résolution du ticket..."
-                    value={editForm.resolution_notes}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
-                    minRows={2}
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Annuler
-                </Button>
-                <Button 
-                  color="primary" 
-                  onPress={handleEdit}
-                  isLoading={isUpdating}
-                  isDisabled={!editForm.title || !editForm.description || !editForm.declarant_name || !editForm.user_id || !editForm.project_id || !editForm.category || !editForm.impact || !editForm.domain}
-                >
-                  {isUpdating ? "Sauvegarde..." : "Sauvegarder"}
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+                    {isUpdating ? "Sauvegarde..." : "Sauvegarder"}
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
+      )}
 
       {/* Modal de suppression */}
       <Modal 
