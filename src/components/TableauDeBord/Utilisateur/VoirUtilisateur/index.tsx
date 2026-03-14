@@ -54,7 +54,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
       if (!userData) { setError('Utilisateur non trouvé'); return; }
       setUser(userData);
       // Charger les projets au montage si partenaire
-      if (userData.role_id === 5 && userData.partner_name) {
+      if (userData.role_id === 4 && userData.partner_name) {
         loadProjectsForUser(userData);
       }
     } catch (error) {
@@ -67,7 +67,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
 
   const loadProjectsForUser = async (userData?: User) => {
     const currentUser = userData || user;
-    if (!currentUser || currentUser.role_id !== 5 || !currentUser.partner_name) return;
+    if (!currentUser || currentUser.role_id !== 4 || !currentUser.partner_name) return;
     try {
       setLoadingProjects(true);
       const projectsData = await projectsService.getProjectsByPartner(currentUser.partner_name);
@@ -176,7 +176,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
     );
   }
 
-  const statCards = user.role_id === 5 ? [
+  const statCards = user.role_id === 4 ? [
     {
       icon: <FileText className="w-5 h-5" />,
       label: "Projets",
@@ -398,7 +398,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
             </Tab>
 
             {/* Projets (partenaires uniquement) */}
-            {user.role_id === 5 && (
+            {user.role_id === 4 && (
               <Tab
                 key="projects"
                 title={<div className="flex items-center gap-2"><FileText className="w-4 h-4" /><span>Projets ({projects.length})</span></div>}

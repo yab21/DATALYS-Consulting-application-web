@@ -365,7 +365,7 @@ const GestionIncidents: React.FC = () => {
             id: partner.id,
             name: partner.name,
             email: partner.email || "",
-            role_id: 3, // Role partenaire
+            role_id: 4, // Role partenaire
             is_active: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -446,8 +446,6 @@ const GestionIncidents: React.FC = () => {
             ...(priorityFilter !== "tous" && {
               priority: priorityFilter as any,
             }),
-            // Pour les partners, filtrer par created_by (qui les a créés) au lieu de user_id (expert assigné)
-            ...(isPartner() && user && { created_by: user.id }),
           },
         };
 
@@ -550,6 +548,12 @@ const GestionIncidents: React.FC = () => {
   useEffect(() => {
     let filtered = incidents;
 
+    // Pour les partenaires : limiter aux incidents de leurs projets uniquement
+    if (isPartner() && projects.length > 0) {
+      const partnerProjectIds = new Set(projects.map((p) => p.id));
+      filtered = filtered.filter((i) => partnerProjectIds.has(i.project_id));
+    }
+
     // Filtrage par projet (via URL query param)
     if (filterProjectId) {
       filtered = filtered.filter(
@@ -587,7 +591,7 @@ const GestionIncidents: React.FC = () => {
     }
 
     setFilteredIncidents(filtered);
-  }, [incidents, searchTerm, filterStatus, filterPriority, filterProjectId]);
+  }, [incidents, searchTerm, filterStatus, filterPriority, filterProjectId, projects, isPartner]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1031,7 +1035,6 @@ const GestionIncidents: React.FC = () => {
       data: {
         is_active: true,
         type: "incident",
-        ...(isPartner() && user?.id && { created_by: user.id }),
       },
     };
 
@@ -1118,9 +1121,6 @@ const GestionIncidents: React.FC = () => {
         data: {
           is_active: true,
           type: "incident", // Filtrer seulement les incidents
-          // Pour les partners, filtrer uniquement leurs incidents
-          // Pour les partners, filtrer par created_by
-          ...(isPartner() && user && { created_by: user.id }),
         },
       };
 

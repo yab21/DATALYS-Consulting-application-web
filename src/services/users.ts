@@ -6,7 +6,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role_id: number; // 1 = admin, 5 = partner
+  role_id: number; // 1 = admin, 2 = manager, 3 = user, 4 = partner
   partner_id?: number;
   is_active: boolean;
   is_deleted?: boolean;

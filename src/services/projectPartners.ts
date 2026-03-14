@@ -220,9 +220,9 @@ class ProjectPartnersService {
 
       const users = response.items || response.data || [];
 
-      // Filtrer les utilisateurs partenaires (role_id = 5) qui appartiennent au partner_id du projet
+      // Filtrer les utilisateurs partenaires (role_id = 4) qui appartiennent au partner_id du projet
       const partners = users.filter(
-        (user: any) => user.role_id === 5 && user.partner_id === targetProject.partner_id
+        (user: any) => user.role_id === 4 && user.partner_id === targetProject.partner_id
       );
 
       const result: ProjectPartner[] = partners.map((user: any) => ({
@@ -282,9 +282,9 @@ class ProjectPartnersService {
 
       const users = response.items || response.data || [];
       
-      // Filtrer seulement les utilisateurs partenaires (role_id = 5)
+      // Filtrer seulement les utilisateurs partenaires (role_id = 4)
       let partners = users
-        .filter((user: any) => user.role_id === 5)
+        .filter((user: any) => user.role_id === 4)
         .map((user: any) => ({
           id: user.id,
           name: user.name,
@@ -424,7 +424,7 @@ class ProjectPartnersService {
       });
 
       const users = response.items || response.data || [];
-      const user = users.find((u: any) => u.id === partnerId && u.role_id === 5);
+      const user = users.find((u: any) => u.id === partnerId && u.role_id === 4);
       
       if (!user) return null;
       

@@ -2,7 +2,7 @@
 
 export enum UserRole {
   ADMIN = 1,        // Datalys Consulting - Contrôle total
-  PARTNER = 5       // Client externe - Lecture seule sur ses données
+  PARTNER = 4       // Client externe - Lecture seule sur ses données
 }
 
 export enum Permission {
@@ -199,7 +199,7 @@ export class PermissionManager {
    * Vérifie si un utilisateur est partenaire
    */
   static isPartner(user: UserWithPermissions): boolean {
-    return user.role_id === UserRole.PARTNER; // role_id === 5
+    return user.role_id === UserRole.PARTNER; // role_id === 4
   }
 
   /**

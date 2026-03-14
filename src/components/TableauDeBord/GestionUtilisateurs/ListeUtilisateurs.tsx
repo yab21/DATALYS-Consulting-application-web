@@ -131,7 +131,7 @@ const ListeUtilisateurs: React.FC = () => {
     const activeUsers = users.filter(u => u.is_active).length;
     const inactiveUsers = users.filter(u => !u.is_active).length;
     const adminUsers = users.filter(u => u.role_id === 1).length;
-    const partnerUsers = users.filter(u => u.role_id === 5).length;
+    const partnerUsers = users.filter(u => u.role_id === 4).length;
     const recentActivity = users.filter(u => new Date(u.updated_at) >= today).length;
     
     return {
