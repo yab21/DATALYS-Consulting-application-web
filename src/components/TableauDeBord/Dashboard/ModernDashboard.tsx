@@ -8,27 +8,19 @@ import {
   Users,
   FolderOpen,
   AlertTriangle,
-  MessageCircle,
-  Shield,
   Zap,
   Target,
-  Upload,
-  Plus,
   RefreshCw,
   Activity,
   Building2,
   Clock,
   ExternalLink,
   XCircle,
-  Eye,
-  MoreVertical,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Permission } from "@/lib/permissions";
 import { isTokenExpiredError } from "@/lib/api-interceptor";
 import { dashboardService } from "@/services/dashboard";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
-import { ProfessionalCard } from "@/components/UI/Professional";
 import {
   Table,
   TableHeader,
@@ -37,11 +29,6 @@ import {
   TableRow,
   TableCell,
   Chip,
-  Button,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
   Avatar,
   Pagination,
 } from "@heroui/react";
@@ -82,19 +69,8 @@ interface DashboardStats {
   };
 }
 
-interface QuickAction {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  variant: "primary" | "secondary" | "success" | "warning" | "danger";
-  action: () => void;
-  permission?: Permission;
-}
-
-
 const ModernDashboard: React.FC = () => {
-  const { user, isAdmin, isPartner, hasPermission, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isPartner, isLoading: authLoading } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const { finish } = useTopBarProgress();
   const router = useRouter();
@@ -205,57 +181,6 @@ const ModernDashboard: React.FC = () => {
   const partnersPerPage = 8;
   
 
-
-  // Actions rapides configurables selon le rôle (non utilisées pour le moment)
-  /* const quickActions: QuickAction[] = [
-    {
-      id: "new-project",
-      title: "Nouveau Projet",
-      description: "Créer un nouveau projet",
-      icon: <Plus className="h-5 w-5" />,
-      variant: "primary",
-      action: () => window.location.href = "/tableaudebord/projet/ajouter",
-      permission: Permission.CREATE_PROJECTS_ALL_PARTNERS,
-    },
-    {
-      id: "add-partner",
-      title: "Ajouter Partenaire",
-      description: "Inviter un nouveau partenaire",
-      icon: <Users className="h-5 w-5" />,
-      variant: "secondary",
-      action: () => window.location.href = "/tableaudebord/partenaire/ajouter",
-      permission: Permission.CREATE_PARTNERS,
-    },
-    {
-      id: "upload-files",
-      title: "Upload Fichiers",
-      description: "Gérer les documents",
-      icon: <Upload className="h-5 w-5" />,
-      variant: "success",
-      action: () => window.location.href = "/tableaudebord/projet/gerer",
-    },
-    {
-      id: "messages",
-      title: "Messages",
-      description: "Centre de communication",
-      icon: <MessageCircle className="h-5 w-5" />,
-      variant: "warning",
-      action: () => window.location.href = "/tableaudebord/messages",
-    },
-    {
-      id: "support",
-      title: "Support",
-      description: "Assistance technique",
-      icon: <Shield className="h-5 w-5" />,
-      variant: "danger",
-      action: () => window.location.href = "/tableaudebord/support",
-    },
-  ]; */
-
-  // Filtrer les actions selon les permissions (non utilisé pour le moment)
-  /* const availableActions = quickActions.filter(action => 
-    !action.permission || hasPermission(action.permission)
-  ); */
 
   useEffect(() => {
     // Attendre que les données d'authentification soient chargées
@@ -694,64 +619,15 @@ const ModernDashboard: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Dashboard Partenaire avec données API réelles */}
+        {/* Dashboard Partenaire */}
         {isPartner() && partnerData && (
           <div className="space-y-8">
-            {/* 1. Carte Partenaire Premium */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 rounded-lg bg-[#4ba9b7] flex items-center justify-center">
-                      <Building2 className="w-8 h-8 text-white" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {partnerData.partner.name}
-                      </h2>
-                      <span className={`px-2 py-1 text-xs font-medium rounded ${
-                        partnerData.partner.is_active 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {partnerData.partner.is_active ? "Actif" : "Inactif"}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4 text-gray-400" />
-                        <span>{partnerData.partner.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-400">Tél:</span>
-                        <span>{partnerData.partner.phone_formatted}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-400">Pays:</span>
-                        <span>{partnerData.partner.country_name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-gray-400" />
-                        <span>ID #{partnerData.partner.id}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* 2. Métriques Exécutives */}
+            {/* 1. Métriques Exécutives */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
             >
               {/* Carte Projets */}
               <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
@@ -823,32 +699,9 @@ const ModernDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Carte Activité */}
-              <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 rounded-md bg-purple-50 dark:bg-purple-900/30">
-                    <Activity className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{partnerData.activitySummary.active_sessions || 12}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Sessions</div>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Utilisateurs</span>
-                    <span className="text-gray-900 dark:text-white font-medium">{partnerData.activitySummary.active_users || 8}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Pics</span>
-                    <span className="text-gray-900 dark:text-white font-medium">15</span>
-                  </div>
-                </div>
-              </div>
             </motion.div>
 
-            {/* 3. Analytics Avancées */}
+            {/* 2. Analytics Avancées */}
             {partnerData.incidentStats.total > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -857,111 +710,102 @@ const ModernDashboard: React.FC = () => {
                 className="grid gap-6 lg:grid-cols-3"
               >
                 {/* Statut des Incidents */}
-                <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-indigo-200 dark:border-indigo-800">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700">
-                        <Target className="w-5 h-5 text-indigo-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Incidents par Statut</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.incidentStats.total} au total</p>
-                      </div>
+                <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-md bg-[#4ba9b7]/10">
+                      <Target className="w-5 h-5 text-[#4ba9b7]" />
                     </div>
-                    <div className="space-y-3">
-                      {Object.entries(partnerData.incidentStats.by_status || {}).map(([status, count]: [string, any]) => (
-                        <div key={status} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${
-                              status === 'nouveau' ? 'bg-blue-500' :
-                              status === 'en_cours' ? 'bg-orange-500' :
-                              status === 'resolu' ? 'bg-green-500' : 'bg-gray-500'
-                            }`}></div>
-                            <span className="text-gray-800 dark:text-gray-200 font-medium capitalize">{status.replace('_', ' ')}</span>
-                          </div>
-                          <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
-                            status === 'nouveau' ? 'bg-blue-100 text-blue-700' :
-                            status === 'en_cours' ? 'bg-orange-100 text-orange-700' :
-                            status === 'resolu' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {count}
-                          </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Incidents par Statut</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.incidentStats.total} au total</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {Object.entries(partnerData.incidentStats.by_status || {}).map(([status, count]: [string, any]) => (
+                      <div key={status} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${
+                            status === 'nouveau' ? 'bg-blue-500' :
+                            status === 'en_cours' ? 'bg-orange-500' :
+                            status === 'resolu' ? 'bg-green-500' : 'bg-gray-500'
+                          }`}></div>
+                          <span className="text-gray-800 dark:text-gray-200 font-medium capitalize">{status.replace('_', ' ')}</span>
                         </div>
-                      ))}
-                    </div>
+                        <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
+                          status === 'nouveau' ? 'bg-blue-100 text-blue-700' :
+                          status === 'en_cours' ? 'bg-orange-100 text-orange-700' :
+                          status === 'resolu' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {count}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* Priorités */}
-                <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-red-200 dark:border-red-800">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-red-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700">
-                        <AlertTriangle className="w-5 h-5 text-red-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Par Priorité</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Classification SLA</p>
-                      </div>
+                <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-md bg-red-50 dark:bg-red-900/30">
+                      <AlertTriangle className="w-5 h-5 text-red-600" />
                     </div>
-                    <div className="space-y-3">
-                      {Object.entries(partnerData.incidentStats.by_priority || {}).map(([priority, count]: [string, any]) => (
-                        <div key={priority} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${
-                              priority === 'P0' ? 'bg-red-500' :
-                              priority === 'P1' ? 'bg-orange-500' :
-                              priority === 'P2' ? 'bg-yellow-500' : 'bg-green-500'
-                            }`}></div>
-                            <span className="text-gray-800 dark:text-gray-200 font-medium">{priority}</span>
-                          </div>
-                          <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
-                            priority === 'P0' ? 'bg-red-100 text-red-700' :
-                            priority === 'P1' ? 'bg-orange-100 text-orange-700' :
-                            priority === 'P2' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
-                          }`}>
-                            {count}
-                          </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Par Priorité</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Classification SLA</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {Object.entries(partnerData.incidentStats.by_priority || {}).map(([priority, count]: [string, any]) => (
+                      <div key={priority} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${
+                            priority === 'P0' ? 'bg-red-500' :
+                            priority === 'P1' ? 'bg-orange-500' :
+                            priority === 'P2' ? 'bg-yellow-500' : 'bg-green-500'
+                          }`}></div>
+                          <span className="text-gray-800 dark:text-gray-200 font-medium">{priority}</span>
                         </div>
-                      ))}
-                    </div>
+                        <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
+                          priority === 'P0' ? 'bg-red-100 text-red-700' :
+                          priority === 'P1' ? 'bg-orange-100 text-orange-700' :
+                          priority === 'P2' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+                        }`}>
+                          {count}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* Types */}
-                <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-purple-200 dark:border-purple-800">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-50 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700">
-                        <XCircle className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Par Catégorie</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Types d'incidents</p>
-                      </div>
+                <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-md bg-purple-50 dark:bg-purple-900/30">
+                      <XCircle className="w-5 h-5 text-purple-600" />
                     </div>
-                    <div className="space-y-3">
-                      {Object.entries(partnerData.incidentStats.by_type || {}).map(([type, count]: [string, any]) => (
-                        <div key={type} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                            <span className="text-gray-800 dark:text-gray-200 font-medium capitalize">{type}</span>
-                          </div>
-                          <div className="px-3 py-1 rounded-lg text-sm font-bold bg-purple-100 text-purple-700">
-                            {count}
-                          </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Par Catégorie</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Types d'incidents</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {Object.entries(partnerData.incidentStats.by_type || {}).map(([type, count]: [string, any]) => (
+                      <div key={type} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                          <span className="text-gray-800 dark:text-gray-200 font-medium capitalize">{type}</span>
                         </div>
-                      ))}
-                    </div>
+                        <div className="px-3 py-1 rounded-lg text-sm font-bold bg-purple-100 text-purple-700">
+                          {count}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </motion.div>
             )}
 
-            {/* 4. Section Portfolio */}
+            {/* 3. Section Portfolio */}
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Projets Récents */}
               {partnerData.recentProjects.length > 0 && (
@@ -970,70 +814,56 @@ const ModernDashboard: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-gray-200 dark:border-gray-700">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-gray-50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 rounded-xl bg-[#4ba9b7]/10 border border-[#4ba9b7]/20">
-                          <FolderOpen className="w-6 h-6 text-[#4ba9b7]" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Projets Récents</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.recentProjects.length} projets actifs</p>
-                        </div>
+                  <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 rounded-md bg-[#4ba9b7]/10">
+                        <FolderOpen className="w-5 h-5 text-[#4ba9b7]" />
                       </div>
-                      
-                      <div className="space-y-4">
-                        {partnerData.recentProjects.slice(0, 3).map((project: any, index: number) => (
-                          <motion.div
-                            key={project.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.1 * index }}
-                            className="group p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 hover:border-[#4ba9b7] transition-all duration-300 cursor-pointer"
-                            onClick={() => window.location.href = `/tableaudebord/projet/pageprojet/${project.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4ba9b7] to-[#3a8a96] flex items-center justify-center shadow-lg">
-                                  <FolderOpen className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-[#4ba9b7] transition-colors">
-                                    {project.title}
-                                  </h4>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {new Date(project.created_at).toLocaleDateString('fr-FR', { 
-                                      day: 'numeric', 
-                                      month: 'short' 
-                                    })}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center gap-3">
-                                <div className={`px-3 py-1 rounded-lg text-xs font-medium ${
-                                  project.is_active 
-                                    ? 'bg-green-100 text-green-700 border border-green-200' 
-                                    : 'bg-gray-100 text-gray-700 border border-gray-200'
-                                }`}>
-                                  {project.is_active ? "✓ Actif" : "Inactif"}
-                                </div>
-                                <ExternalLink className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-[#4ba9b7] transition-colors" />
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Projets Récents</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.recentProjects.length} projets actifs</p>
                       </div>
-                      
-                      {partnerData.recentProjects.length > 3 && (
-                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                            +{partnerData.recentProjects.length - 3} projets supplémentaires
-                          </p>
-                        </div>
-                      )}
                     </div>
+
+                    <div className="space-y-3">
+                      {partnerData.recentProjects.slice(0, 3).map((project: any) => (
+                        <div
+                          key={project.id}
+                          className="group flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 hover:border-[#4ba9b7] transition-all duration-300 cursor-pointer"
+                          onClick={() => window.location.href = `/tableaudebord/projet/pageprojet/${project.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-md bg-[#4ba9b7]/10">
+                              <FolderOpen className="w-4 h-4 text-[#4ba9b7]" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-[#4ba9b7] transition-colors text-sm">
+                                {project.title}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {new Date(project.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 text-xs font-medium rounded ${
+                              project.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {project.is_active ? "Actif" : "Inactif"}
+                            </span>
+                            <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-[#4ba9b7] transition-colors" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {partnerData.recentProjects.length > 3 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          +{partnerData.recentProjects.length - 3} projets supplémentaires
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -1045,81 +875,66 @@ const ModernDashboard: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <div className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 shadow-xl border border-red-200 dark:border-red-800">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 rounded-xl bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700">
-                          <AlertTriangle className="w-6 h-6 text-red-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Incidents Critiques</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.recentIncidents.length} incidents récents</p>
-                        </div>
+                  <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 rounded-md bg-red-50 dark:bg-red-900/30">
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
                       </div>
-                      
-                      <div className="space-y-4">
-                        {partnerData.recentIncidents.slice(0, 3).map((incident: any, index: number) => (
-                          <motion.div
-                            key={incident.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.1 * index }}
-                            className="group p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 hover:border-red-400 transition-all duration-300 cursor-pointer"
-                            onClick={() => window.location.href = `/tableaudebord/incidents/${incident.id}`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-4">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
-                                  incident.priority === 'P0' ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                                  incident.priority === 'P1' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
-                                  'bg-gradient-to-br from-yellow-500 to-yellow-600'
-                                }`}>
-                                  <AlertTriangle className="h-6 w-6 text-white" />
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-red-600 transition-colors">
-                                    {incident.title}
-                                  </h4>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                                    {incident.description}
-                                  </p>
-                                  <div className="flex items-center gap-4 mt-3">
-                                    <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                      incident.priority === 'P0' ? 'bg-red-100 text-red-700' :
-                                      incident.priority === 'P1' ? 'bg-orange-100 text-orange-700' :
-                                      'bg-yellow-100 text-yellow-700'
-                                    }`}>
-                                      {incident.priority}
-                                    </div>
-                                    <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                      incident.status === 'nouveau' ? 'bg-blue-100 text-blue-700' :
-                                      incident.status === 'en_cours' ? 'bg-orange-100 text-orange-700' :
-                                      'bg-green-100 text-green-700'
-                                    }`}>
-                                      {incident.status}
-                                    </div>
-                                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                                      {formatTimeAgo(incident.created_at)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <ExternalLink className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-red-600 transition-colors" />
-                            </div>
-                          </motion.div>
-                        ))}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Incidents Récents</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{partnerData.recentIncidents.length} incidents récents</p>
                       </div>
-                      
-                      {partnerData.recentIncidents.length > 3 && (
-                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                            +{partnerData.recentIncidents.length - 3} incidents supplémentaires
-                          </p>
-                        </div>
-                      )}
                     </div>
+
+                    <div className="space-y-3">
+                      {partnerData.recentIncidents.slice(0, 3).map((incident: any) => (
+                        <div
+                          key={incident.id}
+                          className="group flex items-start justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 hover:border-red-400 transition-all duration-300 cursor-pointer"
+                          onClick={() => window.location.href = `/tableaudebord/incidents/${incident.id}`}
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className={`mt-0.5 p-2 rounded-md ${
+                              incident.priority === 'P0' ? 'bg-red-50 dark:bg-red-900/30' :
+                              incident.priority === 'P1' ? 'bg-orange-50 dark:bg-orange-900/30' :
+                              'bg-yellow-50 dark:bg-yellow-900/30'
+                            }`}>
+                              <AlertTriangle className={`w-4 h-4 ${
+                                incident.priority === 'P0' ? 'text-red-600' :
+                                incident.priority === 'P1' ? 'text-orange-600' : 'text-yellow-600'
+                              }`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-red-600 transition-colors text-sm truncate">
+                                {incident.title}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                  incident.priority === 'P0' ? 'bg-red-100 text-red-700' :
+                                  incident.priority === 'P1' ? 'bg-orange-100 text-orange-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>{incident.priority}</span>
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                  incident.status === 'nouveau' ? 'bg-blue-100 text-blue-700' :
+                                  incident.status === 'en_cours' ? 'bg-orange-100 text-orange-700' :
+                                  'bg-green-100 text-green-700'
+                                }`}>{incident.status}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">{formatTimeAgo(incident.created_at)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition-colors ml-2 flex-shrink-0" />
+                        </div>
+                      ))}
+                    </div>
+
+                    {partnerData.recentIncidents.length > 3 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          +{partnerData.recentIncidents.length - 3} incidents supplémentaires
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

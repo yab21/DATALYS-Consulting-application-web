@@ -45,7 +45,7 @@ interface VoirIncidentProps {
 
 const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isPartner } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const [loading, setLoading] = useState(true);
   const [incident, setIncident] = useState<Incident | null>(null);
@@ -126,6 +126,8 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
   const loadAssignedUser = async (inc?: Incident) => {
     const current = inc || incident;
     if (!current || !current.user_id) return;
+    // Les partenaires n'ont pas accès à /users/getByCriteria (403)
+    if (isPartner()) return;
     try {
       setLoadingUser(true);
       const userData = await UsersService.getUserById(current.user_id);
