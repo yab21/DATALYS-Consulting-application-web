@@ -100,7 +100,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
   const getRoleLabel = (roleId: number) => {
     switch (roleId) {
       case 1: return 'Administrateur';
-      case 5: return 'Partenaire';
+      case 4: return 'Partenaire';
       default: return 'Utilisateur';
     }
   };
@@ -108,7 +108,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
   const getRoleColor = (roleId: number): "primary" | "secondary" | "warning" => {
     switch (roleId) {
       case 1: return 'primary';
-      case 5: return 'secondary';
+      case 4: return 'secondary';
       default: return 'warning';
     }
   };
