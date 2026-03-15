@@ -53,10 +53,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
       const userData = await UsersService.getUserById(userId);
       if (!userData) { setError('Utilisateur non trouvé'); return; }
       setUser(userData);
-      // Charger les projets au montage si partenaire
-      if (userData.role_id === 4 && userData.partner_name) {
-        loadProjectsForUser(userData);
-      }
+      loadProjectsForUser(userData);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       setError(extractBackendMessage(error));
@@ -67,11 +64,29 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
 
   const loadProjectsForUser = async (userData?: User) => {
     const currentUser = userData || user;
-    if (!currentUser || currentUser.role_id !== 4 || !currentUser.partner_name) return;
+    if (!currentUser) return;
     try {
       setLoadingProjects(true);
-      const projectsData = await projectsService.getProjectsByPartner(currentUser.partner_name);
-      setProjects(projectsData);
+      const allProjects = await projectsService.getActiveProjects();
+
+      let userProjects: Project[];
+      if (currentUser.role_id === 4) {
+        // Partenaires : matcher par nom de société (user.name = nom du partenaire)
+        const userName = currentUser.name.toLowerCase();
+        userProjects = allProjects.filter((project) => {
+          const projectPartnerName = (project as any).partner?.name || project.partner_name || '';
+          return projectPartnerName.toLowerCase().includes(userName) ||
+                 userName.includes(projectPartnerName.toLowerCase());
+        });
+      } else {
+        // Admins et autres rôles : projets créés par cet utilisateur
+        // created_by peut être string ou number dans l'API
+        userProjects = allProjects.filter(
+          (project) => Number((project as any).created_by) === currentUser.id
+        );
+      }
+
+      setProjects(userProjects);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
     } finally {
@@ -176,7 +191,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
     );
   }
 
-  const statCards = user.role_id === 4 ? [
+  const statCards = [
     {
       icon: <FileText className="w-5 h-5" />,
       label: "Projets",
@@ -185,7 +200,7 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
       iconColor: "text-emerald-600 dark:text-emerald-400",
       borderActive: "border-emerald-300 dark:border-emerald-700"
     }
-  ] : [];
+  ];
 
   return (
     <>
@@ -397,12 +412,11 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
               </div>
             </Tab>
 
-            {/* Projets (partenaires uniquement) */}
-            {user.role_id === 4 && (
-              <Tab
-                key="projects"
-                title={<div className="flex items-center gap-2"><FileText className="w-4 h-4" /><span>Projets ({projects.length})</span></div>}
-              >
+            {/* Projets */}
+            <Tab
+              key="projects"
+              title={<div className="flex items-center gap-2"><FileText className="w-4 h-4" /><span>Projets ({projects.length})</span></div>}
+            >
                 <div className="p-6">
                   {loadingProjects ? (
                     <div className="flex justify-center py-8"><Spinner size="md" /></div>
@@ -450,7 +464,6 @@ const VoirUtilisateur: React.FC<VoirUtilisateurProps> = ({ id }) => {
                   )}
                 </div>
               </Tab>
-            )}
           </Tabs>
         </div>
       </div>
