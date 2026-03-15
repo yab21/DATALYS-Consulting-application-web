@@ -465,7 +465,6 @@ const GestionRoles: React.FC = () => {
         <Table aria-label="Table des rôles" removeWrapper>
           <TableHeader>
             <TableColumn>RÔLE</TableColumn>
-            <TableColumn>DESCRIPTION</TableColumn>
             <TableColumn>STATUT</TableColumn>
             <TableColumn>CRÉÉ LE</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
@@ -482,11 +481,6 @@ const GestionRoles: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {role.description || "Aucune description"}
-                  </span>
                 </TableCell>
                 <TableCell>
                   <Chip
@@ -556,7 +550,7 @@ const GestionRoles: React.FC = () => {
 
         {filteredRoles.length === 0 && (
           <div className="py-16 text-center">
-            <Settings className="mx-auto mb-4 h-20 w-20 text-gray-300 dark:text-gray-600 dark:text-gray-400" />
+            <Settings className="mx-auto mb-4 h-20 w-20 text-gray-300 dark:text-gray-600" />
             <h3 className="mb-2 text-xl font-bold text-gray-600 dark:text-gray-300">
               Aucun rôle trouvé
             </h3>
