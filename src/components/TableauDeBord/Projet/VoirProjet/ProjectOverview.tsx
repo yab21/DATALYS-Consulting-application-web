@@ -260,7 +260,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
         return items.map((file, idx) => (
           <button
             key={idx}
-            onClick={(e) => { e.stopPropagation(); onTabChange?.("files"); }}
+            onClick={(e) => { e.stopPropagation(); onTabChange?.("files", { id: file.folder_id, name: file.folder_name, ancestorPath: buildAncestorPath(file.folder_id) }); }}
             className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
           >
             <FileText className="w-4 h-4 text-[#4ba9b7] flex-shrink-0" />

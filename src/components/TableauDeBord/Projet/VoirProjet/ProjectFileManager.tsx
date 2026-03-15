@@ -361,7 +361,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         : null,
     };
 
-    setBreadcrumbs(ancestorItems);
+    setBreadcrumbs([...ancestorItems, targetItem]);
     setCurrentFolder(targetItem);
     onTargetFolderNavigated?.();
   }, [targetFolder?.id]);
