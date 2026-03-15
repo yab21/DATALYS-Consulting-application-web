@@ -56,6 +56,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
   const { user, isAdmin } = useAuth();
   const { showNotification } = useSimpleNotifications();
   const [showCloseModal, setShowCloseModal] = useState(false);
+  const [targetFolder, setTargetFolder] = useState<{ id: number; name: string; ancestorPath: { id: number; name: string }[] } | null>(null);
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [closureReason, setClosureReason] = useState("");
   const [isClosing, setIsClosing] = useState(false);
@@ -347,7 +348,13 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                   </div>
                 }
               >
-                <ProjectOverview project={project} onTabChange={setActiveTab} />
+                <ProjectOverview
+                  project={project}
+                  onTabChange={(tab, folder) => {
+                    setActiveTab(tab);
+                    if (folder) setTargetFolder(folder);
+                  }}
+                />
               </Tab>
 
               <Tab
@@ -365,6 +372,8 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                   onFileUpload={handleFileUploaded}
                   uploadedFiles={uploadedFiles}
                   refreshKey={fileRefreshKey}
+                  targetFolder={targetFolder}
+                  onTargetFolderNavigated={() => setTargetFolder(null)}
                 />
               </Tab>
             </Tabs>

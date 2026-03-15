@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Button,
   Input,
@@ -75,6 +75,8 @@ interface ProjectFileManagerProps {
   onFileUpload?: (uploadResponse: any) => void;
   uploadedFiles?: any[];
   refreshKey?: number;
+  targetFolder?: { id: number; name: string; ancestorPath: { id: number; name: string }[] } | null;
+  onTargetFolderNavigated?: () => void;
 }
 
 // Utilitaires
@@ -151,7 +153,9 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   projectName,
   onFileUpload,
   uploadedFiles = EMPTY_UPLOADED_FILES,
-  refreshKey = 0
+  refreshKey = 0,
+  targetFolder = null,
+  onTargetFolderNavigated,
 }) => {
   const { user } = useAuth();
   const { showNotification } = useSimpleNotifications();
@@ -183,6 +187,9 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   // Navigation
   const [breadcrumbs, setBreadcrumbs] = useState<FileItem[]>([]);
 
+  // Stale-check pour éviter les race conditions lors du chargement
+  const loadingVersionRef = useRef(0);
+
   // Charger les statistiques d'un dossier
   const loadFolderStats = useCallback(async (folderId: string, projectId: number): Promise<FolderStats | null> => {
     try {
@@ -199,6 +206,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
 
   // Charger les fichiers et dossiers
   const loadFilesAndFolders = useCallback(async () => {
+    const version = ++loadingVersionRef.current;
     try {
       setLoading(true);
       console.log('🔄 Chargement des fichiers pour le dossier:', currentFolder?.id || 'racine');
@@ -292,6 +300,9 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
           isShared: file.is_public || false
         }));
 
+      // Stale-check : si une autre requête plus récente a démarré, ignorer cette réponse
+      if (version !== loadingVersionRef.current) return;
+
       setFolders(finalFolders);
       setFiles([...formattedFiles, ...localUploadedFiles]);
 
@@ -305,7 +316,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         type: 'error'
       });
     } finally {
-      setLoading(false);
+      if (version === loadingVersionRef.current) setLoading(false);
     }
   }, [currentFolder, projectId, uploadedFiles, showNotification]);
 
@@ -323,6 +334,37 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       setBreadcrumbs([]);
     }
   }, []);
+
+  // Navigation vers un dossier cible depuis la vue d'ensemble
+  useEffect(() => {
+    if (!targetFolder) return;
+
+    const ancestorItems: FileItem[] = targetFolder.ancestorPath.map((ancestor, idx) => ({
+      id: ancestor.id.toString(),
+      name: ancestor.name,
+      type: 'folder' as const,
+      createdAt: new Date(),
+      modifiedAt: new Date(),
+      path: ancestor.name,
+      parentId: idx > 0 ? targetFolder.ancestorPath[idx - 1].id.toString() : null,
+    }));
+
+    const targetItem: FileItem = {
+      id: targetFolder.id.toString(),
+      name: targetFolder.name,
+      type: 'folder' as const,
+      createdAt: new Date(),
+      modifiedAt: new Date(),
+      path: targetFolder.name,
+      parentId: targetFolder.ancestorPath.length > 0
+        ? targetFolder.ancestorPath[targetFolder.ancestorPath.length - 1].id.toString()
+        : null,
+    };
+
+    setBreadcrumbs(ancestorItems);
+    setCurrentFolder(targetItem);
+    onTargetFolderNavigated?.();
+  }, [targetFolder?.id]);
 
   const navigateUp = useCallback(() => {
     if (breadcrumbs.length > 0) {

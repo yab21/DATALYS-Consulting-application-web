@@ -45,7 +45,6 @@ import {
   Timer,
   Download,
   MessageCircle,
-  Settings,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
@@ -1883,15 +1882,6 @@ const GestionIncidents: React.FC = () => {
                               Voir détails
                             </DropdownItem>
                             <DropdownItem
-                              key="manage"
-                              startContent={<Settings className="h-4 w-4" />}
-                              onPress={() =>
-                                handleIncidentAction(incident, "manage")
-                              }
-                            >
-                              Gérer
-                            </DropdownItem>
-                            <DropdownItem
                               key="chat"
                               startContent={
                                 <MessageCircle className="h-4 w-4" />
@@ -2109,15 +2099,6 @@ const GestionIncidents: React.FC = () => {
                                 Voir détails
                               </DropdownItem>
                               <DropdownItem
-                                key="manage"
-                                startContent={<Settings className="h-4 w-4" />}
-                                onPress={() =>
-                                  handleIncidentAction(incident, "manage")
-                                }
-                              >
-                                Gérer
-                              </DropdownItem>
-                              <DropdownItem
                                 key="chat"
                                 startContent={
                                   <MessageCircle className="h-4 w-4" />
@@ -2172,15 +2153,6 @@ const GestionIncidents: React.FC = () => {
                                 }
                               >
                                 Voir détails
-                              </DropdownItem>
-                              <DropdownItem
-                                key="manage"
-                                startContent={<Settings className="h-4 w-4" />}
-                                onPress={() =>
-                                  handleIncidentAction(incident, "manage")
-                                }
-                              >
-                                Gérer
                               </DropdownItem>
                               <DropdownItem
                                 key="chat"

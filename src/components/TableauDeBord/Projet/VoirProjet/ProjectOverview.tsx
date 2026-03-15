@@ -32,7 +32,7 @@ interface ProjectOverviewProps {
     progression?: number;
     description?: string;
   };
-  onTabChange?: (tab: string) => void;
+  onTabChange?: (tab: string, folder?: { id: number; name: string; ancestorPath: { id: number; name: string }[] }) => void;
 }
 
 const MAX_DROPDOWN_ITEMS = 5;
@@ -86,27 +86,46 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
       try {
         projectFilesService.clearStatsCache();
 
-        const folders = await projectFilesService.getFolders(null, Number(project.id));
-        const foldersCount = folders.length;
+        type AllFile = { name: string; folder_name: string; folder_id: number };
 
-        let totalFiles = 0;
-        const allFiles: { name: string; folder_name: string; folder_id: number }[] = [];
+        const collectAllData = async (
+          parentId: number | null,
+          projectId: number
+        ): Promise<{ folders: ProjectFolder[]; files: AllFile[] }> => {
+          const sub = await projectFilesService.getFolders(parentId, projectId);
+          let allFolders: ProjectFolder[] = [...sub];
+          let allFiles: AllFile[] = [];
 
-        for (const folder of folders) {
-          try {
-            const files = await projectFilesService.getFiles(folder.id, Number(project.id));
-            totalFiles += files.length;
-            files.forEach(f => {
-              allFiles.push({
-                name: f.original_name || f.name,
-                folder_name: folder.name,
-                folder_id: folder.id
-              });
-            });
-          } catch (error) {
-            if (isTokenExpiredError(error)) throw error;
+          for (const f of sub) {
+            try {
+              const folderFiles = await projectFilesService.getFiles(f.id, projectId);
+              folderFiles.forEach(file => allFiles.push({
+                name: file.original_name || file.name,
+                folder_name: f.name,
+                folder_id: f.id
+              }));
+            } catch (error) {
+              if (isTokenExpiredError(error)) throw error;
+            }
+            const children = await collectAllData(f.id, projectId);
+            allFolders = [...allFolders, ...children.folders];
+            allFiles = [...allFiles, ...children.files];
           }
-        }
+          return { folders: allFolders, files: allFiles };
+        };
+
+        const { folders: rawFoldersList, files: allFilesList } = await collectAllData(null, Number(project.id));
+
+        // Dédupliquer les dossiers par ID (collectAllData peut retourner le même dossier si l'API ignore le filtre parent)
+        const seenFolderIds = new Set<number>();
+        const allFoldersList = rawFoldersList.filter(f => {
+          if (seenFolderIds.has(f.id)) return false;
+          seenFolderIds.add(f.id);
+          return true;
+        });
+
+        const foldersCount = allFoldersList.length;
+        const totalFiles = allFilesList.length;
 
         let incidentsCount = 0;
         let incidentsList: Incident[] = [];
@@ -143,7 +162,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
           }
         }
 
-        setDetailedData({ folders, files: allFiles, incidents: incidentsList, teamMembers: teamMembersList });
+        setDetailedData({ folders: allFoldersList, files: allFilesList, incidents: incidentsList, teamMembers: teamMembersList });
         setProjectStats({ filesCount: totalFiles, foldersCount, incidentsCount, teamMembersCount, teamError, loading: false });
       } catch (error) {
         if (isTokenExpiredError(error)) throw error;
@@ -201,6 +220,20 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
     }
   };
 
+  const buildAncestorPath = (folderId: number): { id: number; name: string }[] => {
+    const path: { id: number; name: string }[] = [];
+    const folder = detailedData.folders.find(f => f.id === folderId);
+    if (!folder) return path;
+    let parentId: number | null = folder.parent_folder_id || null;
+    while (parentId !== null) {
+      const parent = detailedData.folders.find(f => f.id === parentId);
+      if (!parent) break;
+      path.unshift({ id: parent.id, name: parent.name });
+      parentId = parent.parent_folder_id || null;
+    }
+    return path;
+  };
+
   const renderDropdownContent = (label: string) => {
     switch (label) {
       case "Dossiers": {
@@ -209,7 +242,10 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
         return items.map(folder => (
           <button
             key={folder.id}
-            onClick={(e) => { e.stopPropagation(); onTabChange?.("files"); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTabChange?.("files", { id: folder.id, name: folder.name, ancestorPath: buildAncestorPath(folder.id) });
+            }}
             className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
           >
             <FolderOpen className="w-4 h-4 text-[#4ba9b7] flex-shrink-0" />
