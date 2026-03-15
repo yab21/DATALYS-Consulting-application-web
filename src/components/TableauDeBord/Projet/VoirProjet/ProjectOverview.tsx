@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { Chip } from "@heroui/react";
 import { projectFilesService, ProjectFolder } from "@/services/projectFiles";
 import { IncidentsService, Incident } from "@/services/incidents";
-import { projectPartnersService, ProjectPartner } from "@/services/projectPartners";
+import { ProjectPartner } from "@/services/projectPartners";
 import { useAuth } from "@/context/AuthContext";
 import { isTokenExpiredError } from "@/lib/api-interceptor";
 
@@ -141,25 +141,27 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
           if (isTokenExpiredError(error)) throw error;
         }
 
+        // Option B : afficher la société partenaire liée au projet (pas les utilisateurs individuels)
         let teamMembersCount = 0;
         let teamMembersList: ProjectPartner[] = [];
-        let teamError = false;
-        // Les partenaires n'ont pas accès à /users/getByCriteria (403)
-        if (!isPartner()) {
-          try {
-            if (user?.id) {
-              const teamMembers = await projectPartnersService.getProjectPartners(
-                parseInt(project.id), user.id
-              );
-              teamMembersCount = teamMembers.length;
-              teamMembersList = teamMembers;
-            } else {
-              teamError = true;
-            }
-          } catch (error) {
-            if (isTokenExpiredError(error)) throw error;
-            teamError = true;
-          }
+        const teamError = false;
+        const hasPartner = project.societe && project.societe !== "Aucun partenaire assigné";
+        if (!isPartner() && hasPartner) {
+          teamMembersCount = 1;
+          teamMembersList = [{
+            id: 0,
+            user_id: 0,
+            project_id: Number(project.id),
+            permission_type: 'read',
+            assigned_at: '',
+            assigned_by: 0,
+            is_active: true,
+            partner_name: project.societe,
+            partner_email: '',
+            user_name: project.societe,
+            user_email: '',
+            role_in_project: 'Partenaire'
+          }];
         }
 
         setDetailedData({ folders: allFoldersList, files: allFilesList, incidents: incidentsList, teamMembers: teamMembersList });
@@ -183,7 +185,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
       case "Incidents":
         router.push(`/tableaudebord/incidents?project_id=${project.id}`);
         break;
-      case "Équipe":
+      case "Partenaire":
         router.push(`/tableaudebord/partenaire/liste?project_id=${project.id}`);
         break;
     }
@@ -215,7 +217,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
       case "Dossiers": return detailedData.folders.length;
       case "Fichiers": return detailedData.files.length;
       case "Incidents": return detailedData.incidents.length;
-      case "Équipe": return detailedData.teamMembers.length;
+      case "Partenaire": return detailedData.teamMembers.length;
       default: return 0;
     }
   };
@@ -297,7 +299,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
           </button>
         ));
       }
-      case "Équipe": {
+      case "Partenaire": {
         if (projectStats.teamError) {
           return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Données non disponibles</p>;
         }
@@ -306,7 +308,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
         return items.map(member => (
           <button
             key={member.id}
-            onClick={(e) => { e.stopPropagation(); router.push(`/tableaudebord/partenaire/${member.user_id}`); }}
+            onClick={(e) => { e.stopPropagation(); router.push(`/tableaudebord/partenaire/liste?project_id=${project.id}`); }}
             className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
           >
             <div className="w-7 h-7 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
@@ -354,7 +356,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project, onTabChange 
     },
     {
       icon: <Users className="w-5 h-5" />,
-      label: "Équipe",
+      label: "Partenaire",
       value: projectStats.teamError ? "N/A" : projectStats.teamMembersCount,
       iconBg: "bg-violet-50 dark:bg-violet-900/20",
       iconColor: "text-violet-600 dark:text-violet-400",

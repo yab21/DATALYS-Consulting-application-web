@@ -204,14 +204,6 @@ export class ProjectFilesService {
         requestData.data.project_id = projectId;
       }
 
-      // 🔍 LOG: Requête getFolders
-      console.log('🔍 [DEBUG SERVICE] - Requête getFolders CORRIGÉE:', {
-        parentFolderId,
-        projectId,
-        requestData: JSON.stringify(requestData, null, 2),
-        expliciteParentFilter: parentFolderId !== undefined ? `parent_folder_id = ${parentFolderId}` : 'Pas de filtre parent'
-      });
-
       const response = await securedFetch('/folders/getByCriteria', {
         method: 'POST',
         headers: {
@@ -241,8 +233,6 @@ export class ProjectFilesService {
         return [];
       }
       
-      // Log simplifié
-      console.log(`📁 [getFolders] - ${data.items?.length || 0} dossier(s) retourné(s) pour parent: ${parentFolderId}`);
 
       if (data.code === 200) {
         const folders = data.items || [];
@@ -305,8 +295,7 @@ export class ProjectFilesService {
     try {
       // CORRECTION: Gérer le cas où folderId est null (fichiers racine)
       if (folderId === null) {
-        console.log('🔍 [DEBUG FIX] - Tentative de récupération des fichiers racine ignorée');
-        return []; // Retourner un tableau vide pour les fichiers racine pour l'instant
+        return [];
       }
 
       const requestData: any = {
@@ -316,13 +305,6 @@ export class ProjectFilesService {
           folder_id: folderId
         }
       };
-
-      // 🔍 LOG: Requête getFiles
-      console.log('🔍 [DEBUG SERVICE] - Requête getFiles:', {
-        folderId,
-        projectId,
-        requestData
-      });
 
       // Essayer d'abord avec juste folder_id (cas le plus courant pour les sous-dossiers)
       try {
@@ -335,19 +317,12 @@ export class ProjectFilesService {
         });
 
         const data: FilesResponse = await response.json();
-        
-        console.log('🔍 [DEBUG SERVICE] - Réponse getFiles (folder_id seul):', {
-          success: data.code === 200,
-          count: data.items?.length || 0,
-          items: data.items?.map(f => ({ id: f.id, name: f.name, folder_id: f.folder_id }))
-        });
 
         if (data.code === 200 && data.items && data.items.length > 0) {
-          console.log('🔄 [DEBUG SERVICE] - Mapping des fichiers API vers interface frontend (folder_id seul)');
           return this.mapApiFilesToProjectFiles(data.items);
         }
       } catch (error) {
-        console.log('Tentative avec folder_id seul échouée:', error);
+        // Tentative avec folder_id seul échouée, on continue
       }
 
       // Si on a un projectId, essayer avec project_id
@@ -364,18 +339,12 @@ export class ProjectFilesService {
           });
 
           const data: FilesResponse = await response.json();
-          
-          console.log('🔍 [DEBUG SERVICE] - Réponse getFiles (avec project_id):', {
-            success: data.code === 200,
-            count: data.items?.length || 0
-          });
 
           if (data.code === 200) {
-            console.log('🔄 [DEBUG SERVICE] - Mapping des fichiers API vers interface frontend (avec project_id)');
             return this.mapApiFilesToProjectFiles(data.items || []);
           }
         } catch (error) {
-          console.log('project_id failed, trying incident_id');
+          // Tentative avec project_id échouée, on essaie incident_id
         }
 
         // Fallback avec incident_id
@@ -392,14 +361,8 @@ export class ProjectFilesService {
           });
 
           const data: FilesResponse = await response.json();
-          
-          console.log('🔍 [DEBUG SERVICE] - Réponse getFiles (avec incident_id):', {
-            success: data.code === 200,
-            count: data.items?.length || 0
-          });
 
           if (data.code === 200) {
-            console.log('🔄 [DEBUG SERVICE] - Mapping des fichiers API vers interface frontend (avec incident_id)');
             return this.mapApiFilesToProjectFiles(data.items || []);
           }
         } catch (error) {
@@ -407,8 +370,6 @@ export class ProjectFilesService {
         }
       }
 
-      // Retourner un tableau vide si toutes les tentatives échouent
-      console.warn('🔍 [DEBUG SERVICE] - Aucun fichier trouvé pour le dossier:', folderId);
       return [];
     } catch (error) {
       console.error('Erreur lors de la récupération des fichiers:', error);
@@ -441,41 +402,12 @@ export class ProjectFilesService {
       // Note: On ne vérifie plus l'existence car cela pose problème avec les sous-dossiers
       // Le backend retournera une erreur si le parent n'existe pas
       if (parentFolderId !== undefined && parentFolderId !== null) {
-        console.log('🔍 [DEBUG SERVICE] - Ajout du parent_folder_id:', {
-          parentFolderId,
-          type: typeof parentFolderId
-        });
-        
         requestData.datas[0].parent_folder_id = parentFolderId;
-      } else {
-        console.log('🔍 [DEBUG SERVICE] - Création dans le dossier racine (parent_folder_id non défini)');
       }
 
       if (projectId !== undefined) {
         requestData.datas[0].project_id = projectId;
       }
-
-      // 🔍 LOG: Requête complète envoyée au backend
-      console.log('🔍 [DEBUG SERVICE] - Requête complète envoyée au backend:', {
-        url: '/folders/create',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData, null, 2),
-        parameters: {
-          name: name.trim(),
-          description: description.trim(),
-          parentFolderId,
-          projectId,
-          userId
-        },
-        backendExpectedFormat: {
-          explanation: "Backend attend selon doc: parent_folder_id (ID du parent) + project_id",
-          option1: "parent_folder_id + project_id",
-          option2: "parent_folder_name + project_name"
-        }
-      });
 
       const response = await securedFetch('/folders/create', {
         method: 'POST',
@@ -486,18 +418,6 @@ export class ProjectFilesService {
       });
 
       const data: any = await response.json();
-
-      // 🔍 LOG: Réponse complète du backend
-      console.log('🔍 [DEBUG SERVICE] - Réponse complète du backend createFolder:', {
-        httpStatus: response.status,
-        httpStatusText: response.statusText,
-        responseHeaders: Object.fromEntries(response.headers.entries()),
-        responseBody: data,
-        success: data.code === 200,
-        hasItems: !!(data.items && data.items.length > 0),
-        createdFolder: data.items?.[0],
-        fullResponse: JSON.stringify(data, null, 2)
-      });
 
       if (data.code === 200 && data.items && data.items.length > 0) {
         return data.items[0];
@@ -514,9 +434,8 @@ export class ProjectFilesService {
           shouldTryFallback: !isPermissionError && parentFolderId !== null && parentFolderId !== undefined
         });
         
-        // 🔄 FALLBACK: Essayer avec parent_folder_name seulement si ce n'est pas une erreur de permissions
+        // Fallback: essayer avec parent_folder_name si ce n'est pas une erreur de permissions
         if (!isPermissionError && parentFolderId !== null && parentFolderId !== undefined) {
-          console.warn('🔄 [DEBUG SERVICE] - Tentative de fallback avec parent_folder_name...');
           return await this.createFolderWithParentName(name, description, parentFolderId, projectId, userId);
         }
         
@@ -574,13 +493,6 @@ export class ProjectFilesService {
         requestData.datas[0].project_id = projectId;
       }
 
-      // 🔍 LOG: Requête fallback envoyée
-      console.log('🔍 [DEBUG FALLBACK] - Requête createFolder avec parent_folder_name:', {
-        parentFolderName: parentFolder.name,
-        parentFolderId,
-        requestData: JSON.stringify(requestData, null, 2)
-      });
-
       const response = await securedFetch('/folders/create', {
         method: 'POST',
         headers: {
@@ -591,22 +503,14 @@ export class ProjectFilesService {
 
       const data: any = await response.json();
 
-      // 🔍 LOG: Réponse fallback reçue
-      console.log('🔍 [DEBUG FALLBACK] - Réponse createFolder avec parent_folder_name:', {
-        responseData: data,
-        success: data.code === 200,
-        hasItems: !!(data.items && data.items.length > 0),
-        createdFolder: data.items?.[0]
-      });
-
       if (data.code === 200 && data.items && data.items.length > 0) {
         return data.items[0];
       } else {
-        console.error('🔍 [DEBUG FALLBACK] - Échec du fallback aussi:', data.message);
+        console.error('Erreur lors de la création du dossier (fallback):', data.message);
         return null;
       }
     } catch (error) {
-      console.error('🔍 [DEBUG FALLBACK] - Exception lors du fallback:', error);
+      console.error('Exception lors de la création du dossier (fallback):', error);
       return null;
     }
   }
@@ -702,39 +606,12 @@ export class ProjectFilesService {
     const cacheKey = `${folderId}_${projectId || 'null'}`;
     const cached = statsCache[cacheKey];
     if (cached && (Date.now() - cached.timestamp) < STATS_CACHE_DURATION) {
-      console.log('💾 [DEBUG STATS] - Utilisation du cache pour:', { folderId, projectId, stats: cached });
       return cached;
     }
 
     try {
-      // 🔍 LOG: Début du calcul des stats
-      console.log('🔍 [DEBUG STATS] - Calcul des statistiques pour le dossier:', {
-        folderId,
-        projectId,
-        cacheKey
-      });
-
-      // Récupérer les sous-dossiers directs
       const directFolders = await this.getFolders(folderId, projectId);
-
-      console.log('🔍 [DEBUG STATS] - Sous-dossiers directs trouvés:', {
-        count: directFolders.length,
-        folders: directFolders.map(f => ({ id: f.id, name: f.name, parent_folder_id: f.parent_folder_id }))
-      });
-
-      // Récupérer les fichiers directs
       const directFiles = await this.getFiles(folderId, projectId);
-
-      console.log('🔍 [DEBUG STATS] - Fichiers directs trouvés:', {
-        count: directFiles.length,
-        files: directFiles.map(f => ({
-          id: f.id,
-          name: f.original_name,
-          folder_id: f.folder_id,
-          project_id: f.project_id,
-          incident_id: f.incident_id
-        }))
-      });
 
       // Comptage récursif : parcourir chaque sous-dossier
       let totalSubfolders = directFolders.length;
@@ -752,10 +629,7 @@ export class ProjectFilesService {
         timestamp: Date.now()
       };
 
-      // Mettre en cache avec la clé unique
       statsCache[cacheKey] = stats;
-      
-      console.log('🔍 [DEBUG STATS] - Statistiques finales:', { folderId, projectId, stats, cacheKey });
       return stats;
 
     } catch (error) {
@@ -788,8 +662,6 @@ export class ProjectFilesService {
         formData.append('project_id', projectId.toString());
       }
 
-      console.log('📋 [UPLOAD FIXED] - Utilisation XMLHttpRequest comme les incidents');
-      
       // Utiliser XMLHttpRequest comme dans incident-files.ts qui fonctionne
       const xhr = new XMLHttpRequest();
       
@@ -797,7 +669,6 @@ export class ProjectFilesService {
         xhr.addEventListener('load', () => {
           try {
             const response = JSON.parse(xhr.responseText);
-            console.log('📡 [UPLOAD FIXED] - Response:', response);
             
             if (xhr.status >= 200 && xhr.status < 300 && 
                 (response.status === 'success' || response.code === 200)) {
@@ -904,12 +775,7 @@ export class ProjectFilesService {
    */
   async viewFile(fileId: number, fileName: string, fileUrl?: string): Promise<void> {
     try {
-      console.log(`📖 [VIEW FILE] - Ouverture du fichier: ${fileName} (ID: ${fileId})`);
-      console.log(`📖 [VIEW FILE] - File URL fournie: ${fileUrl}`);
-
-      // Si pas de fileUrl, utiliser l'endpoint download comme fallback
       if (!fileUrl) {
-        console.log(`📖 [VIEW FILE] - Pas de file_url, utilisation de /files/download/${fileId}`);
         const response = await securedFetch(`/files/download/${fileId}`, {
           method: 'GET',
         });
@@ -941,8 +807,6 @@ export class ProjectFilesService {
         cleanFileUrl = cleanFileUrl.substring('files/serve/'.length);
       }
       const viewUrl = `${baseUrl}/files/serve/${cleanFileUrl}`;
-      
-      console.log(`📖 [VIEW FILE] - URL finale: ${viewUrl}`);
       
       const token = SecureStorage.getItem('authToken');
       const response = await fetch(viewUrl, {
@@ -979,7 +843,6 @@ export class ProjectFilesService {
     Object.keys(statsCache).forEach(key => {
       delete statsCache[key];
     });
-    console.log('🗑️ [DEBUG CACHE] - Cache des statistiques vidé');
   }
 
   /**
@@ -988,7 +851,6 @@ export class ProjectFilesService {
   clearFolderStatsCache(folderId: number, projectId?: number): void {
     const cacheKey = `${folderId}_${projectId || 'null'}`;
     delete statsCache[cacheKey];
-    console.log('🗑️ [DEBUG CACHE] - Cache vidé pour:', { folderId, projectId, cacheKey });
   }
 
   /**

@@ -182,8 +182,6 @@ class ProjectPartnersService {
         const data = await response.json();
         if (data.status === 'success') {
           const items = data.data || data.items || [];
-          console.log('✅ [PROJECT_PARTNERS] - Permissions projet récupérées:', items.length);
-
           if (items.length > 0) {
             return items;
           }
@@ -203,11 +201,8 @@ class ProjectPartnersService {
       const targetProject = allProjects.find((p) => p.id === projectId);
 
       if (!targetProject || !targetProject.partner_id) {
-        console.log('⚠️ [PROJECT_PARTNERS] - Projet sans partner_id, retour tableau vide');
         return [];
       }
-
-      console.log('🔍 [PROJECT_PARTNERS] - Fallback: partner_id du projet =', targetProject.partner_id);
 
       // Récupérer les utilisateurs liés à ce partenaire
       const response = await UsersService.getUsersByCriteria({
@@ -219,12 +214,11 @@ class ProjectPartnersService {
       });
 
       const users = response.items || response.data || [];
-
       // Filtrer les utilisateurs partenaires (role_id = 4) qui appartiennent au partner_id du projet
+      // Conversion Number() pour gérer le type mismatch string/number selon la source API
       const partners = users.filter(
-        (user: any) => user.role_id === 4 && user.partner_id === targetProject.partner_id
+        (user: any) => user.role_id === 4 && Number(user.partner_id) === Number(targetProject.partner_id)
       );
-
       const result: ProjectPartner[] = partners.map((user: any) => ({
         id: user.id,
         user_id: user.id,
@@ -245,7 +239,6 @@ class ProjectPartnersService {
         role_in_project: 'Partenaire'
       }));
 
-      console.log('✅ [PROJECT_PARTNERS] - Membres d\'équipe du projet:', result.length);
 
       return result;
     } catch (error) {

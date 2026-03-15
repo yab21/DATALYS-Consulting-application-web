@@ -193,9 +193,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   // Charger les statistiques d'un dossier
   const loadFolderStats = useCallback(async (folderId: string, projectId: number): Promise<FolderStats | null> => {
     try {
-      console.log('📊 Chargement des statistiques du dossier:', folderId);
       const stats = await projectFilesService.getFolderStats(Number(folderId), projectId);
-      console.log('✅ Statistiques chargées:', stats);
       return stats;
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
@@ -209,14 +207,12 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
     const version = ++loadingVersionRef.current;
     try {
       setLoading(true);
-      console.log('🔄 Chargement des fichiers pour le dossier:', currentFolder?.id || 'racine');
 
       // Charger les dossiers
       const foldersData = await projectFilesService.getFolders(
-        currentFolder?.id ? Number(currentFolder.id) : null, 
+        currentFolder?.id ? Number(currentFolder.id) : null,
         Number(projectId)
       );
-      console.log('📁 Dossiers chargés:', foldersData);
 
       const formattedFolders: FileItem[] = foldersData.map(folder => ({
         id: folder.id.toString(),
@@ -262,7 +258,6 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       let formattedFiles: FileItem[] = [];
       if (currentFolder?.id) {
         const filesData = await projectFilesService.getFiles(Number(currentFolder.id), Number(projectId));
-        console.log('📄 Fichiers chargés:', filesData);
 
         formattedFiles = filesData.map(file => ({
           id: file.id.toString(),
@@ -530,8 +525,6 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       for (let i = 0; i < uploadingFiles.length; i++) {
         const file = uploadingFiles[i];
         
-        console.log(`📤 Upload ${i + 1}/${uploadingFiles.length}: ${file.name}`);
-        
         const result = await projectFilesService.uploadFile(
           file,
           currentFolder ? Number(currentFolder.id) : 0, // folderId - 0 for root
@@ -542,8 +535,6 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         // Progression
         const progress = ((i + 1) / uploadingFiles.length) * 100;
         setUploadProgress(progress);
-        
-        console.log(`✅ Upload terminé pour ${file.name}:`, result);
         
         // Notifier le parent de l'upload
         if (onFileUpload && result) {
@@ -604,19 +595,14 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   // Voir un fichier - ouvre dans une nouvelle fenêtre
   const handlePreview = useCallback(async (file: FileItem) => {
     try {
-      console.log('📖 [PREVIEW] - Fichier:', file.name, 'URL:', file.file_url);
-
       if (file.file_url && file.file_url.trim() !== '') {
         const correctedUrl = fixFileUrl(file.file_url);
-        console.log('📖 [PREVIEW] - URL corrigée:', correctedUrl);
         if (correctedUrl) {
           window.open(correctedUrl, '_blank');
           return;
         }
       }
 
-      // Fallback: utiliser le service viewFile qui gère plusieurs cas
-      console.log('📖 [PREVIEW] - Fallback: utilisation du service viewFile');
       await projectFilesService.viewFile(Number(file.id), file.name, file.file_url);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
