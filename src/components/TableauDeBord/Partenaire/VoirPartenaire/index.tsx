@@ -12,7 +12,7 @@ import { filesService, ProjectFile } from '@/services/files';
 import { extractBackendMessage } from '@/lib/error-handler';
 import { isTokenExpiredError } from '@/lib/api-interceptor';
 import LoadingState from "@/components/UI/Loading/LoadingState";
-import { PartnerStatsService, PartnerStats } from '@/services/partnerStats';
+import { PartnerStatsService, PartnerStats, PartnerIncident } from '@/services/partnerStats';
 import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
 import { useAuth } from '@/context/AuthContext';
 import ProjectFileManager from '@/components/TableauDeBord/Projet/VoirProjet/ProjectFileManager';
@@ -39,7 +39,9 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   const [stats, setStats] = useState<PartnerStats>({
     projectsCount: 0,
     incidentsCount: 0,
-    supportTicketsCount: 0
+    supportTicketsCount: 0,
+    incidentsList: [],
+    supportTicketsList: []
   });
   const [loadingStats, setLoadingStats] = useState(false);
   const [logoError, setLogoError] = useState(false);
@@ -297,10 +299,59 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
           </button>
         ));
       }
-      case "Incidents":
-        return <p className="text-sm text-gray-500 dark:text-gray-400 px-4 py-3">{stats.incidentsCount} incident{stats.incidentsCount !== 1 ? 's' : ''} enregistré{stats.incidentsCount !== 1 ? 's' : ''}</p>;
-      case "Support":
-        return <p className="text-sm text-gray-500 dark:text-gray-400 px-4 py-3">{stats.supportTicketsCount} ticket{stats.supportTicketsCount !== 1 ? 's' : ''} de support</p>;
+      case "Incidents": {
+        if (loadingStats) return <div className="flex justify-center py-3"><Spinner size="sm" /></div>;
+        const incidentItems = stats.incidentsList.slice(0, MAX_DROPDOWN_ITEMS);
+        if (incidentItems.length === 0) return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Aucun incident</p>;
+        return incidentItems.map((incident: PartnerIncident) => (
+          <button
+            key={incident.id}
+            onClick={(e) => { e.stopPropagation(); router.push(`/tableaudebord/incidents/${incident.id}`); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
+          >
+            <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">{incident.title}</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                {incident.priority && (
+                  <Chip size="sm" color={['P0','P1'].includes(incident.priority) ? 'danger' : incident.priority === 'P2' ? 'warning' : 'primary'} variant="flat" className="h-5 text-[10px]">
+                    {incident.priority}
+                  </Chip>
+                )}
+                {incident.status && (
+                  <Chip size="sm" variant="flat" className="h-5 text-[10px]">
+                    {incident.status}
+                  </Chip>
+                )}
+              </div>
+            </div>
+            <ArrowRight className="w-3 h-3 text-gray-300 dark:text-gray-600 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0" />
+          </button>
+        ));
+      }
+      case "Support": {
+        if (loadingStats) return <div className="flex justify-center py-3"><Spinner size="sm" /></div>;
+        const supportItems = stats.supportTicketsList.slice(0, MAX_DROPDOWN_ITEMS);
+        if (supportItems.length === 0) return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Aucun ticket de support</p>;
+        return supportItems.map((ticket: PartnerIncident) => (
+          <button
+            key={ticket.id}
+            onClick={(e) => { e.stopPropagation(); router.push(`/tableaudebord/support/${ticket.id}`); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group/item"
+          >
+            <Headphones className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">{ticket.title}</span>
+              {ticket.status && (
+                <Chip size="sm" variant="flat" className="h-5 text-[10px] mt-1">
+                  {ticket.status}
+                </Chip>
+              )}
+            </div>
+            <ArrowRight className="w-3 h-3 text-gray-300 dark:text-gray-600 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0" />
+          </button>
+        ));
+      }
       default: return null;
     }
   };
