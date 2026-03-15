@@ -159,8 +159,11 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     if (!currentPartner) return;
     try {
       setLoadingProjects(true);
-      const projectsData = await projectsService.getProjectsByPartner(currentPartner.name);
-      setProjects(projectsData);
+      const allProjects = await projectsService.getActiveProjects();
+      const partnerProjects = allProjects.filter(
+        (project) => Number(project.partner_id) === Number(currentPartner.id)
+      );
+      setProjects(partnerProjects);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
     } finally {
