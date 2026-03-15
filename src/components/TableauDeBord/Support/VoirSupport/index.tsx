@@ -26,6 +26,7 @@ import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { IncidentsService, Incident } from '@/services/incidents';
 import { projectsService, Project } from '@/services/projects';
 import { UsersService, User } from '@/services/users';
+import { messagesService } from '@/services/messages';
 import { extractBackendMessage } from '@/lib/error-handler';
 import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { useAuth } from '@/context/AuthContext';
@@ -49,6 +50,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
   const [loadingProject, setLoadingProject] = useState(false);
   const [loadingUser, setLoadingUser] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [conversationCount, setConversationCount] = useState(0);
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const ticketId = parseInt(id);
@@ -75,6 +77,14 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
       const ticketData = await IncidentsService.getIncidentById(ticketId);
       if (!ticketData) { setError('Ticket de support non trouvé'); return; }
       setTicket(ticketData);
+
+      // Charger le nombre d'échanges dans la conversation
+      try {
+        const conversation = await messagesService.getConversationByTicket(ticketData.incident_number);
+        setConversationCount(conversation.count || conversation.items?.length || 0);
+      } catch {
+        // Pas de conversation encore — count reste à 0
+      }
 
       // Chargement eager du projet et de l'agent assigné
       if (ticketData.project_id) {
@@ -361,7 +371,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
     {
       icon: <MessageCircle className="w-5 h-5" />,
       label: "Échanges",
-      value: ticket.refusal_count || 0,
+      value: conversationCount,
       iconBg: "bg-orange-50 dark:bg-orange-900/20",
       iconColor: "text-orange-600 dark:text-orange-400",
       borderActive: "border-orange-300 dark:border-orange-700"

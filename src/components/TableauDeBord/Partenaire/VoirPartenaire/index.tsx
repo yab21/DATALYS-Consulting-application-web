@@ -148,7 +148,6 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       setStats(statistics);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
-      console.error('Erreur stats:', error);
     } finally {
       setLoadingStats(false);
     }

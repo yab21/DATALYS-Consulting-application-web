@@ -54,8 +54,7 @@ export class PartnerStatsService {
         supportTicketsList
       };
 
-    } catch (error) {
-      console.error('Erreur lors de la récupération des statistiques du partenaire:', error);
+    } catch {
       return {
         projectsCount: 0,
         incidentsCount: 0,
@@ -97,8 +96,7 @@ export class PartnerStatsService {
       }
 
       return [];
-    } catch (error) {
-      console.error('❌ Erreur lors de la récupération des projets:', error);
+    } catch {
       return [];
     }
   }
@@ -133,8 +131,7 @@ export class PartnerStatsService {
       }
 
       return [];
-    } catch (error) {
-      console.error('❌ Erreur lors de la récupération des incidents:', error);
+    } catch {
       return [];
     }
   }
@@ -171,8 +168,7 @@ export class PartnerStatsService {
       }
 
       return [];
-    } catch (error) {
-      console.error('❌ Erreur lors de la récupération des tickets de support:', error);
+    } catch {
       return [];
     }
   }
@@ -184,8 +180,7 @@ export class PartnerStatsService {
     try {
       const ids = await this.getPartnerProjectIds(partnerName);
       return ids.length;
-    } catch (error) {
-      console.error('Erreur lors de la récupération du nombre de projets:', error);
+    } catch {
       return 0;
     }
   }
