@@ -183,6 +183,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   const [isEditingFolder, setIsEditingFolder] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Navigation
   const [breadcrumbs, setBreadcrumbs] = useState<FileItem[]>([]);
@@ -520,6 +521,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
     if (uploadingFiles.length === 0) return;
 
     try {
+      setIsUploading(true);
       setUploadProgress(0);
       
       for (let i = 0; i < uploadingFiles.length; i++) {
@@ -565,6 +567,8 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         type: 'error'
       });
       setUploadProgress(0);
+    } finally {
+      setIsUploading(false);
     }
   }, [uploadingFiles, currentFolder, projectId, user?.id, onFileUpload, showNotification, onUploadClose, loadFilesAndFolders]);
 
@@ -1184,7 +1188,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       </Modal>
 
       {/* Modal d'upload de fichiers */}
-      <Modal isOpen={isUploadOpen} onClose={onUploadClose} size="2xl">
+      <Modal isOpen={isUploadOpen} onClose={onUploadClose} size="2xl" isDismissable={!isUploading}>
         <ModalContent>
           <ModalHeader>
             <div className="flex items-center gap-3">
@@ -1284,8 +1288,8 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
             <Button
               color="primary"
               onPress={handleUpload}
-              isDisabled={uploadingFiles.length === 0 || !currentFolder}
-              isLoading={uploadProgress > 0 && uploadProgress < 100}
+              isDisabled={uploadingFiles.length === 0 || !currentFolder || isUploading}
+              isLoading={isUploading}
             >
               Upload ({uploadingFiles.length} fichier{uploadingFiles.length > 1 ? 's' : ''})
             </Button>
