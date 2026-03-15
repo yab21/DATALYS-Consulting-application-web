@@ -762,7 +762,8 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
                     <p className="text-sm">Aucune note pour cet incident</p>
                   </div>
                 ) : (
-                  [...notes].reverse().map((note) => (
+                  <div className="overflow-y-auto max-h-[520px] space-y-3 pr-1">
+                  {[...notes].reverse().map((note) => (
                     <div key={note.id} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg p-4 space-y-2">
                       <div className="flex items-center gap-2">
                         <Avatar size="sm" name={note.author_name} className="bg-primary text-white flex-shrink-0" />
@@ -804,7 +805,8 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
                         </div>
                       )}
                     </div>
-                  ))
+                  ))}
+                  </div>
                 )}
               </div>
             </Tab>
