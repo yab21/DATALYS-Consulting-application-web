@@ -474,34 +474,6 @@ const GestionIncidents: React.FC = () => {
 
         setIncidents(convertedIncidents);
         setFilteredIncidents(convertedIncidents);
-
-        // Calcul des statistiques
-        const newStats: IncidentStats = {
-          total: convertedIncidents.length,
-          nouveaux: convertedIncidents.filter((i) => i.statut === "nouveau")
-            .length,
-          enCours: convertedIncidents.filter((i) => i.statut === "en_cours")
-            .length,
-          enAttente: convertedIncidents.filter((i) => i.statut === "en_attente")
-            .length,
-          enArbitrage: convertedIncidents.filter(
-            (i) => i.statut === "en_arbitrage",
-          ).length,
-          enPause: convertedIncidents.filter((i) => i.statut === "en_pause")
-            .length,
-          resolus: convertedIncidents.filter((i) => i.statut === "resolu")
-            .length,
-          p0: convertedIncidents.filter((i) => i.priorite === "P0").length,
-          p1: convertedIncidents.filter((i) => i.priorite === "P1").length,
-          tempsMoyenResolution:
-            convertedIncidents
-              .filter((i) => i.tempsMoyenResolution)
-              .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) /
-            (convertedIncidents.filter((i) => i.tempsMoyenResolution).length ||
-              1),
-        };
-
-        setStats(newStats);
       } catch (error) {
         if (isTokenExpiredError(error)) throw error;
         console.error("Erreur lors du chargement des incidents:", error);
@@ -552,6 +524,26 @@ const GestionIncidents: React.FC = () => {
       const partnerProjectIds = new Set(projects.map((p) => p.id));
       filtered = filtered.filter((i) => partnerProjectIds.has(i.project_id));
     }
+
+    // Calcul des statistiques basé sur les incidents du partenaire (avant filtres utilisateur)
+    const baseIncidents = filtered;
+    const newStats: IncidentStats = {
+      total: baseIncidents.length,
+      nouveaux: baseIncidents.filter((i) => i.statut === "nouveau").length,
+      enCours: baseIncidents.filter((i) => i.statut === "en_cours").length,
+      enAttente: baseIncidents.filter((i) => i.statut === "en_attente").length,
+      enArbitrage: baseIncidents.filter((i) => i.statut === "en_arbitrage").length,
+      enPause: baseIncidents.filter((i) => i.statut === "en_pause").length,
+      resolus: baseIncidents.filter((i) => i.statut === "resolu").length,
+      p0: baseIncidents.filter((i) => i.priorite === "P0").length,
+      p1: baseIncidents.filter((i) => i.priorite === "P1").length,
+      tempsMoyenResolution:
+        baseIncidents
+          .filter((i) => i.tempsMoyenResolution)
+          .reduce((sum, i) => sum + (i.tempsMoyenResolution || 0), 0) /
+        (baseIncidents.filter((i) => i.tempsMoyenResolution).length || 1),
+    };
+    setStats(newStats);
 
     // Filtrage par projet (via URL query param)
     if (filterProjectId) {
@@ -737,10 +729,8 @@ const GestionIncidents: React.FC = () => {
       errors.declarant_name = "Le déclarant est obligatoire";
     }
 
-    // Validation du projet
-    if (!createForm.project_id || createForm.project_id === 0) {
-      errors.project_id = "Le projet est obligatoire";
-    } else if (isPartner() && user?.partner_id) {
+    // Validation du projet (optionnel, mais si sélectionné, vérifier la cohérence)
+    if (isPartner() && user?.partner_id && createForm.project_id && createForm.project_id > 0) {
       // Vérifier que le partner sélectionne seulement ses propres projets
       const selectedProject = projects.find(
         (p) => p.id === createForm.project_id,
@@ -2466,7 +2456,6 @@ const GestionIncidents: React.FC = () => {
                     clearCreateFormError("project_id");
                   }}
                   isLoading={loadingProjects}
-                  isRequired
                   isInvalid={!!createFormErrors.project_id}
                   errorMessage={createFormErrors.project_id}
                 >

@@ -452,7 +452,7 @@ const SupportIncidents: React.FC = () => {
     impact: "",
     domain: "",
     declarant_name: user?.name || "",
-    user_id: 0,
+    user_id: isPartner() && user ? user.id : 0,
     project_id: 0,
     is_active: true,
     is_read: false,
@@ -499,7 +499,7 @@ const SupportIncidents: React.FC = () => {
   // Filtrage des tickets
   useEffect(() => {
     filterTickets();
-  }, [tickets, searchTerm, filterStatus, filterPriority]);
+  }, [tickets, searchTerm, filterStatus, filterPriority, projects]);
 
   // Fonctions de chargement des données de référence
   const loadPartners = useCallback(async () => {
@@ -524,8 +524,14 @@ const SupportIncidents: React.FC = () => {
     try {
       setLoadingProjects(true);
       const allProjects = await projectsService.getActiveProjects();
-      setProjects(allProjects);
-      console.log('📋 Projets chargés:', allProjects.length);
+      if (isPartner() && user?.partner_id) {
+        const partnerProjects = allProjects.filter((p: Project) => p.partner_id === user.partner_id);
+        setProjects(partnerProjects);
+        console.log('📋 Projets du partenaire chargés:', partnerProjects.length);
+      } else {
+        setProjects(allProjects);
+        console.log('📋 Tous les projets chargés:', allProjects.length);
+      }
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors du chargement des projets:', error);
@@ -536,7 +542,7 @@ const SupportIncidents: React.FC = () => {
     } finally {
       setLoadingProjects(false);
     }
-  }, [showNotification]);
+  }, [showNotification, isPartner, user?.partner_id]);
 
   const loadData = useCallback(async () => {
     try {
@@ -547,8 +553,6 @@ const SupportIncidents: React.FC = () => {
         size: 100,
         data: {
           type: 'support',
-          // Pour les partners, filtrer par user_id (tickets qui leur sont assignés)
-          ...(isPartner() && user && { user_id: user.id }),
         }
       };
 
@@ -585,9 +589,15 @@ const SupportIncidents: React.FC = () => {
   const filterTickets = useCallback(() => {
     let filtered = [...tickets];
 
+    // Pour les partenaires : limiter aux tickets de leurs projets uniquement
+    if (isPartner() && projects.length > 0) {
+      const partnerProjectIds = new Set(projects.map((p) => p.id));
+      filtered = filtered.filter((t) => partnerProjectIds.has(t.project_id));
+    }
+
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(ticket => 
+      filtered = filtered.filter(ticket =>
         ticket.titre?.toLowerCase().includes(term) ||
         ticket.description?.toLowerCase().includes(term) ||
         ticket.incident_number?.toLowerCase().includes(term) ||
@@ -604,30 +614,36 @@ const SupportIncidents: React.FC = () => {
     }
 
     setFilteredTickets(filtered);
-  }, [tickets, searchTerm, filterStatus, filterPriority]);
+  }, [tickets, searchTerm, filterStatus, filterPriority, isPartner, projects]);
 
-  // Calcul des statistiques
+  // Calcul des statistiques basé sur les tickets visibles par l'utilisateur
   const calculateStats = (): SupportStats => {
+    let baseTickets = tickets;
+    // Pour les partenaires : baser les stats sur leurs tickets uniquement
+    if (isPartner() && projects.length > 0) {
+      const partnerProjectIds = new Set(projects.map((p) => p.id));
+      baseTickets = tickets.filter((t) => partnerProjectIds.has(t.project_id));
+    }
     return {
-      total: tickets.length,
-      nouveaux: tickets.filter(t => t.statut === 'nouveau').length,
-      enCours: tickets.filter(t => t.statut === 'en_cours').length,
-      enAttente: tickets.filter(t => t.statut === 'en_attente').length,
-      enArbitrage: tickets.filter(t => t.statut === 'en_arbitrage').length,
-      enPause: tickets.filter(t => t.statut === 'en_pause').length,
-      resolus: tickets.filter(t => t.statut === 'resolu').length,
-      p0: tickets.filter(t => t.priorite === 'P0').length,
-      p1: tickets.filter(t => t.priorite === 'P1').length,
-      tempsMoyenResolution: tickets
+      total: baseTickets.length,
+      nouveaux: baseTickets.filter(t => t.statut === 'nouveau').length,
+      enCours: baseTickets.filter(t => t.statut === 'en_cours').length,
+      enAttente: baseTickets.filter(t => t.statut === 'en_attente').length,
+      enArbitrage: baseTickets.filter(t => t.statut === 'en_arbitrage').length,
+      enPause: baseTickets.filter(t => t.statut === 'en_pause').length,
+      resolus: baseTickets.filter(t => t.statut === 'resolu').length,
+      p0: baseTickets.filter(t => t.priorite === 'P0').length,
+      p1: baseTickets.filter(t => t.priorite === 'P1').length,
+      tempsMoyenResolution: baseTickets
         .filter(t => t.tempsMoyenResolution)
-        .reduce((acc, t) => acc + (t.tempsMoyenResolution || 0), 0) / 
-        Math.max(tickets.filter(t => t.tempsMoyenResolution).length, 1)
+        .reduce((acc, t) => acc + (t.tempsMoyenResolution || 0), 0) /
+        Math.max(baseTickets.filter(t => t.tempsMoyenResolution).length, 1)
     };
   };
 
   // Handlers CRUD
   const handleCreate = async () => {
-    if (!hasPermission(Permission.HANDLE_ALL_INCIDENTS)) {
+    if (!hasPermission(Permission.HANDLE_ALL_INCIDENTS) && !hasPermission(Permission.REQUEST_TECHNICAL_SUPPORT)) {
       showNotification(simpleNotificationHelpers.error(
         "Permission refusée",
         "Vous n'avez pas les droits pour créer un ticket de support"
@@ -746,8 +762,8 @@ const SupportIncidents: React.FC = () => {
       category: "",
       impact: "",
       domain: "",
-      declarant_name: "",
-      user_id: 0,
+      declarant_name: user?.name || "",
+      user_id: isPartner() && user ? user.id : 0,
       project_id: 0,
       is_active: true,
       is_read: false,
@@ -825,7 +841,7 @@ const SupportIncidents: React.FC = () => {
             Actualiser
           </Button>
 
-          {hasPermission(Permission.HANDLE_ALL_INCIDENTS) && (
+          {(hasPermission(Permission.HANDLE_ALL_INCIDENTS) || hasPermission(Permission.REQUEST_TECHNICAL_SUPPORT)) && (
             <Button
               color="success"
               startContent={<Plus size={16} />}
@@ -1234,26 +1250,36 @@ const SupportIncidents: React.FC = () => {
                   />
 
                   <div className="grid grid-cols-2 gap-4">
-                    <Select
-                      label="Assigné à"
-                      placeholder="Sélectionnez un partenaire"
-                      selectedKeys={createForm.user_id ? [createForm.user_id.toString()] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string;
-                        setCreateForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
-                        clearCreateFormError("user_id");
-                      }}
-                      isLoading={loadingPartners}
-                      isRequired
-                      isInvalid={!!createFormErrors.user_id}
-                      errorMessage={createFormErrors.user_id}
-                    >
-                      {partners.map((partner) => (
-                        <SelectItem key={partner.id.toString()} textValue={partner.name}>
-                          {partner.name}
-                        </SelectItem>
-                      ))}
-                    </Select>
+                    {isPartner() ? (
+                      <Input
+                        label="Assigné à"
+                        value={user?.name || ""}
+                        isReadOnly
+                        description="Automatiquement défini (vous)"
+                        variant="bordered"
+                      />
+                    ) : (
+                      <Select
+                        label="Assigné à"
+                        placeholder="Sélectionnez un partenaire"
+                        selectedKeys={createForm.user_id ? [createForm.user_id.toString()] : []}
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0] as string;
+                          setCreateForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
+                          clearCreateFormError("user_id");
+                        }}
+                        isLoading={loadingPartners}
+                        isRequired
+                        isInvalid={!!createFormErrors.user_id}
+                        errorMessage={createFormErrors.user_id}
+                      >
+                        {partners.map((partner) => (
+                          <SelectItem key={partner.id.toString()} textValue={partner.name}>
+                            {partner.name}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    )}
 
                     <Select
                       label="Projet"
@@ -1265,7 +1291,6 @@ const SupportIncidents: React.FC = () => {
                         clearCreateFormError("project_id");
                       }}
                       isLoading={loadingProjects}
-                      isRequired
                       isInvalid={!!createFormErrors.project_id}
                       errorMessage={createFormErrors.project_id}
                     >
@@ -1350,7 +1375,7 @@ const SupportIncidents: React.FC = () => {
                     <SelectItem key="mineur">Mineur</SelectItem>
                   </Select>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isAdmin() ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                     <Select
                       label="Priorité"
                       selectedKeys={createForm.priority ? [createForm.priority] : []}
@@ -1363,27 +1388,31 @@ const SupportIncidents: React.FC = () => {
                       <SelectItem key="P4">P4 - Très faible</SelectItem>
                     </Select>
 
-                    <Select
-                      label="Statut"
-                      selectedKeys={createForm.status ? [createForm.status] : []}
-                      onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
-                    >
-                      <SelectItem key="nouveau">Nouveau</SelectItem>
-                      <SelectItem key="en_cours">En cours</SelectItem>
-                      <SelectItem key="en_attente">En attente</SelectItem>
-                      <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
-                      <SelectItem key="en_pause">En pause</SelectItem>
-                      <SelectItem key="resolu">Résolu</SelectItem>
-                    </Select>
+                    {isAdmin() && (
+                      <Select
+                        label="Statut"
+                        selectedKeys={createForm.status ? [createForm.status] : []}
+                        onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
+                      >
+                        <SelectItem key="nouveau">Nouveau</SelectItem>
+                        <SelectItem key="en_cours">En cours</SelectItem>
+                        <SelectItem key="en_attente">En attente</SelectItem>
+                        <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
+                        <SelectItem key="en_pause">En pause</SelectItem>
+                        <SelectItem key="resolu">Résolu</SelectItem>
+                      </Select>
+                    )}
                   </div>
 
-                  <Textarea
-                    label="Notes de résolution (optionnel)"
-                    placeholder="Ajoutez des notes sur la résolution du ticket..."
-                    value={createForm.resolution_notes}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
-                    minRows={2}
-                  />
+                  {isAdmin() && (
+                    <Textarea
+                      label="Notes de résolution (optionnel)"
+                      placeholder="Ajoutez des notes sur la résolution du ticket..."
+                      value={createForm.resolution_notes}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
+                      minRows={2}
+                    />
+                  )}
                 </div>
               </ModalBody>
               <ModalFooter>
@@ -1394,7 +1423,7 @@ const SupportIncidents: React.FC = () => {
                   color="primary"
                   onPress={handleCreate}
                   isLoading={isCreating}
-                  isDisabled={!createForm.title || !createForm.description || !createForm.declarant_name || !createForm.user_id || !createForm.project_id || !createForm.category || !createForm.impact || !createForm.domain}
+                  isDisabled={!createForm.title || !createForm.description || !createForm.declarant_name || !createForm.user_id || !createForm.category || !createForm.impact || !createForm.domain}
                 >
                   {isCreating ? "Création..." : "Créer le ticket"}
                 </Button>
