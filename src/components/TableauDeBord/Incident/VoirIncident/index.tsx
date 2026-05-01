@@ -227,8 +227,15 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
     }
   };
 
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const formatDateShort = (dateString: string) => new Date(dateString).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  // Parser la date en traitant les dates sans timezone comme UTC
+  const parseDate = (dateString: string) => {
+    if (!dateString.endsWith('Z') && !dateString.includes('+') && !/\d{2}-\d{2}$/.test(dateString)) {
+      return new Date(dateString + 'Z');
+    }
+    return new Date(dateString);
+  };
+  const formatDate = (dateString: string) => parseDate(dateString).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const formatDateShort = (dateString: string) => parseDate(dateString).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -795,7 +802,16 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
                             <button
                               key={att.id}
                               type="button"
-                              onClick={() => incidentFilesService.viewIncidentFile(att.file_url, att.file_name)}
+                              onClick={async () => {
+                                try {
+                                  console.log('🔍 [DEBUG NOTE ATTACHMENT] file_url brut:', att.file_url);
+                                  console.log('🔍 [DEBUG NOTE ATTACHMENT] file_name:', att.file_name);
+                                  console.log('🔍 [DEBUG NOTE ATTACHMENT] attachment complet:', JSON.stringify(att));
+                                  await incidentFilesService.viewIncidentFile(att.file_url, att.file_name);
+                                } catch (error) {
+                                  console.error('❌ [DEBUG NOTE ATTACHMENT] Erreur ouverture fichier:', error);
+                                }
+                              }}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                             >
                               <FileText className="w-3.5 h-3.5 flex-shrink-0" />

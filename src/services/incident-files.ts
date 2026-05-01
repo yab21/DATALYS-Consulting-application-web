@@ -162,6 +162,8 @@ class IncidentFilesService {
    * Gère différents formats d'URL retournés par l'API
    */
   private buildFileServeUrl(fileUrl: string): string {
+    console.log('🔍 [DEBUG buildFileServeUrl] Input fileUrl:', fileUrl);
+
     // Nettoyer l'URL des slashes en début
     let cleanPath = fileUrl.replace(/^\/+/, '');
 
@@ -173,6 +175,7 @@ class IncidentFilesService {
     // Construire l'URL finale
     const serveUrl = `${this.baseUrl}/files/serve/${cleanPath}`;
 
+    console.log('🔍 [DEBUG buildFileServeUrl] Output serveUrl:', serveUrl);
     return serveUrl;
   }
 
@@ -441,6 +444,9 @@ class IncidentFilesService {
    * Prévisualiser un fichier en ouvrant dans un nouvel onglet (comme les projets)
    */
   async viewIncidentFile(fileUrl: string, fileName?: string): Promise<void> {
+    // Ouvrir la fenêtre immédiatement (pendant le geste utilisateur) pour éviter le popup blocker
+    const newWindow = window.open('', '_blank');
+
     try {
       console.log(`📖 [VIEW INCIDENT FILE] - Ouverture du fichier: ${fileName}`);
       console.log(`📖 [VIEW INCIDENT FILE] - File URL fournie: ${fileUrl}`);
@@ -456,24 +462,33 @@ class IncidentFilesService {
 
       // Gérer les erreurs 401
       if (response.status === 401) {
+        if (newWindow) newWindow.close();
         throw new TokenExpiredError('Session expirée');
       }
 
       if (response.ok) {
         const blob = await response.blob();
+        console.log('🔍 [DEBUG viewIncidentFile] Blob size:', blob.size, 'type:', blob.type);
         const url = window.URL.createObjectURL(blob);
 
-        // Ouvrir dans un nouvel onglet au lieu d'utiliser iframe (évite CSP)
-        window.open(url, '_blank');
+        // Rediriger la fenêtre déjà ouverte vers le blob URL
+        if (newWindow) {
+          newWindow.location.href = url;
+        }
 
-        // Nettoyer l'URL après un délai pour permettre l'ouverture
+        // Nettoyer l'URL après un délai pour permettre le chargement
         setTimeout(() => {
           window.URL.revokeObjectURL(url);
-        }, 1000);
+        }, 5000);
       } else {
+        if (newWindow) newWindow.close();
+        console.error('🔍 [DEBUG viewIncidentFile] Réponse erreur - Status:', response.status, 'StatusText:', response.statusText);
+        const errorText = await response.text().catch(() => 'impossible de lire le body');
+        console.error('🔍 [DEBUG viewIncidentFile] Body erreur:', errorText);
         throw new Error(`Erreur lors de l'ouverture du fichier: ${response.status}`);
       }
     } catch (error) {
+      if (newWindow) newWindow.close();
       if (isTokenExpiredError(error)) throw error;
       console.error(`❌ Erreur lors de l'ouverture du fichier ${fileName}:`, error);
       throw error;
