@@ -37,6 +37,19 @@ import {
   PauseCircle,
 } from "lucide-react";
 
+// Extraire le texte d'un ReactNode pour la recherche full-text
+const extractText = (node: React.ReactNode): string => {
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return String(node);
+  if (!node) return "";
+  if (Array.isArray(node)) return node.map(extractText).join(" ");
+  if (typeof node === "object" && "props" in node) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return extractText((node as any).props?.children);
+  }
+  return "";
+};
+
 // Types
 interface Section {
   id: string;
@@ -91,10 +104,17 @@ const InfoBox = ({ children, type = "info" }: { children: React.ReactNode; type?
   );
 };
 
+// Composant pour masquer le contenu admin aux partenaires
+const AdminOnly = ({ children }: { children: React.ReactNode }) => {
+  const { isAdmin } = useAuth();
+  if (!isAdmin()) return null;
+  return <>{children}</>;
+};
+
 const Documentation: React.FC = () => {
   const { isAdmin, isPartner } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["introduction"]));
   const [activeSection, setActiveSection] = useState<string>("");
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -109,10 +129,22 @@ const Documentation: React.FC = () => {
 
   const scrollToSection = (id: string) => {
     setExpandedSections((prev) => new Set(prev).add(id));
+    window.history.replaceState(null, "", `#${id}`);
     setTimeout(() => {
       sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   };
+
+  // Deep-linking : ouvrir la section depuis le hash URL
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash) {
+      setExpandedSections((prev) => new Set(prev).add(hash));
+      setTimeout(() => {
+        sectionRefs.current[hash]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, []);
 
   // Observer pour détecter la section active
   useEffect(() => {
@@ -244,8 +276,10 @@ const Documentation: React.FC = () => {
           <ul className="list-disc pl-6 space-y-1">
             <li>Des <strong>projets</strong></li>
             <li>Des <strong>dossiers</strong> (vous serez redirigé vers le projet contenant le dossier)</li>
-            <li>Des <strong>utilisateurs</strong> (admin uniquement)</li>
-            <li>Des <strong>partenaires</strong> (admin uniquement)</li>
+            <AdminOnly>
+              <li>Des <strong>utilisateurs</strong> (admin uniquement)</li>
+              <li>Des <strong>partenaires</strong> (admin uniquement)</li>
+            </AdminOnly>
           </ul>
           <InfoBox>
             Utilisez les filtres (chips) dans la barre de recherche pour affiner par type de résultat.
@@ -273,14 +307,16 @@ const Documentation: React.FC = () => {
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-              Créer un projet <RoleBadge role="admin" />
-            </h4>
-            <Step number={1}>Cliquez sur <strong>&quot;Ajouter un projet&quot;</strong>.</Step>
-            <Step number={2}>Remplissez les informations du projet (nom, description, partenaire, etc.).</Step>
-            <Step number={3}>Validez la création.</Step>
-          </div>
+          <AdminOnly>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                Créer un projet <RoleBadge role="admin" />
+              </h4>
+              <Step number={1}>Cliquez sur <strong>&quot;Ajouter un projet&quot;</strong>.</Step>
+              <Step number={2}>Remplissez les informations du projet (nom, description, partenaire, etc.).</Step>
+              <Step number={3}>Validez la création.</Step>
+            </div>
+          </AdminOnly>
 
           <div>
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
@@ -293,49 +329,53 @@ const Documentation: React.FC = () => {
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-              Clôturer un projet <RoleBadge role="admin" />
-            </h4>
-            <p className="mb-2">
-              Un administrateur peut clôturer un projet directement depuis la table des projets.
-            </p>
-            <Step number={1}>Dans la liste des projets, cliquez sur le menu d&apos;actions <strong>(⋮)</strong> du projet concerné.</Step>
-            <Step number={2}>Sélectionnez <strong>&quot;Clôturer&quot;</strong>.</Step>
-            <Step number={3}>Saisissez un <strong>motif de clôture</strong> (obligatoire) expliquant la raison.</Step>
-            <Step number={4}>Confirmez la clôture.</Step>
-            <InfoBox>
-              Le projet clôturé apparaît avec un badge <strong>&quot;Clôturé&quot;</strong> en rouge dans la table, accompagné du motif de clôture.
-            </InfoBox>
-          </div>
+          <AdminOnly>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                Clôturer un projet <RoleBadge role="admin" />
+              </h4>
+              <p className="mb-2">
+                Un administrateur peut clôturer un projet directement depuis la table des projets.
+              </p>
+              <Step number={1}>Dans la liste des projets, cliquez sur le menu d&apos;actions <strong>(⋮)</strong> du projet concerné.</Step>
+              <Step number={2}>Sélectionnez <strong>&quot;Clôturer&quot;</strong>.</Step>
+              <Step number={3}>Saisissez un <strong>motif de clôture</strong> (obligatoire) expliquant la raison.</Step>
+              <Step number={4}>Confirmez la clôture.</Step>
+              <InfoBox>
+                Le projet clôturé apparaît avec un badge <strong>&quot;Clôturé&quot;</strong> en rouge dans la table, accompagné du motif de clôture.
+              </InfoBox>
+            </div>
 
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-              Rouvrir un projet clôturé <RoleBadge role="admin" />
-            </h4>
-            <p className="mb-2">
-              Un projet clôturé peut être rouvert si nécessaire.
-            </p>
-            <Step number={1}>Dans la liste des projets, repérez le projet avec le badge <strong>&quot;Clôturé&quot;</strong>.</Step>
-            <Step number={2}>Cliquez sur le menu d&apos;actions <strong>(⋮)</strong> et sélectionnez <strong>&quot;Rouvrir&quot;</strong>.</Step>
-            <Step number={3}>Confirmez la réouverture.</Step>
-            <InfoBox type="tip">
-              Après réouverture, le projet retrouve son statut <strong>&quot;Actif&quot;</strong> et le motif de clôture est supprimé.
-            </InfoBox>
-          </div>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                Rouvrir un projet clôturé <RoleBadge role="admin" />
+              </h4>
+              <p className="mb-2">
+                Un projet clôturé peut être rouvert si nécessaire.
+              </p>
+              <Step number={1}>Dans la liste des projets, repérez le projet avec le badge <strong>&quot;Clôturé&quot;</strong>.</Step>
+              <Step number={2}>Cliquez sur le menu d&apos;actions <strong>(⋮)</strong> et sélectionnez <strong>&quot;Rouvrir&quot;</strong>.</Step>
+              <Step number={3}>Confirmez la réouverture.</Step>
+              <InfoBox type="tip">
+                Après réouverture, le projet retrouve son statut <strong>&quot;Actif&quot;</strong> et le motif de clôture est supprimé.
+              </InfoBox>
+            </div>
+          </AdminOnly>
 
           <div>
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
               Gestion des fichiers
             </h4>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <Upload className="h-4 w-4 text-[#4ba9b7]" />
-                  <strong className="text-sm">Upload</strong> <RoleBadge role="admin" />
+              <AdminOnly>
+                <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Upload className="h-4 w-4 text-[#4ba9b7]" />
+                    <strong className="text-sm">Upload</strong> <RoleBadge role="admin" />
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Glissez-déposez ou cliquez pour ajouter des fichiers.</p>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Glissez-déposez ou cliquez pour ajouter des fichiers.</p>
-              </div>
+              </AdminOnly>
               <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
                   <Eye className="h-4 w-4 text-[#4ba9b7]" />
@@ -391,25 +431,27 @@ const Documentation: React.FC = () => {
             </InfoBox>
           </div>
 
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Gérer un incident <RoleBadge role="admin" /></h4>
-            <p className="mb-2">Les administrateurs peuvent modifier le statut, la priorité, ajouter des notes de résolution et joindre des fichiers.</p>
-          </div>
+          <AdminOnly>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Gérer un incident <RoleBadge role="admin" /></h4>
+              <p className="mb-2">Les administrateurs peuvent modifier le statut, la priorité, ajouter des notes de résolution et joindre des fichiers.</p>
+            </div>
 
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-              Mettre un incident en attente <RoleBadge role="admin" />
-            </h4>
-            <p className="mb-2">
-              Lorsqu&apos;un incident nécessite une pause (attente d&apos;informations, dépendance externe, etc.), un administrateur peut le passer en statut <strong>&quot;En attente&quot;</strong>.
-            </p>
-            <Step number={1}>Depuis la liste des incidents, cliquez sur <strong>&quot;Mettre en pause&quot;</strong> dans le menu d&apos;actions, ou modifiez l&apos;incident et changez le statut à <strong>&quot;En attente&quot;</strong>.</Step>
-            <Step number={2}>Un champ <strong>&quot;Motif de mise en attente&quot;</strong> apparaît — saisissez la raison (obligatoire).</Step>
-            <Step number={3}>Validez la modification.</Step>
-            <InfoBox type="warning">
-              Le motif d&apos;attente est obligatoire. Vous ne pourrez pas enregistrer le changement sans l&apos;avoir renseigné.
-            </InfoBox>
-          </div>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                Mettre un incident en attente <RoleBadge role="admin" />
+              </h4>
+              <p className="mb-2">
+                Lorsqu&apos;un incident nécessite une pause (attente d&apos;informations, dépendance externe, etc.), un administrateur peut le passer en statut <strong>&quot;En attente&quot;</strong>.
+              </p>
+              <Step number={1}>Depuis la liste des incidents, cliquez sur <strong>&quot;Mettre en pause&quot;</strong> dans le menu d&apos;actions, ou modifiez l&apos;incident et changez le statut à <strong>&quot;En attente&quot;</strong>.</Step>
+              <Step number={2}>Un champ <strong>&quot;Motif de mise en attente&quot;</strong> apparaît — saisissez la raison (obligatoire).</Step>
+              <Step number={3}>Validez la modification.</Step>
+              <InfoBox type="warning">
+                Le motif d&apos;attente est obligatoire. Vous ne pourrez pas enregistrer le changement sans l&apos;avoir renseigné.
+              </InfoBox>
+            </div>
+          </AdminOnly>
 
           <div>
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
@@ -444,10 +486,12 @@ const Documentation: React.FC = () => {
               la priorité et les fichiers joints.
             </p>
           </div>
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Gérer un ticket <RoleBadge role="admin" /></h4>
-            <p>Les administrateurs peuvent mettre à jour le statut, ajouter des résolutions, réassigner et clôturer les tickets.</p>
-          </div>
+          <AdminOnly>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Gérer un ticket <RoleBadge role="admin" /></h4>
+              <p>Les administrateurs peuvent mettre à jour le statut, ajouter des résolutions, réassigner et clôturer les tickets.</p>
+            </div>
+          </AdminOnly>
         </div>
       ),
     },
@@ -624,8 +668,10 @@ const Documentation: React.FC = () => {
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Projets</strong> — Redirige vers la page du projet</li>
             <li><strong>Dossiers</strong> — Redirige vers le projet contenant le dossier (onglet fichiers)</li>
-            <li><strong>Utilisateurs</strong> — Redirige vers le profil de l&apos;utilisateur <RoleBadge role="admin" /></li>
-            <li><strong>Partenaires</strong> — Redirige vers la fiche du partenaire <RoleBadge role="admin" /></li>
+            <AdminOnly>
+              <li><strong>Utilisateurs</strong> — Redirige vers le profil de l&apos;utilisateur <RoleBadge role="admin" /></li>
+              <li><strong>Partenaires</strong> — Redirige vers la fiche du partenaire <RoleBadge role="admin" /></li>
+            </AdminOnly>
           </ul>
           <InfoBox>
             Utilisez les filtres (badges cliquables) sous la barre de recherche pour affiner par catégorie.
@@ -643,11 +689,15 @@ const Documentation: React.FC = () => {
     return false;
   });
 
-  // Filtrer par recherche
+  // Filtrer par recherche (titre + contenu)
   const searchFilteredSections = searchQuery
-    ? filteredSections.filter((section) =>
-        section.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    ? filteredSections.filter((section) => {
+        const query = searchQuery.toLowerCase();
+        return (
+          section.title.toLowerCase().includes(query) ||
+          extractText(section.content).toLowerCase().includes(query)
+        );
+      })
     : filteredSections;
 
   return (
