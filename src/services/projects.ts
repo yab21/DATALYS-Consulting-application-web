@@ -83,7 +83,8 @@ export interface ProjectByCriteriaRequest {
   size: number;
   data: {
     is_active?: boolean;
-    partner_name?: string; // Nouveau: filtrage par nom de partenaire
+    partner_name?: string;
+    partner_id?: number;
   };
 }
 
@@ -166,6 +167,51 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des projets:", error);
+      const message = extractBackendMessage(error);
+      throw new Error(message);
+    }
+  }
+
+  /**
+   * Récupérer les projets d'un partenaire par son ID via getByCriteria
+   */
+  async getProjectsByPartnerId(partnerId: number): Promise<Project[]> {
+    try {
+      const requestBody: ProjectByCriteriaRequest = {
+        index: 0,
+        size: 100,
+        data: {
+          is_active: true,
+          partner_id: partnerId,
+        },
+      };
+
+      const response = await fetch(buildApiUrl("/projects/getByCriteria"), {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: ProjectApiResponse = await response.json();
+
+      if (result.code === 200 && result.items) {
+        const transformedProjects = result.items.map((project: any) => ({
+          ...project,
+          partner_name: project.partner?.name || null,
+        }));
+        return transformedProjects;
+      } else {
+        throw new Error(
+          result.message?.message ||
+            "Erreur lors de la récupération des projets",
+        );
+      }
+    } catch (error) {
+      console.error("❌ Erreur lors de la récupération des projets du partenaire:", error);
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

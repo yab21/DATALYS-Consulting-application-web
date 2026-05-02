@@ -162,8 +162,6 @@ class IncidentFilesService {
    * Gère différents formats d'URL retournés par l'API
    */
   private buildFileServeUrl(fileUrl: string): string {
-    console.log('🔍 [DEBUG buildFileServeUrl] Input fileUrl:', fileUrl);
-
     // Nettoyer l'URL des slashes en début
     let cleanPath = fileUrl.replace(/^\/+/, '');
 
@@ -175,7 +173,6 @@ class IncidentFilesService {
     // Construire l'URL finale
     const serveUrl = `${this.baseUrl}/files/serve/${cleanPath}`;
 
-    console.log('🔍 [DEBUG buildFileServeUrl] Output serveUrl:', serveUrl);
     return serveUrl;
   }
 
@@ -468,7 +465,6 @@ class IncidentFilesService {
 
       if (response.ok) {
         const blob = await response.blob();
-        console.log('🔍 [DEBUG viewIncidentFile] Blob size:', blob.size, 'type:', blob.type);
         const url = window.URL.createObjectURL(blob);
 
         // Rediriger la fenêtre déjà ouverte vers le blob URL
@@ -482,9 +478,6 @@ class IncidentFilesService {
         }, 5000);
       } else {
         if (newWindow) newWindow.close();
-        console.error('🔍 [DEBUG viewIncidentFile] Réponse erreur - Status:', response.status, 'StatusText:', response.statusText);
-        const errorText = await response.text().catch(() => 'impossible de lire le body');
-        console.error('🔍 [DEBUG viewIncidentFile] Body erreur:', errorText);
         throw new Error(`Erreur lors de l'ouverture du fichier: ${response.status}`);
       }
     } catch (error) {

@@ -159,111 +159,6 @@ const OptimizedProjectList: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedPartner]);
 
-  // Méthode de fallback pour charger les projets des partenaires
-  const loadProjectsWithFallback = async (user: any): Promise<Project[]> => {
-    try {
-      // Pour les partenaires, charger tous les projets puis filtrer
-      const userProjects = await projectsService.getActiveProjects();
-      
-      console.log("📊 Projets chargés (fallback):", userProjects.length);
-      console.log("🔍 Premier projet (pour debug):", userProjects[0]);
-      
-      // Filtrer les projets par partner_id si il existe
-      let filteredProjects = userProjects;
-      if (user.partner_id) {
-        filteredProjects = userProjects.filter(project => 
-          project.partner_id === user.partner_id
-        );
-        console.log(`🔍 Projets filtrés par partner_id ${user.partner_id}:`, filteredProjects.length);
-      } else {
-        // Solution temporaire : Pour les utilisateurs partenaires sans partner_id,
-        // on va d'abord essayer de trouver une correspondance dans les projets
-        console.log("⚠️ Aucun partner_id trouvé dans les données utilisateur");
-        console.log("🔍 Tentative de correspondance par nom d'utilisateur...");
-        
-        // Chercher si le nom d'utilisateur correspond à un nom de partenaire
-        filteredProjects = userProjects.filter(project => {
-          // Vérifier si l'utilisateur est le créateur/éditeur du projet
-          if (project.created_by === user.id || project.updated_by === user.id) {
-            console.log(`✅ Projet assigné par création/modification: ${project.title}`);
-            return true;
-          }
-          
-          // Vérifier si le nom du partenaire contient le nom de l'utilisateur
-          if (project.partner_name && user.name) {
-            const partnerNameLower = project.partner_name.toLowerCase();
-            const userNameLower = user.name.toLowerCase();
-            if (partnerNameLower.includes(userNameLower) || userNameLower.includes(partnerNameLower)) {
-              console.log(`✅ Projet trouvé par nom correspondant: ${project.title} (partenaire: ${project.partner_name})`);
-              return true;
-            }
-          }
-          
-          // Vérifier dans les données du partenaire si disponible dans la réponse API brute
-          const projectWithPartner = project as any;
-          if (projectWithPartner.partner && user.name) {
-            const partnerData = projectWithPartner.partner;
-            if ((partnerData.name && partnerData.name.toLowerCase().includes(user.name.toLowerCase())) ||
-                (partnerData.email === user.email)) {
-              console.log(`✅ Projet trouvé via données partenaire: ${project.title}`);
-              return true;
-            }
-          }
-          
-          return false;
-        });
-        
-        console.log(`📋 Projets trouvés par correspondance:`, filteredProjects.length);
-        
-        // Solution de fallback : si aucun projet trouvé par correspondance,
-        if (filteredProjects.length === 0) {
-          console.log("📢 Aucune correspondance automatique trouvée");
-          
-          // Solution temporaire : Table de correspondance manuelle pour les utilisateurs connus
-          // Cette table devrait être remplacée par une vraie base de données ou une API
-          const manualUserPartnerMapping: Record<string, number> = {
-            'beyem': 24,  // beyem correspond au partenaire Orange (ID 24)
-            // Ajouter d'autres correspondances si nécessaire
-          };
-          
-          const userPartnerMapping = manualUserPartnerMapping[user.name.toLowerCase()];
-          if (userPartnerMapping) {
-            console.log(`🔧 Correspondance manuelle trouvée: ${user.name} → partner_id ${userPartnerMapping}`);
-            
-            // Filtrer les projets par le partner_id trouvé
-            filteredProjects = userProjects.filter(project => 
-              project.partner_id === userPartnerMapping
-            );
-            
-            console.log(`✅ Projets trouvés via correspondance manuelle: ${filteredProjects.length}`);
-            
-            if (filteredProjects.length > 0) {
-              showNotification(simpleNotificationHelpers.info(
-                "Projets chargés",
-                `${filteredProjects.length} projet(s) trouvé(s) pour votre compte`
-              ));
-            }
-          }
-          
-          // Si toujours aucun projet trouvé après la correspondance manuelle
-          if (filteredProjects.length === 0) {
-            console.log("💡 L'utilisateur partenaire devra contacter l'administrateur pour associer ses projets");
-            showNotification(simpleNotificationHelpers.warning(
-              "Aucun projet assigné", 
-              "Aucun projet n'est actuellement assigné à votre compte. Contactez l'administrateur si vous devriez avoir accès à des projets."
-            ));
-          }
-        }
-      }
-      
-      return filteredProjects;
-    } catch (error) {
-      if (isTokenExpiredError(error)) throw error;
-      console.error("❌ Erreur lors du chargement des projets (fallback):", error);
-      return [];
-    }
-  };
-
   const loadInitialData = async () => {
     // Éviter les appels multiples
     if (isLoadingData) {
@@ -356,29 +251,15 @@ const OptimizedProjectList: React.FC = () => {
         setPartnerNames(partnersResponse);
         setProjects(projectsWithPartnerNames);
       } else if (isPartner()) { // PARTNER - ne peut voir que ses projets
-        // Pour les partenaires, utiliser l'endpoint spécifique s'ils ont un partner_id
-        let partnerProjects: Project[] = [];
-        
+        const allProjects = await projectsService.getActiveProjects();
+
         if (user.partner_id) {
-          console.log(`📡 Chargement des projets via l'endpoint partenaire pour partner_id: ${user.partner_id}`);
-          try {
-            partnerProjects = await projectsService.getPartnerProjects(user.partner_id);
-            console.log(`✅ Projets du partenaire chargés: ${partnerProjects.length}`);
-          } catch (error) {
-            if (isTokenExpiredError(error)) throw error;
-            console.warn("⚠️ Erreur avec l'endpoint partenaire, fallback vers l'endpoint général");
-            // Fallback vers l'endpoint général si l'endpoint partenaire échoue
-            partnerProjects = await loadProjectsWithFallback(user);
-          }
+          setProjects(allProjects.filter((p) => p.partner_id === user.partner_id));
         } else {
-          console.log("📢 Aucun partner_id trouvé, utilisation du fallback");
-          partnerProjects = await loadProjectsWithFallback(user);
+          // Le nom de l'utilisateur partenaire correspond au nom du partenaire
+          setProjects(allProjects.filter((p) => p.partner_name === user.name));
         }
-        
-        setProjects(partnerProjects);
-        
-        // Pas besoin de charger tous les partenaires
-        setPartnerNames([]); 
+        setPartnerNames([]);
       } else {
         showNotification(simpleNotificationHelpers.error(
           "Accès refusé", 
@@ -470,10 +351,18 @@ const OptimizedProjectList: React.FC = () => {
   // Fonction pour recharger les projets après clôture/réouverture
   const reloadProjects = async () => {
     try {
-      const projectsData = user?.role_id === 1
-        ? await projectsService.getAllProjects()
-        : await projectsService.getActiveProjects();
-      setProjects(projectsData);
+      if (user?.role_id === 1) {
+        // Admin : charger tous les projets
+        const projectsData = await projectsService.getAllProjects();
+        setProjects(projectsData);
+      } else if (isPartner()) {
+        const allProjects = await projectsService.getActiveProjects();
+        if (user?.partner_id) {
+          setProjects(allProjects.filter((p) => p.partner_id === user.partner_id));
+        } else {
+          setProjects(allProjects.filter((p) => p.partner_name === user?.name));
+        }
+      }
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors du rechargement des projets:", error);

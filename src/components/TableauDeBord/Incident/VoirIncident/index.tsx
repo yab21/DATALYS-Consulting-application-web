@@ -804,12 +804,9 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
                               type="button"
                               onClick={async () => {
                                 try {
-                                  console.log('🔍 [DEBUG NOTE ATTACHMENT] file_url brut:', att.file_url);
-                                  console.log('🔍 [DEBUG NOTE ATTACHMENT] file_name:', att.file_name);
-                                  console.log('🔍 [DEBUG NOTE ATTACHMENT] attachment complet:', JSON.stringify(att));
                                   await incidentFilesService.viewIncidentFile(att.file_url, att.file_name);
                                 } catch (error) {
-                                  console.error('❌ [DEBUG NOTE ATTACHMENT] Erreur ouverture fichier:', error);
+                                  console.error('Erreur ouverture fichier:', error);
                                 }
                               }}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
