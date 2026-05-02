@@ -116,18 +116,26 @@ export class AuthService {
         }
       );
 
+      console.log('🔍 [DEBUG MFA] HTTP status:', response.status);
+      console.log('🔍 [DEBUG MFA] HTTP ok:', response.ok);
+
       const result = await response.json();
+      console.log('🔍 [DEBUG MFA] Réponse JSON complète:', JSON.stringify(result));
+      console.log('🔍 [DEBUG MFA] result.status:', result.status);
+      console.log('🔍 [DEBUG MFA] result.message:', result.message);
+      console.log('🔍 [DEBUG MFA] result.remaining_attempts:', result.remaining_attempts);
 
       if (result.status === "success" && result.data) {
         // Vérification MFA réussie : stocker les données d'authentification
         this.storeAuthData(result.data);
-        
+
         return {
           status: "success",
           message: result.message,
           data: result.data,
         };
       } else {
+        console.log('🔍 [DEBUG MFA] Code incorrect/expiré, retour erreur au composant');
         return {
           status: "error",
           message: result.message || "Code MFA incorrect",
@@ -135,7 +143,8 @@ export class AuthService {
         };
       }
     } catch (error) {
-      console.error("Erreur lors de la vérification MFA:", error);
+      console.error("🔍 [DEBUG MFA] Exception attrapée:", error);
+      console.error("🔍 [DEBUG MFA] Type d'erreur:", (error as any)?.name, (error as any)?.constructor?.name);
       const message = extractBackendMessage(error);
       return {
         status: "error",

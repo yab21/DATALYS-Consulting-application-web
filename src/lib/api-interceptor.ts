@@ -52,6 +52,15 @@ class ApiInterceptor {
     statusCode?: number,
     url?: string,
   ): boolean {
+    // Exclure les endpoints d'authentification : un 401 ou message d'erreur sur ces endpoints
+    // signifie "code/identifiants incorrects", pas "session expirée"
+    if (url) {
+      const urlLower = url.toLowerCase();
+      if (urlLower.includes('/auth/verify-mfa') || urlLower.includes('/auth/login')) {
+        return false;
+      }
+    }
+
     // Messages explicites d'expiration de token
     const tokenExpiredMessages = [
       "token expiré",
@@ -275,8 +284,15 @@ class ApiInterceptor {
    */
   public async interceptResponse(response: Response): Promise<Response> {
     // Si une redirection est déjà en cours, ne pas traiter la réponse
-    if (this.redirectInProgress) {
+    // SAUF pour les endpoints d'authentification
+    const isAuthEndpoint = response.url.toLowerCase().includes('/auth/');
+    if (this.redirectInProgress && !isAuthEndpoint) {
       throw new TokenExpiredError('Redirection en cours suite à expiration de session');
+    }
+
+    // Réinitialiser l'état si un endpoint auth réussit (nouvelle connexion)
+    if (response.ok && isAuthEndpoint) {
+      this.resetState();
     }
 
     if (!response.ok) {
@@ -344,7 +360,10 @@ class ApiInterceptor {
         init?: RequestInit,
       ): Promise<Response> => {
         // Si une redirection est déjà en cours, rejeter immédiatement
-        if (self.redirectInProgress) {
+        // SAUF pour les endpoints d'authentification qui doivent toujours passer
+        const requestUrl = typeof input === "string" ? input : input.toString();
+        const isAuthEndpoint = requestUrl.toLowerCase().includes('/auth/');
+        if (self.redirectInProgress && !isAuthEndpoint) {
           throw new TokenExpiredError('Session expirée - redirection en cours');
         }
 

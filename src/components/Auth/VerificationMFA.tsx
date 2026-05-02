@@ -84,7 +84,9 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
         mfa_code: fullCode,
       };
 
+      console.log('🔍 [DEBUG MFA COMPONENT] Envoi vérification MFA...');
       const result = await AuthService.verifyMFA(request);
+      console.log('🔍 [DEBUG MFA COMPONENT] Résultat reçu:', JSON.stringify(result));
 
       if (result.status === "success" && result.data) {
         // Utiliser loginWithUserData pour finaliser la connexion
@@ -115,7 +117,8 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
     } catch (error) {
       finish();
       setIsLoading(false);
-      console.error("Erreur vérification MFA:", error);
+      console.error("🔍 [DEBUG MFA COMPONENT] Exception:", error);
+      console.error("🔍 [DEBUG MFA COMPONENT] Type:", (error as any)?.name);
       setError("Erreur de connexion. Veuillez réessayer.");
       showNotification(simpleNotificationHelpers.error(
         "Erreur de connexion",
@@ -178,9 +181,20 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && codeDigits[index] === "" && index > 0) {
-      // Si le champ est vide et qu'on appuie sur Backspace, revenir au champ précédent
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      if (codeDigits[index] !== "") {
+        // Si le champ contient un chiffre, le vider
+        const newDigits = [...codeDigits];
+        newDigits[index] = "";
+        setCodeDigits(newDigits);
+      } else if (index > 0) {
+        // Si le champ est vide, vider le précédent et y revenir
+        const newDigits = [...codeDigits];
+        newDigits[index - 1] = "";
+        setCodeDigits(newDigits);
+        inputRefs.current[index - 1]?.focus();
+      }
     } else if (e.key === "ArrowLeft" && index > 0) {
       inputRefs.current[index - 1]?.focus();
     } else if (e.key === "ArrowRight" && index < 5) {
@@ -506,7 +520,7 @@ const VerificationMFA: React.FC<VerificationMFAProps> = ({ identifier, onBack })
                           inputMode="numeric"
                           pattern="[0-9]"
                           maxLength={1}
-                         
+                          value={codeDigits[index]}
                           onChange={(e) => handleDigitChange(index, e.target.value)}
                           onKeyDown={(e) => handleKeyDown(index, e)}
                           onPaste={(e) => {
