@@ -282,16 +282,16 @@ const GestionIncidents: React.FC = () => {
         console.log("🔄 Chargement des projets...");
         let projectsList: Project[] = [];
 
-        if (isPartner() && user?.partner_id) {
+        if (isPartner()) {
           // Pour les partners, charger uniquement leurs projets
-          console.log("🤝 Chargement des projets du partner:", user.partner_id);
           const allProjects = await projectsService.getActiveProjects();
-          projectsList = allProjects.filter(
-            (project) => project.partner_id === user.partner_id,
-          );
+          if (user?.partner_id) {
+            projectsList = allProjects.filter((project) => project.partner_id === user.partner_id);
+          } else {
+            projectsList = allProjects.filter((project) => project.partner_name === user?.name);
+          }
         } else {
-          // Pour les admins et autres utilisateurs, charger tous les projets
-          console.log("👨‍💼 Chargement de tous les projets...");
+          // Pour les admins, charger tous les projets
           projectsList = await projectsService.getActiveProjects();
         }
 
@@ -473,7 +473,6 @@ const GestionIncidents: React.FC = () => {
         );
 
         setIncidents(convertedIncidents);
-        setFilteredIncidents(convertedIncidents);
       } catch (error) {
         if (isTokenExpiredError(error)) throw error;
         console.error("Erreur lors du chargement des incidents:", error);
@@ -519,10 +518,14 @@ const GestionIncidents: React.FC = () => {
   useEffect(() => {
     let filtered = incidents;
 
-    // Pour les partenaires : limiter aux incidents de leurs projets uniquement
-    if (isPartner() && projects.length > 0) {
-      const partnerProjectIds = new Set(projects.map((p) => p.id));
-      filtered = filtered.filter((i) => partnerProjectIds.has(i.project_id));
+    // Pour les partenaires : limiter aux incidents de leur partenaire ou assignés à eux
+    if (isPartner()) {
+      if (user?.partner_id) {
+        const partnerProjectIds = new Set(projects.map((p) => p.id));
+        filtered = filtered.filter((i) => partnerProjectIds.has(i.project_id) || i.user_id === user.id || !i.project_id);
+      } else {
+        filtered = filtered.filter((i) => i.partnerNom === user?.name || i.user_id === user?.id || !i.project_id);
+      }
     }
 
     // Calcul des statistiques basé sur les incidents du partenaire (avant filtres utilisateur)
@@ -1077,9 +1080,15 @@ const GestionIncidents: React.FC = () => {
         | "en_pause" =
         createForm.user_id && createForm.user_id > 0 ? "en_cours" : "nouveau";
 
+      // Pour les partenaires, auto-assigner l'incident à eux-mêmes
+      const finalUserId = isPartner() && (!createForm.user_id || createForm.user_id === 0)
+        ? user.id
+        : createForm.user_id;
+
       // Préparer les données finales avec le bon statut
       const finalCreateForm: CreateIncidentData = {
         ...createForm,
+        user_id: finalUserId,
         status: finalStatus,
       };
 
@@ -1127,7 +1136,6 @@ const GestionIncidents: React.FC = () => {
         convertApiIncidentToLocal(incident, projects, users),
       );
       setIncidents(convertedIncidents);
-      setFilteredIncidents(convertedIncidents);
 
       // Réinitialiser le formulaire et les erreurs
       setCreateFormErrors({});

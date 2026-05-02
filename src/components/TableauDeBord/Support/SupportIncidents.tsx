@@ -524,13 +524,13 @@ const SupportIncidents: React.FC = () => {
     try {
       setLoadingProjects(true);
       const allProjects = await projectsService.getActiveProjects();
-      if (isPartner() && user?.partner_id) {
-        const partnerProjects = allProjects.filter((p: Project) => p.partner_id === user.partner_id);
+      if (isPartner()) {
+        const partnerProjects = user?.partner_id
+          ? allProjects.filter((p: Project) => p.partner_id === user.partner_id)
+          : allProjects.filter((p: Project) => p.partner_name === user?.name);
         setProjects(partnerProjects);
-        console.log('📋 Projets du partenaire chargés:', partnerProjects.length);
       } else {
         setProjects(allProjects);
-        console.log('📋 Tous les projets chargés:', allProjects.length);
       }
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
@@ -589,10 +589,14 @@ const SupportIncidents: React.FC = () => {
   const filterTickets = useCallback(() => {
     let filtered = [...tickets];
 
-    // Pour les partenaires : limiter aux tickets de leurs projets uniquement
-    if (isPartner() && projects.length > 0) {
-      const partnerProjectIds = new Set(projects.map((p) => p.id));
-      filtered = filtered.filter((t) => partnerProjectIds.has(t.project_id));
+    // Pour les partenaires : limiter aux tickets de leur partenaire ou assignés à eux
+    if (isPartner()) {
+      if (user?.partner_id) {
+        const partnerProjectIds = new Set(projects.map((p) => p.id));
+        filtered = filtered.filter((t) => partnerProjectIds.has(t.project_id) || t.user_id === user.id || !t.project_id);
+      } else {
+        filtered = filtered.filter((t) => t.partnerNom === user?.name || t.user_id === user?.id || !t.project_id);
+      }
     }
 
     if (searchTerm.trim()) {
@@ -620,9 +624,13 @@ const SupportIncidents: React.FC = () => {
   const calculateStats = (): SupportStats => {
     let baseTickets = tickets;
     // Pour les partenaires : baser les stats sur leurs tickets uniquement
-    if (isPartner() && projects.length > 0) {
-      const partnerProjectIds = new Set(projects.map((p) => p.id));
-      baseTickets = tickets.filter((t) => partnerProjectIds.has(t.project_id));
+    if (isPartner()) {
+      if (user?.partner_id) {
+        const partnerProjectIds = new Set(projects.map((p) => p.id));
+        baseTickets = tickets.filter((t) => partnerProjectIds.has(t.project_id) || t.user_id === user.id || !t.project_id);
+      } else {
+        baseTickets = tickets.filter((t) => t.partnerNom === user?.name || t.user_id === user?.id || !t.project_id);
+      }
     }
     return {
       total: baseTickets.length,
@@ -661,8 +669,12 @@ const SupportIncidents: React.FC = () => {
 
     try {
       setIsCreating(true);
-      // Passer l'ID et l'email de l'utilisateur connecté depuis le contexte Auth
-      const result = await IncidentsService.createIncident(createForm, user.id, user.email);
+      // Pour les partenaires, s'assurer que user_id est défini
+      const finalForm = {
+        ...createForm,
+        user_id: isPartner() && (!createForm.user_id || createForm.user_id === 0) ? user.id : createForm.user_id,
+      };
+      const result = await IncidentsService.createIncident(finalForm, user.id, user.email);
       
       showNotification(simpleNotificationHelpers.success(
         "Succès",
