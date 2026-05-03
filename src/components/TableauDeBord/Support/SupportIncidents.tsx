@@ -1263,16 +1263,8 @@ const SupportIncidents: React.FC = () => {
                     variant="bordered"
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {isPartner() ? (
-                      <Input
-                        label="Assigné à"
-                        value={user?.name || ""}
-                        isReadOnly
-                        description="Automatiquement défini (vous)"
-                        variant="bordered"
-                      />
-                    ) : (
+                  <div className={`grid gap-4 ${isPartner() ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    {!isPartner() && (
                       <Select
                         label="Assigné à"
                         placeholder="Sélectionnez un partenaire"
@@ -1389,7 +1381,7 @@ const SupportIncidents: React.FC = () => {
                     <SelectItem key="mineur">Mineur</SelectItem>
                   </Select>
 
-                  <div className={`grid ${isAdmin() ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                  <div className="grid grid-cols-2 gap-4">
                     <Select
                       label="Priorité"
                       selectedKeys={createForm.priority ? [createForm.priority] : []}
@@ -1402,31 +1394,27 @@ const SupportIncidents: React.FC = () => {
                       <SelectItem key="P4">P4 - Très faible</SelectItem>
                     </Select>
 
-                    {isAdmin() && (
-                      <Select
-                        label="Statut"
-                        selectedKeys={createForm.status ? [createForm.status] : []}
-                        onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
-                      >
-                        <SelectItem key="nouveau">Nouveau</SelectItem>
-                        <SelectItem key="en_cours">En cours</SelectItem>
-                        <SelectItem key="en_attente">En attente</SelectItem>
-                        <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
-                        <SelectItem key="en_pause">En pause</SelectItem>
-                        <SelectItem key="resolu">Résolu</SelectItem>
-                      </Select>
-                    )}
+                    <Select
+                      label="Statut"
+                      selectedKeys={createForm.status ? [createForm.status] : ["nouveau"]}
+                      onSelectionChange={(keys) => setCreateForm(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
+                    >
+                      <SelectItem key="nouveau">Nouveau</SelectItem>
+                      <SelectItem key="en_cours">En cours</SelectItem>
+                      <SelectItem key="en_attente">En attente</SelectItem>
+                      <SelectItem key="en_arbitrage">En arbitrage</SelectItem>
+                      <SelectItem key="en_pause">En pause</SelectItem>
+                      <SelectItem key="resolu">Résolu</SelectItem>
+                    </Select>
                   </div>
 
-                  {isAdmin() && (
-                    <Textarea
-                      label="Notes de résolution (optionnel)"
-                      placeholder="Ajoutez des notes sur la résolution du ticket..."
-                      value={createForm.resolution_notes}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
-                      minRows={2}
-                    />
-                  )}
+                  <Textarea
+                    label="Notes de résolution (optionnel)"
+                    placeholder="Ajoutez des notes sur la résolution du ticket..."
+                    value={createForm.resolution_notes}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, resolution_notes: e.target.value }))}
+                    minRows={2}
+                  />
                 </div>
               </ModalBody>
               <ModalFooter>

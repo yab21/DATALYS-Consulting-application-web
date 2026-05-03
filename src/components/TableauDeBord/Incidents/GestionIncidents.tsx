@@ -452,6 +452,7 @@ const GestionIncidents: React.FC = () => {
         const response =
           await IncidentsService.getIncidentsByCriteria(criteria);
 
+
         let apiIncidents: ApiIncident[] = [];
 
         // Traitement de la réponse selon le format
