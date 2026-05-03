@@ -43,7 +43,7 @@ export interface CreateIncidentData {
   impact: string;
   domain: string;
   declarant_name: string;
-  user_id: number;
+  user_id?: number;
   project_id: number;
   assigned_to?: number;
   is_active: boolean;
@@ -221,11 +221,10 @@ export class IncidentsService {
       }
     }
     
-    // Préparer les données avec assigned_to basé sur user_id
+    // Préparer les données - assigned_to doit être explicitement fourni par l'appelant
     const processedData = {
       ...incidentData,
-      // Si assigned_to n'est pas spécifié, utiliser user_id comme valeur par défaut
-      assigned_to: incidentData.assigned_to || incidentData.user_id
+      assigned_to: incidentData.assigned_to
     };
     
     const requestBody = {

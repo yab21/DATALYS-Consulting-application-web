@@ -670,9 +670,11 @@ const SupportIncidents: React.FC = () => {
     try {
       setIsCreating(true);
       // Pour les partenaires, s'assurer que user_id est défini
+      // Pour les admins : assigned_to = expert sélectionné. Pour les partenaires : absent (undefined)
       const finalForm = {
         ...createForm,
         user_id: isPartner() && (!createForm.user_id || createForm.user_id === 0) ? user.id : createForm.user_id,
+        ...(isAdmin() && { assigned_to: createForm.user_id }),
       };
       const result = await IncidentsService.createIncident(finalForm, user.id, user.email);
       

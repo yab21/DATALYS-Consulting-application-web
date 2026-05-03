@@ -518,16 +518,6 @@ const GestionIncidents: React.FC = () => {
   useEffect(() => {
     let filtered = incidents;
 
-    // Pour les partenaires : limiter aux incidents de leur partenaire ou assignés à eux
-    if (isPartner()) {
-      if (user?.partner_id) {
-        const partnerProjectIds = new Set(projects.map((p) => p.id));
-        filtered = filtered.filter((i) => partnerProjectIds.has(i.project_id) || i.user_id === user.id || !i.project_id);
-      } else {
-        filtered = filtered.filter((i) => i.partnerNom === user?.name || i.user_id === user?.id || !i.project_id);
-      }
-    }
-
     // Calcul des statistiques basé sur les incidents du partenaire (avant filtres utilisateur)
     const baseIncidents = filtered;
     const newStats: IncidentStats = {
@@ -1086,25 +1076,14 @@ const GestionIncidents: React.FC = () => {
         : createForm.user_id;
 
       // Préparer les données finales avec le bon statut
+      // Pour les admins : assigned_to = expert sélectionné. Pour les partenaires : absent (undefined)
       const finalCreateForm: CreateIncidentData = {
         ...createForm,
         user_id: finalUserId,
         status: finalStatus,
+        ...(isAdmin() && { assigned_to: createForm.user_id }),
       };
 
-      console.log(
-        "📝 Statut final assigné:",
-        finalStatus,
-        createForm.user_id > 0 ? "(expert assigné)" : "(pas d'expert assigné)",
-      );
-      console.log(
-        "📝 User ID final:",
-        finalCreateForm.user_id,
-        "Partner ID:",
-        user?.partner_id,
-      );
-      console.log("📝 Données finales de création:", finalCreateForm);
-      console.log("📝 User complet:", user);
 
       const result = await IncidentsService.createIncident(
         finalCreateForm,
