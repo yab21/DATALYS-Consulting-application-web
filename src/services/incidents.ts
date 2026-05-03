@@ -456,7 +456,7 @@ export class IncidentsService {
     try {
       const formData = new FormData();
       formData.append('content', content);
-      formData.append('user', JSON.stringify({ id: userId }));
+      formData.append('user', String(userId));
       files.forEach(file => formData.append('files[]', file));
 
       const headers: Record<string, string> = {};

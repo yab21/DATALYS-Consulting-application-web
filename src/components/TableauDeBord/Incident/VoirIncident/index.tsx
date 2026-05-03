@@ -777,7 +777,7 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
                             {note.attachments.length}
                           </span>
                         )}
-                        {user?.role_id === 1 && (
+                        {user && (
                           <Button
                             isIconOnly
                             size="sm"
