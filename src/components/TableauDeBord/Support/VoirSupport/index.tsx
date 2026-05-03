@@ -223,12 +223,7 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
               <span className="text-sm text-gray-500 dark:text-gray-400">Niveau</span>
               <Chip color={getPriorityColor(ticket.priority)} variant="flat" size="sm">{ticket.priority}</Chip>
             </div>
-            {ticket.priority_label && (
-              <div className="px-4 py-2.5 flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Label</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{ticket.priority_label}</span>
-              </div>
-            )}
+
             <div className="px-4 py-2.5 flex items-center justify-between">
               <span className="text-sm text-gray-500 dark:text-gray-400">Impact</span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">{ticket.impact_label || ticket.impact || 'N/A'}</span>

@@ -337,12 +337,7 @@ const VoirIncident: React.FC<VoirIncidentProps> = ({ id }) => {
               <span className="text-sm text-gray-500 dark:text-gray-400">Niveau</span>
               <Chip color={getPriorityColor(incident.priority)} variant="flat" size="sm">{incident.priority}</Chip>
             </div>
-            {incident.priority_label && (
-              <div className="px-4 py-2.5 flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Label</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{incident.priority_label}</span>
-              </div>
-            )}
+
             <div className="px-4 py-2.5 flex items-center justify-between">
               <span className="text-sm text-gray-500 dark:text-gray-400">Impact</span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">{incident.impact_label || incident.impact || 'N/A'}</span>
