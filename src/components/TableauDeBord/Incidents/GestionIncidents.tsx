@@ -1720,7 +1720,7 @@ const GestionIncidents: React.FC = () => {
                             )}
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            #{incident.incident_number}
+                            {incident.incident_number}
                           </p>
                           <p className="line-clamp-1 text-sm text-gray-500 dark:text-gray-400">
                             {incident.description}
@@ -1967,7 +1967,7 @@ const GestionIncidents: React.FC = () => {
                             )}
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            #{incident.incident_number}
+                            {incident.incident_number}
                           </p>
                           <p className="line-clamp-1 text-sm text-gray-500 dark:text-gray-400">
                             {incident.description}

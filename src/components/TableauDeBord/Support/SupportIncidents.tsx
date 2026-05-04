@@ -29,6 +29,7 @@ import {
 } from "@heroui/react";
 import { motion } from "framer-motion";
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Search,
   MoreVertical,
@@ -44,7 +45,8 @@ import {
   RefreshCw,
   Trash2,
   Settings,
-  Headphones
+  Headphones,
+  User as UserIcon,
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -589,16 +591,6 @@ const SupportIncidents: React.FC = () => {
   const filterTickets = useCallback(() => {
     let filtered = [...tickets];
 
-    // Pour les partenaires : limiter aux tickets de leur partenaire ou assignés à eux
-    if (isPartner()) {
-      if (user?.partner_id) {
-        const partnerProjectIds = new Set(projects.map((p) => p.id));
-        filtered = filtered.filter((t) => partnerProjectIds.has(t.project_id) || t.user_id === user.id || !t.project_id);
-      } else {
-        filtered = filtered.filter((t) => t.partnerNom === user?.name || t.user_id === user?.id || !t.project_id);
-      }
-    }
-
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(ticket =>
@@ -618,20 +610,11 @@ const SupportIncidents: React.FC = () => {
     }
 
     setFilteredTickets(filtered);
-  }, [tickets, searchTerm, filterStatus, filterPriority, isPartner, projects]);
+  }, [tickets, searchTerm, filterStatus, filterPriority]);
 
-  // Calcul des statistiques basé sur les tickets visibles par l'utilisateur
+  // Calcul des statistiques
   const calculateStats = (): SupportStats => {
-    let baseTickets = tickets;
-    // Pour les partenaires : baser les stats sur leurs tickets uniquement
-    if (isPartner()) {
-      if (user?.partner_id) {
-        const partnerProjectIds = new Set(projects.map((p) => p.id));
-        baseTickets = tickets.filter((t) => partnerProjectIds.has(t.project_id) || t.user_id === user.id || !t.project_id);
-      } else {
-        baseTickets = tickets.filter((t) => t.partnerNom === user?.name || t.user_id === user?.id || !t.project_id);
-      }
-    }
+    const baseTickets = tickets;
     return {
       total: baseTickets.length,
       nouveaux: baseTickets.filter(t => t.statut === 'nouveau').length,
@@ -1070,133 +1053,162 @@ const SupportIncidents: React.FC = () => {
       {/* Tableau des tickets */}
       <Card>
         <CardBody className="p-0">
-          <Table aria-label="Liste des tickets de support">
-            <TableHeader>
-              <TableColumn>NUMÉRO</TableColumn>
-              <TableColumn>TITRE</TableColumn>
-              <TableColumn>CLIENT</TableColumn>
-              <TableColumn>PRIORITÉ</TableColumn>
-              <TableColumn>STATUT</TableColumn>
-              <TableColumn>CATÉGORIE</TableColumn>
-              <TableColumn>IMPACT</TableColumn>
-              <TableColumn>DOMAINE</TableColumn>
-              <TableColumn>DÉLAIS DE TRAITEMENT</TableColumn>
-              <TableColumn>CRÉÉ LE</TableColumn>
-              <TableColumn>ACTIONS</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="Aucun ticket de support trouvé">
-              {filteredTickets.map((ticket) => (
-                <TableRow key={ticket.id}>
-                  <TableCell>
-                    <code className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                      {ticket.incident_number}
-                    </code>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p 
-                        className="font-medium cursor-pointer hover:text-[#4ba9b7] transition-colors"
-                        onClick={() => handleViewTicket(ticket.id)}
-                      >
-                        {ticket.titre}
-                      </p>
-                      {ticket.description && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                          {ticket.description.substring(0, 100)}
-                          {ticket.description.length > 100 ? '...' : ''}
+          {!isPartner() ? (
+            /* Vue admin */
+            <Table aria-label="Liste des tickets de support">
+              <TableHeader>
+                <TableColumn>SUPPORT</TableColumn>
+                <TableColumn>PRIORITÉ</TableColumn>
+                <TableColumn>STATUT</TableColumn>
+                <TableColumn>CATÉGORIE</TableColumn>
+                <TableColumn>IMPACT</TableColumn>
+                <TableColumn>DOMAINE</TableColumn>
+                <TableColumn>ASSIGNÉ À</TableColumn>
+                <TableColumn>PARTENAIRE</TableColumn>
+                <TableColumn>DÉLAIS DE TRAITEMENT</TableColumn>
+                <TableColumn>CRÉÉ</TableColumn>
+                <TableColumn align="center">ACTIONS</TableColumn>
+              </TableHeader>
+              <TableBody emptyContent="Aucun ticket de support trouvé">
+                {filteredTickets.map((ticket) => (
+                  <TableRow key={ticket.id}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/tableaudebord/support/${ticket.id}`}
+                            className="font-semibold text-gray-900 dark:text-white hover:text-[#4ba9b7] transition-colors duration-200 cursor-pointer"
+                          >
+                            {ticket.titre}
+                          </Link>
+                          {!ticket.is_read && (
+                            <div className="h-2 w-2 rounded-full bg-blue-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {ticket.incident_number}
                         </p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar
-                        size="sm"
-                        name={ticket.declarant_name}
-                        className="w-8 h-8"
-                      />
-                      <span className="text-sm">{ticket.declarant_name || 'Client'}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color={getPriorityColor(ticket.priorite)}
-                      startContent={<span>{getPriorityIcon(ticket.priorite)}</span>}
-                    >
-                      {ticket.priorite}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color={getStatusColor(ticket.statut)}
-                      startContent={getStatusIcon(ticket.statut)}
-                    >
-                      {ticket.statut.replace("_", " ")}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{ticket.category || "N/A"}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{ticket.impact || "N/A"}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{ticket.domain || "N/A"}</span>
-                  </TableCell>
-                  <TableCell>
-                    <SLACountdown ticket={ticket} />
-                  </TableCell>
-                  <TableCell>
-                    {formatDate(ticket.dateCreation)}
-                  </TableCell>
-                  <TableCell>
-                    {!isPartner() && (
+                        <p className="line-clamp-1 text-sm text-gray-500 dark:text-gray-400">
+                          {ticket.description}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="sm" variant="flat" color={getPriorityColor(ticket.priorite)} startContent={<span>{getPriorityIcon(ticket.priorite)}</span>}>
+                        {ticket.priorite}
+                      </Chip>
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="sm" variant="flat" color={getStatusColor(ticket.statut)} startContent={getStatusIcon(ticket.statut)}>
+                        {ticket.statut.replace("_", " ")}
+                      </Chip>
+                    </TableCell>
+                    <TableCell><span className="text-sm">{ticket.category || "N/A"}</span></TableCell>
+                    <TableCell><span className="text-sm">{ticket.impact || "N/A"}</span></TableCell>
+                    <TableCell><span className="text-sm">{ticket.domain || "N/A"}</span></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {ticket.assigneA ? (
+                          <>
+                            <UserIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                            <span className="text-sm">{ticket.assigneA}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-gray-400">Non assigné</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {ticket.partnerLogo && (
+                          <Avatar src={ticket.partnerLogo} alt={ticket.partnerNom} size="sm" className="h-6 w-6" />
+                        )}
+                        <span className="text-sm">{ticket.partnerNom || "N/A"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell><SLACountdown ticket={ticket} /></TableCell>
+                    <TableCell>{formatDate(ticket.dateCreation)}</TableCell>
+                    <TableCell>
                       <Dropdown>
                         <DropdownTrigger>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                          >
+                          <Button isIconOnly size="sm" variant="light">
                             <MoreVertical size={16} />
                           </Button>
                         </DropdownTrigger>
                         <DropdownMenu>
-                          <DropdownItem
-                            key="manage"
-                            startContent={<Settings size={14} />}
-                            onPress={() => handleManageTicket(ticket.id)}
-                          >
-                            Gérer
-                          </DropdownItem>
-                          <DropdownItem
-                            key="edit"
-                            startContent={<Edit size={14} />}
-                            onClick={() => openEditModal(ticket)}
-                          >
-                            Modifier
-                          </DropdownItem>
-                          <DropdownItem
-                            key="delete"
-                            className="text-danger"
-                            color="danger"
-                            startContent={<Trash2 size={14} />}
-                            onClick={() => openDeleteModal(ticket)}
-                          >
-                            Supprimer
-                          </DropdownItem>
+                          <DropdownItem key="manage" startContent={<Settings size={14} />} onPress={() => handleManageTicket(ticket.id)}>Gérer</DropdownItem>
+                          <DropdownItem key="edit" startContent={<Edit size={14} />} onClick={() => openEditModal(ticket)}>Modifier</DropdownItem>
+                          <DropdownItem key="delete" className="text-danger" color="danger" startContent={<Trash2 size={14} />} onClick={() => openDeleteModal(ticket)}>Supprimer</DropdownItem>
                         </DropdownMenu>
                       </Dropdown>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            /* Vue partner */
+            <Table aria-label="Liste des tickets de support">
+              <TableHeader>
+                <TableColumn>SUPPORT</TableColumn>
+                <TableColumn>PRIORITÉ</TableColumn>
+                <TableColumn>STATUT</TableColumn>
+                <TableColumn>CATÉGORIE</TableColumn>
+                <TableColumn>IMPACT</TableColumn>
+                <TableColumn>DOMAINE</TableColumn>
+                <TableColumn>DÉLAIS DE TRAITEMENT</TableColumn>
+                <TableColumn>CRÉÉ</TableColumn>
+                <TableColumn align="center">ACTIONS</TableColumn>
+              </TableHeader>
+              <TableBody emptyContent="Aucun ticket de support trouvé">
+                {filteredTickets.map((ticket) => (
+                  <TableRow key={ticket.id}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/tableaudebord/support/${ticket.id}`}
+                            className="font-semibold text-gray-900 dark:text-white hover:text-[#4ba9b7] transition-colors duration-200 cursor-pointer"
+                          >
+                            {ticket.titre}
+                          </Link>
+                          {!ticket.is_read && (
+                            <div className="h-2 w-2 rounded-full bg-blue-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {ticket.incident_number}
+                        </p>
+                        <p className="line-clamp-1 text-sm text-gray-500 dark:text-gray-400">
+                          {ticket.description}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="sm" variant="flat" color={getPriorityColor(ticket.priorite)} startContent={<span>{getPriorityIcon(ticket.priorite)}</span>}>
+                        {ticket.priorite}
+                      </Chip>
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="sm" variant="flat" color={getStatusColor(ticket.statut)} startContent={getStatusIcon(ticket.statut)}>
+                        {ticket.statut.replace("_", " ")}
+                      </Chip>
+                    </TableCell>
+                    <TableCell><span className="text-sm">{ticket.category || "N/A"}</span></TableCell>
+                    <TableCell><span className="text-sm">{ticket.impact || "N/A"}</span></TableCell>
+                    <TableCell><span className="text-sm">{ticket.domain || "N/A"}</span></TableCell>
+                    <TableCell><SLACountdown ticket={ticket} /></TableCell>
+                    <TableCell>{formatDate(ticket.dateCreation)}</TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="flat" color="primary" onPress={() => handleManageTicket(ticket.id)}>
+                        Voir
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardBody>
       </Card>
 
