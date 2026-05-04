@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Tab, Tabs, Spinner, Chip, Button } from '@heroui/react';
+import { Tab, Tabs, Spinner, Chip, Button, Avatar, Textarea } from '@heroui/react';
 import {
   ArrowLeft,
   Headphones,
@@ -17,16 +17,23 @@ import {
   ChevronUp,
   Info,
   Dot,
-  AlertTriangle
+  AlertTriangle,
+  Edit3,
+  Plus,
+  Trash2,
+  Paperclip,
+  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
-import { IncidentsService, Incident } from '@/services/incidents';
+import { IncidentsService, Incident, type IncidentNote } from '@/services/incidents';
+import { incidentFilesService } from '@/services/incident-files';
 import { projectsService, Project } from '@/services/projects';
 import { UsersService, User } from '@/services/users';
 import { extractBackendMessage } from '@/lib/error-handler';
 import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { useAuth } from '@/context/AuthContext';
+import { useSimpleNotifications, simpleNotificationHelpers } from '@/components/UI/Notifications/SimpleNotificationSystem';
 import LoadingState from "@/components/UI/Loading/LoadingState";
 import IncidentFiles from "../../Incidents/Voir/IncidentFiles";
 import { AnimatePresence, motion } from 'framer-motion';
@@ -37,7 +44,8 @@ interface VoirSupportProps {
 
 const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
   const router = useRouter();
-  const { isPartner } = useAuth();
+  const { user, isPartner } = useAuth();
+  const { showNotification } = useSimpleNotifications();
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState<Incident | null>(null);
   const [project, setProject] = useState<Project | null>(null);
@@ -45,6 +53,12 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [loadingProject, setLoadingProject] = useState(false);
+  const [notes, setNotes] = useState<IncidentNote[]>([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [noteFiles, setNoteFiles] = useState<File[]>([]);
+  const [submittingNote, setSubmittingNote] = useState(false);
+  const [deletingNoteId, setDeletingNoteId] = useState<number | null>(null);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -73,13 +87,14 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
       if (!ticketData) { setError('Ticket de support non trouvé'); return; }
       setTicket(ticketData);
 
-      // Chargement eager du projet et de l'agent assigné
+      // Chargement eager du projet, de l'agent assigné et des notes
       if (ticketData.project_id) {
         loadProjectData(ticketData);
       }
       if (ticketData.user_id) {
         loadAssignedUser(ticketData);
       }
+      loadNotes(ticketData.id);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       setError(extractBackendMessage(error));
@@ -100,6 +115,53 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
       if (isTokenExpiredError(error)) throw error;
     } finally {
       setLoadingProject(false);
+    }
+  };
+
+  const loadNotes = async (overrideId?: number) => {
+    const id = overrideId ?? ticketId;
+    try {
+      setLoadingNotes(true);
+      const data = await IncidentsService.getNotes(id);
+      setNotes(data);
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      setNotes([]);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!user || !newNoteContent.trim()) return;
+    try {
+      setSubmittingNote(true);
+      const result = await IncidentsService.addNote(ticketId, newNoteContent.trim(), user.id, noteFiles);
+      setNewNoteContent('');
+      setNoteFiles([]);
+      await loadNotes();
+      const msg = result?.message || extractBackendMessage(result) || 'Note ajoutée';
+      showNotification(simpleNotificationHelpers.success('Succès', msg));
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      showNotification(simpleNotificationHelpers.error('Erreur', extractBackendMessage(error)));
+    } finally {
+      setSubmittingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: number) => {
+    try {
+      setDeletingNoteId(noteId);
+      const result = await IncidentsService.deleteNote(ticketId, noteId, user!.id, user!.email);
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+      const msg = result?.message || extractBackendMessage(result) || 'Note supprimée';
+      showNotification(simpleNotificationHelpers.success('Succès', msg));
+    } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
+      showNotification(simpleNotificationHelpers.error('Erreur', extractBackendMessage(error)));
+    } finally {
+      setDeletingNoteId(null);
     }
   };
 
@@ -614,6 +676,135 @@ const VoirSupport: React.FC<VoirSupportProps> = ({ id }) => {
                     )}
                   </div>
                 </div>
+              </div>
+            </Tab>
+
+            {/* Notes de résolution */}
+            <Tab
+              key="notes"
+              title={<div className="flex items-center gap-2"><Edit3 className="w-4 h-4" /><span>Notes de résolution</span></div>}
+            >
+              <div className="p-6 sm:p-8 space-y-4">
+                {/* Formulaire d'ajout */}
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
+                  <Textarea
+                    placeholder="Ajouter une note de résolution..."
+                    value={newNoteContent}
+                    onValueChange={setNewNoteContent}
+                    minRows={3}
+                    maxRows={8}
+                    className="w-full"
+                    classNames={{ input: 'text-sm' }}
+                  />
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <label className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                      <Paperclip className="w-4 h-4" />
+                      <span>Joindre des fichiers</span>
+                      <input
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            setNoteFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                    </label>
+                    <Button
+                      color="primary"
+                      size="sm"
+                      startContent={<Plus className="h-4 w-4" />}
+                      onPress={handleAddNote}
+                      isLoading={submittingNote}
+                      isDisabled={!newNoteContent.trim()}
+                    >
+                      {submittingNote ? 'Ajout...' : 'Ajouter la note'}
+                    </Button>
+                  </div>
+                  {noteFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {noteFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-300">
+                          <Paperclip className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate max-w-[160px]">{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setNoteFiles(prev => prev.filter((_, i) => i !== idx))}
+                            className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Liste des notes */}
+                {loadingNotes ? (
+                  <div className="flex justify-center py-8">
+                    <Spinner size="sm" />
+                  </div>
+                ) : notes.length === 0 ? (
+                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                    <Edit3 className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">Aucune note pour ce ticket</p>
+                  </div>
+                ) : (
+                  <div className="overflow-y-auto max-h-[520px] space-y-3 pr-1">
+                    {[...notes].reverse().map((note) => (
+                      <div key={note.id} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Avatar size="sm" name={note.author_name} className="bg-primary text-white flex-shrink-0" />
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{note.author_name}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">{formatDate(note.created_at)}</span>
+                          {note.attachments && note.attachments.length > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                              <Paperclip className="w-3 h-3" />
+                              {note.attachments.length}
+                            </span>
+                          )}
+                          {user && (
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="light"
+                              color="danger"
+                              isLoading={deletingNoteId === note.id}
+                              onPress={() => handleDeleteNote(note.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap pl-9">{note.content}</p>
+                        {note.attachments && note.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pl-9 pt-1">
+                            {note.attachments.map((att) => (
+                              <button
+                                key={att.id}
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await incidentFilesService.viewIncidentFile(att.file_url, att.file_name);
+                                  } catch (error) {
+                                    console.error('Erreur ouverture fichier:', error);
+                                  }
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                              >
+                                <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span className="truncate max-w-[200px]">{att.file_name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </Tab>
 
