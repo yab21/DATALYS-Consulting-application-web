@@ -3,6 +3,7 @@
 import { buildApiUrl, getDefaultHeaders } from "@/lib/api-config";
 import { SecureStorage } from "@/lib/secure-storage";
 import { extractBackendMessage } from "@/lib/error-handler";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 export interface Project {
   id: number;
@@ -167,6 +168,7 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des projets:", error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -212,6 +214,7 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération des projets du partenaire:", error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -260,6 +263,7 @@ export class ProjectsService {
       }
     } catch (error) {
       console.error("❌ Erreur lors de la récupération de tous les projets:", error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -326,6 +330,7 @@ export class ProjectsService {
         "❌ Erreur lors de la récupération des projets du partenaire:",
         error,
       );
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -383,6 +388,7 @@ export class ProjectsService {
         "❌ Erreur lors de la récupération des projets par partenaire:",
         error,
       );
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -444,6 +450,7 @@ export class ProjectsService {
       return result;
     } catch (error) {
       console.error("❌ Erreur lors de la création du projet:", error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -510,6 +517,7 @@ export class ProjectsService {
       return result;
     } catch (error) {
       console.error("❌ Erreur lors de la mise à jour du projet:", error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -568,6 +576,7 @@ export class ProjectsService {
       return result;
     } catch (error) {
       console.error("❌ Erreur lors de la suppression du projet:", error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -618,6 +627,7 @@ export class ProjectsService {
         "❌ Erreur lors de la récupération des partenaires:",
         error,
       );
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -673,6 +683,7 @@ export class ProjectsService {
         "❌ Erreur lors de la récupération de la map des partenaires:",
         error,
       );
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -726,6 +737,7 @@ export class ProjectsService {
       return result;
     } catch (error) {
       console.error("❌ Erreur lors de la clôture du projet:", error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -777,6 +789,7 @@ export class ProjectsService {
       return result;
     } catch (error) {
       console.error("❌ Erreur lors de la réouverture du projet:", error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

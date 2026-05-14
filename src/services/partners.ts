@@ -2,6 +2,7 @@
 import { SecureStorage } from '@/lib/secure-storage';
 import { extractBackendMessage } from '@/lib/error-handler';
 import { API_CONFIG } from '@/lib/api-config';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 export interface Partner {
   id: number;
   name: string;
@@ -146,6 +147,7 @@ class PartnersService {
       
       return result;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la connexion:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -221,6 +223,7 @@ class PartnersService {
       
       return finalResult;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la création du partenaire:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -265,6 +268,7 @@ class PartnersService {
       }
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de l\'upload du logo:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -300,6 +304,7 @@ class PartnersService {
         throw new Error(result.message?.message || 'Erreur lors de la mise à jour de l\'URL du logo');
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la mise à jour de l\'URL du logo:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -337,6 +342,7 @@ class PartnersService {
         throw new Error(result.message?.message || 'Erreur lors de la suppression du logo');
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la suppression du logo:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -479,6 +485,7 @@ class PartnersService {
         count: result.count
       };
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la récupération des partenaires:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -495,6 +502,7 @@ class PartnersService {
       
       return result.items || [];
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération de tous les partenaires:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -510,6 +518,7 @@ class PartnersService {
       
       return result.items || [];
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la recherche de partenaires:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -525,6 +534,7 @@ class PartnersService {
       
       return result.items || [];
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération des partenaires actifs:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -582,6 +592,7 @@ class PartnersService {
         logoUploadError
       };
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la modification du partenaire:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -663,6 +674,7 @@ class PartnersService {
       console.log('✅ Partenaire supprimé avec succès');
       return result;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ Erreur lors de la suppression du partenaire:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -680,6 +692,7 @@ class PartnersService {
       const partner = result.items?.find(p => p.id === partnerId);
       return partner || null;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération du partenaire par ID:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);

@@ -4,7 +4,7 @@
  */
 
 import { extractBackendMessage } from '@/lib/error-handler';
-
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import { SecureStorage } from '@/lib/secure-storage';
 
 // Interfaces TypeScript
@@ -140,6 +140,7 @@ class ProjectPartnersService {
 
       return data;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       console.error(`Erreur dans makeRequest (${endpoint}):`, {
         error,
@@ -242,6 +243,7 @@ class ProjectPartnersService {
 
       return result;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ [PROJECT_PARTNERS] - Erreur dans getProjectPartners:', {
         projectId,
         userId,
@@ -304,6 +306,7 @@ class ProjectPartnersService {
 
       return partners;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération des partenaires disponibles:', error);
       return [];
     }
@@ -434,6 +437,7 @@ class ProjectPartnersService {
         created_at: user.created_at || new Date().toISOString()
       };
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération des détails du partenaire:', error);
       return null;
     }
@@ -466,6 +470,7 @@ class ProjectPartnersService {
 
       return stats;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du calcul des statistiques:', error);
       return {
         totalPartners: 0,
@@ -487,6 +492,7 @@ class ProjectPartnersService {
       const partners = await this.getProjectPartners(projectId, userId);
       return partners.some(p => p.user_id === partnerId);
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la vérification de l\'assignation:', error);
       return false;
     }

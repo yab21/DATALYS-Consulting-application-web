@@ -1,7 +1,7 @@
 "use client";
 
 import { API_CONFIG } from '@/lib/api-config';
-import { securedFetch } from '@/lib/api-interceptor';
+import { securedFetch, isTokenExpiredError } from '@/lib/api-interceptor';
 import { extractBackendMessage } from '@/lib/error-handler';
 
 // Types pour les réponses des APIs dashboard
@@ -220,6 +220,7 @@ class DashboardService {
       return data;
     } catch (error) {
       console.error('Erreur lors de la récupération du dashboard partenaire:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -252,6 +253,7 @@ class DashboardService {
       return data;
     } catch (error) {
       console.error('Erreur lors de la récupération des projets partenaire:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -284,6 +286,7 @@ class DashboardService {
       return data;
     } catch (error) {
       console.error('Erreur lors de la récupération des incidents partenaire:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -323,6 +326,7 @@ class DashboardService {
       return data;
     } catch (error) {
       console.error('❌ Erreur lors de la récupération du dashboard admin:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

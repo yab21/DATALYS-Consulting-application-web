@@ -1,6 +1,6 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders } from '@/lib/api-config';
 import { extractBackendMessage } from '@/lib/error-handler';
-import { securedFetch } from '@/lib/api-interceptor';
+import { securedFetch, isTokenExpiredError } from '@/lib/api-interceptor';
 import { UsersService } from '@/services/users';
 import { SecureStorage } from '@/lib/secure-storage';
 
@@ -187,6 +187,7 @@ export class IncidentsService {
 
       return data;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -322,6 +323,7 @@ export class IncidentsService {
       return stats;
     } catch (error) {
       console.error('Erreur lors du calcul des statistiques:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -424,6 +426,7 @@ export class IncidentsService {
       return blob;
     } catch (error) {
       console.error('❌ Erreur lors de l\'export des incidents:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -482,6 +485,7 @@ export class IncidentsService {
         return {};
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -523,6 +527,7 @@ export class IncidentsService {
       return incident || null;
     } catch (error) {
       console.error('Erreur lors de la récupération de l\'incident par ID:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

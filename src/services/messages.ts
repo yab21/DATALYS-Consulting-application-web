@@ -1,6 +1,7 @@
 import { API_CONFIG } from "@/lib/api-config";
 import { SecureStorage } from "@/lib/secure-storage";
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 
 // Types pour le système de messages
 export interface Message {
@@ -198,6 +199,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur envoi message:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -226,6 +228,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur envoi notification:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -262,6 +265,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération notifications:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -292,6 +296,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur marquage notification:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -324,6 +329,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération messages:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -359,6 +365,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération conversation:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -396,6 +403,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur création support:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -435,6 +443,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération support:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -473,6 +482,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération mes tickets support:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -505,6 +515,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur recherche communications:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -541,6 +552,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur mise à jour statut:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -586,6 +598,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur envoi message incident:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -621,6 +634,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération messages incident:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -656,6 +670,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération conversations expert:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -678,6 +693,7 @@ class MessagesService {
       });
     } catch (error) {
       console.error('Erreur réponse incident:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -706,6 +722,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur broadcast message:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -734,6 +751,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('Erreur réponse message:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -767,6 +785,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération threads:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -791,6 +810,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur récupération conversation par ticket:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -824,6 +844,7 @@ class MessagesService {
       return await response.json();
     } catch (error) {
       console.error('Erreur envoi message aux admins:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -869,6 +890,7 @@ class MessagesService {
       };
     } catch (error) {
       console.error('💥 Erreur suppression message:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

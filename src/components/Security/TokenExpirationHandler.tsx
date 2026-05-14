@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { setRedirectCallback, setupGlobalInterceptor, resetInterceptorState } from '@/lib/api-interceptor';
 import { useSimpleNotifications } from '@/components/UI/Notifications/SimpleNotificationSystem';
-import { ERROR_MESSAGES } from '@/lib/error-messages';
 
 interface TokenExpirationHandlerProps {
   children: ReactNode;
@@ -41,14 +40,6 @@ export const TokenExpirationHandler: React.FC<TokenExpirationHandlerProps> = ({ 
         logout();
       }
 
-      // Notification rapide à l'utilisateur
-      showNotification({
-        type: "warning",
-        title: "Session expirée",
-        message: ERROR_MESSAGES.AUTH.SESSION_EXPIRED || "Votre session a expiré. Veuillez vous reconnecter.",
-        duration: 3000,
-      });
-
       // Redirection IMMÉDIATE
       router.push('/connexion?expired=true');
     };
@@ -79,7 +70,7 @@ export const TokenExpirationHandler: React.FC<TokenExpirationHandlerProps> = ({ 
 
     // Cleanup function
     return () => {
-      setRedirectCallback(() => {});
+      setRedirectCallback(null);
       redirectingRef.current = false;
       if (typeof window !== 'undefined') {
         window.removeEventListener('token-expired', handleTokenExpiredEvent as EventListener);

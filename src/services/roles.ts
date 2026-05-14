@@ -1,5 +1,6 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders } from '@/lib/api-config';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 
 export interface Role {
   id: number;
@@ -55,6 +56,7 @@ export class RolesService {
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

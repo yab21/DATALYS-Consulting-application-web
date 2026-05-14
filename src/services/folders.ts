@@ -5,6 +5,7 @@
 
 import { SecureStorage } from '@/lib/secure-storage';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 
 // Interfaces TypeScript
 export interface Folder {
@@ -117,6 +118,7 @@ class FoldersService {
 
       return data;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       // Améliorer le logging d'erreur pour debug
       console.error(`Erreur dans makeRequest (${endpoint}):`, error);
       console.error('Type d\'erreur:', typeof error);
@@ -463,6 +465,7 @@ class FoldersService {
 
       return data;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'upload de fichiers:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);
@@ -529,6 +532,7 @@ class FoldersService {
 
       return data;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'upload du fichier ZIP:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);

@@ -1,6 +1,7 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders, ApiResponse } from '@/lib/api-config';
 import { UserRole } from '@/lib/permissions';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 
 export interface User {
   id: number;
@@ -80,6 +81,7 @@ export class UsersService {
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -176,6 +178,7 @@ export class UsersService {
       return user || null;
     } catch (error) {
       console.error('Erreur lors de la récupération de l\'utilisateur par ID:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

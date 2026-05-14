@@ -1,6 +1,7 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders, ApiResponse } from '@/lib/api-config';
 import { extractBackendMessage } from '@/lib/error-handler';
 import { SecureStorage } from '@/lib/secure-storage';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 
 export interface SearchFilters {
   query?: string;
@@ -153,6 +154,7 @@ class SearchService {
       };
     } catch (error) {
       console.error('Erreur lors de la recherche globale:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -247,6 +249,7 @@ class SearchService {
       };
     } catch (error) {
       console.error(`Erreur lors de la recherche ${entityType}:`, error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -343,6 +346,7 @@ class SearchService {
       localStorage.setItem('datalys-saved-searches', JSON.stringify(savedSearches));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de la recherche:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
@@ -366,6 +370,7 @@ class SearchService {
       localStorage.setItem('datalys-saved-searches', JSON.stringify(filteredSearches));
     } catch (error) {
       console.error('Erreur lors de la suppression de la recherche sauvegardée:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }

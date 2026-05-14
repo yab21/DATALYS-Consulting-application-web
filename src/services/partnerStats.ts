@@ -1,6 +1,7 @@
 // Service pour récupérer les statistiques des partenaires
 import { buildApiUrl, getDefaultHeaders } from "@/lib/api-config";
 import { SecureStorage } from "@/lib/secure-storage";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 export interface PartnerIncident {
   id: number;

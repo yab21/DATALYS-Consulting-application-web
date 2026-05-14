@@ -1,6 +1,7 @@
 import React from 'react';
 import { AdvancedNotification } from '@/components/UI/Notifications/AdvancedNotificationProvider';
 import { buildApiUrl, getDefaultHeaders } from '@/lib/api-config';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 
 export interface NotificationSubscription {
   id: string;

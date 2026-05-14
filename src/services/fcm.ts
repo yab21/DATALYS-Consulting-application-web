@@ -13,6 +13,7 @@ import {
   FCM_TOKEN_ENDPOINT,
 } from "@/config/firebase";
 import { SecureStorage } from "@/lib/secure-storage";
+import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 class FCMService {
   private messaging: Messaging | null = null;
@@ -229,6 +230,7 @@ class FCMService {
         return false;
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors de l'envoi du token au serveur:", error);
       return false;
     }
@@ -360,6 +362,7 @@ class FCMService {
 
       return true;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors de la suppression du token:", error);
       return false;
     }
@@ -386,6 +389,7 @@ class FCMService {
 
       return newToken;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors de la régénération forcée:", error);
       return null;
     }

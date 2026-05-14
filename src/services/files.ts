@@ -5,6 +5,7 @@
 
 import { SecureStorage } from '@/lib/secure-storage';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 
 // Interfaces TypeScript
 export interface ProjectFile {
@@ -100,6 +101,7 @@ class FilesService {
 
       return data;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       // Améliorer le logging d'erreur pour debug
       console.error(`Erreur dans makeRequest (${endpoint}):`, error);
       console.error('Type d\'erreur:', typeof error);
@@ -267,6 +269,7 @@ class FilesService {
                 reject(new Error(response.message || 'Erreur lors de l\'upload'));
               }
             } catch (error) {
+              if (isTokenExpiredError(error)) { reject(error); return; }
               const message = extractBackendMessage(error);
               reject(new Error(message));
             }
@@ -291,6 +294,7 @@ class FilesService {
         uploadedFiles.push(uploadedFile);
         
       } catch (error) {
+        if (isTokenExpiredError(error)) throw error;
         console.error(`Erreur lors de l'upload de ${file.name}:`, error);
         const message = extractBackendMessage(error);
         throw new Error(message);
@@ -329,6 +333,7 @@ class FilesService {
       window.URL.revokeObjectURL(downloadUrl);
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors du téléchargement:', error);
       const message = extractBackendMessage(error);
       throw new Error(message);

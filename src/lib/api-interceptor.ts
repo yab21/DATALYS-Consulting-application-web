@@ -40,7 +40,7 @@ class ApiInterceptor {
   /**
    * Définir le callback de redirection
    */
-  public setRedirectCallback(callback: () => void) {
+  public setRedirectCallback(callback: (() => void) | null) {
     this.redirectCallback = callback;
   }
 
@@ -509,7 +509,7 @@ export const securedFetch = (url: string, options?: RequestInit) =>
 export const handleApiError = (error: any) =>
   apiInterceptor.handleApiError(error);
 
-export const setRedirectCallback = (callback: () => void) =>
+export const setRedirectCallback = (callback: (() => void) | null) =>
   apiInterceptor.setRedirectCallback(callback);
 
 export const setupGlobalInterceptor = () =>

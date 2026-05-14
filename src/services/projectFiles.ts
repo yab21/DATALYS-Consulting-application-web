@@ -2,7 +2,7 @@
  * Service pour la gestion des fichiers et dossiers de projets
  */
 
-import { securedFetch } from '@/lib/api-interceptor';
+import { securedFetch, isTokenExpiredError } from '@/lib/api-interceptor';
 import { SecureStorage } from '@/lib/secure-storage';
 
 // Configuration de base - utilise toujours l'URL de production
@@ -282,6 +282,7 @@ export class ProjectFilesService {
         return [];
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération des dossiers:', error);
       return [];
     }
@@ -372,6 +373,7 @@ export class ProjectFilesService {
 
       return [];
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération des fichiers:', error);
       return [];
     }
@@ -449,6 +451,7 @@ export class ProjectFilesService {
         return null;
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('🔍 [DEBUG SERVICE] - Exception lors de la création du dossier:', error);
       // Re-lancer les erreurs de permissions pour qu'elles soient gérées par l'interface
       if (error instanceof Error && error.message.includes('permissions')) {
@@ -510,6 +513,7 @@ export class ProjectFilesService {
         return null;
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Exception lors de la création du dossier (fallback):', error);
       return null;
     }
@@ -558,6 +562,7 @@ export class ProjectFilesService {
         return false;
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la mise à jour du dossier:', error);
       return false;
     }
@@ -593,6 +598,7 @@ export class ProjectFilesService {
         return false;
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la suppression du dossier:', error);
       return false;
     }
@@ -633,6 +639,7 @@ export class ProjectFilesService {
       return stats;
 
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('❌ [DEBUG STATS] - Erreur lors du calcul des statistiques:', {
         folderId,
         projectId,
@@ -708,6 +715,7 @@ export class ProjectFilesService {
       return await uploadPromise;
       
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'upload du fichier:', error);
       return false;
     }
@@ -737,6 +745,7 @@ export class ProjectFilesService {
         return false;
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la suppression du fichier:', error);
       return false;
     }
@@ -879,6 +888,7 @@ export class ProjectFilesService {
 
       return [];
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération des dossiers du partenaire:', error);
       return [];
     }
@@ -909,6 +919,7 @@ export class ProjectFilesService {
 
       return [];
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la récupération des fichiers du partenaire:', error);
       return [];
     }
@@ -971,6 +982,7 @@ export class ProjectFilesService {
 
       return null;
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la création du dossier partenaire:', error);
       return null;
     }
@@ -1012,6 +1024,7 @@ export class ProjectFilesService {
         return false;
       }
     } catch (error) {
+      if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'upload du fichier partenaire:', error);
       return false;
     }

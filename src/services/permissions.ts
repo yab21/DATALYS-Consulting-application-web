@@ -1,5 +1,6 @@
 import { API_CONFIG, buildApiUrl, getDefaultHeaders } from '@/lib/api-config';
 import { extractBackendMessage } from '@/lib/error-handler';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 
 export interface UserProjectPermission {
   id: number;
@@ -63,6 +64,7 @@ export class PermissionsService {
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      if (isTokenExpiredError(error)) throw error;
       const message = extractBackendMessage(error);
       throw new Error(message);
     }
