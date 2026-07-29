@@ -502,6 +502,13 @@ class ApiInterceptor {
 // Instance singleton
 export const apiInterceptor = ApiInterceptor.getInstance();
 
+// Initialisation automatique côté client — au niveau module, pas dans un useEffect.
+// Garantit que window.fetch est patché avant que tout composant React
+// puisse faire un appel réseau, indépendamment de l'ordre des useEffect.
+if (typeof window !== 'undefined') {
+  apiInterceptor.setupGlobalInterceptor();
+}
+
 // Export des fonctions utilitaires
 export const securedFetch = (url: string, options?: RequestInit) =>
   apiInterceptor.securedFetch(url, options);
