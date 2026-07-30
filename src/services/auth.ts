@@ -292,7 +292,7 @@ export class AuthService {
   }
 
   /**
-   * Vérifier si l'utilisateur est connecté
+   * Vérifier si l'utilisateur est connecté et que son token n'est pas expiré
    */
   static isAuthenticated(): boolean {
     if (typeof window === "undefined") return false;
@@ -300,7 +300,33 @@ export class AuthService {
     const token = SecureStorage.getItem("authToken");
     const userInfo = SecureStorage.getItem("userInfo");
 
-    return !!(token && userInfo);
+    if (!token || !userInfo) return false;
+
+    // Vérifier l'expiration du token JWT côté client
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        // Token malformé — nettoyer et déconnecter
+        SecureStorage.removeItem('authToken');
+        SecureStorage.removeItem('userInfo');
+        return false;
+      }
+
+      const payload = JSON.parse(atob(parts[1]));
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+
+      if (payload.exp && payload.exp < nowInSeconds) {
+        // Token expiré — nettoyer le storage immédiatement
+        SecureStorage.removeItem('authToken');
+        SecureStorage.removeItem('userInfo');
+        return false;
+      }
+    } catch {
+      // Erreur de décodage — considérer comme non authentifié
+      return false;
+    }
+
+    return true;
   }
 
   /**
