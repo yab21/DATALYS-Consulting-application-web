@@ -156,7 +156,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       
       {/* Container des notifications */}
       <div className={`fixed z-[9999] max-w-sm w-full ${getPositionClasses()}`}>
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           {notifications.map((notification) => (
             <NotificationCard
               key={notification.id}

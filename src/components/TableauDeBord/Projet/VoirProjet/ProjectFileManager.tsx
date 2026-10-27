@@ -283,7 +283,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
           return fileFolderId === currentFolderId;
         })
         .map(file => ({
-          id: `temp-${file.id || Date.now()}-${Math.random()}`,
+          id: file.id ? `temp-${file.id}` : `temp-${file.name}-${file.folder_id ?? "root"}`,
           name: file.original_name || file.name,
           type: 'file' as const,
           size: file.size || 0,
@@ -407,7 +407,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       setNewFolderName('');
       setNewFolderDescription('');
       onCreateFolderClose();
-      loadFilesAndFolders();
+      setTimeout(() => loadFilesAndFolders(), 300);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de la création du dossier:', error);
@@ -556,7 +556,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       setUploadingFiles([]);
       setUploadProgress(0);
       onUploadClose();
-      loadFilesAndFolders();
+      setTimeout(() => loadFilesAndFolders(), 300);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       console.error('Erreur lors de l\'upload:', error);
@@ -881,7 +881,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                   ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
                   : "space-y-2"
               )}>
-                <AnimatePresence mode="popLayout">
+                <AnimatePresence>
                   {filteredAndSortedItems.map((item, index) => (
                     <motion.div
                       key={item.id}
@@ -1256,7 +1256,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                 <h4 className="font-medium">Fichiers sélectionnés :</h4>
                 <div className="max-h-40 overflow-y-auto space-y-2">
                   {uploadingFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                    <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                       <div className="flex items-center gap-2">
                         {getFileIconComponent('file', file.name)}
                         <span className="text-sm font-medium">{file.name}</span>

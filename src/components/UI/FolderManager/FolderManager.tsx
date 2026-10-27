@@ -566,7 +566,7 @@ const FolderManager: React.FC<FolderManagerProps> = ({
               <Breadcrumbs size="lg" className="hidden sm:flex">
                 {breadcrumbPath.map((path, index) => (
                   <BreadcrumbItem
-                    key={index}
+                    key={path.id ?? 'root'}
                     onPress={() => handleBreadcrumbClick(index)}
                     className="cursor-pointer hover:text-primary"
                   >

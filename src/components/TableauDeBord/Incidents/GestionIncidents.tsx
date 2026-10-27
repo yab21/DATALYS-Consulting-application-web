@@ -903,7 +903,6 @@ const GestionIncidents: React.FC = () => {
       // Fermer le modal et réinitialiser
       setShowReopenModal(false);
       setReopenReason("");
-      setSelectedIncident(null);
 
       // Recharger la liste des incidents
       await refreshIncidents();
@@ -961,7 +960,6 @@ const GestionIncidents: React.FC = () => {
       // Fermer le modal et réinitialiser
       setShowPauseModal(false);
       setPauseMotif("");
-      setSelectedIncident(null);
 
       // Recharger la liste des incidents
       await refreshIncidents();
@@ -1199,7 +1197,6 @@ const GestionIncidents: React.FC = () => {
       );
 
       setShowEditModal(false);
-      setSelectedIncident(null);
       setEditFormErrors({});
       const successMessage =
         extractBackendMessage(result) || result?.message ;
@@ -1236,7 +1233,6 @@ const GestionIncidents: React.FC = () => {
       );
 
       setShowDeleteModal(false);
-      setSelectedIncident(null);
       const successMessage =
         extractBackendMessage(result) || result?.message ;
       showNotification(
@@ -3299,7 +3295,6 @@ const GestionIncidents: React.FC = () => {
         onClose={() => {
           setShowReopenModal(false);
           setReopenReason("");
-          setSelectedIncident(null);
         }}
         size="lg"
         classNames={{
@@ -3349,7 +3344,6 @@ const GestionIncidents: React.FC = () => {
               onPress={() => {
                 setShowReopenModal(false);
                 setReopenReason("");
-                setSelectedIncident(null);
               }}
             >
               Annuler
@@ -3372,7 +3366,6 @@ const GestionIncidents: React.FC = () => {
         onClose={() => {
           setShowPauseModal(false);
           setPauseMotif("");
-          setSelectedIncident(null);
         }}
         size="lg"
         classNames={{
@@ -3421,7 +3414,6 @@ const GestionIncidents: React.FC = () => {
               onPress={() => {
                 setShowPauseModal(false);
                 setPauseMotif("");
-                setSelectedIncident(null);
               }}
             >
               Annuler
@@ -3444,7 +3436,6 @@ const GestionIncidents: React.FC = () => {
           isOpen={showFilesModal}
           onClose={() => {
             setShowFilesModal(false);
-            setSelectedIncident(null);
           }}
           incidentId={parseInt(selectedIncident.id)}
           incidentTitle={`#${selectedIncident.incident_number} - ${selectedIncident.titre}`}

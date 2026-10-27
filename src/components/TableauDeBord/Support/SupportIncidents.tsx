@@ -700,7 +700,6 @@ const SupportIncidents: React.FC = () => {
       ));
       
       setShowEditModal(false);
-      setSelectedTicket(null);
       await loadData();
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
@@ -733,7 +732,6 @@ const SupportIncidents: React.FC = () => {
       ));
       
       setShowDeleteModal(false);
-      setSelectedTicket(null);
       await loadData();
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;

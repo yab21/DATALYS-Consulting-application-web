@@ -812,7 +812,7 @@ const IncidentFiles: React.FC<IncidentFilesProps> = ({ incidentId }) => {
           <ModalBody>
             <div className="space-y-4">
               {selectedFiles && Array.from(selectedFiles).map((file, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   {getFileIcon(file.type, "sm")}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{file.name}</p>

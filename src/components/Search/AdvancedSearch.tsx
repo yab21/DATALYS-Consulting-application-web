@@ -255,7 +255,7 @@ export default function AdvancedSearch({
                 }}
               >
                 {availableEntityTypes.map((type) => (
-                  <SelectItem key={type.key}>
+                  <SelectItem key={type.key} textValue={type.label}>
                     <div className="flex items-center gap-2">
                       <type.icon className="w-4 h-4" />
                       {type.label}

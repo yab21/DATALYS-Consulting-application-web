@@ -1001,7 +1001,7 @@ const TablePartner: React.FC = () => {
         isOpen={modalState.isOpen}
         type={modalState.type}
         partner={modalState.partner}
-        onClose={() => setModalState({ isOpen: false, type: null, partner: null })}
+        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
         onRefresh={loadPartners}
         onSuccess={handleModalSuccess}
         onError={handleModalError}

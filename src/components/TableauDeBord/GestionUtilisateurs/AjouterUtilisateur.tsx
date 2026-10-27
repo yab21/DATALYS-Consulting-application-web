@@ -472,7 +472,7 @@ const AjouterUtilisateur: React.FC = () => {
                   startContent={<Users className="h-4 w-4 text-gray-400" />}
                 >
                   {partners.map((partner) => (
-                    <SelectItem key={partner.id.toString()}>
+                    <SelectItem key={partner.id.toString()} textValue={`${partner.name} (${partner.email})`}>
                       {partner.name} {partner.email && `(${partner.email})`}
                     </SelectItem>
                   ))}

@@ -420,7 +420,7 @@ const AjouterPartenaire: React.FC = () => {
                         className="max-h-60 overflow-auto"
                       >
                         {COUNTRY_CODES.map((country) => (
-                          <DropdownItem key={country.code}>
+                          <DropdownItem key={country.code} textValue={`${country.code} - ${country.name}`}>
                             {country.flag} {country.code} - {country.name}
                           </DropdownItem>
                         ))}

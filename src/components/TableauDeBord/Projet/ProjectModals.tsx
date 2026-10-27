@@ -156,8 +156,8 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
       
       if (result) {
         onSuccess?.(extractBackendMessage(result));
-        onRefresh();
         onClose();
+        setTimeout(() => onRefresh(), 300);
       } else {
         onError?.(extractBackendMessage(result));
       }
@@ -181,8 +181,8 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
       
       if (result) {
         onSuccess?.(extractBackendMessage(result));
-        onRefresh();
         onClose();
+        setTimeout(() => onRefresh(), 300);
       } else {
         onError?.(extractBackendMessage(result));
       }
@@ -225,8 +225,8 @@ const ProjectModals: React.FC<ProjectModalsProps> = ({
       
       if (result) {
         onSuccess?.(extractBackendMessage(result));
-        onRefresh();
         onClose();
+        setTimeout(() => onRefresh(), 300);
         // Réinitialiser le formulaire
         setCreateForm({
           title: '',

@@ -89,7 +89,7 @@ const NotificationContainer: React.FC = () => {
 
   return (
     <div className="fixed top-4 right-4 z-[9999] max-w-sm space-y-3">
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence>
         {notifications.map((notification) => (
           <NotificationItem
             key={notification.id}
@@ -158,7 +158,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClo
 
   return (
     <motion.div
-      layout
+      
       initial={{ opacity: 0, x: 300, scale: 0.8 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 300, scale: 0.8, transition: { duration: 0.2 } }}

@@ -179,6 +179,12 @@ const ModernDashboard: React.FC = () => {
   // États pour la pagination des tables
   const [partnersPage, setPartnersPage] = useState(1);
   const partnersPerPage = 8;
+
+  // Logos en erreur de chargement (fallback React, jamais de mutation DOM)
+  const [logoErrors, setLogoErrors] = useState<Set<string>>(new Set());
+  const handleLogoError = useCallback((partnerId: string | number) => {
+    setLogoErrors(prev => new Set(prev).add(String(partnerId)));
+  }, []);
   
 
 
@@ -1053,17 +1059,13 @@ const ModernDashboard: React.FC = () => {
                         <TableRow key={partner.partner_id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              {fixImageUrl(partner.logo_url) ? (
+                              {fixImageUrl(partner.logo_url) && !logoErrors.has(String(partner.partner_id)) ? (
                                 <div className="w-12 h-12 rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center p-1 shadow-sm flex-shrink-0">
                                   <img
                                     src={fixImageUrl(partner.logo_url)!}
                                     alt={`Logo ${partner.partner_name}`}
                                     className="w-full h-full object-contain"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                      (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-bold text-white">${partner.partner_name?.charAt(0) || 'P'}</span>`;
-                                      (e.target as HTMLImageElement).parentElement!.className = 'w-12 h-12 rounded-md bg-[#4ba9b7] flex items-center justify-center flex-shrink-0';
-                                    }}
+                                    onError={() => handleLogoError(partner.partner_id)}
                                   />
                                 </div>
                               ) : (

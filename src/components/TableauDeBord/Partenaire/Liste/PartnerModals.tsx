@@ -298,8 +298,8 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
           // Log warning au lieu d'une notification d'erreur pour les problèmes de logo
           console.warn('⚠️ Problème logo:', result.logoUploadError);
         }
-        onRefresh();
         onClose();
+        setTimeout(() => onRefresh(), 300);
       } else {
         onError?.(extractBackendMessage(result) || result.message?.message);
       }
@@ -324,8 +324,8 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
       if (result.code === 200 || result.code === 201) {
         const successMessage = extractBackendMessage(result) || result.message?.message;
         onSuccess?.(successMessage);
-        onRefresh();
         onClose();
+        setTimeout(() => onRefresh(), 300);
       } else {
         onError?.(extractBackendMessage(result) || result.message?.message);
       }
@@ -369,8 +369,8 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
           // Utiliser warning au lieu d'error pour les problèmes de logo
           console.warn('⚠️ Problème logo:', result.logoUploadError);
         }
-        onRefresh();
         onClose();
+        setTimeout(() => onRefresh(), 300);
         // Réinitialiser le formulaire
         setCreateForm({
           name: '',
@@ -702,7 +702,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   }}
                 >
                   {COUNTRY_CODES.map((country) => (
-                    <SelectItem key={country.code}>
+                    <SelectItem key={country.code} textValue={`${country.code} (${country.name})`}>
                       <div className="flex items-center gap-2">
                         <span>{country.flag}</span>
                         <span>{country.code}</span>
@@ -961,7 +961,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   }}
                 >
                   {COUNTRY_CODES.map((country) => (
-                    <SelectItem key={country.code}>
+                    <SelectItem key={country.code} textValue={`${country.code} (${country.name})`}>
                       <div className="flex items-center gap-2">
                         <span>{country.flag}</span>
                         <span>{country.code}</span>

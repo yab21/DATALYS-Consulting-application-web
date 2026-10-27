@@ -800,7 +800,7 @@ const ProjectFilesModal: React.FC<ProjectFilesModalProps> = ({
               >
                 {breadcrumbPath.map((item, index) => (
                   <BreadcrumbItem
-                    key={index}
+                    key={item.id ?? 'root'}
                     onPress={() => navigateToBreadcrumb(index)}
                     className={`${index === breadcrumbPath.length - 1 ? "text-[#4ba9b7] font-medium" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white cursor-pointer"}`}
                   >

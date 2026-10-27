@@ -463,7 +463,7 @@ const IncidentFilesModal: React.FC<IncidentFilesModalProps> = ({
               </p>
               
               {uploadFiles.map((file, index) => (
-                <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div key={`${file.name}-${file.size}-${file.lastModified}`} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{file.name}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">

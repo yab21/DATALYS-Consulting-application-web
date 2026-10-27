@@ -103,8 +103,9 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
 
   const handleFileUploaded = (uploadResponse: any) => {
     if (uploadResponse.files && Array.isArray(uploadResponse.files)) {
-      const newFiles = uploadResponse.files.map((file: any) => ({
-        id: `temp-${Date.now()}-${Math.random()}`,
+      const uploadBatchId = Date.now();
+      const newFiles = uploadResponse.files.map((file: any, index: number) => ({
+        id: `temp-upload-${uploadBatchId}-${index}`,
         name: file.name,
         type: 'file',
         path: file.path,
@@ -131,7 +132,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
     } else if (uploadResponse.status === 'success' && uploadResponse.data?.name) {
       const fileData = uploadResponse.data;
       const newFile = {
-        id: fileData.id || `temp-${Date.now()}-${Math.random()}`,
+        id: fileData.id || `temp-upload-${Date.now()}`,
         name: fileData.name,
         type: 'file',
         file_url: fileData.file_url,

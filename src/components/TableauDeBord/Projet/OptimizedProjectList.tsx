@@ -876,7 +876,7 @@ const OptimizedProjectList: React.FC = () => {
         isOpen={modalState.isOpen}
         type={modalState.type}
         project={modalState.project}
-        onClose={() => setModalState({ isOpen: false, type: null, project: null })}
+        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
         onRefresh={loadInitialData}
         onSuccess={handleModalSuccess}
         onError={handleModalError}
@@ -887,7 +887,7 @@ const OptimizedProjectList: React.FC = () => {
         <ProjectFilesModal
           project={filesModalState.project}
           isOpen={filesModalState.isOpen}
-          onClose={() => setFilesModalState({ isOpen: false, project: null })}
+          onClose={() => setFilesModalState(prev => ({ ...prev, isOpen: false }))}
         />
       )}
 
