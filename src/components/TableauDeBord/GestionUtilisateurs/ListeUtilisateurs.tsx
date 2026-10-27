@@ -214,10 +214,10 @@ const ListeUtilisateurs: React.FC = () => {
   };
 
   // Recharger les données
-  const loadUsers = async () => {
+  const loadUsers = async (silent = false) => {
     if (!isAuthenticated || !isAdmin()) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const response = await UsersService.getUsersByCriteria();
       
@@ -277,8 +277,38 @@ const ListeUtilisateurs: React.FC = () => {
     });
   };
 
+  // Les modals restent montés pendant le chargement (squelette) pour ne pas
+  // interrompre leur animation de sortie (sinon NotFoundError insertBefore)
+  // Modals
+  const userModals = (
+  <>
+  {/* Modals */}
+  <UserModals
+    isOpen={modalState.isOpen}
+    type={modalState.type}
+    user={modalState.user}
+    onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+    onRefresh={() => loadUsers(true)}
+    onSuccess={handleModalSuccess}
+    onError={handleModalError}
+  />
+  
+  {/* Modal de création d'utilisateur */}
+  <CreateUserModal
+    isOpen={showCreateModal}
+    onClose={() => setShowCreateModal(false)}
+    onUserCreated={() => {
+      setShowCreateModal(false);
+      loadUsers(true);
+    }}
+  />
+  </>
+  );
+
   if (loading) {
     return (
+      <>
+      {userModals}
       <div className="space-y-6">
         {/* Header skeleton */}
         <div className="flex justify-between items-start">
@@ -346,6 +376,7 @@ const ListeUtilisateurs: React.FC = () => {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
@@ -536,7 +567,7 @@ const ListeUtilisateurs: React.FC = () => {
             <Button
               variant="light"
               startContent={<RefreshCw className="h-4 w-4" />}
-              onPress={loadUsers}
+              onPress={() => loadUsers()}
               size="sm"
             >
               Actualiser
@@ -708,26 +739,7 @@ const ListeUtilisateurs: React.FC = () => {
         </Table>
       </motion.div>
 
-      {/* Modals */}
-      <UserModals
-        isOpen={modalState.isOpen}
-        type={modalState.type}
-        user={modalState.user}
-        onClose={() => setModalState({ isOpen: false, type: null, user: null })}
-        onRefresh={loadUsers}
-        onSuccess={handleModalSuccess}
-        onError={handleModalError}
-      />
-      
-      {/* Modal de création d'utilisateur */}
-      <CreateUserModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onUserCreated={() => {
-          loadUsers();
-          setShowCreateModal(false);
-        }}
-      />
+      {userModals}
     </div>
   );
 };

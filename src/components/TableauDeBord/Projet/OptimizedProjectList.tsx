@@ -159,7 +159,7 @@ const OptimizedProjectList: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedPartner]);
 
-  const loadInitialData = async () => {
+  const loadInitialData = async (silent = false) => {
     // Éviter les appels multiples
     if (isLoadingData) {
       console.log("⚠️ Chargement déjà en cours, abandon de l'appel");
@@ -168,7 +168,7 @@ const OptimizedProjectList: React.FC = () => {
 
     try {
       setIsLoadingData(true);
-      setLoading(true);
+      if (!silent) setLoading(true);
       
       // Vérifier les permissions avant de charger les données
       if (!user) {
@@ -448,8 +448,141 @@ const OptimizedProjectList: React.FC = () => {
     }
   };
 
+  // Les modals restent montés pendant le chargement (squelette) pour ne pas
+  // interrompre leur animation de sortie (sinon NotFoundError insertBefore)
+  // Modals
+  const pageModals = (
+  <>
+  <ProjectModals
+    isOpen={modalState.isOpen}
+    type={modalState.type}
+    project={modalState.project}
+    onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+    onRefresh={() => loadInitialData(true)}
+    onSuccess={handleModalSuccess}
+    onError={handleModalError}
+  />
+
+  {/* Modal de gestion des fichiers */}
+  {filesModalState.project && (
+    <ProjectFilesModal
+      project={filesModalState.project}
+      isOpen={filesModalState.isOpen}
+      onClose={() => setFilesModalState(prev => ({ ...prev, isOpen: false }))}
+    />
+  )}
+
+  {/* Modal de clôture du projet */}
+  <Modal
+    isOpen={showCloseModal}
+    onClose={() => {
+      setShowCloseModal(false);
+      setClosureReason("");
+      setSelectedProjectForAction(null);
+    }}
+    size="lg"
+  >
+    <ModalContent>
+      <ModalHeader>
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-danger/10 p-2">
+            <Lock className="h-5 w-5 text-danger" />
+          </div>
+          <h3 className="text-xl font-bold">Clôturer le projet</h3>
+        </div>
+      </ModalHeader>
+      <ModalBody>
+        <div className="space-y-4">
+          <p className="text-gray-600 dark:text-gray-400">
+            Vous êtes sur le point de clôturer le projet{" "}
+            <span className="font-semibold">{selectedProjectForAction?.title}</span>.
+          </p>
+          <Textarea
+            label="Raison de la clôture"
+            placeholder="Décrivez pourquoi vous souhaitez clôturer ce projet..."
+            value={closureReason}
+            onChange={(e) => setClosureReason(e.target.value)}
+            minRows={3}
+            isRequired
+          />
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          variant="light"
+          onPress={() => {
+            setShowCloseModal(false);
+            setClosureReason("");
+            setSelectedProjectForAction(null);
+          }}
+        >
+          Annuler
+        </Button>
+        <Button
+          color="danger"
+          startContent={<Lock className="h-4 w-4" />}
+          onPress={handleCloseProject}
+          isDisabled={!closureReason.trim()}
+          isLoading={isClosing}
+        >
+          Clôturer
+        </Button>
+      </ModalFooter>
+    </ModalContent>
+  </Modal>
+
+  {/* Modal de réouverture du projet */}
+  <Modal
+    isOpen={showReopenModal}
+    onClose={() => {
+      setShowReopenModal(false);
+      setSelectedProjectForAction(null);
+    }}
+    size="md"
+  >
+    <ModalContent>
+      <ModalHeader>
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-success/10 p-2">
+            <Unlock className="h-5 w-5 text-success" />
+          </div>
+          <h3 className="text-xl font-bold">Réouvrir le projet</h3>
+        </div>
+      </ModalHeader>
+      <ModalBody>
+        <p className="text-gray-600 dark:text-gray-400">
+          Confirmez-vous la réouverture du projet{" "}
+          <span className="font-semibold">{selectedProjectForAction?.title}</span> ?
+          Le projet redeviendra actif.
+        </p>
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          variant="light"
+          onPress={() => {
+            setShowReopenModal(false);
+            setSelectedProjectForAction(null);
+          }}
+        >
+          Annuler
+        </Button>
+        <Button
+          color="success"
+          startContent={<Unlock className="h-4 w-4" />}
+          onPress={handleReopenProject}
+          isLoading={isReopening}
+        >
+          Réouvrir
+        </Button>
+      </ModalFooter>
+    </ModalContent>
+  </Modal>
+  </>
+  );
   if (loading && projects.length === 0) {
     return (
+      <>
+      {pageModals}
       <div className="space-y-6">
         {/* Header skeleton */}
         <div className="flex justify-between items-start">
@@ -516,6 +649,7 @@ const OptimizedProjectList: React.FC = () => {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
@@ -676,7 +810,7 @@ const OptimizedProjectList: React.FC = () => {
             <Button
               variant="flat"
               isIconOnly
-              onPress={loadInitialData}
+              onPress={() => loadInitialData()}
               isLoading={loading}
               size="sm"
               className="min-h-[40px] min-w-[40px]"
@@ -871,131 +1005,7 @@ const OptimizedProjectList: React.FC = () => {
           </Table>
       </motion.div>
 
-      {/* Modals */}
-      <ProjectModals
-        isOpen={modalState.isOpen}
-        type={modalState.type}
-        project={modalState.project}
-        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
-        onRefresh={loadInitialData}
-        onSuccess={handleModalSuccess}
-        onError={handleModalError}
-      />
-
-      {/* Modal de gestion des fichiers */}
-      {filesModalState.project && (
-        <ProjectFilesModal
-          project={filesModalState.project}
-          isOpen={filesModalState.isOpen}
-          onClose={() => setFilesModalState(prev => ({ ...prev, isOpen: false }))}
-        />
-      )}
-
-      {/* Modal de clôture du projet */}
-      <Modal
-        isOpen={showCloseModal}
-        onClose={() => {
-          setShowCloseModal(false);
-          setClosureReason("");
-          setSelectedProjectForAction(null);
-        }}
-        size="lg"
-      >
-        <ModalContent>
-          <ModalHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-danger/10 p-2">
-                <Lock className="h-5 w-5 text-danger" />
-              </div>
-              <h3 className="text-xl font-bold">Clôturer le projet</h3>
-            </div>
-          </ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <p className="text-gray-600 dark:text-gray-400">
-                Vous êtes sur le point de clôturer le projet{" "}
-                <span className="font-semibold">{selectedProjectForAction?.title}</span>.
-              </p>
-              <Textarea
-                label="Raison de la clôture"
-                placeholder="Décrivez pourquoi vous souhaitez clôturer ce projet..."
-                value={closureReason}
-                onChange={(e) => setClosureReason(e.target.value)}
-                minRows={3}
-                isRequired
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="light"
-              onPress={() => {
-                setShowCloseModal(false);
-                setClosureReason("");
-                setSelectedProjectForAction(null);
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              color="danger"
-              startContent={<Lock className="h-4 w-4" />}
-              onPress={handleCloseProject}
-              isDisabled={!closureReason.trim()}
-              isLoading={isClosing}
-            >
-              Clôturer
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* Modal de réouverture du projet */}
-      <Modal
-        isOpen={showReopenModal}
-        onClose={() => {
-          setShowReopenModal(false);
-          setSelectedProjectForAction(null);
-        }}
-        size="md"
-      >
-        <ModalContent>
-          <ModalHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-success/10 p-2">
-                <Unlock className="h-5 w-5 text-success" />
-              </div>
-              <h3 className="text-xl font-bold">Réouvrir le projet</h3>
-            </div>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-gray-600 dark:text-gray-400">
-              Confirmez-vous la réouverture du projet{" "}
-              <span className="font-semibold">{selectedProjectForAction?.title}</span> ?
-              Le projet redeviendra actif.
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="light"
-              onPress={() => {
-                setShowReopenModal(false);
-                setSelectedProjectForAction(null);
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              color="success"
-              startContent={<Unlock className="h-4 w-4" />}
-              onPress={handleReopenProject}
-              isLoading={isReopening}
-            >
-              Réouvrir
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {pageModals}
     </div>
   );
 };
