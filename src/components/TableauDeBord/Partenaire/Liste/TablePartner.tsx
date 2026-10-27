@@ -336,7 +336,7 @@ const TablePartner: React.FC = () => {
   };
 
   // Chargement des données depuis l'API
-  const loadPartners = useCallback(async () => {
+  const loadPartners = useCallback(async (silent = false) => {
     // Attendre que l'authentification soit chargée
     if (authLoading) {
       return;
@@ -363,7 +363,7 @@ const TablePartner: React.FC = () => {
       return;
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
     
     try {
@@ -499,9 +499,25 @@ const TablePartner: React.FC = () => {
 
 
 
+  // Les modals restent montés pendant le chargement pour ne pas interrompre
+  // leur animation de sortie (sinon NotFoundError insertBefore)
+  const partnerModals = (
+    <PartnerModals
+      isOpen={modalState.isOpen}
+      type={modalState.type}
+      partner={modalState.partner}
+      onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+      onRefresh={() => loadPartners(true)}
+      onSuccess={handleModalSuccess}
+      onError={handleModalError}
+    />
+  );
+
   // Gestion des états de chargement et d'erreur
   if (loading) {
     return (
+      <>
+      {partnerModals}
       <div className="space-y-6">
         {/* Header skeleton */}
         <div className="flex justify-between items-start">
@@ -569,6 +585,7 @@ const TablePartner: React.FC = () => {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
@@ -997,15 +1014,7 @@ const TablePartner: React.FC = () => {
       </motion.div>
 
       {/* Modals */}
-      <PartnerModals
-        isOpen={modalState.isOpen}
-        type={modalState.type}
-        partner={modalState.partner}
-        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
-        onRefresh={loadPartners}
-        onSuccess={handleModalSuccess}
-        onError={handleModalError}
-      />
+      {partnerModals}
       
     </div>
   );
