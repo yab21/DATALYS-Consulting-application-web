@@ -1220,7 +1220,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
           <ModalBody className="space-y-4">
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {currentFolder ? (
-                <>Upload dans le dossier : <strong><span translate="no">{currentFolder.name}</span></strong></>
+                <><span>Upload dans le dossier : </span><strong><span translate="no">{currentFolder.name}</span></strong></>
               ) : (
                 <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                   <div className="flex items-start gap-3">

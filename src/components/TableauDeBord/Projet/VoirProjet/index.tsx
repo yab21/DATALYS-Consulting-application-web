@@ -12,7 +12,6 @@ import {
   Dot,
   Lock,
   Unlock,
-  XCircle,
 } from "lucide-react";
 import Breadcrumb from "@/components/TableauDeBord/Breadcrumbs/Breadcrumb";
 import { projectsService } from "@/services/projects";
@@ -98,7 +97,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
       }
     };
 
-    loadProject();
+    void loadProject();
   }, [projectId, user]);
 
   const handleFileUploaded = (uploadResponse: any) => {
@@ -155,7 +154,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
     try {
       setIsClosing(true);
       const result = await projectsService.closeProject(
-        parseInt(projectId),
+        Number.parseInt(projectId),
         closureReason.trim(),
         user.id,
         user.email,
@@ -182,7 +181,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
     try {
       setIsReopening(true);
       const result = await projectsService.reopenProject(
-        parseInt(projectId),
+        Number.parseInt(projectId),
         user.id,
         user.email,
       );
@@ -233,7 +232,34 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
     );
   }
 
-  const projectAge = Math.floor((new Date().getTime() - project.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+  const projectAge = Math.floor((Date.now() - project.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+
+  let statutBadgeClass: string;
+  if (project.statut === 'en_cours') {
+    statutBadgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400';
+  } else if (project.statut === 'cloture') {
+    statutBadgeClass = 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400';
+  } else {
+    statutBadgeClass = 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+  }
+
+  let statutDotClass: string;
+  if (project.statut === 'en_cours') {
+    statutDotClass = 'bg-emerald-500';
+  } else if (project.statut === 'cloture') {
+    statutDotClass = 'bg-red-500';
+  } else {
+    statutDotClass = 'bg-gray-400';
+  }
+
+  let statutLabel: string;
+  if (project.statut === 'en_cours') {
+    statutLabel = 'Actif';
+  } else if (project.statut === 'cloture') {
+    statutLabel = 'Clôturé';
+  } else {
+    statutLabel = 'Suspendu';
+  }
 
   return (
     <>
@@ -260,12 +286,12 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {project.intitule}
+                  <span translate="no">{project.intitule}</span>
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-1 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5" />
-                    {project.societe}
+                    <span translate="no">{project.societe}</span>
                   </span>
                   <Dot className="w-4 h-4 text-gray-300 dark:text-gray-600" />
                   <span className="flex items-center gap-1.5">
@@ -279,24 +305,16 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                   <Dot className="w-4 h-4 text-gray-300 dark:text-gray-600" />
                   <span className="flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" />
-                    {projectAge} jour{projectAge !== 1 ? 's' : ''}
+                    <span>{projectAge} jour{projectAge !== 1 ? 's' : ''}</span>
                   </span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                project.statut === 'en_cours'
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                  : project.statut === 'cloture'
-                    ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                  project.statut === 'en_cours' ? 'bg-emerald-500' : project.statut === 'cloture' ? 'bg-red-500' : 'bg-gray-400'
-                }`} />
-                {project.statut === 'en_cours' ? 'Actif' : project.statut === 'cloture' ? 'Clôturé' : 'Suspendu'}
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statutBadgeClass}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statutDotClass}`} />
+                <span>{statutLabel}</span>
               </span>
 
               {/* Boutons clôturer / réouvrir (admin uniquement) */}

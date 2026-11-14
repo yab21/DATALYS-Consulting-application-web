@@ -89,7 +89,7 @@ const SimpleNotificationContainer: React.FC = () => {
   const { notifications, hideNotification } = useSimpleNotifications();
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] max-w-sm space-y-3">
+    <div className="fixed top-4 right-4 z-[9999] max-w-sm space-y-3" translate="no">
       <AnimatePresence>
         {notifications.map((notification) => (
           <SimpleNotificationItem
