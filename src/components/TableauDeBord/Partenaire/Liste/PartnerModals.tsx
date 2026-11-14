@@ -63,6 +63,35 @@ interface CreateFormData {
   logo?: File;
 }
 
+const MAX_LOGO_WIDTH = 2000;
+
+const resizeImageIfNeeded = (file: File, maxWidth: number = MAX_LOGO_WIDTH): Promise<File> =>
+  new Promise((resolve) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      if (img.width <= maxWidth) {
+        resolve(file);
+        return;
+      }
+      const scale = maxWidth / img.width;
+      const canvas = document.createElement('canvas');
+      canvas.width = maxWidth;
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve(file); return; }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      canvas.toBlob((blob) => {
+        if (!blob) { resolve(file); return; }
+        resolve(new File([blob], file.name, { type: outputType, lastModified: Date.now() }));
+      }, outputType, 0.9);
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
+
 const fixImageUrl = (url: string | undefined): string | undefined => {
   if (!url) return url;
 
@@ -176,7 +205,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
   };
 
   // Gestion de l'upload de logo pour l'édition
-  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validation de sécurité du fichier
@@ -194,14 +223,15 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         return;
       }
 
-      setEditForm(prev => ({ ...prev, logo: file }));
+      const resizedFile = await resizeImageIfNeeded(file);
+      setEditForm(prev => ({ ...prev, logo: resizedFile }));
 
-      // Créer un aperçu
+      // Créer un aperçu à partir du fichier redimensionné
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(resizedFile);
     }
   };
 
@@ -235,7 +265,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
   };
 
   // Gestion de l'upload de logo pour la création
-  const handleCreateLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCreateLogoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validation de sécurité du fichier
@@ -253,14 +283,15 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         return;
       }
 
-      setCreateForm(prev => ({ ...prev, logo: file }));
+      const resizedFile = await resizeImageIfNeeded(file);
+      setCreateForm(prev => ({ ...prev, logo: resizedFile }));
 
-      // Créer un aperçu
+      // Créer un aperçu à partir du fichier redimensionné
       const reader = new FileReader();
       reader.onload = (e) => {
         setCreateLogoPreview(e.target?.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(resizedFile);
     }
   };
 

@@ -1220,7 +1220,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
           <ModalBody className="space-y-4">
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {currentFolder ? (
-                <>Upload dans le dossier : <strong>{currentFolder.name}</strong></>
+                <>Upload dans le dossier : <strong><span translate="no">{currentFolder.name}</span></strong></>
               ) : (
                 <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                   <div className="flex items-start gap-3">
@@ -1278,7 +1278,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
                     <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                       <div className="flex items-center gap-2">
                         {getFileIconComponent('file', file.name)}
-                        <span className="text-sm font-medium">{file.name}</span>
+                        <span className="text-sm font-medium" translate="no">{file.name}</span>
                       </div>
                       <span className="text-xs text-gray-500 dark:text-gray-400">{formatFileSize(file.size)}</span>
                     </div>
@@ -1310,7 +1310,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
               isDisabled={uploadingFiles.length === 0 || !currentFolder || isUploading}
               isLoading={isUploading}
             >
-              Upload ({uploadingFiles.length} fichier{uploadingFiles.length > 1 ? 's' : ''})
+              <span>Upload ({uploadingFiles.length} fichier{uploadingFiles.length > 1 ? 's' : ''})</span>
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -1348,7 +1348,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
               {itemToDelete && (
                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    <strong>{itemToDelete.type === 'folder' ? 'Dossier' : 'Fichier'} à supprimer :</strong> {itemToDelete.name}
+                    <strong>{itemToDelete.type === 'folder' ? 'Dossier' : 'Fichier'} à supprimer :</strong> <span translate="no">{itemToDelete.name}</span>
                   </p>
                 </div>
               )}

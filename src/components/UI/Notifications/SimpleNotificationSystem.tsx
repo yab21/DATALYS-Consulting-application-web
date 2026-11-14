@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle, 
@@ -46,7 +46,7 @@ export const SimpleNotificationProvider: React.FC<SimpleNotificationProviderProp
   const [notifications, setNotifications] = useState<SimpleNotification[]>([]);
 
   const showNotification = useCallback((notification: Omit<SimpleNotification, "id">) => {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = crypto.randomUUID();
     const newNotification: SimpleNotification = {
       ...notification,
       id,
@@ -70,13 +70,15 @@ export const SimpleNotificationProvider: React.FC<SimpleNotificationProviderProp
     setNotifications([]);
   }, []);
 
+  const contextValue = useMemo(() => ({
+    notifications,
+    showNotification,
+    hideNotification,
+    clearAllNotifications,
+  }), [notifications, showNotification, hideNotification, clearAllNotifications]);
+
   return (
-    <SimpleNotificationContext.Provider value={{
-      notifications,
-      showNotification,
-      hideNotification,
-      clearAllNotifications,
-    }}>
+    <SimpleNotificationContext.Provider value={contextValue}>
       {children}
       <SimpleNotificationContainer />
     </SimpleNotificationContext.Provider>
@@ -180,12 +182,12 @@ const SimpleNotificationItem: React.FC<SimpleNotificationItemProps> = ({ notific
           {/* Content */}
           <div className="flex-1 min-w-0">
             <h4 className={`font-medium text-sm ${config.titleClass}`}>
-              {notification.title}
+              <span>{notification.title}</span>
             </h4>
-            
+
             {notification.message && (
               <p className={`text-xs mt-1 ${config.messageClass}`}>
-                {notification.message}
+                <span>{notification.message}</span>
               </p>
             )}
           </div>
