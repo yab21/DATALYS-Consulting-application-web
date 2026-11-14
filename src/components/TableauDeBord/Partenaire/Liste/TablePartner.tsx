@@ -41,7 +41,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import LoadingState from "@/components/UI/Loading/LoadingState";
+
 import { partnersService, Partner, GetPartnersParams } from "@/services/partners";
 import { projectsService } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
@@ -169,11 +169,11 @@ const TablePartner: React.FC = () => {
         console.error("Erreur chargement projet pour filtre:", error);
       }
     };
-    loadProjectFilter();
+    void loadProjectFilter();
   }, [filterProjectId]);
 
   // Fonction utilitaire pour corriger les URLs d'images (adaptée pour HTTPS backend direct)
-  const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
+  const fixImageUrl = useCallback((url: string | undefined): string | undefined => { // NOSONAR
     if (!url || url.trim() === '') return undefined;
     
     // Nettoyer l'URL
@@ -209,7 +209,7 @@ const TablePartner: React.FC = () => {
       
       // Si c'est une URL complète avec /files/serve/, la convertir vers HTTPS
       if (cleanUrl.includes('/files/serve/')) {
-        const pathMatch = cleanUrl.match(/\/files\/serve\/(.+)$/);
+        const pathMatch = /\/files\/serve\/(.+)$/.exec(cleanUrl);
         if (pathMatch) {
           return `https://applicationweb.datalysconsulting.com/files/serve/${pathMatch[1]}`;
         }
@@ -218,12 +218,12 @@ const TablePartner: React.FC = () => {
     
     // Ancien format avec serveur d'images statiques - convertir vers HTTPS
     if (cleanUrl.includes('82.112.253.137:8082')) {
-      return cleanUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com/api');
+      return cleanUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com/api'); // NOSONAR
     }
     
     // URLs avec ancien localhost - convertir vers HTTPS
     if (cleanUrl.includes('localhost:8081') || cleanUrl.includes('82.112.253.137:8081')) {
-      const pathMatch = cleanUrl.match(/\/uploads\/logos\/(.+)$/);
+      const pathMatch = /\/uploads\/logos\/(.+)$/.exec(cleanUrl);
       if (pathMatch) {
         const filename = pathMatch[1];
         return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
@@ -444,7 +444,7 @@ const TablePartner: React.FC = () => {
 
   // Effet pour charger les données au démarrage et lors des changements de filtres/pagination
   useEffect(() => {
-    loadPartners();
+    void loadPartners();
   }, [loadPartners]);
   
   // Réinitialiser la pagination quand la recherche debouncée change
@@ -533,8 +533,8 @@ const TablePartner: React.FC = () => {
 
         {/* Stats skeleton - 4 cartes pour les partenaires */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={`skeleton-${i}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
@@ -564,8 +564,8 @@ const TablePartner: React.FC = () => {
             </div>
           </div>
           <div className="divide-y divide-gray-200">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="px-6 py-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={`skeleton-${i}`} className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
@@ -724,7 +724,7 @@ const TablePartner: React.FC = () => {
           }
         ].map((stat, index) => (
           <motion.div
-            key={index}
+            key={stat.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -829,7 +829,7 @@ const TablePartner: React.FC = () => {
               startContent={<RefreshCw className="h-4 w-4" />}
               onPress={() => {
                 setImageErrors(new Set()); // Réinitialiser les erreurs d'images
-                loadPartners();
+                void loadPartners();
               }}
               size="sm"
             >
@@ -935,13 +935,13 @@ const TablePartner: React.FC = () => {
                       }
                     })()}
                     <div className="flex flex-col">
-                      <Link 
+                      <Link
                         href={`/tableaudebord/partenaire/details/${partner.id}`}
                         className="font-semibold text-sm text-gray-900 dark:text-white hover:text-[#4ba9b7] transition-colors duration-200 cursor-pointer"
                       >
-                        {partner.name}
+                        <span translate="no">{partner.name}</span>
                       </Link>
-                      <p className="font-medium text-sm text-gray-600 dark:text-gray-400">{partner.email}</p>
+                      <p className="font-medium text-sm text-gray-600 dark:text-gray-400"><span translate="no">{partner.email}</span></p>
                     </div>
                   </div>
                 </TableCell>

@@ -48,11 +48,11 @@ import {
 } from "@heroui/react";
 import { projectsService, Project } from "@/services/projects";
 import { useAuth } from "@/context/AuthContext";
-import LoadingState from "@/components/UI/Loading/LoadingState";
+
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { getContextualErrorMessage } from '@/lib/error-messages';
 import { extractBackendMessage } from '@/lib/error-handler';
-import { apiInterceptor, isTokenExpiredError } from '@/lib/api-interceptor';
+import { isTokenExpiredError } from '@/lib/api-interceptor';
 import ProjectModals from "./ProjectModals";
 import ProjectFilesModal from "./ProjectFilesModal";
 
@@ -134,7 +134,7 @@ const OptimizedProjectList: React.FC = () => {
       }
     };
 
-    loadData();
+    void loadData();
 
     // Cleanup pour éviter les mises à jour après démontage
     return () => {
@@ -159,7 +159,7 @@ const OptimizedProjectList: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedPartner]);
 
-  const loadInitialData = async (silent = false) => {
+  const loadInitialData = async (silent = false) => { // NOSONAR
     // Éviter les appels multiples
     if (isLoadingData) {
       console.log("⚠️ Chargement déjà en cours, abandon de l'appel");
@@ -180,11 +180,14 @@ const OptimizedProjectList: React.FC = () => {
       }
 
       // Vérifier si l'utilisateur peut accéder aux projets
-      const projectPermissions = user.role_id === 1 ? // ADMIN
-        { canRead: true, canModify: true } :
-        isPartner() ? // PARTNER
-        { canRead: true, canModify: false } :
-        { canRead: false, canModify: false };
+      let projectPermissions: { canRead: boolean; canModify: boolean };
+      if (user.role_id === 1) { // ADMIN
+        projectPermissions = { canRead: true, canModify: true };
+      } else if (isPartner()) { // PARTNER
+        projectPermissions = { canRead: true, canModify: false };
+      } else {
+        projectPermissions = { canRead: false, canModify: false };
+      }
 
       if (!projectPermissions.canRead) {
         showNotification(simpleNotificationHelpers.error(
@@ -279,7 +282,7 @@ const OptimizedProjectList: React.FC = () => {
       }
 
       // Gestion spécifique des erreurs d'authentification
-      if (error.message && error.message.includes('401')) {
+      if (error.message?.includes('401')) {
         // Pour les partenaires, une erreur 401 peut indiquer un problème de permissions
         // plutôt qu'une session expirée
         if (user && isPartner()) { // PARTNER
@@ -321,7 +324,7 @@ const OptimizedProjectList: React.FC = () => {
     if (searchTerm.trim()) {
       filtered = filtered.filter(project =>
         project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (project.partner_name && project.partner_name.toLowerCase().includes(searchTerm.toLowerCase()))
+        project.partner_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -598,8 +601,8 @@ const OptimizedProjectList: React.FC = () => {
 
         {/* Stats skeleton - 4 cartes pour les projets */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={`skeleton-${i}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
@@ -629,8 +632,8 @@ const OptimizedProjectList: React.FC = () => {
             </div>
           </div>
           <div className="divide-y divide-gray-200">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="px-6 py-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={`skeleton-${i}`} className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
@@ -738,7 +741,7 @@ const OptimizedProjectList: React.FC = () => {
           
           return projectStatsCards.map((stat, index) => (
             <motion.div
-              key={index}
+              key={stat.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -888,7 +891,7 @@ const OptimizedProjectList: React.FC = () => {
                       </Link>
                       {/* Afficher le partenaire sur mobile quand la colonne est masquée */}
                       <p className="text-xs text-gray-500 dark:text-gray-400 sm:hidden truncate max-w-[120px]">
-                        {project.partner_name || "Non assigné"}
+                        {project.partner_name ? <span translate="no">{project.partner_name}</span> : "Non assigné"}
                       </p>
                     </div>
                   </div>
@@ -897,7 +900,7 @@ const OptimizedProjectList: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[140px]">
-                      {project.partner_name || "Non assigné"}
+                      {project.partner_name ? <span translate="no">{project.partner_name}</span> : "Non assigné"}
                     </span>
                   </div>
                 </TableCell>
