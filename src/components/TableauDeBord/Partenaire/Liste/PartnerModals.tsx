@@ -29,7 +29,7 @@ import {
   Globe,
   UserPlus
 } from "lucide-react";
-import { Partner, UpdatePartnerFormData, CreatePartnerData, CreatePartnerFormData, partnersService } from "@/services/partners";
+import { Partner, UpdatePartnerFormData, CreatePartnerFormData, partnersService } from "@/services/partners";
 import { useAuth } from "@/context/AuthContext";
 import { extractBackendMessage } from "@/lib/error-handler";
 import { validateFileImmediately } from '@/lib/upload-security-immediate';
@@ -62,6 +62,57 @@ interface CreateFormData {
   address: string;
   logo?: File;
 }
+
+const fixImageUrl = (url: string | undefined): string | undefined => {
+  if (!url) return url;
+
+  if (url.includes('82.112.253.137:8082/files/serve/')) {
+    return url.replace('http://82.112.253.137:8082', '/api'); // NOSONAR — pattern de remplacement, pas une URL de requête
+  }
+
+  if (url.includes('localhost:8081')) {
+    const pathMatch = /\/uploads\/logos\/(.+)$/.exec(url);
+    if (pathMatch) {
+      const filename = pathMatch[1];
+      return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+    } else {
+      return url.replace('localhost:8081', '')
+                .replace('/uploads/', `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/`);
+    }
+  }
+
+  if (url.includes('82.112.253.137:8081/uploads/') || url.includes('/uploads/')) {
+    const pathMatch = /\/uploads\/logos\/(.+)$/.exec(url);
+    if (pathMatch) {
+      const filename = pathMatch[1];
+      return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+    }
+  }
+
+  if (url.startsWith('/uploads/logos/')) {
+    const filename = url.replace('/uploads/logos/', '');
+    return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
+  }
+
+  return url;
+};
+
+const COUNTRY_CODES = [
+  { code: "+237", name: "Cameroun", flag: "🇨🇲" },
+  { code: "+33", name: "France", flag: "🇫🇷" },
+  { code: "+1", name: "États-Unis", flag: "🇺🇸" },
+  { code: "+44", name: "Royaume-Uni", flag: "🇬🇧" },
+  { code: "+49", name: "Allemagne", flag: "🇩🇪" },
+  { code: "+34", name: "Espagne", flag: "🇪🇸" },
+  { code: "+39", name: "Italie", flag: "🇮🇹" },
+  { code: "+41", name: "Suisse", flag: "🇨🇭" },
+  { code: "+32", name: "Belgique", flag: "🇧🇪" },
+  { code: "+225", name: "Côte d'Ivoire", flag: "🇨🇮" },
+  { code: "+221", name: "Sénégal", flag: "🇸🇳" },
+  { code: "+212", name: "Maroc", flag: "🇲🇦" },
+  { code: "+213", name: "Algérie", flag: "🇩🇿" },
+  { code: "+216", name: "Tunisie", flag: "🇹🇳" },
+];
 
 const PartnerModals: React.FC<PartnerModalsProps> = ({
   isOpen,
@@ -119,43 +170,8 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
     }
   }, [partner, type]);
 
-  // Fonction utilitaire pour corriger les URLs d'images
-  const fixImageUrl = (url: string | undefined): string | undefined => {
-    if (!url) return url;
-    
-    if (url.includes('82.112.253.137:8082/files/serve/')) {
-      return url.replace('http://82.112.253.137:8082', '/api');
-    }
-    
-    if (url.includes('localhost:8081')) {
-      const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
-      if (pathMatch) {
-        const filename = pathMatch[1];
-        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
-      } else {
-        return url.replace('localhost:8081', '')
-                  .replace('/uploads/', `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/`);
-      }
-    }
-    
-    if (url.includes('82.112.253.137:8081/uploads/') || url.includes('/uploads/')) {
-      const pathMatch = url.match(/\/uploads\/logos\/(.+)$/);
-      if (pathMatch) {
-        const filename = pathMatch[1];
-        return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
-      }
-    }
-    
-    if (url.startsWith('/uploads/logos/')) {
-      const filename = url.replace('/uploads/logos/', '');
-      return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${filename}`;
-    }
-    
-    return url;
-  };
-
   // Gestion des changements dans le formulaire
-  const handleEditFormChange = (field: keyof EditFormData, value: any) => {
+  const handleEditFormChange = (field: keyof EditFormData, value: EditFormData[keyof EditFormData]) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -200,7 +216,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
       if (fileInput) {
         fileInput.value = '';
       }
-    } else if (partner && partner.logo_url) {
+    } else if (partner?.logo_url) {
       // Cas 2: Supprimer le logo existant via l'API
       setDeleteLogoLoading(true);
       try {
@@ -274,21 +290,6 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         logo: editForm.logo
       };
 
-      // Si l'utilisateur a choisi de supprimer le logo existant, on n'envoie pas de logo
-      if (removeExistingLogo && !editForm.logo) {
-        // Note: L'API pourrait ne pas supporter la suppression de logo
-        // Dans ce cas, on garde le logo existant
-        console.log('⚠️ Suppression de logo demandée, mais pas encore supportée par l\'API');
-      }
-
-      console.log('🔄 Modal - Données de modification:', {
-        partnerId: partner.id,
-        partnerIdType: typeof partner.id,
-        userId: user.id,
-        updateData,
-        partner
-      });
-
       const result = await partnersService.updatePartner(partner.id, updateData, user.id);
       
       if (result.code === 200 || result.code === 201) {
@@ -340,7 +341,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
   };
 
   // Gestion des changements dans le formulaire de création
-  const handleCreateFormChange = (field: keyof CreateFormData, value: any) => {
+  const handleCreateFormChange = (field: keyof CreateFormData, value: CreateFormData[keyof CreateFormData]) => {
     setCreateForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -429,23 +430,6 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
   };
 
   // Liste des codes pays
-  const COUNTRY_CODES = [
-    { code: "+237", name: "Cameroun", flag: "🇨🇲" },
-    { code: "+33", name: "France", flag: "🇫🇷" },
-    { code: "+1", name: "États-Unis", flag: "🇺🇸" },
-    { code: "+44", name: "Royaume-Uni", flag: "🇬🇧" },
-    { code: "+49", name: "Allemagne", flag: "🇩🇪" },
-    { code: "+34", name: "Espagne", flag: "🇪🇸" },
-    { code: "+39", name: "Italie", flag: "🇮🇹" },
-    { code: "+41", name: "Suisse", flag: "🇨🇭" },
-    { code: "+32", name: "Belgique", flag: "🇧🇪" },
-    { code: "+225", name: "Côte d'Ivoire", flag: "🇨🇮" },
-    { code: "+221", name: "Sénégal", flag: "🇸🇳" },
-    { code: "+212", name: "Maroc", flag: "🇲🇦" },
-    { code: "+213", name: "Algérie", flag: "🇩🇿" },
-    { code: "+216", name: "Tunisie", flag: "🇹🇳" },
-  ];
-
   if (!partner && type !== 'create') return null;
 
   // Modal de visualisation
@@ -465,7 +449,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1 pb-4">
             <div className="flex items-center gap-4">
-              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg dark:border-gray-600 dark:bg-gray-700">
+              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-lg">
                 {partner?.logo_url ? (
                   <img
                     src={fixImageUrl(partner?.logo_url)!}
@@ -587,40 +571,52 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
             <div className="space-y-4">
               {/* Logo upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">Logo</label>
+                <label htmlFor="logo-upload" className="block text-sm font-medium mb-2">Logo</label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
-                      {logoPreview ? (
-                        <img
-                          src={logoPreview}
-                          alt="Aperçu"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : partner && partner.logo_url && fixImageUrl(partner.logo_url) && !removeExistingLogo ? (
-                        <img
-                          src={fixImageUrl(partner.logo_url)!}
-                          alt={partner?.name}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const fallback = target.parentElement?.querySelector('.fallback-logo');
-                            if (fallback) {
-                              (fallback as HTMLElement).style.display = 'flex';
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="fallback-logo absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-400"
-                        style={{ display: (logoPreview || (partner && partner.logo_url && fixImageUrl(partner.logo_url) && !removeExistingLogo)) ? 'none' : 'flex' }}
-                      >
-                        {partner ? partner?.name?.charAt(0).toUpperCase() : 'P'}
-                      </div>
-                    </div>
+                    {(() => {
+                      const hasExistingLogo = partner?.logo_url && fixImageUrl(partner.logo_url) && !removeExistingLogo;
+                      const showLogo = logoPreview || hasExistingLogo;
+                      let logoContent: React.ReactNode = null;
+                      if (logoPreview) {
+                        logoContent = (
+                          <img
+                            src={logoPreview}
+                            alt="Aperçu"
+                            className="h-full w-full object-cover"
+                          />
+                        );
+                      } else if (hasExistingLogo) {
+                        logoContent = (
+                          <img
+                            src={fixImageUrl(partner!.logo_url)!}
+                            alt={partner?.name}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = target.parentElement?.querySelector('.fallback-logo');
+                              if (fallback) {
+                                (fallback as HTMLElement).style.display = 'flex';
+                              }
+                            }}
+                          />
+                        );
+                      }
+                      return (
+                        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                          {logoContent}
+                          <div
+                            className="fallback-logo absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-400"
+                            style={{ display: showLogo ? 'none' : 'flex' }}
+                          >
+                            {partner?.name?.charAt(0).toUpperCase() ?? 'P'}
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {/* Bouton X pour supprimer le logo - positionné en dehors du container */}
-                    {(logoPreview || (partner && partner.logo_url && fixImageUrl(partner.logo_url) && !removeExistingLogo)) && (
+                    {(logoPreview || (partner?.logo_url && fixImageUrl(partner.logo_url) && !removeExistingLogo)) && (
                       <button
                         type="button"
                         onClick={handleRemoveEditLogo}
@@ -649,7 +645,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg"
                     >
                       <Upload className="h-4 w-4" />
-                      Changer le logo
+                      <span>Changer le logo</span>
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PNG, JPG jusqu'à 2MB</p>
                   </div>
@@ -677,6 +673,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                   isRequired
                 />
                 
+                <div translate="no">
                 <Select
                   label="Code pays"
                   placeholder="Sélectionner un code pays"
@@ -711,7 +708,8 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                     </SelectItem>
                   ))}
                 </Select>
-                
+                </div>
+
                 <Input
                   label="Téléphone"
                   placeholder="123456789"
@@ -748,7 +746,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               isDisabled={!isFormValid()}
               startContent={!editLoading ? <Save className="h-4 w-4" /> : undefined}
             >
-              {editLoading ? 'Modification...' : 'Modifier'}
+              <span>{editLoading ? 'Modification...' : 'Modifier'}</span>
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -824,7 +822,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               isLoading={deleteLoading}
               startContent={!deleteLoading ? <X className="h-4 w-4" /> : undefined}
             >
-              {deleteLoading ? 'Suppression...' : 'Supprimer'}
+              <span>{deleteLoading ? 'Suppression...' : 'Supprimer'}</span>
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -864,9 +862,9 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
             <div className="space-y-4">
               {/* Logo upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">Logo (optionnel)</label>
+                <label htmlFor="create-logo-upload" className="block text-sm font-medium mb-2">Logo (optionnel)</label>
                 <div className="flex items-center gap-4">
-                  <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
+                  <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
                     {createLogoPreview ? (
                       <>
                         <img
@@ -903,7 +901,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                       className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg"
                     >
                       <Upload className="h-4 w-4" />
-                      Choisir un logo
+                      <span>Choisir un logo</span>
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PNG, JPG jusqu'à 2MB</p>
                   </div>
@@ -933,7 +931,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
                 size="sm"
               />
               
-              <div className="flex gap-3">
+              <div className="flex gap-3" translate="no">
                 <Select
                   label="Code pays"
                   placeholder="Sélectionner"
@@ -1010,7 +1008,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
               isDisabled={!isCreateFormValid()}
               startContent={!createLoading ? <Save className="h-4 w-4" /> : undefined}
             >
-              {createLoading ? 'Création...' : 'Créer'}
+              <span>{createLoading ? 'Création...' : 'Créer'}</span>
             </Button>
           </ModalFooter>
         </ModalContent>
