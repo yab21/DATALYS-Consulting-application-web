@@ -207,9 +207,10 @@ class PartnersService {
           // Ne pas faire échouer toute l'opération si seulement le logo échoue
           // Le partenaire est déjà créé, on continue
         }
-      } else {
+      } else if (partnerData.logo && partnerData.logo instanceof File && !createdPartner) {
+        logoUploadError = 'Partenaire créé mais logo non uploadé : identifiant introuvable dans la réponse API. Veuillez uploader le logo depuis la page du partenaire.';
       }
-      
+
       // S'assurer que le partenaire retourné contient bien l'URL du logo mise à jour
       const finalResult = {
         ...partnerResult,

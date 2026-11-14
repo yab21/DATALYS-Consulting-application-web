@@ -296,8 +296,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         const successMessage = extractBackendMessage(result) || result.message?.message;
         onSuccess?.(successMessage);
         if (result.logoUploadError) {
-          // Log warning au lieu d'une notification d'erreur pour les problèmes de logo
-          console.warn('⚠️ Problème logo:', result.logoUploadError);
+          onError?.(`Logo non uploadé : ${result.logoUploadError}`);
         }
         onClose();
         setTimeout(() => onRefresh(), 300);
@@ -367,8 +366,7 @@ const PartnerModals: React.FC<PartnerModalsProps> = ({
         const successMessage = extractBackendMessage(result) || result.message?.message;
         onSuccess?.(successMessage);
         if (result.logoUploadError) {
-          // Utiliser warning au lieu d'error pour les problèmes de logo
-          console.warn('⚠️ Problème logo:', result.logoUploadError);
+          onError?.(`Logo non uploadé : ${result.logoUploadError}`);
         }
         onClose();
         setTimeout(() => onRefresh(), 300);
