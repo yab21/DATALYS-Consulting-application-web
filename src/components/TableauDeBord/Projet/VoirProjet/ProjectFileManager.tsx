@@ -517,16 +517,19 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
   }, [openDeleteModal]);
 
   // Upload de fichiers
-  const handleUpload = useCallback(async () => {
+  const handleUpload = useCallback(async () => { // NOSONAR — complexité justifiée : gestion d'uploads multiples avec suivi individuel des erreurs
     if (uploadingFiles.length === 0) return;
 
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      
+
+      let failedCount = 0;
+      const failedNames: string[] = [];
+
       for (let i = 0; i < uploadingFiles.length; i++) {
         const file = uploadingFiles[i];
-        
+
         const result = await projectFilesService.uploadFile( // NOSONAR — await en boucle intentionnel (upload séquentiel + progression)
           file,
           currentFolder ? Number(currentFolder.id) : 0, // folderId - 0 for root
@@ -537,9 +540,15 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
         // Progression
         const progress = ((i + 1) / uploadingFiles.length) * 100;
         setUploadProgress(progress);
-        
+
+        if (!result) {
+          failedCount++;
+          failedNames.push(file.name);
+          continue;
+        }
+
         // Notifier le parent de l'upload
-        if (onFileUpload && result) {
+        if (onFileUpload) {
           onFileUpload(result);
         }
       }
@@ -547,12 +556,27 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
       // Vider le cache des statistiques car de nouveaux fichiers ont été ajoutés
       projectFilesService.clearStatsCache();
 
-      showNotification({
-        title: 'Succès',
-        message: `${uploadingFiles.length} fichier${uploadingFiles.length > 1 ? 's' : ''} uploadé${uploadingFiles.length > 1 ? 's' : ''} avec succès`,
-        type: 'success'
-      });
-      
+      const successCount = uploadingFiles.length - failedCount;
+      if (failedCount === uploadingFiles.length) {
+        showNotification({
+          title: 'Erreur upload',
+          message: `Aucun fichier n'a pu être uploadé. Fichiers rejetés : ${failedNames.join(', ')}`,
+          type: 'error'
+        });
+      } else if (failedCount > 0) {
+        showNotification({
+          title: 'Upload partiel',
+          message: `${successCount} fichier${successCount > 1 ? 's' : ''} uploadé${successCount > 1 ? 's' : ''}, ${failedCount} rejeté${failedCount > 1 ? 's' : ''} : ${failedNames.join(', ')}`,
+          type: 'warning'
+        });
+      } else {
+        showNotification({
+          title: 'Succès',
+          message: `${successCount} fichier${successCount > 1 ? 's' : ''} uploadé${successCount > 1 ? 's' : ''} avec succès`,
+          type: 'success'
+        });
+      }
+
       setUploadingFiles([]);
       setUploadProgress(0);
       onUploadClose();

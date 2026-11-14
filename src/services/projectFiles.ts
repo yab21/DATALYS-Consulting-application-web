@@ -179,7 +179,8 @@ export class ProjectFilesService {
       'gif': 'image/gif',
       'txt': 'text/plain',
       'zip': 'application/zip',
-      'rar': 'application/x-rar-compressed'
+      'rar': 'application/x-rar-compressed',
+      'mpp': 'application/vnd.ms-project'
     };
     return mimeTypes[extension || ''] || 'application/octet-stream';
   }
@@ -292,7 +293,7 @@ export class ProjectFilesService {
    * Récupérer les fichiers d'un dossier
    * CORRECTION: Gérer correctement le cas où folderId est null (fichiers racine)
    */
-  async getFiles(folderId: number | null, projectId?: number): Promise<ProjectFile[]> {
+  async getFiles(folderId: number | null, projectId?: number): Promise<ProjectFile[]> { // NOSONAR — complexité justifiée par les 3 stratégies de fallback séquentielles
     try {
       // CORRECTION: Gérer le cas où folderId est null (fichiers racine)
       if (folderId === null) {
@@ -382,7 +383,7 @@ export class ProjectFilesService {
   /**
    * Créer un nouveau dossier (avec logs de debug et fallback)
    */
-  async createFolder(
+  async createFolder( // NOSONAR — complexité justifiée par l'analyse d'erreur et le fallback createFolderWithParentName
     name: string,
     description: string = '',
     parentFolderId?: number | null,
@@ -438,7 +439,7 @@ export class ProjectFilesService {
         
         // Fallback: essayer avec parent_folder_name si ce n'est pas une erreur de permissions
         if (!isPermissionError && parentFolderId !== null && parentFolderId !== undefined) {
-          return await this.createFolderWithParentName(name, description, parentFolderId, projectId, userId);
+          return await this.createFolderWithParentName(name, parentFolderId, projectId, description, userId);
         }
         
         // ⚠️ Erreur de permissions : ne pas essayer le fallback
@@ -466,9 +467,9 @@ export class ProjectFilesService {
    */
   private async createFolderWithParentName(
     name: string,
-    description: string = '',
     parentFolderId: number,
     projectId?: number,
+    description: string = '',
     userId: number = 1
   ): Promise<ProjectFolder | null> {
     try {
@@ -624,7 +625,7 @@ export class ProjectFilesService {
       let totalFiles = directFiles.length;
 
       for (const folder of directFolders) {
-        const childStats = await this.getFolderStats(folder.id, projectId);
+        const childStats = await this.getFolderStats(folder.id, projectId); // NOSONAR — await en boucle intentionnel (récursion séquentielle pour additionner les stats)
         totalSubfolders += childStats.subfolders;
         totalFiles += childStats.files;
       }
@@ -769,7 +770,7 @@ export class ProjectFilesService {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        a.remove();
       } else {
         throw new Error('Erreur lors du téléchargement');
       }
@@ -808,7 +809,7 @@ export class ProjectFilesService {
       if (cleanFileUrl.startsWith('http://') || cleanFileUrl.startsWith('https://')) {
         const urlParts = cleanFileUrl.split('/files/serve/');
         if (urlParts.length > 1) {
-          cleanFileUrl = urlParts[urlParts.length - 1];
+          cleanFileUrl = urlParts.at(-1) ?? cleanFileUrl;
         }
       } else if (cleanFileUrl.includes('/files/serve/')) {
         cleanFileUrl = cleanFileUrl.split('/files/serve/').pop() || cleanFileUrl;
@@ -929,11 +930,11 @@ export class ProjectFilesService {
    * Créer un dossier pour un partenaire
    */
   async createPartnerFolder(
-    name: string, 
-    description: string = '', 
+    name: string,
     parentFolderId: number | null,
     partnerId: number,
-    userId: number
+    userId: number,
+    description: string = ''
   ): Promise<ProjectFolder | null> {
     try {
       const requestData: CreateFolderRequest = {
