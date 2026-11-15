@@ -41,7 +41,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission, UserRole } from "@/lib/permissions";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { UsersService, User as UserType } from "@/services/users";
-import LoadingState from "@/components/UI/Loading/LoadingState";
 import Link from "next/link";
 import UserModals from "./UserModals";
 import CreateUserModal from "./CreateUserModal";
@@ -118,7 +117,6 @@ const ListeUtilisateurs: React.FC = () => {
         message: "Accès refusé",
         duration: 5000,
       });
-      return;
     }
   }, [isAuthenticated, isAdmin, showNotification]);
 
@@ -146,7 +144,7 @@ const ListeUtilisateurs: React.FC = () => {
 
   // Chargement initial des utilisateurs
   useEffect(() => {
-    loadUsers();
+    void loadUsers();
   }, [isAuthenticated, isAdmin]);
 
   // Filtrage des utilisateurs
@@ -159,7 +157,7 @@ const ListeUtilisateurs: React.FC = () => {
         (user) =>
           user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (user.partner_name && user.partner_name.toLowerCase().includes(searchTerm.toLowerCase()))
+          (user.partner_name?.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -299,7 +297,7 @@ const ListeUtilisateurs: React.FC = () => {
     onClose={() => setShowCreateModal(false)}
     onUserCreated={() => {
       setShowCreateModal(false);
-      loadUsers(true);
+      void loadUsers(true);
     }}
   />
   </>
@@ -324,8 +322,8 @@ const ListeUtilisateurs: React.FC = () => {
 
         {/* Stats skeleton - 4 cartes pour les utilisateurs */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={`user-stat-skeleton-${i}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
@@ -355,8 +353,8 @@ const ListeUtilisateurs: React.FC = () => {
             </div>
           </div>
           <div className="divide-y divide-gray-200">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="px-6 py-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={`user-row-skeleton-${i}`} className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
@@ -474,7 +472,7 @@ const ListeUtilisateurs: React.FC = () => {
           }
         ].map((stat, index) => (
           <motion.div
-            key={index}
+            key={stat.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -716,7 +714,7 @@ const ListeUtilisateurs: React.FC = () => {
                             startContent={<Edit className="h-4 w-4" />}
                             onPress={() => handleUserAction(user, "edit")}
                           >
-                            Modifier
+                            <span translate="no">Modifier</span>
                           </DropdownItem>
                         ] : []),
                         ...(canDelete() && hasPermission(Permission.DELETE_USERS) ? [
@@ -726,7 +724,7 @@ const ListeUtilisateurs: React.FC = () => {
                             color="danger"
                             onPress={() => handleUserAction(user, "delete")}
                           >
-                            Supprimer
+                            <span translate="no">Supprimer</span>
                           </DropdownItem>
                         ] : [])
                       ]}

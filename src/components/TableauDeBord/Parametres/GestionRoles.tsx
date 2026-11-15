@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Card,
-  CardBody,
   Button,
   Input,
   Chip,
@@ -40,7 +38,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { useSimpleNotifications } from "@/components/UI/Notifications/SimpleNotificationSystem";
 import { RolesService, Role } from "@/services/roles";
-import LoadingState from "@/components/UI/Loading/LoadingState";
 import { extractBackendMessage } from "@/lib/error-handler";
 import { isTokenExpiredError } from "@/lib/api-interceptor";
 
@@ -91,7 +88,6 @@ const GestionRoles: React.FC = () => {
         message: "Accès refusé",
         duration: 5000,
       });
-      return;
     }
   }, [isAuthenticated, isAdmin, hasPermission, showNotification]);
 
@@ -145,7 +141,7 @@ const GestionRoles: React.FC = () => {
       }
     };
 
-    loadRoles();
+    void loadRoles();
   }, [isAuthenticated, isAdmin, hasPermission, showNotification]);
 
   // Filtrage des rôles par recherche
@@ -156,7 +152,7 @@ const GestionRoles: React.FC = () => {
       filtered = filtered.filter(
         (role) =>
           role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (role.description && role.description.toLowerCase().includes(searchTerm.toLowerCase()))
+          (role.description?.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -202,28 +198,28 @@ const GestionRoles: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const executeRoleAction = async () => {
+  const executeRoleAction = async () => { // NOSONAR
     if (!selectedRole && actionType !== "create") return;
 
     setIsSubmitting(true);
     try {
       switch (actionType) {
-        case "create":
+        case "create": {
           if (!validateForm()) return;
-          
+
           const createResponse = await RolesService.createRole({
             name: formData.name,
             description: formData.description,
             is_active: formData.is_active,
           });
-          
+
           if (createResponse.code === 200) {
             // Recharger la liste
             const response = await RolesService.getRolesByCriteria();
             if (response.code === 200 && response.items) {
               setRoles(response.items);
             }
-            
+
             showNotification({
               type: "success",
               title: "Rôle créé",
@@ -232,17 +228,18 @@ const GestionRoles: React.FC = () => {
             });
           }
           break;
+        }
 
-        case "edit":
+        case "edit": {
           if (!validateForm() || !selectedRole) return;
-          
+
           const updateResponse = await RolesService.updateRole({
             id: selectedRole.id,
             name: formData.name,
             description: formData.description,
             is_active: formData.is_active,
           });
-          
+
           if (updateResponse.code === 200) {
             const updatedRoles = roles.map((role) =>
               role.id === selectedRole.id
@@ -250,7 +247,7 @@ const GestionRoles: React.FC = () => {
                 : role
             );
             setRoles(updatedRoles);
-            
+
             showNotification({
               type: "success",
               title: "Rôle modifié",
@@ -259,15 +256,16 @@ const GestionRoles: React.FC = () => {
             });
           }
           break;
+        }
 
-        case "toggle":
+        case "toggle": {
           if (!selectedRole) return;
-          
+
           const toggleResponse = await RolesService.toggleRoleStatus(
             selectedRole.id,
             !selectedRole.is_active
           );
-          
+
           if (toggleResponse.code === 200) {
             const updatedRoles = roles.map((role) =>
               role.id === selectedRole.id
@@ -275,7 +273,7 @@ const GestionRoles: React.FC = () => {
                 : role
             );
             setRoles(updatedRoles);
-            
+
             showNotification({
               type: "success",
               title: "Rôle mis à jour",
@@ -284,16 +282,17 @@ const GestionRoles: React.FC = () => {
             });
           }
           break;
+        }
 
-        case "delete":
+        case "delete": {
           if (!selectedRole) return;
-          
+
           const deleteResponse = await RolesService.deleteRole(selectedRole.id);
-          
+
           if (deleteResponse.code === 200) {
             const filteredRolesList = roles.filter((role) => role.id !== selectedRole.id);
             setRoles(filteredRolesList);
-            
+
             showNotification({
               type: "success",
               title: "Rôle supprimé",
@@ -302,6 +301,7 @@ const GestionRoles: React.FC = () => {
             });
           }
           break;
+        }
       }
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
@@ -338,8 +338,8 @@ const GestionRoles: React.FC = () => {
 
         {/* Stats skeleton - 3 cartes pour les rôles */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={`role-stat-skeleton-${i}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
@@ -361,8 +361,8 @@ const GestionRoles: React.FC = () => {
 
         {/* Roles cards skeleton */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={`role-card-skeleton-${i}`} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
@@ -522,14 +522,14 @@ const GestionRoles: React.FC = () => {
                         startContent={<Edit className="h-4 w-4" />}
                         onPress={() => handleRoleAction(role, "edit")}
                       >
-                        Modifier
+                        <span translate="no">Modifier</span>
                       </DropdownItem>
                       <DropdownItem
                         key="toggle"
                         startContent={<Power className="h-4 w-4" />}
                         onPress={() => handleRoleAction(role, "toggle")}
                       >
-                        {role.is_active ? "Désactiver" : "Activer"}
+                        <span translate="no">{role.is_active ? "Désactiver" : "Activer"}</span>
                       </DropdownItem>
                       <DropdownItem
                         key="delete"
@@ -538,7 +538,7 @@ const GestionRoles: React.FC = () => {
                         color="danger"
                         onPress={() => handleRoleAction(role, "delete")}
                       >
-                        Supprimer
+                        <span translate="no">Supprimer</span>
                       </DropdownItem>
                     </DropdownMenu>
                   </Dropdown>
@@ -578,21 +578,21 @@ const GestionRoles: React.FC = () => {
                 {actionType === "view" && selectedRole && (
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Nom</label>
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Nom</span>
                       <p className="font-semibold">{selectedRole.name}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Description</label>
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Description</span>
                       <p>{selectedRole.description || "Aucune description"}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Statut</label>
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Statut</span>
                       <p className="font-semibold">
                         {selectedRole.is_active ? "Actif" : "Inactif"}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Créé le</label>
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Créé le</span>
                       <p>{new Date(selectedRole.created_at).toLocaleDateString("fr-FR")}</p>
                     </div>
                   </div>

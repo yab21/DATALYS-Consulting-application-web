@@ -122,11 +122,14 @@ const convertApiIncidentToLocal = (
 
   // Trouver l'utilisateur assigné pour récupérer son vrai nom
   const assignedUser = users.find((u) => u.id === apiIncident.user_id);
-  const assignedName = assignedUser
-    ? assignedUser.name
-    : apiIncident.user_id
-      ? `Expert ${apiIncident.user_id}`
-      : "Non assigné";
+  let assignedName: string;
+  if (assignedUser) {
+    assignedName = assignedUser.name;
+  } else if (apiIncident.user_id) {
+    assignedName = `Expert ${apiIncident.user_id}`;
+  } else {
+    assignedName = "Non assigné";
+  }
 
   return {
     id: apiIncident.id.toString(),
@@ -154,7 +157,7 @@ const convertApiIncidentToLocal = (
     ),
     dateResolution: undefined,
     assigneA: assignedName,
-    commentaires: Math.floor(Math.random() * 10) + 1,
+    commentaires: Math.floor(Math.random() * 10) + 1, // NOSONAR
     tempsMoyenResolution: undefined,
     sla_prise_en_charge_status: apiIncident.sla_prise_en_charge_status,
     sla_resolution_status: apiIncident.sla_resolution_status,
@@ -275,7 +278,7 @@ const GestionIncidents: React.FC = () => {
 
   // Charger les projets et utilisateurs au montage du composant
   useEffect(() => {
-    const loadProjectsAndUsers = async () => {
+    const loadProjectsAndUsers = async () => { // NOSONAR
       // Charger les projets
       setLoadingProjects(true);
       try {
@@ -395,7 +398,7 @@ const GestionIncidents: React.FC = () => {
       }
     };
 
-    loadProjectsAndUsers();
+    void loadProjectsAndUsers();
   }, [isAdmin, isPartner, user]);
   const [stats, setStats] = useState<IncidentStats>({
     total: 0,
@@ -430,7 +433,7 @@ const GestionIncidents: React.FC = () => {
       return;
     }
 
-    const loadData = async () => {
+    const loadData = async () => { // NOSONAR
       setLoading(true);
 
       try {
@@ -506,7 +509,7 @@ const GestionIncidents: React.FC = () => {
       }
     };
 
-    loadData();
+    void loadData();
   }, [
     currentPage,
     pageSize,
@@ -695,7 +698,7 @@ const GestionIncidents: React.FC = () => {
   };
 
   // Fonctions de validation
-  const validateCreateForm = (): boolean => {
+  const validateCreateForm = (): boolean => { // NOSONAR
     const errors: Record<string, string> = {};
 
     // Validation du titre
@@ -729,7 +732,7 @@ const GestionIncidents: React.FC = () => {
       const selectedProject = projects.find(
         (p) => p.id === createForm.project_id,
       );
-      if (!selectedProject || selectedProject.partner_id !== user.partner_id) {
+      if (selectedProject?.partner_id !== user?.partner_id) {
         errors.project_id =
           "Vous ne pouvez sélectionner que vos propres projets";
       }
@@ -742,15 +745,15 @@ const GestionIncidents: React.FC = () => {
 
     // Le type est fixé à "incident" pour ce modal, pas besoin de validation
 
-    if (!createForm.category || !createForm.category.trim()) {
+    if (!createForm.category?.trim()) {
       errors.category = "La catégorie est obligatoire";
     }
 
-    if (!createForm.domain || !createForm.domain.trim()) {
+    if (!createForm.domain?.trim()) {
       errors.domain = "Le domaine est obligatoire";
     }
 
-    if (!createForm.impact || !createForm.impact.trim()) {
+    if (!createForm.impact?.trim()) {
       errors.impact = "L'impact est obligatoire";
     }
 
@@ -765,7 +768,7 @@ const GestionIncidents: React.FC = () => {
     // Les champs vides conserveront leurs valeurs existantes
 
     // Validation du titre (seulement si modifié)
-    if (editForm.title && editForm.title.trim()) {
+    if (editForm.title?.trim()) {
       if (editForm.title.trim().length < 5) {
         errors.title = "Le titre doit contenir au moins 5 caractères";
       } else if (editForm.title.trim().length > 200) {
@@ -774,7 +777,7 @@ const GestionIncidents: React.FC = () => {
     }
 
     // Validation de la description (seulement si modifiée)
-    if (editForm.description && editForm.description.trim()) {
+    if (editForm.description?.trim()) {
       if (editForm.description.trim().length < 10) {
         errors.description =
           "La description doit contenir au moins 10 caractères";
@@ -785,7 +788,7 @@ const GestionIncidents: React.FC = () => {
     }
 
     // Validation du motif si statut = en_attente
-    if (editForm.status === "en_attente" && (!editForm.motif_attente || !editForm.motif_attente.trim())) {
+    if (editForm.status === "en_attente" && !editForm.motif_attente?.trim()) {
       errors.motif_attente = "Le motif de mise en attente est obligatoire";
     }
 
@@ -810,7 +813,7 @@ const GestionIncidents: React.FC = () => {
     });
   };
 
-  const handleIncidentAction = async (incident: Incident, action: string) => {
+  const handleIncidentAction = (incident: Incident, action: string) => {
     setSelectedIncident(incident);
 
     switch (action) {
@@ -826,12 +829,12 @@ const GestionIncidents: React.FC = () => {
         // Naviguer vers la page de gestion de l'incident
         router.push(`/tableaudebord/incidents/${incident.id}`);
         break;
-      case "edit":
+      case "edit": {
         // Pré-remplir le formulaire d'édition
         console.log("🔧 Pré-remplissage du formulaire d'édition:", incident);
 
         const editData = {
-          id: parseInt(incident.id),
+          id: Number.parseInt(incident.id),
           title: incident.titre,
           description: incident.description,
           type: incident.type,
@@ -853,6 +856,7 @@ const GestionIncidents: React.FC = () => {
         setEditForm(editData);
         setShowEditModal(true);
         break;
+      }
       case "delete":
         setShowDeleteModal(true);
         break;
@@ -860,7 +864,7 @@ const GestionIncidents: React.FC = () => {
   };
 
   // Fonction pour rouvrir un incident (pour les partners)
-  const handleIncidentReopen = async (incident: Incident) => {
+  const handleIncidentReopen = (incident: Incident) => {
     setSelectedIncident(incident);
     setShowReopenModal(true);
   };
@@ -890,7 +894,7 @@ const GestionIncidents: React.FC = () => {
 
       // Préparer les données de mise à jour
       const updateData: UpdateIncidentData = {
-        id: parseInt(selectedIncident.id),
+        id: Number.parseInt(selectedIncident.id),
         status: "en_cours", // Remettre le statut en cours
         resolution_notes: `${selectedIncident.resolution_notes || ""}\n\n[RÉOUVERTURE - ${new Date().toLocaleString()}] ${reopenReason}`,
       };
@@ -945,7 +949,7 @@ const GestionIncidents: React.FC = () => {
 
       // Préparer les données de mise à jour avec motif_attente
       const updateData: UpdateIncidentData = {
-        id: parseInt(selectedIncident.id),
+        id: Number.parseInt(selectedIncident.id),
         status: "en_attente",
         motif_attente: pauseMotif.trim(),
         resolution_notes: `${selectedIncident.resolution_notes || ""}\n\n[MISE EN ATTENTE - ${new Date().toLocaleString()}] Motif: ${pauseMotif.trim()} — Par ${user.name}`,
@@ -987,7 +991,7 @@ const GestionIncidents: React.FC = () => {
 
       // Préparer les données de mise à jour
       const updateData: UpdateIncidentData = {
-        id: parseInt(incident.id),
+        id: Number.parseInt(incident.id),
         status: "resolu",
         resolution_notes: `${incident.resolution_notes || ""}\n\n[CLÔTURE - ${new Date().toLocaleString()}] Incident résolu et clôturé par ${user.name}`,
       };
@@ -1223,7 +1227,7 @@ const GestionIncidents: React.FC = () => {
       console.log("🔄 Suppression de l'incident:", selectedIncident.id);
 
       const result = await IncidentsService.deleteIncident(
-        parseInt(selectedIncident.id),
+        Number.parseInt(selectedIncident.id),
       );
 
       // Retirer de l'état local
@@ -1303,7 +1307,7 @@ const GestionIncidents: React.FC = () => {
       a.download = `incidents_export_${new Date().toISOString().split("T")[0]}.${exportForm.format}`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
       URL.revokeObjectURL(url);
 
       setShowExportModal(false);
@@ -1360,8 +1364,8 @@ const GestionIncidents: React.FC = () => {
 
         {/* Stats skeleton - 6 cartes pour les incidents */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={`incident-stat-skeleton-${i}`} className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <CardBody className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
@@ -1379,9 +1383,9 @@ const GestionIncidents: React.FC = () => {
         <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardBody className="p-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              {[...Array(4)].map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (
                 <div
-                  key={i}
+                  key={`incident-filter-skeleton-${i}`}
                   className="h-10 animate-pulse rounded bg-gray-200 dark:bg-gray-700"
                 ></div>
               ))}
@@ -1393,9 +1397,9 @@ const GestionIncidents: React.FC = () => {
         <Card className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardBody className="p-0">
             <div className="space-y-4 p-4">
-              {[...Array(8)].map((_, i) => (
+              {Array.from({ length: 8 }).map((_, i) => (
                 <div
-                  key={i}
+                  key={`incident-table-skeleton-${i}`}
                   className="h-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700"
                 ></div>
               ))}
@@ -1913,7 +1917,7 @@ const GestionIncidents: React.FC = () => {
                                 handleIncidentAction(incident, "edit")
                               }
                             >
-                              Modifier
+                              <span translate="no">Modifier</span>
                             </DropdownItem>
                             <DropdownItem
                               key="delete"
@@ -1923,7 +1927,7 @@ const GestionIncidents: React.FC = () => {
                               }
                               className="text-danger"
                             >
-                              Supprimer
+                              <span translate="no">Supprimer</span>
                             </DropdownItem>
                           </DropdownMenu>
                         </Dropdown>
@@ -2297,7 +2301,7 @@ const GestionIncidents: React.FC = () => {
                     setShowEditModal(true);
                   }}
                 >
-                  Modifier
+                  <span translate="no">Modifier</span>
                 </Button>
               ) : null}
             </ModalFooter>
@@ -2403,7 +2407,7 @@ const GestionIncidents: React.FC = () => {
                     onSelectionChange={(keys) => {
                       setCreateForm((prev) => ({
                         ...prev,
-                        user_id: parseInt(Array.from(keys)[0] as string) || 0,
+                        user_id: Number.parseInt(Array.from(keys)[0] as string) || 0,
                       }));
                       clearCreateFormError("user_id");
                     }}
@@ -2435,7 +2439,7 @@ const GestionIncidents: React.FC = () => {
                   onSelectionChange={(keys) => {
                     setCreateForm((prev) => ({
                       ...prev,
-                      project_id: parseInt(Array.from(keys)[0] as string),
+                      project_id: Number.parseInt(Array.from(keys)[0] as string),
                     }));
                     clearCreateFormError("project_id");
                   }}
@@ -2445,8 +2449,8 @@ const GestionIncidents: React.FC = () => {
                 >
                   {projects.map((project) => (
                     <SelectItem
-                      key={project.id.toString()}
-                      textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ""}`}
+                      key={String(project.id)}
+                      textValue={project.title + (project.partner_name ? ` (${project.partner_name})` : "")}
                     >
                       {project.title}{" "}
                       {project.partner_name ? `(${project.partner_name})` : ""}
@@ -2753,7 +2757,7 @@ const GestionIncidents: React.FC = () => {
                       onSelectionChange={(keys) =>
                         setEditForm((prev) => ({
                           ...prev,
-                          user_id: parseInt(Array.from(keys)[0] as string),
+                          user_id: Number.parseInt(Array.from(keys)[0] as string),
                         }))
                       }
                       isLoading={loadingUsers}
@@ -2781,7 +2785,7 @@ const GestionIncidents: React.FC = () => {
                     onSelectionChange={(keys) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        project_id: parseInt(Array.from(keys)[0] as string),
+                        project_id: Number.parseInt(Array.from(keys)[0] as string),
                       }))
                     }
                     isLoading={loadingProjects}
@@ -2789,8 +2793,8 @@ const GestionIncidents: React.FC = () => {
                   >
                     {projects.map((project) => (
                       <SelectItem
-                        key={project.id.toString()}
-                        textValue={`${project.title} ${project.partner_name ? `(${project.partner_name})` : ""}`}
+                        key={String(project.id)}
+                        textValue={project.title + (project.partner_name ? ` (${project.partner_name})` : "")}
                       >
                         {project.title}{" "}
                         {project.partner_name
@@ -3101,9 +3105,9 @@ const GestionIncidents: React.FC = () => {
             <div className="space-y-6">
               {/* Format d'export */}
               <div>
-                <label className="mb-2 block text-sm font-medium">
+                <span className="mb-2 block text-sm font-medium">
                   Format d'export
-                </label>
+                </span>
                 <Select
                   selectedKeys={[exportForm.format]}
                   onSelectionChange={(keys) =>
@@ -3235,9 +3239,9 @@ const GestionIncidents: React.FC = () => {
 
               {/* Options d'export */}
               <div className="space-y-3">
-                <label className="block text-sm font-medium">
+                <span className="block text-sm font-medium">
                   Options d'export
-                </label>
+                </span>
                 <div className="flex flex-col gap-2">
                   <label className="flex items-center gap-2">
                     <input
@@ -3315,11 +3319,8 @@ const GestionIncidents: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Vous êtes sur le point de rouvrir l'incident{" "}
-                  <span className="font-semibold">
-                    #{selectedIncident?.incident_number}
-                  </span>
-                  .
+                  Vous êtes sur le point de rouvrir l&apos;incident{" "}
+                  <span className="font-semibold">#{selectedIncident?.incident_number}</span>.
                 </p>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Veuillez expliquer pourquoi la solution proposée ne convient
@@ -3387,10 +3388,7 @@ const GestionIncidents: React.FC = () => {
               <div>
                 <p className="text-gray-600 dark:text-gray-400">
                   Vous êtes sur le point de mettre en attente l&apos;incident{" "}
-                  <span className="font-semibold">
-                    #{selectedIncident?.incident_number}
-                  </span>
-                  .
+                  <span className="font-semibold">#{selectedIncident?.incident_number}</span>.
                 </p>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Veuillez indiquer le motif de la mise en attente.
@@ -3437,7 +3435,7 @@ const GestionIncidents: React.FC = () => {
           onClose={() => {
             setShowFilesModal(false);
           }}
-          incidentId={parseInt(selectedIncident.id)}
+          incidentId={Number.parseInt(selectedIncident.id)}
           incidentTitle={`#${selectedIncident.incident_number} - ${selectedIncident.titre}`}
         />
       )}

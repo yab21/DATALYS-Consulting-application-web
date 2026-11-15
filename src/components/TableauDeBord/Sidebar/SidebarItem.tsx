@@ -17,7 +17,6 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
     pathname === item.route;
 
   return (
-    <>
       <motion.li
         whileHover={{ x: 4 }}
         transition={{ type: "spring", stiffness: 300 }}
@@ -37,7 +36,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           </div>
 
           {/* Label */}
-          <span className="flex-1">{item.label}</span>
+          <span className="flex-1" translate="no">{item.label}</span>
 
           {/* Badge de message */}
           {item.message && (
@@ -89,7 +88,6 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           </div>
         )}
       </motion.li>
-    </>
   );
 };
 

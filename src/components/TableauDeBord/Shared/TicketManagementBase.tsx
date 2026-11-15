@@ -12,10 +12,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Tabs,
-  Tab,
-  Select,
-  SelectItem,
   Textarea,
   Table,
   TableHeader,
@@ -27,27 +23,13 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  Avatar,
-  Progress,
 } from "@heroui/react";
-import { motion } from "framer-motion";
-import { 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Eye, 
-  Edit, 
-  UserCheck, 
-  Clock,
-  AlertTriangle,
-  CheckCircle,
+import {
+  Search,
+  MoreVertical,
+  Eye,
+  Edit,
   XCircle,
-  ArrowUpRight,
-  Calendar,
-  User as UserIcon,
-  Timer,
-  TrendingUp,
-  Download,
   Plus,
   RefreshCw
 } from "lucide-react";
@@ -55,14 +37,11 @@ import {
 // Imports des services et types
 import { IncidentsService, type Incident as ApiIncident, type IncidentCriteria, type CreateIncidentData, type UpdateIncidentData } from "@/services/incidents";
 import { projectsService, type Project } from "@/services/projects";
-import { UsersService, type User as UserType } from "@/services/users";
 import { useSimpleNotifications, simpleNotificationHelpers } from "@/components/UI/Notifications/SimpleNotificationSystem";
-import { useAuth } from "@/context/AuthContext";
-import { Permission } from "@/lib/permissions";
 import { isTokenExpiredError } from "@/lib/api-interceptor";
 
 // Imports de la configuration contextuelle
-import { TICKET_CONTEXTS, getContextConfig, getPriorityConfig, getStatusConfig, calculateSLAStatus, type ContextConfig } from "@/config/ticketContexts";
+import { getContextConfig, getPriorityConfig, getStatusConfig } from "@/config/ticketContexts";
 
 // Imports des composants SLA
 import { SLACountdown, SLAMetrics, ClientSatisfactionMetrics } from "@/components/TableauDeBord/Support/SLAComponents";
@@ -88,10 +67,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
   const [filteredIncidents, setFilteredIncidents] = useState<ApiIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIncident, setSelectedIncident] = useState<ApiIncident | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // States de formulaires
   const [createForm, setCreateForm] = useState<Partial<CreateIncidentData>>({
@@ -108,21 +84,17 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
-  const [filterType, setFilterType] = useState<string>("all");
+  const filterType = "all";
 
   // States pour les données de référence
   const [projects, setProjects] = useState<Project[]>([]);
-  const [users, setUsers] = useState<UserType[]>([]);
 
-  // Auth et permissions
-  const { user, hasPermission } = useAuth();
   const { showNotification } = useSimpleNotifications();
 
   // Chargement initial des données
   useEffect(() => {
-    loadData();
-    loadProjects();
-    loadUsers();
+    void loadData();
+    void loadProjects();
   }, [context]);
 
   // Filtrage des incidents
@@ -181,20 +153,6 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       console.error("Erreur lors du chargement des projets:", error);
-    }
-  };
-
-  const loadUsers = async () => {
-    // Ne charger les utilisateurs que pour les admins
-    if (user?.partner_id || (user?.role_id !== 1 && String(user?.role_id) !== "1")) {
-      return;
-    }
-    try {
-      const usersData = await UsersService.getUsersByCriteria();
-      setUsers(Array.isArray(usersData?.data) ? usersData.data : []);
-    } catch (error) {
-      if (isTokenExpiredError(error)) throw error;
-      console.error("Erreur lors du chargement des utilisateurs:", error);
     }
   };
 
@@ -273,63 +231,6 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
     }
   };
 
-  const handleEdit = async () => {
-    try {
-      if (!selectedIncident || !editForm.title) {
-        showNotification(simpleNotificationHelpers.error(
-          "Erreur de validation", 
-          "Veuillez remplir tous les champs obligatoires"
-        ));
-        return;
-      }
-
-      await IncidentsService.updateIncident(editForm as UpdateIncidentData);
-      
-      showNotification(simpleNotificationHelpers.success(
-        "Succès",
-        `${context === 'support' ? 'Ticket' : 'Incident'} modifié avec succès`
-      ));
-      
-      setIsEditModalOpen(false);
-      setSelectedIncident(null);
-      setEditForm({});
-      
-      await loadData();
-    } catch (error) {
-      if (isTokenExpiredError(error)) throw error;
-      console.error("Erreur lors de la modification:", error);
-      showNotification(simpleNotificationHelpers.error(
-        "Erreur",
-        `Impossible de modifier le ${context === 'support' ? 'ticket' : 'incident'}`
-      ));
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      if (!selectedIncident?.id) return;
-
-      await IncidentsService.deleteIncident(typeof selectedIncident.id === 'string' ? parseInt(selectedIncident.id) : selectedIncident.id);
-      
-      showNotification(simpleNotificationHelpers.success(
-        "Succès",
-        `${context === 'support' ? 'Ticket' : 'Incident'} supprimé avec succès`
-      ));
-      
-      setIsDeleteModalOpen(false);
-      setSelectedIncident(null);
-      
-      await loadData();
-    } catch (error) {
-      if (isTokenExpiredError(error)) throw error;
-      console.error("Erreur lors de la suppression:", error);
-      showNotification(simpleNotificationHelpers.error(
-        "Erreur",
-        `Impossible de supprimer le ${context === 'support' ? 'ticket' : 'incident'}`
-      ));
-    }
-  };
-
   // Fonctions utilitaires
   const getPriorityColor = (priority: string) => {
     const priorityConfig = getPriorityConfig(context, priority);
@@ -353,7 +254,6 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
 
   const openViewModal = (incident: ApiIncident) => {
     setSelectedIncident(incident);
-    setIsViewModalOpen(true);
   };
 
   const openEditModal = (incident: ApiIncident) => {
@@ -368,12 +268,10 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
       project_id: incident.project_id,
       assigned_to: (incident as any).assigned_to,
     });
-    setIsEditModalOpen(true);
   };
 
   const openDeleteModal = (incident: ApiIncident) => {
     setSelectedIncident(incident);
-    setIsDeleteModalOpen(true);
   };
 
   if (loading) {
@@ -397,7 +295,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
           <Button
             color="primary"
             startContent={<RefreshCw size={16} />}
-            onClick={loadData}
+            onPress={() => void loadData()}
             isLoading={loading}
           >
             Actualiser
@@ -407,7 +305,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
             <Button
               color="success"
               startContent={<Plus size={16} />}
-              onClick={() => setIsCreateModalOpen(true)}
+              onPress={() => setIsCreateModalOpen(true)}
             >
               Nouveau {context === 'support' ? 'Ticket' : 'Incident'}
             </Button>
@@ -554,7 +452,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                               startContent={<Edit size={14} />}
                               onClick={() => openEditModal(incident)}
                             >
-                              Modifier
+                              <span translate="no">Modifier</span>
                             </DropdownItem>
                             <DropdownItem
                               key="delete"
@@ -563,7 +461,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                               startContent={<XCircle size={14} />}
                               onClick={() => openDeleteModal(incident)}
                             >
-                              Supprimer
+                              <span translate="no">Supprimer</span>
                             </DropdownItem>
                           </DropdownMenu>
                         </Dropdown>
@@ -649,7 +547,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                               startContent={<Edit size={14} />}
                               onClick={() => openEditModal(incident)}
                             >
-                              Modifier
+                              <span translate="no">Modifier</span>
                             </DropdownItem>
                             <DropdownItem
                               key="delete"
@@ -658,7 +556,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                               startContent={<XCircle size={14} />}
                               onClick={() => openDeleteModal(incident)}
                             >
-                              Supprimer
+                              <span translate="no">Supprimer</span>
                             </DropdownItem>
                           </DropdownMenu>
                         </Dropdown>
@@ -721,7 +619,7 @@ const TicketManagementBase: React.FC<TicketManagementBaseProps> = ({
                      
                       onChange={(e) => setCreateForm(prev => ({ 
                         ...prev, 
-                        project_id: e.target.value ? parseInt(e.target.value) : undefined
+                        project_id: e.target.value ? Number.parseInt(e.target.value) : undefined
                       }))}
                     />
                   )}

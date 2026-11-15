@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import SidebarItem from "@/components/TableauDeBord/Sidebar/SidebarItem";
 import ClickOutside from "@/components/ClickOutside";
@@ -17,7 +16,7 @@ interface SidebarProps {
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
-  const { user, isAdmin, isPartner, hasPermission, canCreate, isLoading } = useAuth();
+  const { user, isAdmin, isPartner, hasPermission, isLoading } = useAuth();
 
   console.log("🎨 Sidebar rendu - état auth:", {
     user: user?.name,
@@ -336,19 +335,19 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           <nav className="mt-4 px-4 lg:px-6">
             {getMenuGroups().map((group, groupIndex) => (
               <motion.div
-                key={groupIndex}
+                key={group.name}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: groupIndex * 0.1 }}
               >
                 <h3 className="mb-3 ml-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  {group.name}
+                  <span translate="no">{group.name}</span>
                 </h3>
 
                 <ul className="mb-6 flex flex-col gap-1">
-                  {group.menuItems.map((menuItem, menuIndex) => (
+                  {group.menuItems.map((menuItem) => (
                     <SidebarItem
-                      key={menuIndex}
+                      key={menuItem.route}
                       item={menuItem}
                       pageName={pageName}
                       setPageName={setPageName}
