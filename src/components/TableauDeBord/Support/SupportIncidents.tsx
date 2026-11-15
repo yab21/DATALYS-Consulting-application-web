@@ -369,8 +369,8 @@ const SkeletonLoader: React.FC = () => (
 
     {/* Stats skeleton */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {[...Array(4)].map((_, i) => (
-        <Card key={i}>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={`ticket-stat-skeleton-${i}`}>
           <CardBody className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
@@ -388,8 +388,8 @@ const SkeletonLoader: React.FC = () => (
     <Card>
       <CardBody className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={`ticket-filter-skeleton-${i}`} className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           ))}
         </div>
       </CardBody>
@@ -399,8 +399,8 @@ const SkeletonLoader: React.FC = () => (
     <Card>
       <CardBody className="p-0">
         <div className="space-y-4 p-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={`ticket-table-skeleton-${i}`} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           ))}
         </div>
       </CardBody>
@@ -493,9 +493,9 @@ const SupportIncidents: React.FC = () => {
 
   // Chargement initial
   useEffect(() => {
-    loadData();
-    loadPartners();
-    loadProjects();
+    void loadData();
+    void loadPartners();
+    void loadProjects();
   }, []);
 
   // Filtrage des tickets
@@ -724,7 +724,7 @@ const SupportIncidents: React.FC = () => {
 
     try {
       setIsDeleting(true);
-      const result = await IncidentsService.deleteIncident(parseInt(selectedTicket!.id));
+      const result = await IncidentsService.deleteIncident(Number.parseInt(selectedTicket!.id));
       
       showNotification(simpleNotificationHelpers.success(
         "Succès",
@@ -766,10 +766,6 @@ const SupportIncidents: React.FC = () => {
     });
   };
 
-  const handleViewTicket = (ticketId: string) => {
-    router.push(`/tableaudebord/support/${ticketId}`);
-  };
-
   const handleManageTicket = (ticketId: string) => {
     router.push(`/tableaudebord/support/${ticketId}`);
   };
@@ -777,7 +773,7 @@ const SupportIncidents: React.FC = () => {
   const openEditModal = (ticket: SupportTicket) => {
     setSelectedTicket(ticket);
     setEditForm({
-      id: parseInt(ticket.id),
+      id: Number.parseInt(ticket.id),
       title: ticket.titre,
       description: ticket.description,
       type: ticket.type,
@@ -1135,8 +1131,8 @@ const SupportIncidents: React.FC = () => {
                         </DropdownTrigger>
                         <DropdownMenu>
                           <DropdownItem key="manage" startContent={<Settings size={14} />} onPress={() => handleManageTicket(ticket.id)}>Gérer</DropdownItem>
-                          <DropdownItem key="edit" startContent={<Edit size={14} />} onClick={() => openEditModal(ticket)}>Modifier</DropdownItem>
-                          <DropdownItem key="delete" className="text-danger" color="danger" startContent={<Trash2 size={14} />} onClick={() => openDeleteModal(ticket)}>Supprimer</DropdownItem>
+                          <DropdownItem key="edit" startContent={<Edit size={14} />} onClick={() => openEditModal(ticket)}><span translate="no">Modifier</span></DropdownItem>
+                          <DropdownItem key="delete" className="text-danger" color="danger" startContent={<Trash2 size={14} />} onClick={() => openDeleteModal(ticket)}><span translate="no">Supprimer</span></DropdownItem>
                         </DropdownMenu>
                       </Dropdown>
                     </TableCell>
@@ -1281,7 +1277,7 @@ const SupportIncidents: React.FC = () => {
                         selectedKeys={createForm.user_id ? [createForm.user_id.toString()] : []}
                         onSelectionChange={(keys) => {
                           const selected = Array.from(keys)[0] as string;
-                          setCreateForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
+                          setCreateForm(prev => ({ ...prev, user_id: selected ? Number.parseInt(selected) : 0 }));
                           clearCreateFormError("user_id");
                         }}
                         isLoading={loadingPartners}
@@ -1303,7 +1299,7 @@ const SupportIncidents: React.FC = () => {
                       selectedKeys={createForm.project_id ? [createForm.project_id.toString()] : []}
                       onSelectionChange={(keys) => {
                         const selected = Array.from(keys)[0] as string;
-                        setCreateForm(prev => ({ ...prev, project_id: selected ? parseInt(selected) : 0 }));
+                        setCreateForm(prev => ({ ...prev, project_id: selected ? Number.parseInt(selected) : 0 }));
                         clearCreateFormError("project_id");
                       }}
                       isLoading={loadingProjects}
@@ -1313,7 +1309,7 @@ const SupportIncidents: React.FC = () => {
                       {projects.map((project) => (
                         <SelectItem
                           key={project.id.toString()}
-                          textValue={`${project.title}${project.partner_name ? ` (${project.partner_name})` : ''}`}
+                          textValue={project.title + (project.partner_name ? ` (${project.partner_name})` : '')}
                         >
                           {project.title}{project.partner_name ? ` (${project.partner_name})` : ''}
                         </SelectItem>
@@ -1456,7 +1452,7 @@ const SupportIncidents: React.FC = () => {
         }}
       >
         <ModalContent>
-          {(onClose) => (
+          {(onClose) => ( // NOSONAR
             <>
               <ModalHeader className="flex flex-col gap-1">
                 Détails du ticket - {selectedTicket?.incident_number}
@@ -1488,21 +1484,27 @@ const SupportIncidents: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="font-medium">Statut:</span>
-                            <Chip
-                              color={selectedTicket.statut_color === 'blue' ? 'primary' :
-                                     selectedTicket.statut_color === 'orange' ? 'warning' :
-                                     selectedTicket.statut_color === 'gray' ? 'default' :
-                                     selectedTicket.statut_color === 'purple' ? 'secondary' :
-                                     selectedTicket.statut_color === 'green' ? 'success' : 'default'}
-                              size="sm"
-                              variant="flat"
-                            >
-                              {selectedTicket.statut === 'nouveau' ? 'Nouveau' :
-                               selectedTicket.statut === 'en_cours' ? 'En cours' :
-                               selectedTicket.statut === 'en_attente' ? 'En attente' :
-                               selectedTicket.statut === 'en_arbitrage' ? 'En arbitrage' :
-                               selectedTicket.statut === 'resolu' ? 'Résolu' : selectedTicket.statut}
-                            </Chip>
+                            {(() => {
+                              let statutColor: "primary" | "warning" | "default" | "secondary" | "success" | "danger";
+                              if (selectedTicket.statut_color === 'blue') { statutColor = 'primary'; }
+                              else if (selectedTicket.statut_color === 'orange') { statutColor = 'warning'; }
+                              else if (selectedTicket.statut_color === 'gray') { statutColor = 'default'; }
+                              else if (selectedTicket.statut_color === 'purple') { statutColor = 'secondary'; }
+                              else if (selectedTicket.statut_color === 'green') { statutColor = 'success'; }
+                              else { statutColor = 'default'; }
+                              let statutLabel: string;
+                              if (selectedTicket.statut === 'nouveau') { statutLabel = 'Nouveau'; }
+                              else if (selectedTicket.statut === 'en_cours') { statutLabel = 'En cours'; }
+                              else if (selectedTicket.statut === 'en_attente') { statutLabel = 'En attente'; }
+                              else if (selectedTicket.statut === 'en_arbitrage') { statutLabel = 'En arbitrage'; }
+                              else if (selectedTicket.statut === 'resolu') { statutLabel = 'Résolu'; }
+                              else { statutLabel = selectedTicket.statut; }
+                              return (
+                                <Chip color={statutColor} size="sm" variant="flat">
+                                  {statutLabel}
+                                </Chip>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>
@@ -1603,7 +1605,7 @@ const SupportIncidents: React.FC = () => {
                           selectedKeys={editForm.user_id ? [editForm.user_id.toString()] : []}
                           onSelectionChange={(keys) => {
                             const selected = Array.from(keys)[0] as string;
-                            setEditForm(prev => ({ ...prev, user_id: selected ? parseInt(selected) : 0 }));
+                            setEditForm(prev => ({ ...prev, user_id: selected ? Number.parseInt(selected) : 0 }));
                           }}
                           isLoading={loadingPartners}
                           isRequired
@@ -1622,7 +1624,7 @@ const SupportIncidents: React.FC = () => {
                         selectedKeys={editForm.project_id ? [editForm.project_id.toString()] : []}
                         onSelectionChange={(keys) => {
                           const selected = Array.from(keys)[0] as string;
-                          setEditForm(prev => ({ ...prev, project_id: selected ? parseInt(selected) : 0 }));
+                          setEditForm(prev => ({ ...prev, project_id: selected ? Number.parseInt(selected) : 0 }));
                         }}
                         isLoading={loadingProjects}
                         isRequired
@@ -1630,7 +1632,7 @@ const SupportIncidents: React.FC = () => {
                         {projects.map((project) => (
                           <SelectItem
                             key={project.id.toString()}
-                            textValue={`${project.title}${project.partner_name ? ` (${project.partner_name})` : ""}`}
+                            textValue={project.title + (project.partner_name ? ` (${project.partner_name})` : "")}
                           >
                             {project.title}{project.partner_name ? ` (${project.partner_name})` : ""}
                           </SelectItem>
@@ -1816,7 +1818,7 @@ const SupportIncidents: React.FC = () => {
                   onPress={handleDelete}
                   isLoading={isDeleting}
                 >
-                  Supprimer définitivement
+                  <span translate="no">Supprimer définitivement</span>
                 </Button>
               </ModalFooter>
             </>

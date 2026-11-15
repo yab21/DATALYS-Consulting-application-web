@@ -326,7 +326,7 @@ const VoirProjet: React.FC<VoirProjetProps> = ({ id }) => {
                   startContent={<Lock className="w-3.5 h-3.5" />}
                   onPress={() => setShowCloseModal(true)}
                 >
-                  Clôturer
+                  <span translate="no">Clôturer</span>
                 </Button>
               )}
               {isAdmin() && isClosed && (

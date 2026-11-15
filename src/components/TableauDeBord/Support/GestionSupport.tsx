@@ -69,12 +69,12 @@ const GestionSupport: React.FC = () => {
         if (isTokenExpiredError(error)) throw error;
       }
     };
-    loadProjects();
+    void loadProjects();
   }, [user?.id]);
 
   // Chargement des données
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
   // Filtrage des incidents
@@ -241,7 +241,7 @@ const GestionSupport: React.FC = () => {
           <Button
             color="primary"
             startContent={<RefreshCw size={16} />}
-            onClick={loadData}
+            onPress={() => void loadData()}
             isLoading={loading}
           >
             Actualiser
@@ -368,12 +368,13 @@ const GestionSupport: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p 
-                        className="font-medium cursor-pointer hover:text-[#4ba9b7] transition-colors"
+                      <button
+                        type="button"
+                        className="font-medium cursor-pointer hover:text-[#4ba9b7] transition-colors text-left"
                         onClick={() => handleViewTicket(incident.id)}
                       >
                         {incident.title}
-                      </p>
+                      </button>
                       {incident.description && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                           {incident.description}
@@ -425,7 +426,7 @@ const GestionSupport: React.FC = () => {
                           key="edit"
                           startContent={<Edit size={14} />}
                         >
-                          Modifier
+                          <span translate="no">Modifier</span>
                         </DropdownItem>
                         <DropdownItem
                           key="delete"
@@ -433,7 +434,7 @@ const GestionSupport: React.FC = () => {
                           color="danger"
                           startContent={<XCircle size={14} />}
                         >
-                          Supprimer
+                          <span translate="no">Supprimer</span>
                         </DropdownItem>
                       </DropdownMenu>
                     </Dropdown>

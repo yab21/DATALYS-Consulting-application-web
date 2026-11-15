@@ -110,7 +110,7 @@ const FileItem: React.FC<FileItemProps> = ({ file, onFileDeleted }) => {
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   return (
@@ -147,7 +147,7 @@ const FileItem: React.FC<FileItemProps> = ({ file, onFileDeleted }) => {
               isIconOnly
               size="sm"
               variant="light"
-              onClick={() => setShowRenameModal(true)}
+              onPress={() => setShowRenameModal(true)}
               className="text-blue-600 hover:bg-blue-50"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -159,7 +159,7 @@ const FileItem: React.FC<FileItemProps> = ({ file, onFileDeleted }) => {
               isIconOnly
               size="sm"
               variant="light"
-              onClick={() => setShowMoveModal(true)}
+              onPress={() => setShowMoveModal(true)}
               className="text-green-600 hover:bg-green-50"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -172,7 +172,7 @@ const FileItem: React.FC<FileItemProps> = ({ file, onFileDeleted }) => {
                 isIconOnly
                 size="sm"
                 variant="light"
-                onClick={togglePrivacy}
+                onPress={togglePrivacy}
                 className="text-yellow-600 hover:bg-yellow-50"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -189,7 +189,7 @@ const FileItem: React.FC<FileItemProps> = ({ file, onFileDeleted }) => {
               isIconOnly
               size="sm"
               variant="light"
-              onClick={onOpen}
+              onPress={onOpen}
               className="text-red-600 hover:bg-red-50"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -215,7 +215,7 @@ const FileItem: React.FC<FileItemProps> = ({ file, onFileDeleted }) => {
                   Annuler
                 </Button>
                 <Button color="danger" onPress={deleteFile}>
-                  Supprimer
+                  <span translate="no">Supprimer</span>
                 </Button>
               </ModalFooter>
             </>

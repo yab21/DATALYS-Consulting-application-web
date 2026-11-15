@@ -112,7 +112,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
     };
 
     if (incidentId) {
-      loadIncidentData();
+      void loadIncidentData();
     }
   }, [incidentId, showNotification]);
 
@@ -154,15 +154,6 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
       case "en_retard": return "danger";
       case "non_applicable": return "default";
       default: return "default";
-    }
-  };
-
-  const getSLAStatusLabel = (status: string) => {
-    switch (status) {
-      case "respecte": return "Respecté";
-      case "en_retard": return "En retard";
-      case "non_applicable": return "Non applicable";
-      default: return status;
     }
   };
 
@@ -277,7 +268,7 @@ const IncidentDetail: React.FC<IncidentDetailProps> = ({ incidentId }) => {
               </ProfessionalButton>
             </Link>
             <ProfessionalButton variant="outline" size="sm" startContent={<Edit className="h-4 w-4" />}>
-              Modifier
+              <span translate="no">Modifier</span>
             </ProfessionalButton>
           </div>
         </div>

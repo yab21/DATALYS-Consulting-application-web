@@ -990,7 +990,7 @@ const TablePartner: React.FC = () => {
                           partner
                         })}
                       >
-                        Modifier
+                        <span translate="no">Modifier</span>
                       </DropdownItem>
                       <DropdownItem
                         key="delete"
@@ -1002,7 +1002,7 @@ const TablePartner: React.FC = () => {
                           partner
                         })}
                       >
-                        Supprimer
+                        <span translate="no">Supprimer</span>
                       </DropdownItem>
                     </DropdownMenu>
                   </Dropdown>

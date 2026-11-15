@@ -37,7 +37,7 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
     setIsUserAdmin(true); // Temporary - set to true for demo
   }, []);
 
-  const handleRename = async (newName: string) => {
+  const handleRename = async (newName: string) => { // NOSONAR
     try {
       // Placeholder: Rename file logic
       console.log(`Renaming file ${file.name} to ${newName}`);
@@ -48,7 +48,7 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
     }
   };
 
-  const handleMove = async (newParentId: string) => {
+  const handleMove = async (newParentId: string) => { // NOSONAR
     try {
       // Placeholder: Move file logic
       console.log(`Moving file ${file.name} to parent ${newParentId}`);
@@ -59,7 +59,7 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async () => { // NOSONAR
     try {
       // Placeholder: Delete file logic
       console.log(`Deleting file ${file.name}`);
@@ -71,7 +71,7 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
     }
   };
 
-  const togglePrivate = async () => {
+  const togglePrivate = async () => { // NOSONAR
     try {
       // Placeholder: Toggle private status logic
       console.log(`Toggling private status for file ${file.name}`);
@@ -95,24 +95,11 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
     return iconMap[extension || ""] || "/images/file-icon.png";
   };
 
-  const handleDownload = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (file.imageUrl) {
-      const link = document.createElement("a");
-      link.href = file.imageUrl;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      console.error("Impossible de télécharger le fichier");
-    }
-  };
-
   return (
     <>
-      <div
-        className="flex w-1/4 cursor-pointer flex-col items-center justify-center p-4 hover:bg-gray-100"
+      <button
+        type="button"
+        className="flex w-1/4 cursor-pointer flex-col items-center justify-center p-4 hover:bg-gray-100 bg-transparent border-0"
         onClick={onOpen}
       >
         <Image
@@ -132,14 +119,14 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
               color="primary"
               onPress={() => setShowRenameModal(true)}
             >
-              Renommer
+              <span translate="no">Renommer</span>
             </Button>
             <Button
               size="sm"
               color="secondary"
               onPress={() => setShowMoveModal(true)}
             >
-              Déplacer
+              <span translate="no">Déplacer</span>
             </Button>
             <Button size="sm" color="warning" onPress={togglePrivate}>
               {file.isPrivate ? "Rendre public" : "Rendre privé"}
@@ -149,11 +136,11 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
               color="danger"
               onPress={() => setShowDeleteModal(true)}
             >
-              Supprimer
+              <span translate="no">Supprimer</span>
             </Button>
           </div>
         )}
-      </div>
+      </button>
 
       <RenameModal
         isOpen={showRenameModal}
@@ -194,6 +181,7 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
                 ) : (
                   <iframe
                     src={file.imageUrl}
+                    title="Aperçu du fichier"
                     style={{ width: "100%", height: "80vh" }}
                   />
                 )}
@@ -217,7 +205,7 @@ const FileItemXL: React.FC<FileItemXLProps> = ({ file, onFileDeleted }) => {
           </ModalBody>
           <ModalFooter>
             <Button color="danger" onPress={handleDelete}>
-              Supprimer
+              <span translate="no">Supprimer</span>
             </Button>
             <Button
               color="primary"

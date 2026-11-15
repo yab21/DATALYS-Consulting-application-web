@@ -528,7 +528,7 @@ const OptimizedProjectList: React.FC = () => {
           isDisabled={!closureReason.trim()}
           isLoading={isClosing}
         >
-          Clôturer
+          <span translate="no">Clôturer</span>
         </Button>
       </ModalFooter>
     </ModalContent>
@@ -962,7 +962,7 @@ const OptimizedProjectList: React.FC = () => {
                             startContent={<Edit className="h-4 w-4" />}
                             onPress={() => handleProjectAction(project, 'edit')}
                           >
-                            Modifier
+                            <span translate="no">Modifier</span>
                           </DropdownItem>
                           {project.is_active ? (
                             <DropdownItem
@@ -974,7 +974,7 @@ const OptimizedProjectList: React.FC = () => {
                                 setShowCloseModal(true);
                               }}
                             >
-                              Clôturer
+                              <span translate="no">Clôturer</span>
                             </DropdownItem>
                           ) : (
                             <DropdownItem
@@ -986,7 +986,7 @@ const OptimizedProjectList: React.FC = () => {
                                 setShowReopenModal(true);
                               }}
                             >
-                              Réouvrir
+                              <span translate="no">Réouvrir</span>
                             </DropdownItem>
                           )}
                           <DropdownItem
@@ -995,7 +995,7 @@ const OptimizedProjectList: React.FC = () => {
                             color="danger"
                             onPress={() => handleProjectAction(project, 'delete')}
                           >
-                            Supprimer
+                            <span translate="no">Supprimer</span>
                           </DropdownItem>
                         </DropdownMenu>
                       </Dropdown>

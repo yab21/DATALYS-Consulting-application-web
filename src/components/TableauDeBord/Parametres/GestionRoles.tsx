@@ -656,10 +656,10 @@ const GestionRoles: React.FC = () => {
                     onPress={executeRoleAction}
                     isLoading={isSubmitting}
                   >
-                    {actionType === "create" && "Créer"}
-                    {actionType === "edit" && "Modifier"}
-                    {actionType === "delete" && "Supprimer"}
-                    {actionType === "toggle" && "Confirmer"}
+                    {actionType === "create" && <span translate="no">Créer</span>}
+                    {actionType === "edit" && <span translate="no">Modifier</span>}
+                    {actionType === "delete" && <span translate="no">Supprimer</span>}
+                    {actionType === "toggle" && <span translate="no">Confirmer</span>}
                   </Button>
                 )}
               </ModalFooter>

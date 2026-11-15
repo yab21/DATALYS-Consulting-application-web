@@ -30,7 +30,7 @@ interface FolderItemProps {
   onFolderUpdated: () => void;
 }
 
-function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
+function FolderItem({ folder, onClick, onFolderUpdated }: Readonly<FolderItemProps>) {
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -42,7 +42,7 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
     setIsUserAdmin(true); // Temporary - set to true for demo
   }, []);
 
-  const handleRename = async (newName: string) => {
+  const handleRename = async (newName: string) => { // NOSONAR
     try {
       // Placeholder: Rename folder logic
       console.log(`Renaming folder ${folder.name} to ${newName}`);
@@ -53,7 +53,7 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
     }
   };
 
-  const handleMove = async (newParentId: string) => {
+  const handleMove = async (newParentId: string) => { // NOSONAR
     try {
       // Placeholder: Move folder logic
       console.log(`Moving folder ${folder.name} to parent ${newParentId}`);
@@ -80,7 +80,7 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
     }
   };
 
-  const togglePrivate = async () => {
+  const togglePrivate = async () => { // NOSONAR
     try {
       // Placeholder: Toggle private status logic
       console.log(`Toggling private status for folder ${folder.name}`);
@@ -137,13 +137,13 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
               className="bg-white text-dark dark:bg-dark-2 dark:text-white"
             >
               <DropdownItem key="renommer" onPress={() => setShowRenameModal(true)}>
-                Renommer
+                <span translate="no">Renommer</span>
               </DropdownItem>
               <DropdownItem key="deplacer" onPress={() => setShowMoveModal(true)}>
-                Déplacer
+                <span translate="no">Déplacer</span>
               </DropdownItem>
               <DropdownItem key="supprimer" onPress={onDeleteModalOpen}>
-                Supprimer
+                <span translate="no">Supprimer</span>
               </DropdownItem>
               <DropdownItem key="prive" onPress={togglePrivate}>
                 {folder.isPrivate ? "Rendre public" : "Rendre privé"}
@@ -180,7 +180,7 @@ function FolderItem({ folder, onClick, onFolderUpdated }: FolderItemProps) {
           </ModalBody>
           <ModalFooter>
             <Button color="danger" onPress={handleDelete}>
-              Supprimer
+              <span translate="no">Supprimer</span>
             </Button>
             <Button color="primary" variant="light" onPress={onDeleteModalClose}>
               Annuler

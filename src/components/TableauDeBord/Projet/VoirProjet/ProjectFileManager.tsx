@@ -1224,7 +1224,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
               isDisabled={!newFolderName.trim()}
               isLoading={isEditingFolder}
             >
-              Modifier
+              <span translate="no">Modifier</span>
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -1391,7 +1391,7 @@ const ProjectFileManager: React.FC<ProjectFileManagerProps> = ({
               onPress={confirmDelete}
               isLoading={isDeleting}
             >
-              Supprimer définitivement
+              <span translate="no">Supprimer définitivement</span>
             </Button>
           </ModalFooter>
         </ModalContent>

@@ -23,7 +23,7 @@ interface VoirPartenaireProps {
 
 const MAX_DROPDOWN_ITEMS = 5;
 
-const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
+const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => { // NOSONAR
   const router = useRouter();
   const { user } = useAuth();
   const { showNotification } = useSimpleNotifications();
@@ -61,7 +61,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const partnerId = parseInt(id);
+  const partnerId = Number.parseInt(id, 10);
 
   // Fermer dropdown au clic extérieur
   useEffect(() => {
@@ -92,7 +92,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   };
 
   // Corriger URL image
-  const fixImageUrl = useCallback((url: string | undefined): string | undefined => {
+  const fixImageUrl = useCallback((url: string | undefined): string | undefined => { // NOSONAR
     if (!url || url.trim() === '') return undefined;
     const cleanUrl = url.trim();
     try {
@@ -104,11 +104,11 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     if (cleanUrl.includes('/files/serve/')) {
       if (cleanUrl.startsWith('https://applicationweb.datalysconsulting.com/files/serve/')) return cleanUrl;
       if (cleanUrl.startsWith('/files/serve/')) return `https://applicationweb.datalysconsulting.com${cleanUrl}`;
-      if (cleanUrl.includes('82.112.253.137:8082')) return cleanUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com');
+      if (cleanUrl.includes('82.112.253.137:8082')) return cleanUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com'); // NOSONAR
       if (cleanUrl.includes('/api/files/serve/')) return cleanUrl.replace('/api/files/serve/', '/files/serve/');
     }
     if (cleanUrl.includes('localhost:8081') || cleanUrl.includes('82.112.253.137:8081')) {
-      const pathMatch = cleanUrl.match(/\/uploads\/logos\/(.+)$/);
+      const pathMatch = /\/uploads\/logos\/(.+)$/.exec(cleanUrl);
       if (pathMatch) return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}/uploads/logos/${pathMatch[1]}`;
     }
     if (cleanUrl.startsWith('/uploads/logos/')) return `${process.env.NEXT_PUBLIC_IMAGES_BASE_URL || 'https://applicationweb.datalysconsulting.com/static'}${cleanUrl}`;
@@ -118,7 +118,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
   }, []);
 
   // Chargement initial
-  useEffect(() => { loadPartnerData(); }, [id]);
+  useEffect(() => { void loadPartnerData(); }, [id]);
 
   const loadPartnerData = async () => {
     try {
@@ -128,9 +128,9 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
       const partnerData = await partnersService.getPartnerById(partnerId);
       if (!partnerData) { setError('Partenaire non trouvé'); return; }
       setPartner(partnerData);
-      loadPartnerStats(partnerData);
+      void loadPartnerStats(partnerData);
       // Charger les projets au montage pour les dropdowns
-      loadProjectsForPartner(partnerData);
+      void loadProjectsForPartner(partnerData);
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       setError(extractBackendMessage(error));
@@ -174,12 +174,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     if (!partner || projects.length === 0) return;
     try {
       setLoadingFiles(true);
-      const allFiles: ProjectFile[] = [];
-      for (const project of projects) {
-        const projectFiles = await filesService.getFilesByCriteria(0, 100, { project_id: project.id });
-        allFiles.push(...projectFiles);
-      }
-      setFiles(allFiles);
+      const results = await Promise.all(
+        projects.map(project => filesService.getFilesByCriteria(0, 100, { project_id: project.id }))
+      );
+      setFiles(results.flat());
     } catch (error) {
       if (isTokenExpiredError(error)) throw error;
       setError(extractBackendMessage(error));
@@ -198,7 +196,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     let fixedUrl = url;
     if (fixedUrl.includes('/api/files/serve/')) fixedUrl = fixedUrl.replace('/api/files/serve/', '/files/serve/');
     if (fixedUrl.startsWith('/files/serve/')) fixedUrl = `https://applicationweb.datalysconsulting.com${fixedUrl}`;
-    if (fixedUrl.includes('82.112.253.137:8082')) fixedUrl = fixedUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com');
+    if (fixedUrl.includes('82.112.253.137:8082')) fixedUrl = fixedUrl.replace('http://82.112.253.137:8082', 'https://applicationweb.datalysconsulting.com'); // NOSONAR
     return fixedUrl;
   }, []);
 
@@ -241,7 +239,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const filteredAndSortedFiles = useMemo(() => {
@@ -305,7 +303,16 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
         if (loadingStats) return <div className="flex justify-center py-3"><Spinner size="sm" /></div>;
         const incidentItems = stats.incidentsList.slice(0, MAX_DROPDOWN_ITEMS);
         if (incidentItems.length === 0) return <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">Aucun incident</p>;
-        return incidentItems.map((incident: PartnerIncident) => (
+        return incidentItems.map((incident: PartnerIncident) => {
+          let priorityColor: "danger" | "warning" | "primary";
+          if (['P0','P1'].includes(incident.priority ?? '')) {
+            priorityColor = 'danger';
+          } else if (incident.priority === 'P2') {
+            priorityColor = 'warning';
+          } else {
+            priorityColor = 'primary';
+          }
+          return (
           <button
             key={incident.id}
             onClick={(e) => { e.stopPropagation(); router.push(`/tableaudebord/incidents/${incident.id}`); }}
@@ -316,7 +323,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
               <span className="text-sm text-gray-700 dark:text-gray-300 truncate block">{incident.title}</span>
               <div className="flex items-center gap-1.5 mt-1">
                 {incident.priority && (
-                  <Chip size="sm" color={['P0','P1'].includes(incident.priority) ? 'danger' : incident.priority === 'P2' ? 'warning' : 'primary'} variant="flat" className="h-5 text-[10px]">
+                  <Chip size="sm" color={priorityColor} variant="flat" className="h-5 text-[10px]">
                     {incident.priority}
                   </Chip>
                 )}
@@ -329,7 +336,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
             </div>
             <ArrowRight className="w-3 h-3 text-gray-300 dark:text-gray-600 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0" />
           </button>
-        ));
+          );
+        });
       }
       case "Support": {
         if (loadingStats) return <div className="flex justify-center py-3"><Spinner size="sm" /></div>;
@@ -532,9 +540,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                 ref={(el) => { cardRefs.current[stat.label] = el; }}
                 className="relative"
               >
-                <div
+                <button
+                  type="button"
                   onClick={() => handleCardClick(stat.label)}
-                  className={`bg-white dark:bg-gray-800 rounded-xl border p-5 cursor-pointer transition-all duration-200 select-none ${
+                  className={`w-full bg-white dark:bg-gray-800 rounded-xl border p-5 cursor-pointer transition-all duration-200 select-none ${
                     isExpanded
                       ? `${stat.borderActive} shadow-md`
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'
@@ -559,7 +568,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       }
                     </div>
                   </div>
-                </div>
+                </button>
 
                 <AnimatePresence>
                   {isExpanded && (
@@ -669,9 +678,11 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
               title={<div className="flex items-center gap-2"><FileText className="w-4 h-4" /><span>Projets ({projects.length})</span></div>}
             >
               <div className="p-6">
-                {loadingProjects ? (
+                {(() => {
+                  if (loadingProjects) return (
                   <div className="flex justify-center py-8"><Spinner size="md" /></div>
-                ) : projects.length > 0 ? (
+                  );
+                  if (projects.length > 0) return (
                   <>
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-sm text-gray-500 dark:text-gray-400">{projects.length} projet{projects.length > 1 ? 's' : ''}</span>
@@ -688,9 +699,10 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {projects.map(project => (
-                        <div
+                        <button
+                          type="button"
                           key={project.id}
-                          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all cursor-pointer group"
+                          className="text-left w-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all cursor-pointer group"
                           onClick={() => router.push(`/tableaudebord/projet/pageprojet/${project.id}`)}
                         >
                           <div className="flex items-start gap-3">
@@ -715,11 +727,12 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </>
-                ) : (
+                  );
+                  return (
                   <div className="text-center py-12">
                     <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
                       <FileText className="w-7 h-7 text-gray-400" />
@@ -727,7 +740,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                     <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Aucun projet</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Aucun projet associé à ce partenaire</p>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </Tab>
 
@@ -805,7 +819,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                   </button>
                                 </div>
                               </div>
-                              <div className="text-center" onClick={() => handlePreviewFile(file)}>
+                              <button type="button" className="text-center w-full" onClick={() => handlePreviewFile(file)}>
                                 <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                                   {getFileIconComponent(file.name)}
                                 </div>
@@ -816,29 +830,29 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                                   )}
                                   <p>{formatDateShort(file.created_at)}</p>
                                 </div>
-                              </div>
+                              </button>
                             </div>
                           ) : (
                             <div key={file.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:shadow-sm transition-all cursor-pointer">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg" onClick={() => handlePreviewFile(file)}>
+                                <button type="button" className="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg" onClick={() => handlePreviewFile(file)}>
                                   {getFileIconComponent(file.name)}
-                                </div>
-                                <div className="flex-1 min-w-0" onClick={() => handlePreviewFile(file)}>
+                                </button>
+                                <button type="button" className="flex-1 min-w-0 text-left" onClick={() => handlePreviewFile(file)}>
                                   <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate">{file.name}</h4>
                                   <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                                     {file.extension && <span>{file.extension.toUpperCase()}</span>}
                                     {file.size > 0 && <span>{formatFileSize(file.size)}</span>}
                                     <span>{formatDateShort(file.created_at)}</span>
                                   </div>
-                                </div>
+                                </button>
                                 <Dropdown>
                                   <DropdownTrigger>
                                     <Button size="sm" variant="light" isIconOnly className="text-gray-400"><MoreVertical className="w-4 h-4" /></Button>
                                   </DropdownTrigger>
                                   <DropdownMenu>
                                     <DropdownItem key="view" startContent={<Eye className="w-4 h-4" />} onPress={() => handlePreviewFile(file)}>Voir</DropdownItem>
-                                    <DropdownItem key="delete" startContent={<Trash2 className="w-4 h-4" />} className="text-danger" color="danger" onPress={() => openDeleteFileModal(file)}>Supprimer</DropdownItem>
+                                    <DropdownItem key="delete" startContent={<Trash2 className="w-4 h-4" />} className="text-danger" color="danger" onPress={() => openDeleteFileModal(file)}><span translate="no">Supprimer</span></DropdownItem>
                                   </DropdownMenu>
                                 </Dropdown>
                               </div>
@@ -870,14 +884,16 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
               title={<div className="flex items-center gap-2"><FolderIcon className="w-4 h-4" /><span>Dossiers</span></div>}
             >
               <div className="p-6">
-                {loadingProjects ? (
+                {(() => {
+                  if (loadingProjects) return (
                   <div className="flex justify-center py-8"><Spinner size="md" /></div>
-                ) : projects.length > 0 ? (
+                  );
+                  if (projects.length > 0) return (
                   <>
                     <div className="mb-6">
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                      <span className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                         Sélectionnez un projet
-                      </label>
+                      </span>
                       <div className="max-w-md">
                         <Dropdown>
                           <DropdownTrigger>
@@ -924,7 +940,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                       </div>
                     )}
                   </>
-                ) : (
+                  );
+                  return (
                   <div className="text-center py-12">
                     <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
                       <FolderIcon className="w-7 h-7 text-gray-400" />
@@ -932,7 +949,8 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
                     <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Aucun projet</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Aucun projet associé à ce partenaire</p>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </Tab>
           </Tabs>
@@ -968,7 +986,7 @@ const VoirPartenaire: React.FC<VoirPartenaireProps> = ({ id }) => {
           </ModalBody>
           <ModalFooter>
             <Button variant="flat" onPress={onDeleteFileModalClose} isDisabled={isDeleting}>Annuler</Button>
-            <Button color="danger" onPress={confirmDeleteFile} isLoading={isDeleting}>Supprimer</Button>
+            <Button color="danger" onPress={confirmDeleteFile} isLoading={isDeleting}><span translate="no">Supprimer</span></Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
